@@ -64,6 +64,8 @@
     "code_and_data_sections": 28,
     "all_sections_match_tested_binary": true,
     "signature_verified": true,
-    "live_launch": "Running process; startup waiting in SQLite guarded_open_np for existing Documents save; macOS response pending."
+    "live_launch": "Verified running after the user allowed macOS file access.",
+    "normal_saved_flight_resumed": true,
+    "live_hyperion_mode_verified": true
   }
 }

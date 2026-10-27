@@ -11,3 +11,5 @@ Call graph:
     +             858 robust_open2  (in libsqlite3.dylib) + 420  [0x18a9f1fa0]
     +               858 guarded_open_np  (in libsystem_kernel.dylib) + 36  [0x182a0b580]
     +                 858 __guarded_open_np  (in libsystem_kernel.dylib) + 8  [0x182a0b594]
+
+Resolved: the user allowed macOS file access. The packaged app resumed the existing saved flight; the live cockpit and HYPERION mode were verified.
