@@ -1,6 +1,8 @@
 # INFINITE
 
-A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.10 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.11 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+
+Version 0.11 makes the surrounding universe visible from the cockpit: all existing system planets and the sun appear on the contact scope and list, distant unresolved planets retain selectable light proxies, and addressed stars, gas and neighbouring galaxies supply the sky. The lights retain their true bearings, distances and destination addresses. [CELESTIAL_CONTEXT.md](docs/CELESTIAL_CONTEXT.md) explains the visibility fixes and comparisons.
 
 The universe remains at its original physical scale. Its generators, hierarchical addresses, seeds, geology, rocks, minerals and atomic structures are unchanged. Camera precision changes never resize the normal ship. See [OPERATING_SCALES.md](docs/OPERATING_SCALES.md) for the three operating regimes, controls and validation.
 
@@ -51,6 +53,8 @@ ctest --test-dir build-core --output-on-failure
 New games begin in planetary orbit with a **12 m ship** and cruise disengaged. Existing version-3 saves resume their exact view, motion, size and drive settings. **C** captures the mouse helm; **W/S** changes persistent throttle and **B** brakes.
 
 Use **Y** to cycle the current system's existing planets, then **J** to navigate. **L** chooses the real terrain underfoot for an assisted landing; **Enter** lifts off. Normal handling has a nominal 85 km/s open-space envelope that decreases smoothly toward 350 m/s near terrain, with boost and speed adjustment available.
+
+The cockpit lists the sun and every planet with range and ahead/aft/occulted status. Its scope shows their bearings, and unresolved planets have labels in the forward view. Click a contact row, planet light, star or distant galaxy to select its actual address, then press **J** to travel; **N** supplies the optional long-range drive for astronomical distances.
 
 **N** explicitly enables long-range cruise. Its initial ceiling is **100 light years per second**, with proximity braking near structures. **-/+** changes the cruise ceiling while it is engaged. Voyages remain continuous and can last as long as desired; elapsed flight time, travelled distance and ETA are displayed and saved. Cruise continues when the open app loses focus.
 

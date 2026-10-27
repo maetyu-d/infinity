@@ -1,6 +1,7 @@
 #pragma once
 #include "infinite/Piloting.hpp"
 #include "infinite/Renderer.hpp"
+#include <algorithm>
 #include <filesystem>
 #include <iostream>
 #include <sstream>
@@ -62,7 +63,8 @@ class PilotValidation {
                 renderer.screenshot(
                     (std::filesystem::path(directory) / (std::string(name) + ".ppm")).string());
         };
-        if (stage_ == 0 && age_ >= 90 && stats.visibleObjects && stats.uploadDeferred == 0) {
+        if (stage_ == 0 && age_ >= 90 && stats.visibleObjects && stats.uploadDeferred == 0 &&
+            stats.celestialContacts > 0 && stats.skyGalaxies > 0) {
             auto geometry = renderer.submittedGeometry(n_.anchor);
             if (!geometry)
                 return;
@@ -88,8 +90,36 @@ class PilotValidation {
             }
             std::cout << "PILOT_MODE_PROOF identical camera and planet geometry in all three cockpit modes / "
                          "sky stars="
-                      << stats.skyStars << " atmosphere=" << stats.atmospheres << '\n';
+                      << stats.skyStars << " background_galaxies=" << stats.skyGalaxies
+                      << " atmosphere=" << stats.atmospheres << '\n';
+            if (stats.skyGalaxies == 0)
+                throw std::runtime_error("Extragalactic lights vanished from the outward-facing sky");
             renderer.setMode(RenderMode::Hyperion);
+            const auto contacts = renderer.celestialContacts();
+            auto target = std::find_if(contacts.begin(), contacts.end(), [&](const CelestialContact& c) {
+                return c.address.kind() == Kind::Planet && c.address != planet_ && !c.occluded &&
+                       c.distanceMetres > 10000 * std::pow(10., n_.logDistance);
+            });
+            if (target == contacts.end())
+                throw std::runtime_error("Planetary cockpit lost the rest of its actual system");
+            distantPlanet_ = target->address;
+            const auto eye = n_.cameraPosition();
+            const auto direction = n_.orientation * target->localDirection;
+            const auto up = std::abs(direction.y) > .95 ? glm::dvec3(1, 0, 0) : glm::dvec3(0, 1, 0);
+            n_.orientation = glm::quatLookAtRH(direction, up);
+            n_.offset = eye - n_.orientation * glm::dvec3(0, 0, 1);
+            n_.selected = distantPlanet_;
+            p_.resetMotion();
+            stage_ = 7;
+            age_ = 0;
+        } else if (stage_ == 7 && age_ == 30) {
+            if (stats.celestialContacts < 6 || stats.celestialLights == 0 ||
+                renderer.pick(720, 450) != distantPlanet_ || renderer.pick(1170, 217) != planet_.parent())
+                throw std::runtime_error("Distant planet is not visible and selectable beyond the far plane");
+            capture("system-contacts");
+            std::cout << "PILOT_SYSTEM_CONTACTS count=" << stats.celestialContacts
+                      << " lights=" << stats.celestialLights << " distant_planet_pick=PASS\n";
+        } else if (stage_ == 7 && age_ == 40) {
             // Look toward the physical galaxy centre: the orbital comparison
             // deliberately faces a hemisphere where the disc is behind us.
             auto galaxy = planet_;
@@ -107,8 +137,31 @@ class PilotValidation {
         } else if (stage_ == 5 && age_ == 30) {
             if (stats.skyStars < 10)
                 throw std::runtime_error("Addressed galactic stars disappeared from the cockpit sky");
+            bool picked = false;
+            if (auto sky = renderer.galaxySamples())
+                for (const auto& star : sky->particles) {
+                    if (star.objectId == UINT64_MAX)
+                        continue;
+                    const auto point = u_.pointRelative(
+                        sky->address,
+                        star.position *
+                            std::pow(10., sky->logUnits - u_.describe(sky->address).frame.logRadius),
+                        n_.anchor, n_.logDistance);
+                    const auto local = glm::inverse(n_.orientation) * (point - n_.cameraPosition());
+                    if (local.z >= 0)
+                        continue;
+                    const double x = 720 + local.x / -local.z * 450 / .7002075,
+                                 y = 450 - local.y / -local.z * 450 / .7002075;
+                    if (x > 150 && x < 1100 && y > 170 && y < 650 &&
+                        renderer.pick(x, y) == sky->address.child(Kind::System, star.objectId)) {
+                        picked = true;
+                        break;
+                    }
+                }
+            if (!picked)
+                throw std::runtime_error("Addressed stellar background cannot be selected");
             capture("stellar-background");
-            std::cout << "PILOT_STELLAR_SKY addressed stars=" << stats.skyStars << '\n';
+            std::cout << "PILOT_STELLAR_SKY addressed stars=" << stats.skyStars << " sky_pick=PASS\n";
         } else if (stage_ == 5 && age_ == 40) {
             place(false);
             p_.land();
@@ -185,7 +238,7 @@ class PilotValidation {
     const Universe& u_;
     Navigation& n_;
     Pilot& p_;
-    Address planet_, nanoAddress_;
+    Address planet_, nanoAddress_, distantPlanet_;
     bool microCaptured_ = false;
     glm::dvec3 direction_{};
     uint64_t descriptor_ = 0, geometry_ = 0;

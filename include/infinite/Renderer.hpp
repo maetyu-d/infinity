@@ -17,6 +17,7 @@ struct FrameStats {
     size_t terrainTiles = 0, rootCells = 0;
     size_t atmospheres = 0;
     size_t skyStars = 0;
+    size_t celestialContacts = 0, celestialLights = 0, skyGas = 0, skyGalaxies = 0;
 };
 class Renderer {
   public:
@@ -32,6 +33,7 @@ class Renderer {
     std::string backend() const;
     std::shared_ptr<const Geometry> submittedGeometry(const Address&) const;
     std::shared_ptr<const Geometry> galaxySamples() const;
+    std::span<const CelestialContact> celestialContacts() const;
     void setMode(RenderMode);
     RenderMode mode() const;
     void freezeVisualTime(double seconds);

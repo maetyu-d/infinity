@@ -75,7 +75,7 @@ std::string flightQuantity(double v, bool speed) {
     if (a >= 9.4607304725808e15) {
         divisor = 9.4607304725808e15;
         suffix = "LY";
-    } else if (a >= 1.495978707e11) {
+    } else if (a >= 1.495978707e10) {
         divisor = 1.495978707e11;
         suffix = "AU";
     } else if (a >= 1000) {
@@ -173,7 +173,7 @@ Mesh cockpitMesh(double aspect) {
     return m;
 }
 CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::string_view mode,
-                              std::string_view notice) {
+                              std::string_view notice, std::span<const CelestialContact> contacts) {
     CockpitOverlay h;
     const double w = 900 * aspect, center = w * .5, deck = 790;
     rect(h.panels, 0, 0, w, 40, ink, .98f);
@@ -210,6 +210,15 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     line(h.strokes, radarX, radarY - 5, radarX - 4, radarY + 5, mint);
     line(h.strokes, radarX - 4, radarY + 5, radarX + 4, radarY + 5, mint);
     line(h.strokes, radarX + 4, radarY + 5, radarX, radarY - 5, mint);
+    for (const auto& contact : contacts) {
+        if (contact.selected)
+            continue; // The active target is drawn in amber below.
+        const auto v = contact.localDirection;
+        const double x = radarX + v.x * 49, y = radarY + v.z * 14;
+        const auto color = contact.address.kind() == Kind::System ? pearl : ice;
+        line(h.strokes, x, y, x, y - v.y * 17, color * .6f);
+        rect(h.panels, x - 1.4, y - v.y * 17 - 1.4, 2.8, 2.8, color);
+    }
     if (t.targetVisible) {
         auto v = glm::normalize(t.localTarget);
         double x = radarX + v.x * 49, y = radarY + v.z * 14;
@@ -266,6 +275,39 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
         for (int side : {-1, 1})
             line(h.strokes, center + side * 45 * cs, yy - side * 45 * sn, center + side * 95 * cs,
                  yy - side * 95 * sn, muted);
+    }
+    if (!contacts.empty() && (!t.shrinking || t.hullMetres >= .001)) {
+        const double x = w - 310;
+        text(h.lettering, "SYSTEM CONTACTS / Y SELECT", x, 189, 10, ice);
+        size_t index = 0;
+        for (const auto& contact : contacts) {
+            const auto color = contact.selected ? amber : (contact.occluded ? muted * .8f : pearl);
+            const double y = 211 + index * 34;
+            text(h.lettering, (contact.selected ? "+ " : "  ") + contact.label, x, y, 10, color, 25);
+            text(h.lettering,
+                 flightQuantity(contact.distanceMetres) + " / " +
+                     (contact.occluded               ? "OCCULTED"
+                      : contact.localDirection.z < 0 ? "AHEAD"
+                                                     : "AFT"),
+                 x + 17, y + 15, 8, contact.selected ? amber : muted, 33);
+            ++index;
+            if (!contact.occluded && contact.localDirection.z < 0 && contact.angularRadius < .008) {
+                const auto d = contact.localDirection;
+                const double px = center + d.x / -d.z * 450 / .7002075;
+                const double py = 450 - d.y / -d.z * 450 / .7002075;
+                if (px > 70 && px < w - 70 && py > 180 && py < 660 && (px < w - 350 || py > 570)) {
+                    for (int side : {-1, 1}) {
+                        line(h.strokes, px + side * 6, py - 4, px + side * 6, py + 4,
+                             contact.selected ? amber : ice * .6f);
+                    }
+                    if (!contact.selected) {
+                        text(h.lettering, contact.label, px + 10, py - 10, 8, ice, 20);
+                        text(h.lettering, flightQuantity(contact.distanceMetres), px + 10, py + 4, 8, muted,
+                             20);
+                    }
+                }
+            }
+        }
     }
     std::snprintf(value, sizeof(value), "VIEW SCALE %s / %s",
                   flightQuantity(std::pow(10., t.logMetres)).c_str(),

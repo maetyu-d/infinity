@@ -107,6 +107,7 @@ struct Renderer::Impl {
     double cabinAspect = 0;
     std::optional<FlightInstruments> instruments;
     std::shared_ptr<const Geometry> skyGeometry;
+    std::vector<CelestialContact> contacts;
     std::unique_ptr<HyperionRenderer> hyperion;
     RenderMode mode = RenderMode::Original;
     double visualTime = 0, fixedVisualTime = -1;
@@ -141,6 +142,9 @@ struct Renderer::Impl {
     TerrainStreamer terrain;
     bool terrainActive = false;
     explicit Impl(SDL_Window* w, const Universe& u) : universe(u), window(w), terrain(u) {}
+    bgfx::ViewId worldView() const {
+        return instruments ? 2 : 0; // Flight sky precedes terrain (1) and opaque local geometry (2).
+    }
     ~Impl() {
         if (initialized) {
             for (auto& [key, g] : gpu) {
@@ -288,7 +292,8 @@ struct Renderer::Impl {
         else
             state |= BGFX_STATE_BLEND_ALPHA;
         bgfx::setState(state);
-        bgfx::submit(0, mode == RenderMode::Original ? instanceProgram : hyperion->geometryProgram());
+        bgfx::submit(worldView(),
+                     mode == RenderMode::Original ? instanceProgram : hyperion->geometryProgram());
     }
     void drawLines(const GPUMesh& m, const glm::mat4& model) {
         if (!bgfx::isValid(m.vertices))
@@ -298,7 +303,7 @@ struct Renderer::Impl {
         bgfx::setIndexBuffer(m.indices);
         bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_PT_LINES | BGFX_STATE_DEPTH_TEST_LEQUAL |
                        BGFX_STATE_MSAA);
-        bgfx::submit(0, colorProgram);
+        bgfx::submit(worldView(), colorProgram);
     }
     void transient(const Mesh& mesh, bgfx::ViewId viewId, bool lines, bool additive, bool depth = true,
                    bool writeDepth = false) {
@@ -319,7 +324,7 @@ struct Renderer::Impl {
         bgfx::setIndexBuffer(&ib);
         uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_MSAA;
         if (lines)
-            state |= BGFX_STATE_PT_LINES | (viewId == 0 && depth ? BGFX_STATE_DEPTH_TEST_LEQUAL : 0);
+            state |= BGFX_STATE_PT_LINES | (depth ? BGFX_STATE_DEPTH_TEST_LEQUAL : 0);
         else if (depth)
             state |= BGFX_STATE_DEPTH_TEST_LEQUAL;
         if (writeDepth)
@@ -516,7 +521,10 @@ struct Renderer::Impl {
         if (radius <= 3)
             return;
         const float handoff = float(smoothstep(3., 12., radius));
-        auto geometry = cache.request(galaxy, 0, 6);
+        // Refine the same addressed stellar population asynchronously. A pixel
+        // floor, like Hyperion skyFragment's derivative-filtered points, keeps
+        // unresolved emitters from disappearing between MSAA samples.
+        auto geometry = cache.request(galaxy, 2, 6);
         if (!geometry)
             return;
         skyGeometry = geometry;
@@ -529,7 +537,7 @@ struct Renderer::Impl {
         if (nav.anchor.path.size() > galaxy.address.path.size())
             active = nav.anchor.path[galaxy.address.path.size()].id;
         for (const auto& star : geometry->particles) {
-            if (star.objectId == UINT64_MAX || star.objectId == active)
+            if (star.objectId == active)
                 continue;
             const auto delta = orientation * (star.position * factor - galaxyEye);
             const double distance = glm::length(delta);
@@ -539,11 +547,65 @@ struct Renderer::Impl {
             const auto local = cameraInverse * direction;
             if (local.z >= 0)
                 continue;
-            const double angular = std::clamp(double(star.radius) * factor / distance, .00025, .0016);
+            const bool gas = star.objectId == UINT64_MAX;
+            const double pixelAngle = 2 * std::tan(fieldOfView * .5) / height;
+            const double angular = gas ? std::clamp(double(star.radius) * factor / distance, .004, .04)
+                                       : std::clamp(double(star.radius) * factor / distance,
+                                                    pixelAngle * 1.05, pixelAngle * 2.7);
             const double size = 500 * angular;
             if (LOD::visible(local * 500., size, double(width) / height, fieldOfView)) {
-                addBillboard(eye + direction * 500., size, star.color * handoff, true);
-                ++stats.skyStars;
+                const double physicalDistance = distance * std::pow(10., galaxy.frame.logRadius);
+                if (celestialOccluded(local, physicalDistance, contacts))
+                    continue;
+                const auto point = eye + direction * 500.;
+                addBillboard(point, size, star.color * (handoff * (gas ? .5f : 1.f)), true);
+                if (gas)
+                    ++stats.skyGas;
+                else {
+                    ++stats.skyStars;
+                    if (auto screen = project(point))
+                        picks.push_back(
+                            {galaxy.address.child(Kind::System, star.objectId), *screen, physicalDistance});
+                }
+            }
+        }
+    }
+    void galaxySky(const Node& root, const Navigation& nav, RegionCache& cache, double exposure) {
+        if (!instruments || exposure < .0001)
+            return;
+        const auto catalog = cache.catalog(root);
+        if (!catalog)
+            return;
+        const auto rootEye = universe.pointRelative(
+            nav.anchor, eye * std::pow(10., nav.logDistance - anchorFrames.back().logRadius), root.address,
+            root.frame.logRadius);
+        const auto orientation = poseFor(root.address, nav).orientation;
+        const double pixelAngle = 2 * std::tan(fieldOfView * .5) / height;
+        for (const auto& galaxy : *catalog) {
+            if (galaxy.address.ancestorOf(nav.anchor))
+                continue;
+            const auto delta = orientation * (galaxy.frame.position - rootEye);
+            const double distance = glm::length(delta);
+            if (distance <= 1e-15)
+                continue;
+            const auto direction = delta / distance;
+            const auto local = cameraInverse * direction;
+            if (local.z >= 0 ||
+                celestialOccluded(local, distance * std::pow(10., root.frame.logRadius), contacts))
+                continue;
+            const double angular =
+                std::clamp(std::pow(10., galaxy.frame.logRadius - root.frame.logRadius) / distance,
+                           pixelAngle * .85, pixelAngle * 2.);
+            if (LOD::visible(local * 500., angular * 500., double(width) / height, fieldOfView)) {
+                const auto point = eye + direction * 500.;
+                const glm::vec3 tint = galaxy.galaxy.type == GalaxyType::Elliptical
+                                           ? glm::vec3(.65, .49, .32)
+                                           : glm::vec3(.34, .48, .68);
+                addBillboard(point, angular * 500., tint * float(exposure), true);
+                if (auto screen = project(point))
+                    picks.push_back(
+                        {galaxy.address, *screen, distance * std::pow(10., root.frame.logRadius)});
+                ++stats.skyGalaxies;
             }
         }
     }
@@ -556,7 +618,7 @@ struct Renderer::Impl {
         auto& state = details[node.address];
         bool stellarProxy =
             kind == Kind::System && (node.address.ancestorOf(nav.anchor) || state.blend.current);
-        if (stellarProxy && cp.z < 0) {
+        if (stellarProxy && !instruments && cp.z < 0) {
             double physical = std::pow(10.0, std::log10(node.stellarRadiusMetres) - nav.logDistance) * 2.5;
             double radius = std::clamp(physical, -cp.z * .001, -cp.z * .035);
             float intensity = static_cast<float>(.35 + .65 * std::min(node.massSolar / 3, 1.0));
@@ -818,6 +880,9 @@ void Renderer::setCockpit(const FlightInstruments* instruments) {
 std::shared_ptr<const Geometry> Renderer::galaxySamples() const {
     return impl_->skyGeometry;
 }
+std::span<const CelestialContact> Renderer::celestialContacts() const {
+    return impl_->contacts;
+}
 std::shared_ptr<const Geometry> Renderer::submittedGeometry(const Address& address) const {
     auto found = impl_->details.find(address);
     return found == impl_->details.end() ? nullptr : found->second.blend.current;
@@ -850,7 +915,8 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     p.cosmicBillboards.clear();
     p.frameFrames.clear();
     p.framePoses.clear();
-    p.atomView = 2;
+    p.atomView = p.instruments ? 3 : 2;
+    p.contacts.clear();
     auto nodes = p.universe.lineage(nav.anchor);
     p.anchorFrames.clear();
     for (const auto& node : nodes) {
@@ -877,6 +943,16 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     p.hyperion->begin(p.mode, p.width, p.height, opticalDepth, bool(p.instruments));
     bgfx::setViewTransform(0, glm::value_ptr(v), glm::value_ptr(proj));
     bgfx::setViewRect(0, 0, 0, static_cast<uint16_t>(p.width), static_cast<uint16_t>(p.height));
+    if (p.instruments) {
+        bgfx::setViewTransform(2, glm::value_ptr(v), glm::value_ptr(proj));
+        bgfx::setViewRect(2, 0, 0, uint16_t(p.width), uint16_t(p.height));
+        bgfx::setViewMode(2, bgfx::ViewMode::Default);
+        for (const auto& system : nodes)
+            if (system.address.kind() == Kind::System)
+                if (auto planets = cache.catalog(system))
+                    p.contacts = extractCelestialContacts(p.universe, nav, system, *planets);
+        p.stats.celestialContacts = p.contacts.size();
+    }
     bgfx::touch(0);
     std::optional<Node> terrainPlanet;
     for (const auto& node : nodes)
@@ -902,6 +978,26 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     for (const auto& node : nodes)
         if (node.address.kind() == Kind::Galaxy)
             p.stellarSky(node, nav, cache);
+    for (const auto& contact : p.contacts) {
+        const auto direction = contact.localDirection;
+        if (direction.z >= 0 || contact.occluded)
+            continue;
+        const auto point = p.eye + nav.orientation * direction * 500.;
+        if (auto screen = p.project(point)) {
+            p.picks.push_back({contact.address, *screen, contact.distanceMetres});
+            // Large resolved planets keep their generated mesh. Unresolved
+            // planets and the actual sun retain a legible angular light proxy
+            // even when their physical distance exceeds the local depth range.
+            if (contact.angularRadius < .008 || contact.address.kind() == Kind::System) {
+                const double pixelAngle = 2 * std::tan(fov * .5) / p.height;
+                const bool star = contact.address.kind() == Kind::System;
+                const double angular = std::clamp(contact.angularRadius * (star ? 2.5 : 1.),
+                                                  pixelAngle * (star ? 2.5 : 1.2), .12);
+                p.addBillboard(point, angular * 500., contact.color * (star ? 1.f : .65f), true);
+                ++p.stats.celestialLights;
+            }
+        }
+    }
     std::vector<Node> rootNodes;
     const Address anchorRoot{nav.anchor.cell, {}};
     const auto anchorRootEye = p.universe.pointRelative(
@@ -910,6 +1006,8 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     const auto [root, rootEye] = canonicalRoot(anchorRoot, anchorRootEye);
     for (const auto& address : rootNeighborhood(root)) {
         auto node = p.universe.describe(address);
+        p.galaxySky(node, nav, cache,
+                    celestialCellWeight(cellDisplacement(address.cell, root.cell), rootEye));
         if (!rendered.contains(address)) {
             p.renderNode(node, nav, cache, 2);
             rendered.insert(address);
@@ -937,6 +1035,12 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         const auto parentFrames = p.framesFor(parent.address);
         auto present = [&](const Node& n) {
             const auto& a = n.address;
+            if (p.instruments) {
+                auto contact = std::find_if(p.contacts.begin(), p.contacts.end(),
+                                            [&](const CelestialContact& c) { return c.address == a; });
+                if (contact != p.contacts.end() && contact->occluded)
+                    return;
+            }
             auto childFrames = parentFrames;
             childFrames.push_back(n.frame);
             p.frameFrames.try_emplace(a, std::move(childFrames));
@@ -1018,7 +1122,8 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                     p.hyperion->bindEmissions(node, glm::inverse(focusModel), p.visualTime);
                 }
             }
-            bgfx::submit(0, p.mode == RenderMode::Original ? p.instanceProgram : p.hyperion->glowProgram());
+            bgfx::submit(cosmic && p.instruments ? 0 : p.worldView(),
+                         p.mode == RenderMode::Original ? p.instanceProgram : p.hyperion->glowProgram());
         }
     };
     drawBillboards(p.cosmicBillboards, true);
@@ -1055,7 +1160,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                             glm::vec3(.28, .78, .91) *
                                 float((1 - distance / (spacing * 2)) * strength * .36));
                 }
-        p.transient(trails, 0, true, true);
+        p.transient(trails, p.worldView(), true, true);
     }
     if (opticalDepth && p.mode != RenderMode::Original) {
         for (const auto& planet : nodes)
@@ -1106,7 +1211,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
 
     if (p.instruments && overlay) {
         const double aspect = double(p.width) / p.height;
-        const auto hud = cockpitOverlay(*p.instruments, aspect, renderModeName(p.mode), notice);
+        const auto hud = cockpitOverlay(*p.instruments, aspect, renderModeName(p.mode), notice, p.contacts);
         const auto projection = bgfx::getCaps()->homogeneousDepth
                                     ? glm::orthoRH_NO(0.f, float(900 * aspect), 900.f, 0.f, -1.f, 1.f)
                                     : glm::orthoRH_ZO(0.f, float(900 * aspect), 900.f, 0.f, -1.f, 1.f);
@@ -1207,6 +1312,15 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
 }
 std::optional<Address> Renderer::pick(double x, double y) const {
     const auto& p = *impl_;
+    if (p.instruments && (!p.instruments->shrinking || p.instruments->hullMetres >= .001)) {
+        const double scale = 900. / p.height;
+        const double px = x * scale, py = y * scale, w = p.width * scale;
+        if (px >= w - 310 && px <= w - 40 && py >= 205) {
+            const auto row = size_t((py - 205) / 34);
+            if (row < p.contacts.size())
+                return p.contacts[row].address;
+        }
+    }
     const Pick* chosen = nullptr;
     double best = 40 * 40;
     for (auto& candidate : p.picks) {

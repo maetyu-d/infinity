@@ -1,0 +1,61 @@
+{
+  "version": "0.11.0",
+  "generation_recipe": 3,
+  "checkpoint": "6232423",
+  "backend": "Metal",
+  "resolution": [
+    1440,
+    900
+  ],
+  "visual_time_seconds": 12,
+  "before": {
+    "median_frame_ms": 16.661,
+    "p95_frame_ms": 16.9806,
+    "frames": 1568,
+    "final_cache_bytes": 12171644,
+    "peak_rss_bytes": 137691136,
+    "galaxy_facing_stars": 4448,
+    "stationary_hyperion_orbit": {
+      "samples": 19,
+      "median_cpu_ms": 2.37737,
+      "median_gpu_ms": 3.76412,
+      "median_wall_ms": 16.6857
+    }
+  },
+  "after": {
+    "median_frame_ms": 16.6635,
+    "p95_frame_ms": 17.3333,
+    "frames": 1608,
+    "final_cache_bytes": 13285820,
+    "peak_rss_bytes": 148619264,
+    "galaxy_facing_stars": 16889,
+    "stationary_hyperion_orbit": {
+      "samples": 19,
+      "median_cpu_ms": 3.25608,
+      "median_gpu_ms": 3.47571,
+      "median_wall_ms": 16.6345
+    }
+  },
+  "visible_outward_galaxies": 63,
+  "system_contacts": 6,
+  "distant_planet_lights": 3,
+  "distant_planet_pick_passed": true,
+  "addressed_star_pick_passed": true,
+  "maximum_sky_catalogues": 8,
+  "cpu_cache_budget_bytes": 33554432,
+  "worker_limit": 3,
+  "preserved_source_count": 18,
+  "preservation_hashes": "preservation.json",
+  "notes": "Full-loop timing includes landing, launch and shrinking. The after run adds 40 frames for the distant-planet capture. The stationary orbit comparison uses the first contiguous Hyperion block, dropping five transition frames at either end; frame timing is VSync limited.",
+  "release_suite": {
+    "passed": 23,
+    "failed": 0,
+    "elapsed_seconds": 164.89
+  },
+  "package": {
+    "version": "0.11.0",
+    "ad_hoc_signature_verified": true,
+    "fresh_and_restart_checks_passed": true,
+    "ship_schema": 3
+  }
+}

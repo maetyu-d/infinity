@@ -3,6 +3,7 @@
 #include "infinite/World.hpp"
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <stdexcept>
 
 using namespace infinite;
@@ -35,6 +36,73 @@ int main() {
                   "HDR display bounded");
         }
         check(glm::length(hyperionDisplay({0, 0, 0})) == 0, "Black remains black");
+        {
+            Universe u;
+            Navigation nav(u);
+            const auto system = u.describe(nav.anchor.child(Kind::System, 9));
+            std::vector<Node> planets;
+            for (auto a : u.children(system))
+                planets.push_back(u.describe(a));
+            std::ostringstream placement;
+            placement.precision(17);
+            placement << planets.front().address.str() << ' ' << planets.front().frame.logRadius
+                      << " 1 0 0 0 0 0 1.2";
+            check(nav.restore(placement.str()), "Invalid planetary contact fixture");
+            nav.selected = planets.back().address;
+            const auto view = nav.serialize();
+            const auto fingerprint = descriptorFingerprint(system);
+            const auto contacts = extractCelestialContacts(u, nav, system, planets);
+            check(contacts.size() == planets.size() + 1, "Planetary view retains every system contact");
+            bool beyondClip = false;
+            for (size_t i = 0; i < contacts.size(); i++) {
+                const auto& contact = contacts[i];
+                check(contact.address == (i ? planets[i - 1].address : system.address),
+                      "Celestial light retains its actual world address");
+                const auto delta =
+                    u.relative(contact.address, nav.anchor, nav.logDistance).position - nav.cameraPosition();
+                const auto direction = glm::inverse(nav.orientation) * glm::normalize(delta);
+                check(glm::length(contact.localDirection - direction) < 1e-12,
+                      "Celestial light changed the physical bearing");
+                check(
+                    std::abs(contact.distanceMetres / (glm::length(delta) * std::pow(10., nav.logDistance)) -
+                             1) < 1e-12,
+                    "Celestial light changed the physical distance");
+                check(contact.selected == (contact.address == *nav.selected), "Contact selection differs");
+                beyondClip |= glm::length(delta) > 10000.;
+            }
+            check(beyondClip, "Fixture did not exercise unresolved planets beyond the local far plane");
+            check(nav.serialize() == view && descriptorFingerprint(u.describe(system.address)) == fingerprint,
+                  "Celestial presentation mutated the camera or system");
+            // An exact physical ray into a planet is masked; an unrelated sky
+            // direction and a foreground emitter remain visible.
+            CelestialContact blocker;
+            blocker.address = planets.front().address;
+            blocker.localDirection = {0, 0, -1};
+            blocker.distanceMetres = 100;
+            blocker.angularRadius = .2;
+            const std::array blockers{blocker};
+            check(celestialOccluded({0, 0, -1}, 1000, blockers), "Planet did not occult a background star");
+            check(!celestialOccluded({1, 0, 0}, 1000, blockers), "Planet masked an unrelated sky bearing");
+            check(!celestialOccluded({0, 0, -1}, 10, blockers), "Planet masked a foreground emitter");
+            check(!celestialOccluded({0, 0, -1}, 1000, blockers, &blocker.address),
+                  "Contact occulted itself");
+            for (auto eye : {glm::dvec3(0), glm::dvec3(.9, -.4, .2), glm::dvec3(1, 1, 1)}) {
+                double weight = 0;
+                size_t cells = 0;
+                for (int z = -1; z <= 1; z++)
+                    for (int y = -1; y <= 1; y++)
+                        for (int x = -1; x <= 1; x++) {
+                            const double w = celestialCellWeight(glm::dvec3(x, y, z) * 2., eye);
+                            weight += w;
+                            cells += w > 0;
+                        }
+                check(std::abs(weight - 1) < 1e-12 && cells <= 8,
+                      "Celestial catalogues exceeded eight cells or lost continuous exposure");
+            }
+            check(std::abs(celestialCellWeight({0, 0, 0}, {1.00001, .3, -.6}) -
+                           celestialCellWeight({-2, 0, 0}, {-.99999, .3, -.6})) < 1e-12,
+                  "Changing root frame changed the same galaxy's sky exposure");
+        }
         for (uint64_t seed : {0x494e46494e495445ULL, 17ULL, 937ULL}) {
             Universe u(seed);
             GeometryGenerator generator(u);
