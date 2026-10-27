@@ -7,8 +7,7 @@ uniform mat4 u_pattern;
 #if INFINITE_FLIGHT_RELIEF
 uniform mat4 u_micro;
 uniform vec4 u_microParams;
-float grainHash(vec3 p){p=mod(p,vec3(64.));p=fract(p*.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}
-float grainNoise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(mix(grainHash(i),grainHash(i+vec3(1.,0.,0.)),f.x),mix(grainHash(i+vec3(0.,1.,0.)),grainHash(i+vec3(1.,1.,0.)),f.x),f.y),mix(mix(grainHash(i+vec3(0.,0.,1.)),grainHash(i+vec3(1.,0.,1.)),f.x),mix(grainHash(i+vec3(0.,1.,1.)),grainHash(i+vec3(1.,1.,1.)),f.x),f.y),f.z);}
+#include "hyperion_material_detail.sh"
 #endif
 #include "hyperion_pigment.sh"
 vec3 brdf(vec3 albedo,vec3 N,vec3 V,vec3 L,float rough,float metallic) {
@@ -53,32 +52,42 @@ void main(){
  float rough=u_hyperion[1].x,microVein=0.,cavity=1.;
  vec3 microGlow=vec3(0.);
 #if INFINITE_FLIGHT_RELIEF
- if(u_microParams.x>0. && primitive<.5){
+ if(u_microParams.x>0. && primitive<.5 && !atom && !craft){
   vec3 q=mul(u_micro,vec4(v_position-u_hyperion[2].xyz,1.)).xyz;
-  float resolved=1.-smoothstep(.35,1.4,length(fwidth(q)));
-  float grain=.5;if(resolved>.001)grain=mix(.5,grainNoise(q),resolved);
-  float middleResolved=1.-smoothstep(.35,1.4,length(fwidth(q*4.)));
-  float fineResolved=1.-smoothstep(.35,1.4,length(fwidth(q*16.)));
-  float middle=.5,fine=.5;
-  if(middleResolved>.001)middle=mix(.5,grainNoise(q*4.),middleResolved);
-  if(fineResolved>.001)fine=mix(.5,grainNoise(q*16.),fineResolved);
-  float height=((grain-.5)*.75+(middle-.5)*.16+(fine-.5)*.035)*u_microParams.x;
+  float footprint=min(length(dFdx(q)),length(dFdy(q))),resolved=1.-smoothstep(.12,.75,footprint);
+  vec3 materialN=mul(mat3(u_micro),N);
+  materialN=normalize(materialN/max(max(abs(materialN.x),max(abs(materialN.y),abs(materialN.z))),1e-30));
+  vec3 qdx=dFdx(q),qdy=dFdy(q);
+  vec4 field=vec4(.5,0.,.5,.5);
+  if(resolved>.001 && u_microParams.y>.5)field=closeField(q+phase*vec3(31.,17.,47.),materialN,qdx,qdy,planet?.5:.125);
+  float stone=field.r,crack=field.g,deposit=field.b,grit=field.a;
+  float originalRough=rough;
+  float ice=1.-step(.1,abs(u_surface.x-3.));
+  float frost=smoothstep(.42,.72,deposit+grit*.13)*ice*(1.-smoothstep(245.,278.,u_surface.z));
+  float seam=crack*(1.-frost*.45)*(.62+.38*clamp(u_materialDomain.y,0.,1.));
+  float height=((stone-.5)*.75-seam*(.38+ice*.30)+(grit-.5)*.06)*u_microParams.x*u_microParams.y;
   vec3 dx=dFdx(v_position),dy=dFdy(v_position),a=cross(dy,N),b=cross(N,dx);float det=dot(dx,a);
   vec3 gradient=sign(det)*(dFdx(height)*a+dFdy(height)*b)/max(abs(det),1e-20);
   gradient*=min(1.,.65/max(length(gradient),.001));N=normalize(N-gradient);
-  // Hyperion closeMaterial's filtered mineral body colour, seams and grazing
-  // sheen. The existing modulo-64 material coordinates keep this stable across
-  // floating-origin and scale changes; there is no texture-space geography.
-  float strata=grain;
-  if(resolved>.001)strata=mix(.5,grainNoise(q*2.),resolved);
-  microVein=thread(strata*24.+grain*.8,.035)*resolved;
-  vec3 closeColour=albedo*(.48+grain*.65)+pigment(phase+strata*.55+grain*.08)*.086+flow*.15;
-  closeColour*=.86+middle*.18+fine*.10;
-  cavity=1.-microVein*.24;
-  closeColour*=cavity;
-  albedo=mix(albedo,closeColour,resolved*.85);
-  microGlow=pigment(phase+strata*.23+.42)*microVein*.035;
-  rough=clamp(rough+(middle-.5)*middleResolved*.20,.18,.99);
+  // Mineral-specific response follows inherited mineral/chemistry values.
+  // Baked fractures affect illumination only; the generator owns cavities.
+  vec3 body=albedo*(.63+stone*.55+grit*.16);
+  body+=pigment(phase+deposit*.23)*.035+flow*.045;
+  if(ice>.5){
+   body=mix(body,body*.65+vec3(.10,.20,.23),frost*.58);
+   body=mix(body,body*.25+vec3(.004,.018,.045),seam*.72);
+   rough=mix(.25+grit*.17,.58,frost*.78);
+  }else{
+   float dust=smoothstep(.45,.73,deposit)*(1.-crack);
+   body=mix(body,body*.79+albedo*.14,dust*.40);
+   rough=clamp(rough+(grit-.5)*.18+crack*.10,.18,.99);
+  }
+  rough=mix(originalRough,rough,resolved*u_microParams.y);
+  microVein=seam*resolved*u_microParams.y;
+  cavity=1.-microVein*mix(.22,.38,ice);
+  albedo=mix(albedo,body*cavity,resolved*.85*u_microParams.y);
+  microGlow=pigment(phase+deposit*.23+.42)*microVein*.035;
+
  }
 #endif
  vec3 ndx=dFdx(N),ndy=dFdy(N);float variance=min(.25,max(dot(ndx,ndx),dot(ndy,ndy))*.5);

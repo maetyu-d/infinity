@@ -18,6 +18,7 @@ struct ScenePresentation {
     float phase;
     float strength;
     glm::vec4 domain{3, 0, 0, 0}; // object class, inherited strain/activity/ice
+    glm::vec4 surface{};          // mineral, water activity, temperature; read-only material inputs
 };
 ScenePresentation extractPresentation(const Node&, const Geometry&, RenderMode);
 float hyperionPhase(uint64_t inheritedKey);

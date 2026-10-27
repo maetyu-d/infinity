@@ -1,4 +1,5 @@
 #include "HyperionRenderer.hpp"
+#include "infinite/MaterialTexture.hpp"
 #include <HyperionShaders.hpp>
 #include <algorithm>
 #include <cstring>
@@ -56,9 +57,43 @@ bgfx::ProgramHandle program(const char* vs, const char* fs) {
 }
 constexpr uint64_t sampling = BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP;
 } // namespace
+struct HyperionRenderer::DetailBake {
+    std::atomic<bool> cancel{false}, ready{false};
+    MaterialTexture texture;
+};
+void HyperionRenderer::publishDetail() {
+    if (!detailBake_ || !detailBake_->ready.load(std::memory_order_acquire))
+        return;
+    auto& pixels = detailBake_->texture.pixels;
+    if (!pixels.empty()) {
+        auto texture = bgfx::createTexture2D(MaterialTexture::size, MaterialTexture::size, true, 1,
+                                             bgfx::TextureFormat::RGBA8, 0,
+                                             bgfx::copy(pixels.data(), uint32_t(pixels.size())));
+        if (bgfx::isValid(texture)) {
+            bgfx::destroy(detail_);
+            detail_ = texture;
+            detailBytes_ = detailUploadBytes_ = pixels.size();
+        }
+    }
+    detailBake_.reset();
+}
 void HyperionRenderer::init() {
     if (bgfx::isValid(geometry_))
         return;
+    detailSampler_ = bgfx::createUniform("s_materialDetail", bgfx::UniformType::Sampler);
+    surface_ = bgfx::createUniform("u_surface", bgfx::UniformType::Vec4);
+    const uint8_t average[] = {128, 0, 128, 128};
+    detail_ = bgfx::createTexture2D(1, 1, false, 1, bgfx::TextureFormat::RGBA8, 0,
+                                    bgfx::copy(average, sizeof(average)));
+    auto work = detailBake_ = std::make_shared<DetailBake>();
+    detailTasks_.run([work] {
+        try {
+            work->texture = bakeMaterialTexture(&work->cancel);
+        } catch (...) {
+            work->cancel.store(true);
+        }
+        work->ready.store(true, std::memory_order_release);
+    });
     geometry_ = program("vs_hyperion", "fs_hyperion");
     glow_ = program("vs_hyperion", "fs_hyperion_glow");
     blur_ = program("vs_hyperion_screen", "fs_hyperion_blur");
@@ -95,13 +130,19 @@ void HyperionRenderer::clearTargets() {
     width_ = height_ = 0;
 }
 HyperionRenderer::~HyperionRenderer() {
+    if (detailBake_)
+        detailBake_->cancel.store(true);
+    detailTasks_.wait();
+    if (bgfx::isValid(detail_))
+        bgfx::destroy(detail_);
     clearTargets();
     for (auto p : {geometry_, glow_, blur_, post_, flightGeometry_, flightPost_, sky_, smoothGeometry_[0],
                    smoothGeometry_[1]})
         if (bgfx::isValid(p))
             bgfx::destroy(p);
-    for (auto u : {sceneSampler_, bloomSampler_, style_, pattern_, postParams_, cavity_, depthSampler_,
-                   atmosphere_, atmosphereRotation_, micro_, microParams_, domain_, skyParams_, skyRotation_})
+    for (auto u : {detailSampler_, surface_, sceneSampler_, bloomSampler_, style_, pattern_, postParams_,
+                   cavity_, depthSampler_, atmosphere_, atmosphereRotation_, micro_, microParams_, domain_,
+                   skyParams_, skyRotation_})
         if (bgfx::isValid(u))
             bgfx::destroy(u);
 }
@@ -120,6 +161,7 @@ bgfx::ProgramHandle HyperionRenderer::geometryProgram(bool smooth) {
     return flightGeometry_;
 }
 void HyperionRenderer::begin(RenderMode mode, int width, int height, bool opticalDepth, bool flight) {
+    detailUploadBytes_ = 0;
     flight_ = flight;
     atmosphereData_ = {};
     const auto previousMode = mode_;
@@ -134,6 +176,7 @@ void HyperionRenderer::begin(RenderMode mode, int width, int height, bool optica
         return;
     }
     init();
+    publishDetail();
     const bool replaceTarget = width_ != width || height_ != height || readableDepth_ != opticalDepth;
     if (replaceTarget) {
         clearTargets();
@@ -178,10 +221,13 @@ void HyperionRenderer::bind(const ScenePresentation& p, const glm::vec3& eye, co
     bgfx::setUniform(style_, data.data(), 4);
     bgfx::setUniform(pattern_, glm::value_ptr(pattern));
     bgfx::setUniform(domain_, glm::value_ptr(p.domain));
+    bgfx::setUniform(surface_, glm::value_ptr(p.surface));
     bgfx::setUniform(cavity_, glm::value_ptr(cavity));
-    if (flight_) {
+    {
         bgfx::setUniform(micro_, glm::value_ptr(micro));
-        const glm::vec4 microParams{relief, 0, 0, 0};
+        bgfx::setTexture(3, detailSampler_, detail_,
+                         BGFX_SAMPLER_MIN_ANISOTROPIC | BGFX_SAMPLER_MAG_ANISOTROPIC);
+        const glm::vec4 microParams{relief, detailBytes_ ? 1.f : 0.f, 0, 0};
         bgfx::setUniform(microParams_, glm::value_ptr(microParams));
     }
 }

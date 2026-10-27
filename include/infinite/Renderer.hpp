@@ -14,7 +14,7 @@ struct FrameStats {
     size_t lodTransitions = 0, sections = 0;
     size_t vertices = 0, triangles = 0, particles = 0, uploadBytes = 0;
     size_t uploadDeferred = 0, atomTriangles = 0;
-    size_t effectBytes = 0;
+    size_t effectBytes = 0, materialBytes = 0;
     size_t terrainTiles = 0, rootCells = 0;
     size_t atmospheres = 0;
     size_t skyStars = 0;

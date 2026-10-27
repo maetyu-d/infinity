@@ -141,6 +141,10 @@ int main() {
                     check(geometryFingerprint(scene.geometry) == hash, "Modes never mutate geometry");
                     check(descriptorFingerprint(node) == descriptor, "Materials never mutate simulation");
                     check(nav.serialize() == camera, "Modes never mutate camera");
+                    check(scene.surface.x == float(node.environment.mineral) &&
+                              scene.surface.y == float(node.environment.waterActivity) &&
+                              scene.surface.z == float(node.environment.temperature),
+                          "Close material lost inherited environmental constraints");
                     check(scene.strength >= 0 && scene.strength <= 1, "Presentation weights bounded");
                     check(scene.phase >= 0 && scene.phase < 1, "Inherited phase bounded");
                     auto [phase, inserted] = materialPhases.emplace(scene.materialFrame, scene.phase);

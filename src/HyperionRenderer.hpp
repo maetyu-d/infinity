@@ -2,6 +2,8 @@
 #include "infinite/Presentation.hpp"
 #include <array>
 #include <bgfx/bgfx.h>
+#include <memory>
+#include <oneapi/tbb/task_group.h>
 
 namespace infinite {
 // Geometry shading, emission bloom and final display transform only. Owns no
@@ -22,6 +24,12 @@ class HyperionRenderer {
     bgfx::ProgramHandle glowProgram() const {
         return glow_;
     }
+    size_t materialUploadBytes() const {
+        return detailUploadBytes_;
+    }
+    size_t materialBytes() const {
+        return detailBytes_;
+    }
     size_t targetBytes() const {
         return bytes_;
     }
@@ -29,6 +37,13 @@ class HyperionRenderer {
   private:
     void init();
     void clearTargets();
+    void publishDetail();
+    struct DetailBake;
+    std::shared_ptr<DetailBake> detailBake_;
+    oneapi::tbb::task_group detailTasks_;
+    bgfx::TextureHandle detail_ = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle detailSampler_ = BGFX_INVALID_HANDLE, surface_ = BGFX_INVALID_HANDLE;
+    size_t detailBytes_ = 0, detailUploadBytes_ = 0;
     void screen(bgfx::ViewId, bgfx::ProgramHandle);
     RenderMode mode_ = RenderMode::Original;
     int width_ = 0, height_ = 0;

@@ -242,7 +242,7 @@ int main(int argc, char** argv) {
                            "gpu_bytes,pending,lod_transitions,sections,submit_ms,vertices,triangles,"
                            "particles,upload_bytes,transitioning,queued,cancelled,evicted,atom_triangles,"
                            "upload_deferred,render_mode,effect_bytes,terrain_tiles,root_cells,activity_"
-                           "bodies,activity_visible,activity_triangles,activity_bytes\n";
+                           "bodies,activity_visible,activity_triangles,activity_bytes,material_bytes\n";
             }
             bool running = true, overlay = true, looking = false;
             bool mouseFlight = false, rightLook = false;
@@ -632,7 +632,8 @@ int main(int argc, char** argv) {
                             << stats.uploadDeferred << ',' << renderModeName(renderer.mode()) << ','
                             << stats.effectBytes << ',' << stats.terrainTiles << ',' << stats.rootCells << ','
                             << stats.activityBodies << ',' << stats.activityVisible << ','
-                            << stats.activityTriangles << ',' << stats.activityBytes << '\n';
+                            << stats.activityTriangles << ',' << stats.activityBytes << ','
+                            << stats.materialBytes << '\n';
                 if (opt.tour) {
                     if (!nav.transitioning && stats.visibleObjects > 0 && gen.pending == 0 &&
                         gen.queued == 0 && stats.lodTransitions == 0 && stats.uploadDeferred == 0)

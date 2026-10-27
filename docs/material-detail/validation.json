@@ -1,0 +1,80 @@
+{
+  "version": "0.17.0",
+  "checkpoint": "b0dfeb7",
+  "backend": "Metal",
+  "resolution": [
+    1440,
+    900
+  ],
+  "before": {
+    "median_frame_ms": 16.6695,
+    "p95_frame_ms": 17.5243,
+    "frames": 1791,
+    "peak_rss_bytes": 158613504,
+    "effect_target_bytes": 17856000,
+    "material_bytes": 0,
+    "stationary_orbit": {
+      "samples": 19,
+      "cpu_ms": 2.87183,
+      "gpu_ms": 9.22508
+    },
+    "surface": {
+      "samples": 1233,
+      "gpu_ms": 8.44754
+    }
+  },
+  "after": {
+    "median_frame_ms": 16.6622,
+    "p95_frame_ms": 17.9836,
+    "frames": 1791,
+    "peak_rss_bytes": 160940032,
+    "effect_target_bytes": 17856000,
+    "material_bytes": 1398100,
+    "stationary_orbit": {
+      "samples": 19,
+      "cpu_ms": 2.88817,
+      "gpu_ms": 7.59329
+    },
+    "surface": {
+      "samples": 1233,
+      "gpu_ms": 8.6875
+    }
+  },
+  "world_recipe": 3,
+  "population_recipe": 1,
+  "unchanged_simulation_files": 16,
+  "notes": "Same native piloting fixture, seed, resolution and fixed visual time. Orbit uses the first contiguous HYPERION block trimmed by five frames at each end. Surface aggregates HYPERION SURFACE frames without an active navigation transition. Single-run observations; VSync limits frame comparisons. Material texture includes the full 512x512-to-1x1 RGBA8 mip chain, accounted separately from HDR targets.",
+  "release_suite": {
+    "passed": 29,
+    "failed": 0,
+    "seconds": 186.76
+  },
+  "mode_proof": {
+    "scales": 9,
+    "checkpoints": 17,
+    "images": 51,
+    "geometry_identical": true,
+    "camera_identical": true,
+    "generation_unchanged": true
+  },
+  "original_image_comparison": {
+    "views": 17,
+    "exact_matches": 17,
+    "crop": [
+      0,
+      240,
+      1920,
+      900
+    ]
+  },
+  "package": {
+    "version": "0.17.0",
+    "build": "17",
+    "code_and_data_sections": 28,
+    "all_sections_match_tested_binary": true,
+    "signature_verified": true,
+    "normal_saved_flight_resumed": true,
+    "live_hyperion_mode_verified": true,
+    "live_launch": "Verified in the native cockpit after reopening the existing saved flight."
+  }
+}

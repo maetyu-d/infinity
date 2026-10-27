@@ -76,7 +76,9 @@ ScenePresentation extractPresentation(const Node& node, const Geometry& geometry
             phase,
             strength,
             {domain, float(node.environment.strain), float(node.geology ? node.geology->activity : .5),
-             float(node.environment.chemistry.ice)}};
+             float(node.environment.chemistry.ice)},
+            {float(node.environment.mineral), float(node.environment.waterActivity),
+             float(node.environment.temperature), 0}};
 }
 float hyperionPhase(uint64_t key) {
     const float phase = float(key % 10000) * .0371f;

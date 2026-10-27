@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Native cockpit visibility and capture-completeness checks (stdlib only)."""
+import csv
 import pathlib
 import sys
 
@@ -27,3 +28,10 @@ assert images["system-contacts"] != images["orbit-hyperion"]
 assert images["orbital-activity"] != images["orbit-hyperion"]
 assert images["controls"] != images["moon-family"]
 print("PASS: all fourteen cockpit, controls guide, real moon family, orbital activity, celestial contacts, addressed stellar background, landing/departure and micro/nano ship captures contain scene geometry and flight instruments")
+
+profile = root.parent / "frames.csv"
+if profile.exists():
+    rows = list(csv.DictReader(profile.open()))
+    assert {int(r["material_bytes"]) for r in rows} <= {0, 1398100}, "Material texture escaped its fixed budget"
+    assert any(r["render_mode"] == "HYPERION" and int(r["material_bytes"]) == 1398100 for r in rows), "Material bake was never published to the GPU"
+    print("PASS: asynchronous material texture uploaded; complete mip chain uses 1,398,100 bytes")

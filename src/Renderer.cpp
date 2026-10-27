@@ -436,7 +436,7 @@ struct Renderer::Impl {
             auto light = lightAt(materialAddress, nav);
             glm::mat4 micro(0);
             float relief = 0;
-            if (instruments && node.address.kind() >= Kind::Planet) {
+            if (mode != RenderMode::Original && node.address.kind() >= Kind::Planet) {
                 const double materialRadius = std::pow(10., materialFrames.back().logRadius);
                 const double spacing =
                     materialAddress.kind() == Kind::Planet ? 8. : std::max(1e-12, materialRadius * .02);
@@ -991,7 +991,7 @@ struct Renderer::Impl {
                 cavity = glm::vec4(glm::vec3(-eye), float(std::max(1.3, glm::length(eye) * 1.1)));
             glm::mat4 micro(0);
             float relief = 0;
-            if (instruments) {
+            if (mode != RenderMode::Original) {
                 const double frequency = std::pow(10., planet.frame.logRadius) / 8.;
                 for (unsigned i = 0; i < 3; i++)
                     micro[i] = glm::vec4(glm::vec3(pattern[i]) * float(frequency), 0);
@@ -1066,7 +1066,7 @@ Renderer::Renderer(SDL_Window* window, const Universe& universe)
     init.swapChain.width = p.width;
     init.swapChain.height = p.height;
     init.swapChain.flags = BGFX_SWAP_CHAIN_MSAA_X4;
-    init.reset = BGFX_RESET_VSYNC;
+    init.reset = BGFX_RESET_VSYNC | BGFX_RESET_MAXANISOTROPY;
     init.limits.maxTransientVbSize = 8 * 1024 * 1024;
     init.limits.maxTransientIbSize = 3 * 1024 * 1024;
     if (!init.swapChain.nwh)
@@ -1194,7 +1194,7 @@ void Renderer::resize(int w, int h) {
     p.height = h;
     p.swapChain.width = w;
     p.swapChain.height = h;
-    bgfx::reset(BGFX_RESET_VSYNC, &p.swapChain);
+    bgfx::reset(BGFX_RESET_VSYNC | BGFX_RESET_MAXANISOTROPY, &p.swapChain);
 }
 FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool overlay, double fps,
                             size_t markers, std::string_view notice, bool looking) {
@@ -1243,6 +1243,8 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                                          n.environment.waterActivity > .01;
                               });
     p.hyperion->begin(p.mode, p.width, p.height, opticalDepth, bool(p.instruments));
+    p.staticUploadBytes += p.hyperion->materialUploadBytes();
+    p.stats.uploadBytes += p.hyperion->materialUploadBytes();
     bgfx::setViewMode(0,
                       p.mode == RenderMode::Original ? bgfx::ViewMode::Default : bgfx::ViewMode::Sequential);
     bgfx::setViewTransform(0, glm::value_ptr(v), glm::value_ptr(proj));
@@ -1633,6 +1635,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     const auto* st = bgfx::getStats();
     p.stats.gpuBytes = p.gpuBytes + p.craftBytes;
     p.stats.effectBytes = p.hyperion->targetBytes();
+    p.stats.materialBytes = p.hyperion->materialBytes();
     p.stats.drawCalls = st->numDraw;
     p.stats.gpuMs = st->gpuTimerFreq
                         ? 1000. * static_cast<double>(st->gpuTimeEnd - st->gpuTimeBegin) / st->gpuTimerFreq
