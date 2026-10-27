@@ -1,6 +1,8 @@
 # INFINITE
 
-A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.11 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.12 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+
+Version 0.12 adds persistent orbital activity above the existing world: harbours and service yards, scheduled freighters and ferries, patrol circuits, survey craft and mineral ejecta. Click a traffic contact or press **K**, **I** to hail, and **J** to approach a harbour or match a moving ship's course. **F6** hides/shows activity. The denser stellar sky refines the same addressed population. [ORBITAL_ACTIVITY.md](docs/ORBITAL_ACTIVITY.md) documents the Hyperion source, deterministic schedules, controls and validation.
 
 Version 0.11 makes the surrounding universe visible from the cockpit: all existing system planets and the sun appear on the contact scope and list, distant unresolved planets retain selectable light proxies, and addressed stars, gas and neighbouring galaxies supply the sky. The lights retain their true bearings, distances and destination addresses. [CELESTIAL_CONTEXT.md](docs/CELESTIAL_CONTEXT.md) explains the visibility fixes and comparisons.
 
@@ -68,6 +70,8 @@ The cockpit lists the sun and every planet with range and ahead/aft/occulted sta
 | C / right drag | Capture / temporarily use mouse helm |
 | B / X | Brake / toggle flight assistance |
 | Y / J | Select next planet / navigate to selected destination |
+| K / I | Select next traffic contact / hail its actual route status |
+| F6 | Hide/show orbital activity; its clock continues |
 | L / G / Enter | Assisted landing / gear / lift off when landed |
 | N | Toggle long-range cruise |
 | - / + or [ / ] | Normal speed multiplier, or cruise speed ceiling |

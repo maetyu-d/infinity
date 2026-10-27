@@ -1,0 +1,79 @@
+{
+  "version": "0.12.0",
+  "world_recipe": 3,
+  "activity_recipe": 1,
+  "checkpoint": "c508f03",
+  "backend": "Metal",
+  "resolution": [
+    1440,
+    900
+  ],
+  "before": {
+    "median_frame_ms": 16.6648,
+    "p95_frame_ms": 17.1428,
+    "frames": 1608,
+    "final_cache_bytes": 13310396,
+    "peak_rss_bytes": 146620416,
+    "galaxy_facing_stars": 16889,
+    "stationary_orbit": {
+      "samples": 19,
+      "median_cpu_ms": 2.45329,
+      "median_gpu_ms": 4.71267,
+      "median_wall_ms": 16.659
+    }
+  },
+  "after": {
+    "median_frame_ms": 16.6607,
+    "p95_frame_ms": 17.0744,
+    "frames": 1688,
+    "final_cache_bytes": 10459228,
+    "peak_rss_bytes": 154583040,
+    "galaxy_facing_stars": 29334,
+    "stationary_orbit": {
+      "samples": 19,
+      "median_cpu_ms": 3.38554,
+      "median_gpu_ms": 4.24879,
+      "median_wall_ms": 16.7022
+    },
+    "max_active_template_bytes": 64800,
+    "maximum_sampled_population": 209
+  },
+  "normal_start_visible_activity": 15,
+  "close_harbour_visible_activity": 10,
+  "close_harbour_triangles": 1650,
+  "mesh_template_bytes_all_18": 170468,
+  "activity_unit_checks": 22079,
+  "harbour_holding_point_error_m": 2.41792,
+  "moving_holding_point_error_m": 5.08492,
+  "moving_relative_speed_mps": 1.16151,
+  "preserved_files": 16,
+  "notes": "Before/after native flight loop includes three-mode orbital views, landing, launch and micro/nano flight. After adds harbour-close and normal-start phases (80 frames); no other build or tests ran alongside the baseline. Stationary orbit uses the first contiguous Hyperion block, excluding five transition frames at each end. VSync limits wall-frame comparisons.",
+  "release_suite": {
+    "passed": 24,
+    "failed": 0,
+    "seconds": 185.97
+  },
+  "final_focused_suite": {
+    "passed": 4,
+    "failed": 0,
+    "seconds": 5.25,
+    "covers": "Final activity heading and physical contact-range correction"
+  },
+  "live_control_checks": {
+    "K_selection": true,
+    "I_hailing": true,
+    "J_rendezvous": true,
+    "B_braking": true,
+    "F6_visibility": true,
+    "selected_actor_restored": true,
+    "contact_facing_camera": true
+  },
+  "package": {
+    "version": "0.12.0",
+    "signature_verified": true,
+    "clock_restored_and_advanced": true,
+    "selected_actor_preserved": true,
+    "ship_schema_unchanged": 3,
+    "isolated_control_test": true
+  }
+}

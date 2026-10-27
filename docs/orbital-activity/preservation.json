@@ -1,0 +1,18 @@
+{
+  "src/Universe.cpp": "2ae1538cc94d9291b3ab2fa5e61efbac5329a106301db6e519740a2580c7ccf4",
+  "src/Processes.cpp": "67e313061245673d88153e275c3c837bad4df278beea1ee3874677c850c0dc23",
+  "src/Crystallography.cpp": "1d135fa1218cea466673723063267fcacdb5c6c56d4240ab5ca00eb0eb042dab",
+  "src/Core.cpp": "8b6e0854d8e8dfdfde2cc78494a31907cedab63d1512020d66c94f6d1d690cb9",
+  "src/Geometry.cpp": "a250eed09f8be9190ecba96cbdf65d5ab56b946e49e0ed543dc4d4886683d4bb",
+  "src/Streaming.cpp": "ec84a8a7d51bff48d5d9144cc5af958042d21ae9e50b08eb0826988b54cc68b4",
+  "src/World.cpp": "a9bb5755250f322b75ed0e1c131e68d7b535ed8964620743f5c95a8f96572077",
+  "src/Navigation.cpp": "c3ad57a8d158e5f70b251697953f8515ba59be5f0a3ef2ba2bed15b823bfa713",
+  "src/Flight.cpp": "bcb52fbd25c222c6eea90ea25498cd9b313a64daab521c49fb86546fbc722076",
+  "include/infinite/Universe.hpp": "82dfc3d6a82e0c9c2c4fed0d55a801b81ef09108cbd2af5e67640566f181c225",
+  "include/infinite/Core.hpp": "ad7a4a59a0b0dbd00d44054fddec3256c159105219096e18e67a8e1e6a16bf6f",
+  "include/infinite/Geometry.hpp": "afae6337cb95690a5ac4de90ab7851cdcf573154c22d0d84e976deb84b6496a6",
+  "include/infinite/World.hpp": "8ae780f142a7c13dbb504d73387fa5c7e0e38847a9c98aed5724f1d3d0a5dea5",
+  "include/infinite/Navigation.hpp": "8cdb72bdfca28c194b828ed68aee9a9362bb97be474c515b32cc2be474126cfa",
+  "include/infinite/Flight.hpp": "2b8f91afc656171a4f2ecac374fe3eae1f1922926b4d36ad4e45fab5f5650fea",
+  "shaders/manifest.json": "6ebfff47e455a01d3d5394c1dda17cb4815ea61bcb4d09e8b998f586d6f7aefb"
+}

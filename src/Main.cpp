@@ -93,6 +93,8 @@ static Options options(int argc, char** argv) {
                          "--data DIR\n";
             std::cout << "H cycles ORIGINAL / HYPERION / HYBRID. --render-mode original|hyperion|hybrid "
                          "--compare-modes --visual-time SECONDS\n";
+            std::cout << "Local activity: K cycles traffic, I hails, J approaches/matches course, F6 "
+                         "hides/shows.\n";
             std::exit(0);
         } else
             throw std::invalid_argument("Unknown option " + arg);
@@ -192,6 +194,41 @@ int main(int argc, char** argv) {
                 pilot.fitToView();
             }
             renderer.freezeVisualTime(opt.visualTime);
+            ActivityState activity;
+            activity.seconds = pilot.ship().flightSeconds;
+            if (!opt.fresh && !opt.smoke) {
+                std::ifstream file(data / ("activity-" + std::to_string(universe.seed()) + ".txt"));
+                std::string text;
+                if (std::getline(file, text))
+                    activity.restore(text, universe);
+            }
+            if (opt.smoke)
+                activity.seconds = opt.visualTime >= 0 ? opt.visualTime : 12;
+            renderer.setActivity(&activity);
+            auto activityBody = [&]() -> std::optional<ActivityBody> {
+                if (!activity.selected)
+                    return {};
+                return sampleActivity(universe.describe(activity.selected->home), activity.selected->slot,
+                                      activity.seconds);
+            };
+            auto waypointFor = [](const ActivityBody& body) {
+                return FlightWaypoint{body.id.home, body.position, body.velocity,
+                                      body.kind == ActivityKind::Harbour ? body.radius * 4
+                                                                         : std::max(750., body.radius * 5),
+                                      body.name};
+            };
+            auto chooseActivity = [&](const ActivityId& id) {
+                activity.selected = id;
+                pilot.brake();
+                pilot.clearWaypoint();
+                pilot.trackWaypoint(waypointFor(*activityBody()));
+            };
+            auto navigateSelected = [&]() {
+                if (auto body = activityBody())
+                    pilot.navigateWaypoint(waypointFor(*body));
+                else if (nav.selected)
+                    pilot.navigate(*nav.selected);
+            };
             std::unique_ptr<RoundTripVerifier> proof;
             if (opt.smoke && !opt.benchmark)
                 proof = std::make_unique<RoundTripVerifier>(universe);
@@ -203,7 +240,8 @@ int main(int argc, char** argv) {
                 profile << "frame,kind,view_log_m,wall_ms,cpu_ms,gpu_ms,draws,visible,atoms,cpu_cache_bytes,"
                            "gpu_bytes,pending,lod_transitions,sections,submit_ms,vertices,triangles,"
                            "particles,upload_bytes,transitioning,queued,cancelled,evicted,atom_triangles,"
-                           "upload_deferred,render_mode,effect_bytes,terrain_tiles,root_cells\n";
+                           "upload_deferred,render_mode,effect_bytes,terrain_tiles,root_cells,activity_"
+                           "bodies,activity_visible,activity_triangles,activity_bytes\n";
             }
             bool running = true, overlay = true, looking = false;
             bool mouseFlight = false, rightLook = false;
@@ -270,7 +308,13 @@ int main(int argc, char** argv) {
                             SDL_GetWindowSizeInPixels(window, &pw, &ph);
                             const double x = looking ? pw * .5 : event.button.x * pw / w;
                             const double y = looking ? ph * .5 : event.button.y * ph / h;
-                            if (auto a = renderer.pick(x, y)) {
+                            if (pilotEnabled && renderer.pickActivity(x, y)) {
+                                chooseActivity(*renderer.pickActivity(x, y));
+                                notice = hailActivity(*activityBody());
+                                noticeTime = 6;
+                            } else if (auto a = renderer.pick(x, y)) {
+                                activity.selected.reset();
+                                pilot.clearWaypoint();
                                 nav.select(*a);
                                 notice = "Selected " + universe.describe(*a).label() +
                                          " / J navigate / F explorer focus";
@@ -331,12 +375,14 @@ int main(int argc, char** argv) {
                                 nav.adjustSpeed(-1);
                             break;
                         case SDL_SCANCODE_F:
+                            activity.selected.reset();
                             pilotEnabled = false;
                             pilot.resetMotion();
                             nav.focus();
                             opt.tour = false;
                             break;
                         case SDL_SCANCODE_BACKSPACE:
+                            activity.selected.reset();
                             pilotEnabled = false;
                             pilot.resetMotion();
                             nav.parent();
@@ -386,15 +432,52 @@ int main(int argc, char** argv) {
                                 pilot.adjustSize(1);
                             break;
                         case SDL_SCANCODE_Y:
-                            if (pilotEnabled)
+                            if (pilotEnabled) {
+                                activity.selected.reset();
                                 pilot.selectNextPlanet();
+                            }
+                            break;
+                        case SDL_SCANCODE_K:
+                            if (pilotEnabled) {
+                                const auto contacts = renderer.activityContacts();
+                                if (!contacts.empty()) {
+                                    auto it =
+                                        std::find_if(contacts.begin(), contacts.end(), [&](const auto& c) {
+                                            return activity.selected && c.body.id == *activity.selected;
+                                        });
+                                    const size_t next =
+                                        it == contacts.end()
+                                            ? 0
+                                            : (size_t(it - contacts.begin()) + 1) % contacts.size();
+                                    chooseActivity(contacts[next].body.id);
+                                    notice = hailActivity(*activityBody());
+                                    noticeTime = 6;
+                                }
+                            }
+                            break;
+                        case SDL_SCANCODE_I:
+                            if (pilotEnabled && activity.selected) {
+                                notice = hailActivity(*activityBody());
+                                noticeTime = 8;
+                            }
+                            break;
+                        case SDL_SCANCODE_F6:
+                            activity.enabled = !activity.enabled;
+                            if (!activity.enabled) {
+                                activity.selected.reset();
+                                pilot.clearWaypoint();
+                            }
+                            notice = activity.enabled ? "LOCAL ACTIVITY ON / K CONTACTS / I HAIL"
+                                                      : "LOCAL ACTIVITY HIDDEN / F6 RETURNS";
+                            noticeTime = 5;
                             break;
                         case SDL_SCANCODE_J:
-                            if (pilotEnabled && nav.selected)
-                                pilot.navigate(*nav.selected);
+                            if (pilotEnabled)
+                                navigateSelected();
                             break;
                         case SDL_SCANCODE_L:
                             if (pilotEnabled) {
+                                activity.selected.reset();
                                 notice =
                                     pilot.land()
                                         ? "Landing site acquired on existing terrain / assisted approach"
@@ -406,8 +489,8 @@ int main(int argc, char** argv) {
                             if (pilotEnabled) {
                                 if (pilot.ship().landed)
                                     pilot.launch();
-                                else if (nav.selected)
-                                    pilot.navigate(*nav.selected);
+                                else
+                                    navigateSelected();
                             }
                             break;
                         case SDL_SCANCODE_TAB:
@@ -419,6 +502,7 @@ int main(int argc, char** argv) {
                             noticeTime = 3;
                             break;
                         case SDL_SCANCODE_R:
+                            activity.selected.reset();
                             if (pilotEnabled)
                                 pilot.startInSystem();
                             else {
@@ -462,6 +546,10 @@ int main(int argc, char** argv) {
                 }
                 if (!running)
                     break;
+                if (!opt.smoke)
+                    activity.advance(dt);
+                if (pilotEnabled && activity.selected)
+                    pilot.trackWaypoint(waypointFor(*activityBody()));
                 const bool* keys = SDL_GetKeyboardState(nullptr);
                 flight.observeGalaxy(renderer.galaxySamples());
                 if (!opt.smoke && (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS)) {
@@ -534,8 +622,9 @@ int main(int argc, char** argv) {
                             << stats.uploadBytes << ',' << nav.transitioning << ',' << gen.queued << ','
                             << gen.cancelled << ',' << gen.evicted << ',' << stats.atomTriangles << ','
                             << stats.uploadDeferred << ',' << renderModeName(renderer.mode()) << ','
-                            << stats.effectBytes << ',' << stats.terrainTiles << ',' << stats.rootCells
-                            << '\n';
+                            << stats.effectBytes << ',' << stats.terrainTiles << ',' << stats.rootCells << ','
+                            << stats.activityBodies << ',' << stats.activityVisible << ','
+                            << stats.activityTriangles << ',' << stats.activityBytes << '\n';
                 if (opt.tour) {
                     if (!nav.transitioning && stats.visibleObjects > 0 && gen.pending == 0 &&
                         gen.queued == 0 && stats.lodTransitions == 0 && stats.uploadDeferred == 0)
@@ -656,6 +745,8 @@ int main(int argc, char** argv) {
                     std::filesystem::rename(pending, path);
                 };
                 saveText(("ship-" + std::to_string(universe.seed()) + ".txt").c_str(), pilot.serialize());
+                saveText(("activity-" + std::to_string(universe.seed()) + ".txt").c_str(),
+                         activity.serialize());
                 saveText("display.txt", std::string(renderModeName(renderer.mode())));
             }
             cache.wait();

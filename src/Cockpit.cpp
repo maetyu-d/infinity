@@ -173,7 +173,8 @@ Mesh cockpitMesh(double aspect) {
     return m;
 }
 CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::string_view mode,
-                              std::string_view notice, std::span<const CelestialContact> contacts) {
+                              std::string_view notice, std::span<const CelestialContact> contacts,
+                              std::span<const ActivityContact> activity) {
     CockpitOverlay h;
     const double w = 900 * aspect, center = w * .5, deck = 790;
     rect(h.panels, 0, 0, w, 40, ink, .98f);
@@ -210,6 +211,38 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     line(h.strokes, radarX, radarY - 5, radarX - 4, radarY + 5, mint);
     line(h.strokes, radarX - 4, radarY + 5, radarX + 4, radarY + 5, mint);
     line(h.strokes, radarX + 4, radarY + 5, radarX, radarY - 5, mint);
+    if (!t.shrinking || t.hullMetres >= .001) {
+        const glm::vec3 trafficInk{1, .64, .78};
+        size_t shown = 0;
+        for (const auto& c : activity) {
+            const auto v = c.localDirection;
+            if (shown < 24) {
+                const double x = radarX + v.x * 52, y = radarY + v.z * 15 - v.y * 17;
+                rect(h.panels, x - 1, y - 1, c.selected ? 4 : 2, c.selected ? 4 : 2,
+                     c.selected ? amber : trafficInk);
+            }
+            if (shown < 6) {
+                const double y = 211 + shown * 34;
+                text(h.lettering, (c.selected ? "+ " : "  ") + c.body.name, 28, y, 10,
+                     c.selected ? amber : trafficInk, 28);
+                text(h.lettering, flightQuantity(c.distance) + " / " + c.body.status, 45, y + 15, 8, muted,
+                     36);
+            }
+            ++shown;
+            if (!c.occluded && c.localDirection.z < 0 &&
+                (c.selected || c.body.kind == ActivityKind::Harbour)) {
+                const double x = center + v.x / -v.z * 450 / .7002075, y = 450 - v.y / -v.z * 450 / .7002075;
+                if (x > 350 && x < w - 345 && y > 180 && y < 660) {
+                    for (int side : {-1, 1})
+                        line(h.strokes, x + side * 9, y - 6, x + side * 9, y + 6, trafficInk);
+                    text(h.lettering, c.body.name, x + 14, y - 13, 8, trafficInk, 25);
+                    text(h.lettering, flightQuantity(c.distance), x + 14, y + 2, 8, muted, 20);
+                }
+            }
+        }
+        if (!activity.empty())
+            text(h.lettering, "LOCAL TRAFFIC / K SELECT / I HAIL", 28, 189, 10, trafficInk);
+    }
     for (const auto& contact : contacts) {
         if (contact.selected)
             continue; // The active target is drawn in amber below.

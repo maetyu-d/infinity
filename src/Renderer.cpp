@@ -69,6 +69,7 @@ struct Callbacks final : bgfx::CallbackI {
 struct GPUMesh {
     bgfx::VertexBufferHandle vertices = BGFX_INVALID_HANDLE;
     bgfx::IndexBufferHandle indices = BGFX_INVALID_HANDLE;
+    size_t count = 0;
 };
 static void destroy(GPUMesh& m) {
     if (bgfx::isValid(m.vertices))
@@ -108,6 +109,11 @@ struct Renderer::Impl {
     std::optional<FlightInstruments> instruments;
     std::shared_ptr<const Geometry> skyGeometry;
     std::vector<CelestialContact> contacts;
+    const ActivityState* activity = nullptr;
+    std::vector<ActivityContact> activityContacts;
+    std::vector<std::pair<ActivityId, glm::dvec2>> activityPicks;
+    std::array<std::array<GPUMesh, 3>, 6> craftMeshes;
+    size_t craftBytes = 0;
     std::unique_ptr<HyperionRenderer> hyperion;
     RenderMode mode = RenderMode::Original;
     double visualTime = 0, fixedVisualTime = -1;
@@ -158,6 +164,9 @@ struct Renderer::Impl {
             destroy(billboardMesh);
             destroy(cabin);
             destroy(hyperionBillboardMesh);
+            for (auto& role : craftMeshes)
+                for (auto& mesh : role)
+                    destroy(mesh);
             hyperion.reset();
             if (bgfx::isValid(colorProgram))
                 bgfx::destroy(colorProgram);
@@ -177,6 +186,7 @@ struct Renderer::Impl {
         result.indices = bgfx::createIndexBuffer(
             bgfx::copy(m.indexData(), static_cast<uint32_t>(m.indexCount() * m.indexWidth())),
             m.wideIndices() ? BGFX_BUFFER_INDEX32 : 0);
+        result.count = m.indexCount();
         return result;
     }
     bgfx::ShaderHandle loadShader(const std::string& name) {
@@ -524,7 +534,7 @@ struct Renderer::Impl {
         // Refine the same addressed stellar population asynchronously. A pixel
         // floor, like Hyperion skyFragment's derivative-filtered points, keeps
         // unresolved emitters from disappearing between MSAA samples.
-        auto geometry = cache.request(galaxy, 2, 6);
+        auto geometry = cache.request(galaxy, 4, 6);
         if (!geometry)
             return;
         skyGeometry = geometry;
@@ -608,6 +618,159 @@ struct Renderer::Impl {
                 ++stats.skyGalaxies;
             }
         }
+    }
+    void renderActivity(const std::vector<Node>& nodes, const Navigation& nav, RegionCache& cache) {
+        activityContacts.clear();
+        activityPicks.clear();
+        stats.activityBytes = craftBytes;
+        if (!activity || !activity->enabled || nav.anchor.kind() >= Kind::Rock)
+            return;
+        std::array<std::array<std::vector<Instance>, 3>, 6> batches;
+        // Like the terrain pass, subtract the double-precision eye before
+        // uploading floats. Derivative normals then remain stable near a hull.
+        const auto rotationView = glm::mat4_cast(glm::quat(cameraInverse));
+        const glm::mat4 actorProjection(projection);
+        bgfx::setViewTransform(62, glm::value_ptr(rotationView), glm::value_ptr(actorProjection));
+        bgfx::setViewRect(62, 0, 0, uint16_t(width), uint16_t(height));
+        Mesh exhaust;
+        const double units = std::pow(10., nav.logDistance);
+        for (const auto& system : nodes) {
+            if (system.address.kind() != Kind::System)
+                continue;
+            const auto planets = cache.catalog(system);
+            if (!planets)
+                continue;
+            for (const auto& planet : *planets) {
+                const auto pose = poseFor(planet.address, nav);
+                const auto planetEye = universe.pointRelative(
+                    nav.anchor, eye * std::pow(10., nav.logDistance - anchorFrames.back().logRadius),
+                    planet.address, 0);
+                for (const auto& body : sampleActivity(planet, activity->seconds)) {
+                    ++stats.activityBodies;
+                    const auto deltaSI = pose.orientation * (body.position - planetEye);
+                    const double distance = glm::length(deltaSI);
+                    if (distance <= 1e-12)
+                        continue;
+                    const auto direction = cameraInverse * (deltaSI / distance);
+                    const bool selected = activity->selected && *activity->selected == body.id;
+                    const bool occulted = celestialOccluded(direction, distance, contacts);
+                    if (body.kind != ActivityKind::Debris) {
+                        const auto velocity = cameraInverse * (pose.orientation * body.velocity);
+                        activityContacts.push_back({body, direction, distance,
+                                                    instruments
+                                                        ? glm::length(velocity - instruments->localVelocity)
+                                                        : glm::length(velocity),
+                                                    selected, occulted});
+                    }
+                    if (direction.z >= 0 || occulted ||
+                        (distance > 2e6 && body.kind != ActivityKind::Harbour && !selected))
+                        continue;
+                    const double angular = body.radius / distance;
+                    if (!LOD::visible(direction * 500., std::max(.5, angular * 500.), double(width) / height,
+                                      fieldOfView))
+                        continue;
+                    const auto point = eye + deltaSI / units;
+                    const auto shell = eye + nav.orientation * direction * 500.;
+                    if (body.kind != ActivityKind::Debris)
+                        if (auto screen = project(shell))
+                            activityPicks.emplace_back(body.id, *screen);
+                    const double pixels = angular * height / std::tan(fieldOfView * .5);
+                    const auto role = size_t(body.kind);
+                    const unsigned detail = pixels > 48 ? 2 : pixels > 8 ? 1 : 0;
+                    if (pixels > 1.6 && -cameraSpace(point).z > .00005 && distance / units < 8000) {
+                        auto model = glm::translate(glm::dmat4(1), deltaSI / units) *
+                                     glm::mat4_cast(pose.orientation * body.orientation) *
+                                     glm::scale(glm::dmat4(1), glm::dvec3(body.radius / units));
+                        batches[role][detail].push_back({glm::mat4(model), glm::vec4(body.tint, 1)});
+                    } else {
+                        const double footprint =
+                            std::max(angular, 2 * std::tan(fieldOfView * .5) / height * .85);
+                        addBillboard(shell, 500 * footprint,
+                                     body.tint * (body.kind == ActivityKind::Debris ? .25f : .75f), true);
+                    }
+                    ++stats.activityVisible;
+                    if (distance < 150000 && body.kind != ActivityKind::Debris) {
+                        // Hyperion drawFactionCraft's two engine traces, kept in
+                        // actual body coordinates rather than screen particles.
+                        const auto rotation = pose.orientation * body.orientation;
+                        const double pulse = .65 + .08 * std::sin(activity->seconds * 7 + body.phase);
+                        if (body.kind != ActivityKind::Harbour && glm::length(body.velocity) > 1)
+                            for (int side : {-1, 1}) {
+                                const auto engine = point + rotation * glm::dvec3(side * .44, 0, 1.16) *
+                                                                (body.radius / units);
+                                addLine(exhaust, engine,
+                                        engine + rotation * glm::dvec3(0, 0, pulse) * (body.radius / units),
+                                        body.tint * 1.3f);
+                            }
+                        if (body.kind == ActivityKind::Harbour) {
+                            for (int side : {-1, 1}) {
+                                const auto lamp =
+                                    point + rotation * glm::dvec3(side * .82, .15, 0) * (body.radius / units);
+                                const double radius =
+                                    std::max(body.radius * .025 / units, distance / units * .00065);
+                                addBillboard(lamp, radius,
+                                             body.tint *
+                                                 float(.5 + .5 * std::sin(activity->seconds * 2 + side)));
+                            }
+                            // The animated cargo hook is the harbour's equipment.
+                            const double travel = .5 + .5 * std::sin(activity->seconds * .55);
+                            const auto base =
+                                point + rotation * glm::dvec3(.45, .64, .18) * (body.radius / units);
+                            const auto hook = base + rotation * glm::dvec3(0, -.08 - .14 * travel, 0) *
+                                                         (body.radius / units);
+                            addLine(exhaust, base, hook, body.tint);
+                        }
+                    }
+                }
+            }
+            for (size_t role = 0; role < batches.size(); role++)
+                for (unsigned detail = 0; detail < 3; detail++) {
+                    const auto& instances = batches[role][detail];
+                    if (instances.empty())
+                        continue;
+                    auto& mesh = craftMeshes[role][detail];
+                    if (!bgfx::isValid(mesh.vertices)) {
+                        const auto source = activityMesh(ActivityKind(role), detail);
+                        mesh = upload(source);
+                        craftBytes += source.bytes();
+                    }
+                    const auto count = bgfx::getAvailInstanceDataBuffer(uint32_t(instances.size()), 80);
+                    if (!count)
+                        continue;
+                    bgfx::InstanceDataBuffer buffer;
+                    bgfx::allocInstanceDataBuffer(&buffer, count, 80);
+                    std::memcpy(buffer.data, instances.data(), count * sizeof(Instance));
+                    bgfx::setVertexBuffer(0, mesh.vertices);
+                    bgfx::setIndexBuffer(mesh.indices);
+                    bgfx::setInstanceDataBuffer(&buffer);
+                    bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS |
+                                   BGFX_STATE_MSAA);
+                    if (mode != RenderMode::Original) {
+                        Geometry source;
+                        const ScenePresentation presentation{source,
+                                                             system.address,
+                                                             {.43, .65, .035, .01},
+                                                             float(role) / 6,
+                                                             mode == RenderMode::Hybrid ? .36f : 1.f};
+                        hyperion->bind(presentation, {}, glm::vec3(lightAt(system.address, nav)),
+                                       glm::mat4(1), 0, activity->seconds);
+                    }
+                    bgfx::submit(62, mode == RenderMode::Original ? instanceProgram
+                                                                  : hyperion->geometryProgram());
+                    stats.activityTriangles += count * mesh.count / 3;
+                }
+        }
+        std::sort(activityContacts.begin(), activityContacts.end(),
+                  [](const auto& a, const auto& b) { return a.distance < b.distance; });
+        if (activityContacts.size() > 80) {
+            auto pinned = std::find_if(activityContacts.begin() + 80, activityContacts.end(),
+                                       [](const auto& c) { return c.selected; });
+            if (pinned != activityContacts.end())
+                activityContacts[79] = *pinned;
+            activityContacts.resize(80);
+        }
+        transient(exhaust, worldView(), true, true);
+        stats.activityBytes = craftBytes;
     }
     void renderNode(const Node& node, const Navigation& nav, RegionCache& cache, unsigned maximum = 4) {
         auto pose = poseFor(node.address, nav);
@@ -883,6 +1046,36 @@ std::shared_ptr<const Geometry> Renderer::galaxySamples() const {
 std::span<const CelestialContact> Renderer::celestialContacts() const {
     return impl_->contacts;
 }
+std::span<const ActivityContact> Renderer::activityContacts() const {
+    return impl_->activityContacts;
+}
+void Renderer::setActivity(const ActivityState* state) {
+    impl_->activity = state;
+}
+std::optional<ActivityId> Renderer::pickActivity(double x, double y) const {
+    const auto& p = *impl_;
+    if (!p.activity || !p.activity->enabled)
+        return {};
+    if (p.instruments && (!p.instruments->shrinking || p.instruments->hullMetres >= .001)) {
+        const double scale = 900. / p.height;
+        const double px = x * scale, py = y * scale;
+        if (px >= 28 && px <= 330 && py >= 205) {
+            const auto row = size_t((py - 205) / 34);
+            if (row < std::min(size_t(6), p.activityContacts.size()))
+                return p.activityContacts[row].body.id;
+        }
+    }
+    double best = 18 * 18;
+    std::optional<ActivityId> selected;
+    for (const auto& [id, point] : p.activityPicks) {
+        const double distance = glm::dot(point - glm::dvec2(x, y), point - glm::dvec2(x, y));
+        if (distance < best) {
+            best = distance;
+            selected = id;
+        }
+    }
+    return selected;
+}
 std::shared_ptr<const Geometry> Renderer::submittedGeometry(const Address& address) const {
     auto found = impl_->details.find(address);
     return found == impl_->details.end() ? nullptr : found->second.blend.current;
@@ -1091,6 +1284,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     for (const auto& node : rootNodes)
         if (node.address != root)
             candidates(node);
+    p.renderActivity(nodes, nav, cache);
     auto drawBillboards = [&](const std::vector<Instance>& instances, bool cosmic) {
         uint32_t count = bgfx::getAvailInstanceDataBuffer(static_cast<uint32_t>(instances.size()), 80);
         if (count) {
@@ -1211,7 +1405,8 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
 
     if (p.instruments && overlay) {
         const double aspect = double(p.width) / p.height;
-        const auto hud = cockpitOverlay(*p.instruments, aspect, renderModeName(p.mode), notice, p.contacts);
+        const auto hud = cockpitOverlay(*p.instruments, aspect, renderModeName(p.mode), notice, p.contacts,
+                                        p.activityContacts);
         const auto projection = bgfx::getCaps()->homogeneousDepth
                                     ? glm::orthoRH_NO(0.f, float(900 * aspect), 900.f, 0.f, -1.f, 1.f)
                                     : glm::orthoRH_ZO(0.f, float(900 * aspect), 900.f, 0.f, -1.f, 1.f);
@@ -1302,7 +1497,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count() -
         p.stats.cpuMs;
     const auto* st = bgfx::getStats();
-    p.stats.gpuBytes = p.gpuBytes;
+    p.stats.gpuBytes = p.gpuBytes + p.craftBytes;
     p.stats.effectBytes = p.hyperion->targetBytes();
     p.stats.drawCalls = st->numDraw;
     p.stats.gpuMs = st->gpuTimerFreq

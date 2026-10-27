@@ -6,7 +6,7 @@ import sys
 root = pathlib.Path(sys.argv[1])
 images = {}
 for name in ("orbit-original", "orbit-hyperion", "orbit-hybrid", "landing-approach",
-             "landed", "departure", "atomic-shrink", "stellar-background", "micro-shrink", "system-contacts"):
+             "landed", "departure", "atomic-shrink", "stellar-background", "micro-shrink", "system-contacts", "orbital-activity", "busy-orbit"):
     with (root / (name + ".ppm")).open("rb") as file:
         assert file.readline().strip() == b"P6"
         width, height = map(int, file.readline().split())
@@ -24,4 +24,5 @@ for name in ("orbit-original", "orbit-hyperion", "orbit-hybrid", "landing-approa
 assert images["orbit-original"] != images["orbit-hyperion"]
 assert images["orbit-hyperion"] != images["orbit-hybrid"]
 assert images["system-contacts"] != images["orbit-hyperion"]
-print("PASS: all ten cockpit, celestial contacts, addressed stellar background, landing/departure and micro/nano ship captures contain scene geometry and flight instruments")
+assert images["orbital-activity"] != images["orbit-hyperion"]
+print("PASS: all twelve cockpit, orbital activity, celestial contacts, addressed stellar background, landing/departure and micro/nano ship captures contain scene geometry and flight instruments")

@@ -94,6 +94,11 @@ class PilotValidation {
                       << " atmosphere=" << stats.atmospheres << '\n';
             if (stats.skyGalaxies == 0)
                 throw std::runtime_error("Extragalactic lights vanished from the outward-facing sky");
+            if (stats.activityBodies < 100)
+                throw std::runtime_error("Orbital flight lost its persistent activity population");
+            std::cout << "PILOT_ACTIVITY population=" << stats.activityBodies
+                      << " visible=" << stats.activityVisible << " template_bytes=" << stats.activityBytes
+                      << '\n';
             renderer.setMode(RenderMode::Hyperion);
             const auto contacts = renderer.celestialContacts();
             auto target = std::find_if(contacts.begin(), contacts.end(), [&](const CelestialContact& c) {
@@ -163,6 +168,36 @@ class PilotValidation {
             capture("stellar-background");
             std::cout << "PILOT_STELLAR_SKY addressed stars=" << stats.skyStars << " sky_pick=PASS\n";
         } else if (stage_ == 5 && age_ == 40) {
+            const auto contacts = renderer.activityContacts();
+            const auto hub = std::find_if(contacts.begin(), contacts.end(), [&](const auto& c) {
+                return c.body.id.home == planet_ && c.body.id.slot == 0;
+            });
+            if (hub == contacts.end())
+                throw std::runtime_error("Missing persistent harbour");
+            harbourId_ = hub->body.id;
+            const auto position = hub->body.position;
+            const auto away = glm::normalize(position) * 1600. + glm::dvec3(600, 500, 300);
+            const auto eye = position + away;
+            const auto q = glm::quatLookAtRH(glm::normalize(-away), glm::normalize(position));
+            std::ostringstream view;
+            view.precision(17);
+            const double logUnits = u_.describe(planet_).frame.logRadius;
+            const auto offset = eye / std::pow(10., logUnits) - q * glm::dvec3(0, 0, 1);
+            view << planet_.str() << ' ' << logUnits << ' ' << q.w << ' ' << q.x << ' ' << q.y << ' ' << q.z
+                 << ' ' << offset.x << ' ' << offset.y << ' ' << offset.z;
+            if (!n_.restore(view.str()))
+                throw std::runtime_error("Invalid harbour fixture");
+            p_.resetMotion();
+            stage_ = 8;
+            age_ = 0;
+        } else if (stage_ == 8 && age_ == 30) {
+            if (stats.activityTriangles == 0 || stats.activityVisible < 2 ||
+                renderer.pickActivity(720, 450) != harbourId_)
+                throw std::runtime_error("Harbour geometry or persistent contact picking is missing");
+            capture("orbital-activity");
+            std::cout << "PILOT_HARBOUR visible=" << stats.activityVisible
+                      << " triangles=" << stats.activityTriangles << " picking=PASS\n";
+        } else if (stage_ == 8 && age_ == 40) {
             place(false);
             p_.land();
             stage_ = 1;
@@ -225,6 +260,16 @@ class PilotValidation {
             stage_ = 4;
             age_ = 0;
         } else if (stage_ == 4 && age_ > 10) {
+            p_.startInSystem();
+            stage_ = 9;
+            age_ = 0;
+        } else if (stage_ == 9 && age_ == 30) {
+            if (stats.activityTriangles == 0 || stats.activityVisible < 3)
+                throw std::runtime_error("The normal planetary start has no visible harbour traffic");
+            capture("busy-orbit");
+            std::cout << "PILOT_BUSY_START visible=" << stats.activityVisible
+                      << " triangles=" << stats.activityTriangles << '\n';
+        } else if (stage_ == 9 && age_ == 40) {
             finished_ = true;
         }
         if (age_ > 4000)
@@ -239,6 +284,7 @@ class PilotValidation {
     Navigation& n_;
     Pilot& p_;
     Address planet_, nanoAddress_, distantPlanet_;
+    ActivityId harbourId_;
     bool microCaptured_ = false;
     glm::dvec3 direction_{};
     uint64_t descriptor_ = 0, geometry_ = 0;

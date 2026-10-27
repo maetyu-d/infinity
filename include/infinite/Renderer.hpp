@@ -1,4 +1,5 @@
 #pragma once
+#include "Activity.hpp"
 #include "Navigation.hpp"
 #include "Piloting.hpp"
 #include "Presentation.hpp"
@@ -18,6 +19,7 @@ struct FrameStats {
     size_t atmospheres = 0;
     size_t skyStars = 0;
     size_t celestialContacts = 0, celestialLights = 0, skyGas = 0, skyGalaxies = 0;
+    size_t activityBodies = 0, activityVisible = 0, activityTriangles = 0, activityBytes = 0;
 };
 class Renderer {
   public:
@@ -34,6 +36,9 @@ class Renderer {
     std::shared_ptr<const Geometry> submittedGeometry(const Address&) const;
     std::shared_ptr<const Geometry> galaxySamples() const;
     std::span<const CelestialContact> celestialContacts() const;
+    std::span<const ActivityContact> activityContacts() const;
+    std::optional<ActivityId> pickActivity(double x, double y) const;
+    void setActivity(const ActivityState*);
     void setMode(RenderMode);
     RenderMode mode() const;
     void freezeVisualTime(double seconds);

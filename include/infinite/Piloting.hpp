@@ -7,6 +7,12 @@ struct HelmInput {
     double throttle = 0, strafe = 0, lift = 0, pitch = 0, yaw = 0, roll = 0;
     bool boost = false, precision = false, brake = false;
 };
+struct FlightWaypoint {
+    Address reference;
+    glm::dvec3 metres{}, velocity{};
+    double standOff = 100;
+    std::string label;
+};
 // Velocity is SI in frame axes. Angular rate and thrusters are in ship axes.
 // Neither is multiplied by the renderer's current magnification.
 struct ShipState {
@@ -22,7 +28,7 @@ struct ShipState {
 struct FlightInstruments {
     glm::dvec3 localVelocity{}, localTarget{}, localUp{0, 1, 0};
     double speed = 0, stoppingDistance = 0, altitude = -1, descent = 0, drift = 0;
-    double range = 0, throttle = 0, engine = 0, hull = 100, logMetres = 0, scaleRate = 0;
+    double range = 0, approachError = 0, throttle = 0, engine = 0, hull = 100, logMetres = 0, scaleRate = 0;
     double roll = 0, pitch = 0, driveSpeed = 0;
     bool gear = false, landed = false, assist = true, shrinking = false, navigating = false;
     bool autoShrink = false, growthBlocked = false;
@@ -62,6 +68,9 @@ class Pilot {
         return 2 * sizeRatio();
     }
     void navigate(const Address&);
+    void trackWaypoint(const FlightWaypoint&);
+    void navigateWaypoint(const FlightWaypoint&);
+    void clearWaypoint();
     bool land();
     void launch();
     void resetMotion();
@@ -81,6 +90,7 @@ class Pilot {
     ShipState ship_;
     FlightInstruments instruments_;
     std::optional<Address> destination_, landingPlanet_;
+    std::optional<FlightWaypoint> waypoint_;
     glm::dvec3 landingDirection_{0, 1, 0};
     bool autopilot_ = false, landing_ = false;
     bool fieldBraking_ = false;

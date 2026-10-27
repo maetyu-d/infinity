@@ -70,6 +70,7 @@ void Pilot::setVelocity(glm::dvec3 v) {
     }
 }
 void Pilot::resetMotion() {
+    waypoint_.reset();
     ship_.frame = nav_.anchor;
     ship_.velocity = ship_.angularVelocity = ship_.thrusters = ship_.positionResidual = {};
     ship_.throttle = ship_.boost = 0;
@@ -207,6 +208,7 @@ void Pilot::startInSystem() {
     instrument();
 }
 void Pilot::selectNextPlanet() {
+    waypoint_.reset();
     auto system = nav_.anchor;
     while (system.kind() > Kind::System)
         system = system.parent();
@@ -377,6 +379,7 @@ std::optional<Pilot::Ground> Pilot::ground() const {
         std::acos(std::clamp(glm::dot(normal, direction), -1., 1.))};
 }
 void Pilot::navigate(const Address& a) {
+    waypoint_.reset();
     a.validate();
     if (ship_.landed)
         launch();
@@ -398,7 +401,32 @@ void Pilot::navigate(const Address& a) {
     phase_ = "DEPARTURE / ALIGNING";
     instrument();
 }
+void Pilot::trackWaypoint(const FlightWaypoint& waypoint) {
+    waypoint.reference.validate();
+    if (!std::isfinite(glm::length(waypoint.metres)) || !std::isfinite(glm::length(waypoint.velocity)) ||
+        !std::isfinite(waypoint.standOff) || waypoint.standOff < 0)
+        throw std::invalid_argument("Invalid activity waypoint");
+    universe_.describe(waypoint.reference);
+    waypoint_ = waypoint;
+    instrument();
+}
+void Pilot::navigateWaypoint(const FlightWaypoint& waypoint) {
+    navigate(waypoint.reference);
+    landingPlanet_.reset();
+    trackWaypoint(waypoint);
+    phase_ = "RENDEZVOUS / MATCHING COURSE";
+    instrument();
+}
+void Pilot::clearWaypoint() {
+    if (waypoint_) {
+        waypoint_.reset();
+        destination_.reset();
+        autopilot_ = false;
+        instrument();
+    }
+}
 bool Pilot::land() {
+    waypoint_.reset();
     auto g = ground();
     if (!g || !continuumContact() || g->slope > .61)
         return false;
@@ -422,6 +450,14 @@ void Pilot::launch() {
     phase_ = "LAUNCH / VERTICAL DEPARTURE";
 }
 glm::dvec3 Pilot::destinationPoint() const {
+    if (waypoint_) {
+        const auto node = universe_.describe(waypoint_->reference);
+        const auto point = universe_.pointRelative(waypoint_->reference,
+                                                   waypoint_->metres / std::pow(10., node.frame.logRadius),
+                                                   nav_.anchor, nav_.logDistance);
+        return point +
+               unit(nav_.cameraPosition() - point) * (waypoint_->standOff / std::pow(10., nav_.logDistance));
+    }
     if (landingPlanet_) {
         const auto p = universe_.describe(*landingPlanet_);
         const double radius = std::pow(10., p.frame.logRadius);
@@ -509,6 +545,13 @@ void Pilot::step(const HelmInput& input, double dt) {
         double distance = glm::length(delta);
         const auto direction = unit(delta, nav_.orientation * glm::dvec3(0, 0, -1));
         auto heading = direction;
+        if (waypoint_) {
+            const auto reference = universe_.describe(waypoint_->reference);
+            const auto contact = universe_.pointRelative(
+                waypoint_->reference, waypoint_->metres / std::pow(10., reference.frame.logRadius),
+                nav_.anchor, nav_.logDistance);
+            heading = unit(contact - oldEye, heading);
+        }
         if (landing_ && beforeGround && beforeGround->altitude < 500) {
             auto forward = nav_.orientation * glm::dvec3(0, 0, -1);
             heading = unit(forward - up * glm::dot(forward, up),
@@ -516,26 +559,36 @@ void Pilot::step(const HelmInput& input, double dt) {
         }
         spin = angularTarget(nav_.orientation, heading, up);
         double speed = std::min(limit, std::sqrt(std::max(0., 2 * retro * distance)) * .55);
+        if (waypoint_)
+            speed = std::min(speed, distance * .55); // Leave time for the velocity servo and jet spool.
         if (landing_)
             speed = std::min(speed, std::max(.04 * sizeRatio(), distance * .65));
         if (landing_ && distance < 100 * sizeRatio())
             speed = std::min(speed, 1.5 * sizeRatio());
         const double alignment = std::max(0., glm::dot(nav_.orientation * glm::dvec3(0, 0, -1), direction));
-        if (!landing_ || distance > 500)
+        if ((!waypoint_ || distance > 2000) && (!landing_ || distance > 500))
             speed *= alignment * alignment;
         const auto target = universe_.describe(*destination_);
         const double targetRadius = std::pow(10., target.frame.logRadius);
         double arrival = std::clamp(targetRadius * .00001, 2. * sizeRatio(), 500. * sizeRatio());
-        if (target.address.kind() <= Kind::System)
+        const auto targetVelocity =
+            waypoint_
+                ? universe_.relative(waypoint_->reference, nav_.anchor, 0).orientation * waypoint_->velocity
+                : glm::dvec3(0);
+        if (waypoint_)
+            arrival = 5 * sizeRatio();
+        if (!waypoint_ && target.address.kind() <= Kind::System)
             arrival = std::max(arrival, targetRadius * 1e-6);
         if (!landing_ && distance < arrival)
             speed = 0;
-        wanted = direction * speed;
-        ship_.throttle = std::clamp(speed / limit, 0., 1.);
+        wanted = direction * speed + targetVelocity;
+        ship_.throttle = std::clamp(glm::length(wanted) / limit, 0., 1.);
         phase_ = landing_                                 ? "LANDING / CONTROLLED DESCENT"
                  : distance < std::max(10000., limit * 4) ? "APPROACH / BRAKING"
                                                           : "TRANSIT / NAVIGATING";
-        if (!landing_ && distance < arrival && glm::length(ship_.velocity) < 2. * sizeRatio()) {
+        if (waypoint_ && distance < arrival)
+            phase_ = "HOLDING / MATCHING TARGET VELOCITY";
+        if (!waypoint_ && !landing_ && distance < arrival && glm::length(ship_.velocity) < 2. * sizeRatio()) {
             autopilot_ = false;
             ship_.throttle = 0;
             wanted = {};
@@ -807,12 +860,20 @@ void Pilot::instrument() {
         t.safe = ship_.gear && std::abs(t.descent) < 2 * sizeRatio() && t.drift < 2 * sizeRatio() &&
                  t.localUp.y > .966 && g->slope < .61;
     }
-    if (destination_) {
-        const auto delta = destinationPoint() - nav_.cameraPosition();
+    if (destination_ || waypoint_) {
+        auto delta = destinationPoint() - nav_.cameraPosition();
+        t.approachError = glm::length(delta) * std::pow(10., nav_.logDistance);
+        if (waypoint_) {
+            const auto reference = universe_.describe(waypoint_->reference);
+            delta = universe_.pointRelative(waypoint_->reference,
+                                            waypoint_->metres / std::pow(10., reference.frame.logRadius),
+                                            nav_.anchor, nav_.logDistance) -
+                    nav_.cameraPosition();
+        }
         t.range = glm::length(delta) * std::pow(10., nav_.logDistance);
         t.localTarget = glm::inverse(nav_.orientation) * delta;
         t.targetVisible = glm::length(delta) > 1e-30;
-        t.destination = universe_.describe(*destination_).label();
+        t.destination = waypoint_ ? waypoint_->label : universe_.describe(*destination_).label();
     } else if (nav_.selected) {
         const auto delta = universe_.relative(*nav_.selected, nav_.anchor, nav_.logDistance).position -
                            nav_.cameraPosition();
@@ -822,9 +883,16 @@ void Pilot::instrument() {
         t.destination = universe_.describe(*nav_.selected).label() + " / J NAVIGATE";
     }
     if (t.targetVisible) {
-        const double closing = -glm::dot(t.localVelocity, unit(-t.localTarget));
-        if (closing > 1e-30)
-            t.etaSeconds = t.range / closing;
+        const auto targetVelocity =
+            waypoint_ ? glm::inverse(nav_.orientation) *
+                            (universe_.relative(waypoint_->reference, nav_.anchor, 0).orientation *
+                             waypoint_->velocity)
+                      : glm::dvec3(0);
+        const double closing = -glm::dot(t.localVelocity - targetVelocity, unit(-t.localTarget));
+        if (waypoint_ && t.approachError < 5 * sizeRatio())
+            t.etaSeconds = 0;
+        else if (closing > 1e-30)
+            t.etaSeconds = (waypoint_ ? t.approachError : t.range) / closing;
     }
 }
 std::string Pilot::serialize() const {
@@ -906,6 +974,7 @@ bool Pilot::restore(std::string_view text) {
             (candidate.landed && (!body || !candidate.gear)))
             return false;
         ship_ = candidate;
+        waypoint_.reset();
         destination_ = dest;
         landingPlanet_ = body;
         landingDirection_ = unit(direction);

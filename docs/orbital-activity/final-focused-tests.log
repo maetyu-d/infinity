@@ -1,0 +1,13 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 1: persistent_orbital_activity
+1/4 Test #1: persistent_orbital_activity .......   Passed    2.26 sec
+    Start 2: operating_regimes_and_shrinking
+2/4 Test #2: operating_regimes_and_shrinking ...   Passed    1.23 sec
+    Start 3: ship_dynamics_and_landing
+3/4 Test #3: ship_dynamics_and_landing .........   Passed    1.04 sec
+    Start 7: rendering_preserves_universe
+4/4 Test #7: rendering_preserves_universe ......   Passed    0.71 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   5.25 sec
