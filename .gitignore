@@ -1,0 +1,7 @@
+/build*/
+/external/
+/user-data/
+/*.app/
+*.sqlite*
+*.ppm
+.DS_Store

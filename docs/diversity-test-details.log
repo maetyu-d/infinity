@@ -1,0 +1,149 @@
+Start testing: Oct 27 03:07 GMT
+----------------------------------------------------------
+1/9 Testing: structural_processes
+1/9 Test: structural_processes
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_process_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"structural_processes" start time: Oct 27 03:07 GMT
+Output:
+----------------------------------------------------------
+SPIRAL DISC thickness=0.0597837 young=875
+BARRED SPIRAL thickness=0.0348088 young=510
+ELLIPTICAL SPHEROID thickness=0.330961 young=39
+IRREGULAR ASSOCIATIONS thickness=0.0394489 young=3610
+PASS: 66204 process checks; web, populations, tectonics, lithologies, habits, stoichiometry, coordination, phase, defects, inheritance, parallel regeneration.
+<end of output>
+Test time =   0.32 sec
+----------------------------------------------------------
+Test Passed.
+"structural_processes" end time: Oct 27 03:07 GMT
+"structural_processes" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/9 Testing: universe_regressions
+2/9 Test: universe_regressions
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"universe_regressions" start time: Oct 27 03:07 GMT
+Output:
+----------------------------------------------------------
+PASS: 251 checks; determinism, order, boundaries, coordinates, identity, LOD, cache, persistence, cancellation.
+<end of output>
+Test time =   0.53 sec
+----------------------------------------------------------
+Test Passed.
+"universe_regressions" end time: Oct 27 03:07 GMT
+"universe_regressions" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/9 Testing: persistence_process_write
+3/9 Test: persistence_process_write
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_tests" "--write" "/Users/user/Documents/SC tutorial/Infinite/build/restart-test.sqlite"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"persistence_process_write" start time: Oct 27 03:07 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"persistence_process_write" end time: Oct 27 03:07 GMT
+"persistence_process_write" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/9 Testing: persistence_process_read
+4/9 Test: persistence_process_read
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_tests" "--read" "/Users/user/Documents/SC tutorial/Infinite/build/restart-test.sqlite"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"persistence_process_read" start time: Oct 27 03:07 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"persistence_process_read" end time: Oct 27 03:07 GMT
+"persistence_process_read" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/9 Testing: cross_scale_round_trip
+5/9 Test: cross_scale_round_trip
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_continuity_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"cross_scale_round_trip" start time: Oct 27 03:07 GMT
+Output:
+----------------------------------------------------------
+PASS: 61289 continuity checks; full non-default galaxy-to-lattice round trips, all LODs, caches, local sections, persisted breadcrumbs, transported frames and atomic site stability.
+<end of output>
+Test time =   6.41 sec
+----------------------------------------------------------
+Test Passed.
+"cross_scale_round_trip" end time: Oct 27 03:07 GMT
+"cross_scale_round_trip" time elapsed: 00:00:06
+----------------------------------------------------------
+
+6/9 Testing: continuity_restart_write
+6/9 Test: continuity_restart_write
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_continuity_tests" "--write" "/Users/user/Documents/SC tutorial/Infinite/build/continuity-restart.sqlite"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"continuity_restart_write" start time: Oct 27 03:07 GMT
+Output:
+----------------------------------------------------------
+PASS: persisted full hierarchy --write
+<end of output>
+Test time =   1.10 sec
+----------------------------------------------------------
+Test Passed.
+"continuity_restart_write" end time: Oct 27 03:07 GMT
+"continuity_restart_write" time elapsed: 00:00:01
+----------------------------------------------------------
+
+7/9 Testing: continuity_restart_read
+7/9 Test: continuity_restart_read
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_continuity_tests" "--read" "/Users/user/Documents/SC tutorial/Infinite/build/continuity-restart.sqlite"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"continuity_restart_read" start time: Oct 27 03:07 GMT
+Output:
+----------------------------------------------------------
+PASS: persisted full hierarchy --read
+<end of output>
+Test time =   0.85 sec
+----------------------------------------------------------
+Test Passed.
+"continuity_restart_read" end time: Oct 27 03:07 GMT
+"continuity_restart_read" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/9 Testing: native_cross_scale_round_trip
+8/9 Test: native_cross_scale_round_trip
+Command: "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake" "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite" "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/native-continuity" "-P" "/Users/user/Documents/SC tutorial/Infinite/cmake/RunNativeTour.cmake"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_cross_scale_round_trip" start time: Oct 27 03:07 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =  21.60 sec
+----------------------------------------------------------
+Test Passed.
+"native_cross_scale_round_trip" end time: Oct 27 03:07 GMT
+"native_cross_scale_round_trip" time elapsed: 00:00:21
+----------------------------------------------------------
+
+9/9 Testing: native_atomic_visibility
+9/9 Test: native_atomic_visibility
+Command: "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9" "/Users/user/Documents/SC tutorial/Infinite/tools/check_continuity_captures.py" "/Users/user/Documents/SC tutorial/Infinite/build/native-continuity/captures" "/Users/user/Documents/SC tutorial/Infinite/build/native-continuity/native.log"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_atomic_visibility" start time: Oct 27 03:07 GMT
+Output:
+----------------------------------------------------------
+Atomic pixels: oxygen=0, iron=0, carbon=99528, cyan=189479
+PASS: 15 native captures, 1920x1080, matching return addresses and visible atoms
+<end of output>
+Test time =   1.24 sec
+----------------------------------------------------------
+Test Passed.
+"native_atomic_visibility" end time: Oct 27 03:07 GMT
+"native_atomic_visibility" time elapsed: 00:00:01
+----------------------------------------------------------
+
+End testing: Oct 27 03:07 GMT

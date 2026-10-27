@@ -1,0 +1,5 @@
+SPIRAL DISC thickness=0.0597837 young=875
+BARRED SPIRAL thickness=0.0348088 young=510
+ELLIPTICAL SPHEROID thickness=0.330961 young=39
+IRREGULAR ASSOCIATIONS thickness=0.0394489 young=3610
+PASS: 66204 process checks; web, populations, tectonics, lithologies, habits, stoichiometry, coordination, phase, defects, inheritance, parallel regeneration.

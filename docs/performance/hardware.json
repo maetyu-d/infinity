@@ -1,0 +1,11 @@
+{
+  "cpu": "Apple M1",
+  "architecture": "arm64",
+  "os": "26.4.1",
+  "renderer": "Metal",
+  "resolution": [
+    1920,
+    1080
+  ],
+  "vsync": true
+}

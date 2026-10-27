@@ -1,0 +1,11 @@
+variant,run,samples,elapsed_ms,checksum
+recipe3_reference,0,12000,115.747,669.421
+optimised,0,12000,28.9333,669.421
+recipe3_reference,1,12000,114.961,669.421
+optimised,1,12000,27.7527,669.421
+recipe3_reference,2,12000,109.947,669.421
+optimised,2,12000,27.7169,669.421
+recipe3_reference,3,12000,110.114,669.421
+optimised,3,12000,27.6964,669.421
+recipe3_reference,4,12000,109.814,669.421
+optimised,4,12000,27.717,669.421

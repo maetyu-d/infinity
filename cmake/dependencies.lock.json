@@ -1,0 +1,52 @@
+{
+  "bgfx.cmake": {
+    "repository": "bkaradzic/bgfx.cmake",
+    "revision": "5ae5fa5b121974b9de084539bb784d97fa4cd8a6",
+    "sha256": "2b3981e0b23c086326554a1908be763688dd1058c12b06bdf81b6f6b71ff7c51"
+  },
+  "bx": {
+    "repository": "bkaradzic/bx",
+    "revision": "0e5bbca6878000f6371c65c53fe06f6f0ae87ca9",
+    "sha256": "948f777092e1dc60dcc9d77dacc570617542d652426f8fddbcf98d5cf647ce53"
+  },
+  "bimg": {
+    "repository": "bkaradzic/bimg",
+    "revision": "9bfbd6493b48a15238f2d1374a718ec026524515",
+    "sha256": "b531e97fa5db1060a11b9831dedc7c9a5190eab4fcf3b3c9553b64d0f66596b0"
+  },
+  "bgfx": {
+    "repository": "bkaradzic/bgfx",
+    "revision": "fe9bbdec66110f8626b9251a4947fc336ac3f62c",
+    "sha256": "1357a5dfeb8534f8c9a32ea9e993084871f8ceb55147c36e1d8dde7d63941b40"
+  },
+  "SDL": {
+    "repository": "libsdl-org/SDL",
+    "revision": "f6864924f76e1a0b4abaefc76ae2ed22b1a8916e",
+    "sha256": "0bc678138c04ed2619a4e20528990c5949d6bf8424b76a4e5174c8ea588eabea"
+  },
+  "glm": {
+    "repository": "g-truc/glm",
+    "revision": "1.0.1",
+    "sha256": "9f3174561fd26904b23f0db5e560971cbf9b3cbda0b280f04d5c379d03bf234c"
+  },
+  "FastNoise2": {
+    "repository": "Auburn/FastNoise2",
+    "revision": "903c1f2d2f9d53ddce94cd223f32727d9ab3aeaa",
+    "sha256": "1e756769d1739d67dd6ca3292dc8dd1a63f04ef2e7f01698deffc8f7a140e143"
+  },
+  "oneTBB": {
+    "repository": "uxlfoundation/oneTBB",
+    "revision": "v2022.1.0",
+    "sha256": "ed067603ece0dc832d2881ba5c516625ac2522c665d95f767ef6304e34f961b5"
+  },
+  "zstd": {
+    "repository": "facebook/zstd",
+    "revision": "v1.5.7",
+    "sha256": "37d7284556b20954e56e1ca85b80226768902e2edabd3b649e9e72c0c9012ee3"
+  },
+  "FastSIMD": {
+    "repository": "Auburn/FastSIMD",
+    "revision": "16450dae9528727e500e7254f635a671f9c7ee2d",
+    "sha256": "b789e0430a812cf73d51ea6b884000ae4d7d1035218678b2e44eb6635bb87b3e"
+  }
+}

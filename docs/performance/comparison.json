@@ -1,0 +1,570 @@
+{
+  "before": {
+    "runs": [
+      {
+        "rss": 133120000,
+        "frames": 1081,
+        "wall_p95": 17.4291
+      },
+      {
+        "rss": 134643712,
+        "frames": 1091,
+        "wall_p95": 17.5736
+      },
+      {
+        "rss": 136642560,
+        "frames": 1093,
+        "wall_p95": 17.4681
+      }
+    ],
+    "rss_median": 134643712,
+    "rss_max": 136642560,
+    "cpu_all_p95_ms": 5.77154,
+    "cpu_cache_max": 17010160,
+    "gpu_cache_max": 5621608,
+    "kinds": {
+      "GALAXY": {
+        "samples": 188,
+        "cpu_median_ms": 5.75173,
+        "cpu_p95_ms": 6.2165,
+        "gpu_median_ms": 1.79052,
+        "vertices": 0,
+        "triangles": 0,
+        "particles": 19606,
+        "atoms": 0,
+        "gpu_bytes": 579072
+      },
+      "STAR SYSTEM": {
+        "samples": 210,
+        "cpu_median_ms": 0.608104,
+        "cpu_p95_ms": 1.05187,
+        "gpu_median_ms": 1.507415,
+        "vertices": 425,
+        "triangles": 768,
+        "particles": 1408,
+        "atoms": 0,
+        "gpu_bytes": 1709008
+      },
+      "PLANET": {
+        "samples": 210,
+        "cpu_median_ms": 0.5196875000000001,
+        "cpu_p95_ms": 0.809542,
+        "gpu_median_ms": 1.516665,
+        "vertices": 14823,
+        "triangles": 23424,
+        "particles": 1,
+        "atoms": 0,
+        "gpu_bytes": 3239224
+      },
+      "SURFACE": {
+        "samples": 210,
+        "cpu_median_ms": 0.549083,
+        "cpu_p95_ms": 0.815458,
+        "gpu_median_ms": 1.6182050000000001,
+        "vertices": 31869,
+        "triangles": 37844,
+        "particles": 1,
+        "atoms": 0,
+        "gpu_bytes": 5621608
+      },
+      "MOUNTAIN": {
+        "samples": 210,
+        "cpu_median_ms": 1.371835,
+        "cpu_p95_ms": 1.88271,
+        "gpu_median_ms": 1.709165,
+        "vertices": 50937,
+        "triangles": 73106,
+        "particles": 24,
+        "atoms": 0,
+        "gpu_bytes": 5504848
+      },
+      "ROCK": {
+        "samples": 210,
+        "cpu_median_ms": 2.599685,
+        "cpu_p95_ms": 3.38554,
+        "gpu_median_ms": 2.0698350000000003,
+        "vertices": 90156,
+        "triangles": 30052,
+        "particles": 1,
+        "atoms": 0,
+        "gpu_bytes": 4194168
+      },
+      "MINERAL GRAIN": {
+        "samples": 210,
+        "cpu_median_ms": 0.4125625,
+        "cpu_p95_ms": 0.651625,
+        "gpu_median_ms": 1.927105,
+        "vertices": 32202,
+        "triangles": 10734,
+        "particles": 1,
+        "atoms": 0,
+        "gpu_bytes": 3787560
+      },
+      "CRYSTAL LATTICE": {
+        "samples": 105,
+        "cpu_median_ms": 0.368542,
+        "cpu_p95_ms": 0.67825,
+        "gpu_median_ms": 2.46596,
+        "vertices": 26424,
+        "triangles": 8808,
+        "particles": 0,
+        "atoms": 1026,
+        "gpu_bytes": 3918720
+      }
+    },
+    "generation": {
+      "GALAXY:0": {
+        "median_of_run_medians_ms": 7.367,
+        "max_run_p95_ms": 7.708,
+        "bytes": 269040,
+        "vertices": 0,
+        "atoms": 0
+      },
+      "GALAXY:2": {
+        "median_of_run_medians_ms": 13.584,
+        "max_run_p95_ms": 14.95,
+        "bytes": 605040,
+        "vertices": 0,
+        "atoms": 0
+      },
+      "GALAXY:4": {
+        "median_of_run_medians_ms": 17.99,
+        "max_run_p95_ms": 18.272,
+        "bytes": 941040,
+        "vertices": 0,
+        "atoms": 0
+      },
+      "STAR SYSTEM:0": {
+        "median_of_run_medians_ms": 1.137,
+        "max_run_p95_ms": 1.199,
+        "bytes": 128064,
+        "vertices": 425,
+        "atoms": 0
+      },
+      "STAR SYSTEM:2": {
+        "median_of_run_medians_ms": 1.099,
+        "max_run_p95_ms": 1.146,
+        "bytes": 128064,
+        "vertices": 425,
+        "atoms": 0
+      },
+      "STAR SYSTEM:4": {
+        "median_of_run_medians_ms": 1.094,
+        "max_run_p95_ms": 1.102,
+        "bytes": 128064,
+        "vertices": 425,
+        "atoms": 0
+      },
+      "PLANET:0": {
+        "median_of_run_medians_ms": 2.226,
+        "max_run_p95_ms": 2.457,
+        "bytes": 16992,
+        "vertices": 486,
+        "atoms": 0
+      },
+      "PLANET:2": {
+        "median_of_run_medians_ms": 21.383,
+        "max_run_p95_ms": 21.768,
+        "bytes": 169920,
+        "vertices": 4860,
+        "atoms": 0
+      },
+      "PLANET:4": {
+        "median_of_run_medians_ms": 64.42,
+        "max_run_p95_ms": 64.443,
+        "bytes": 518256,
+        "vertices": 14823,
+        "atoms": 0
+      },
+      "SURFACE:0": {
+        "median_of_run_medians_ms": 0.42,
+        "max_run_p95_ms": 0.428,
+        "bytes": 2832,
+        "vertices": 81,
+        "atoms": 0
+      },
+      "SURFACE:2": {
+        "median_of_run_medians_ms": 5.562,
+        "max_run_p95_ms": 6.216,
+        "bytes": 42000,
+        "vertices": 1089,
+        "atoms": 0
+      },
+      "SURFACE:4": {
+        "median_of_run_medians_ms": 84.872,
+        "max_run_p95_ms": 88.232,
+        "bytes": 659472,
+        "vertices": 16641,
+        "atoms": 0
+      },
+      "MOUNTAIN:0": {
+        "median_of_run_medians_ms": 0.417,
+        "max_run_p95_ms": 0.43,
+        "bytes": 2832,
+        "vertices": 81,
+        "atoms": 0
+      },
+      "MOUNTAIN:2": {
+        "median_of_run_medians_ms": 5.555,
+        "max_run_p95_ms": 5.899,
+        "bytes": 42000,
+        "vertices": 1089,
+        "atoms": 0
+      },
+      "MOUNTAIN:4": {
+        "median_of_run_medians_ms": 84.871,
+        "max_run_p95_ms": 86.559,
+        "bytes": 659472,
+        "vertices": 16641,
+        "atoms": 0
+      },
+      "ROCK:0": {
+        "median_of_run_medians_ms": 2.395,
+        "max_run_p95_ms": 5.222,
+        "bytes": 39360,
+        "vertices": 1968,
+        "atoms": 0
+      },
+      "ROCK:2": {
+        "median_of_run_medians_ms": 50.648,
+        "max_run_p95_ms": 51.83,
+        "bytes": 708240,
+        "vertices": 35412,
+        "atoms": 0
+      },
+      "ROCK:4": {
+        "median_of_run_medians_ms": 50.583,
+        "max_run_p95_ms": 54.97,
+        "bytes": 708240,
+        "vertices": 35412,
+        "atoms": 0
+      },
+      "MINERAL GRAIN:0": {
+        "median_of_run_medians_ms": 1.472,
+        "max_run_p95_ms": 1.601,
+        "bytes": 25200,
+        "vertices": 1260,
+        "atoms": 0
+      },
+      "MINERAL GRAIN:2": {
+        "median_of_run_medians_ms": 30.29,
+        "max_run_p95_ms": 30.377,
+        "bytes": 317040,
+        "vertices": 15852,
+        "atoms": 0
+      },
+      "MINERAL GRAIN:4": {
+        "median_of_run_medians_ms": 30.074,
+        "max_run_p95_ms": 30.369,
+        "bytes": 317040,
+        "vertices": 15852,
+        "atoms": 0
+      },
+      "CRYSTAL LATTICE:0": {
+        "median_of_run_medians_ms": 1.754,
+        "max_run_p95_ms": 1.803,
+        "bytes": 98680,
+        "vertices": 0,
+        "atoms": 1026
+      },
+      "CRYSTAL LATTICE:2": {
+        "median_of_run_medians_ms": 1.729,
+        "max_run_p95_ms": 1.744,
+        "bytes": 98680,
+        "vertices": 0,
+        "atoms": 1026
+      },
+      "CRYSTAL LATTICE:4": {
+        "median_of_run_medians_ms": 1.735,
+        "max_run_p95_ms": 1.739,
+        "bytes": 98680,
+        "vertices": 0,
+        "atoms": 1026
+      }
+    }
+  },
+  "after": {
+    "runs": [
+      {
+        "rss": 139984896,
+        "frames": 1117,
+        "wall_p95": 17.5562
+      },
+      {
+        "rss": 139296768,
+        "frames": 1115,
+        "wall_p95": 17.5472
+      },
+      {
+        "rss": 141099008,
+        "frames": 1115,
+        "wall_p95": 17.5935
+      }
+    ],
+    "rss_median": 139984896,
+    "rss_max": 141099008,
+    "cpu_all_p95_ms": 3.28004,
+    "cpu_cache_max": 12214734,
+    "gpu_cache_max": 5198790,
+    "kinds": {
+      "GALAXY": {
+        "samples": 210,
+        "cpu_median_ms": 3.295165,
+        "cpu_p95_ms": 3.88079,
+        "gpu_median_ms": 2.47273,
+        "vertices": 0,
+        "triangles": 0,
+        "particles": 33606,
+        "atoms": 0,
+        "gpu_bytes": 1424976
+      },
+      "STAR SYSTEM": {
+        "samples": 210,
+        "cpu_median_ms": 0.4471255,
+        "cpu_p95_ms": 0.811334,
+        "gpu_median_ms": 1.510145,
+        "vertices": 825,
+        "triangles": 1536,
+        "particles": 2808,
+        "atoms": 0,
+        "gpu_bytes": 3912380
+      },
+      "PLANET": {
+        "samples": 210,
+        "cpu_median_ms": 0.245792,
+        "cpu_p95_ms": 0.357417,
+        "gpu_median_ms": 1.74585,
+        "vertices": 53460,
+        "triangles": 84480,
+        "particles": 1,
+        "atoms": 0,
+        "gpu_bytes": 5198790
+      },
+      "SURFACE": {
+        "samples": 210,
+        "cpu_median_ms": 0.25735399999999997,
+        "cpu_p95_ms": 0.403583,
+        "gpu_median_ms": 1.89331,
+        "vertices": 39992,
+        "triangles": 78818,
+        "particles": 1,
+        "atoms": 0,
+        "gpu_bytes": 3782862
+      },
+      "MOUNTAIN": {
+        "samples": 210,
+        "cpu_median_ms": 0.40693749999999995,
+        "cpu_p95_ms": 0.66525,
+        "gpu_median_ms": 2.0259799999999997,
+        "vertices": 81689,
+        "triangles": 161184,
+        "particles": 24,
+        "atoms": 0,
+        "gpu_bytes": 4015234
+      },
+      "ROCK": {
+        "samples": 210,
+        "cpu_median_ms": 0.7001255,
+        "cpu_p95_ms": 1.00313,
+        "gpu_median_ms": 1.799895,
+        "vertices": 34445,
+        "triangles": 68564,
+        "particles": 1,
+        "atoms": 0,
+        "gpu_bytes": 3678292
+      },
+      "MINERAL GRAIN": {
+        "samples": 210,
+        "cpu_median_ms": 0.25064600000000004,
+        "cpu_p95_ms": 0.37925,
+        "gpu_median_ms": 1.7316250000000002,
+        "vertices": 13153,
+        "triangles": 26130,
+        "particles": 1,
+        "atoms": 0,
+        "gpu_bytes": 2769276
+      },
+      "CRYSTAL LATTICE": {
+        "samples": 105,
+        "cpu_median_ms": 0.25375,
+        "cpu_p95_ms": 0.377,
+        "gpu_median_ms": 4.15117,
+        "vertices": 4406,
+        "triangles": 8808,
+        "particles": 0,
+        "atoms": 1395,
+        "gpu_bytes": 2166384
+      }
+    },
+    "generation": {
+      "GALAXY:0": {
+        "median_of_run_medians_ms": 6.41,
+        "max_run_p95_ms": 9.386,
+        "bytes": 269040,
+        "vertices": 0,
+        "atoms": 0
+      },
+      "GALAXY:2": {
+        "median_of_run_medians_ms": 17.82,
+        "max_run_p95_ms": 21.716,
+        "bytes": 941040,
+        "vertices": 0,
+        "atoms": 0
+      },
+      "GALAXY:4": {
+        "median_of_run_medians_ms": 30.297,
+        "max_run_p95_ms": 41.097,
+        "bytes": 1613040,
+        "vertices": 0,
+        "atoms": 0
+      },
+      "STAR SYSTEM:0": {
+        "median_of_run_medians_ms": 1.394,
+        "max_run_p95_ms": 1.824,
+        "bytes": 197184,
+        "vertices": 825,
+        "atoms": 0
+      },
+      "STAR SYSTEM:2": {
+        "median_of_run_medians_ms": 1.175,
+        "max_run_p95_ms": 1.876,
+        "bytes": 197184,
+        "vertices": 825,
+        "atoms": 0
+      },
+      "STAR SYSTEM:4": {
+        "median_of_run_medians_ms": 1.175,
+        "max_run_p95_ms": 1.546,
+        "bytes": 197184,
+        "vertices": 825,
+        "atoms": 0
+      },
+      "PLANET:0": {
+        "median_of_run_medians_ms": 0.577,
+        "max_run_p95_ms": 0.812,
+        "bytes": 12384,
+        "vertices": 486,
+        "atoms": 0
+      },
+      "PLANET:2": {
+        "median_of_run_medians_ms": 5.456,
+        "max_run_p95_ms": 11.749,
+        "bytes": 123840,
+        "vertices": 4860,
+        "atoms": 0
+      },
+      "PLANET:4": {
+        "median_of_run_medians_ms": 54.124,
+        "max_run_p95_ms": 138.319,
+        "bytes": 1269360,
+        "vertices": 49815,
+        "atoms": 0
+      },
+      "SURFACE:0": {
+        "median_of_run_medians_ms": 0.1,
+        "max_run_p95_ms": 0.123,
+        "bytes": 2064,
+        "vertices": 81,
+        "atoms": 0
+      },
+      "SURFACE:2": {
+        "median_of_run_medians_ms": 0.948,
+        "max_run_p95_ms": 1.073,
+        "bytes": 29712,
+        "vertices": 1089,
+        "atoms": 0
+      },
+      "SURFACE:4": {
+        "median_of_run_medians_ms": 29.267,
+        "max_run_p95_ms": 31.366,
+        "bytes": 1038352,
+        "vertices": 37249,
+        "atoms": 0
+      },
+      "MOUNTAIN:0": {
+        "median_of_run_medians_ms": 0.097,
+        "max_run_p95_ms": 0.099,
+        "bytes": 2064,
+        "vertices": 81,
+        "atoms": 0
+      },
+      "MOUNTAIN:2": {
+        "median_of_run_medians_ms": 0.946,
+        "max_run_p95_ms": 0.967,
+        "bytes": 29712,
+        "vertices": 1089,
+        "atoms": 0
+      },
+      "MOUNTAIN:4": {
+        "median_of_run_medians_ms": 29.169,
+        "max_run_p95_ms": 29.338,
+        "bytes": 1038352,
+        "vertices": 37249,
+        "atoms": 0
+      },
+      "ROCK:0": {
+        "median_of_run_medians_ms": 0.462,
+        "max_run_p95_ms": 3.283,
+        "bytes": 9216,
+        "vertices": 330,
+        "atoms": 0
+      },
+      "ROCK:2": {
+        "median_of_run_medians_ms": 9.99,
+        "max_run_p95_ms": 10.119,
+        "bytes": 165384,
+        "vertices": 5910,
+        "atoms": 0
+      },
+      "ROCK:4": {
+        "median_of_run_medians_ms": 61.825,
+        "max_run_p95_ms": 62.176,
+        "bytes": 704360,
+        "vertices": 25154,
+        "atoms": 0
+      },
+      "MINERAL GRAIN:0": {
+        "median_of_run_medians_ms": 0.211,
+        "max_run_p95_ms": 0.327,
+        "bytes": 5912,
+        "vertices": 212,
+        "atoms": 0
+      },
+      "MINERAL GRAIN:2": {
+        "median_of_run_medians_ms": 3.971,
+        "max_run_p95_ms": 4.007,
+        "bytes": 74008,
+        "vertices": 2644,
+        "atoms": 0
+      },
+      "MINERAL GRAIN:4": {
+        "median_of_run_medians_ms": 18.23,
+        "max_run_p95_ms": 18.283,
+        "bytes": 289552,
+        "vertices": 10342,
+        "atoms": 0
+      },
+      "CRYSTAL LATTICE:0": {
+        "median_of_run_medians_ms": 1.8,
+        "max_run_p95_ms": 1.842,
+        "bytes": 93196,
+        "vertices": 0,
+        "atoms": 1026
+      },
+      "CRYSTAL LATTICE:2": {
+        "median_of_run_medians_ms": 2.597,
+        "max_run_p95_ms": 2.641,
+        "bytes": 129168,
+        "vertices": 0,
+        "atoms": 1395
+      },
+      "CRYSTAL LATTICE:4": {
+        "median_of_run_medians_ms": 2.586,
+        "max_run_p95_ms": 2.639,
+        "bytes": 129168,
+        "vertices": 0,
+        "atoms": 1395
+      }
+    }
+  }
+}

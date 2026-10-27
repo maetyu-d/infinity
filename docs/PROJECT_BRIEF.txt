@@ -1,0 +1,562 @@
+
+PROJECT: INFINITE — A Multiscale Procedural Universe
+
+ROLE
+Act as a senior C++ graphics programmer, procedural generation researcher and simulation architect.
+
+Build a standalone, real-time, explorable procedural universe in C++20.
+
+Do not simply describe an architecture or provide pseudocode. Implement, compile, test and progressively improve the application.
+
+If the repository is empty, initialise a complete CMake project. Otherwise, inspect and preserve the existing project.
+
+CORE OBJECTIVE
+Create an effectively infinite 3D universe containing procedurally generated structures at every scale, from cosmic filaments, galaxies and star systems down through planets, terrain, individual rocks, minerals, crystals and atomic lattices.
+
+The universe should be deterministic, persistent, spatially coherent and explorable.
+
+A user must be able to zoom from a galaxy to a star, planet, mountain, rock, crystal and atomic lattice, then reverse the journey and find exactly the same structures.
+
+Avoid arbitrary loading screens or unrelated scenes masquerading as continuous exploration.
+
+1. TECHNICAL STACK
+
+Use:
+- C++20
+- CMake
+- SDL3 for windowing and input
+- bgfx for cross-platform rendering
+- GLM for mathematics
+- FastNoise2 for procedural noise
+- oneTBB for asynchronous procedural generation where useful
+- Counter-based deterministic random generation
+- SQLite for persistent modifications
+- Zstandard for compressed cached data where necessary
+
+Target macOS, Windows and Linux.
+
+Prefer a self-contained build using pinned dependencies and documented setup procedures.
+
+Do not introduce a heavyweight game engine.
+
+Use clean separation between procedural generation, physical models, rendering, navigation, caching and persistence.
+
+2. FUNDAMENTAL GENERATION ARCHITECTURE
+
+Implement a hierarchical, deterministic world generator.
+
+Every generated structure must have:
+- A stable hierarchical address
+- A deterministic seed
+- A parent structure
+- A physical or conceptual scale
+- A spatial reference frame
+- Relevant material and environmental properties
+- A reproducible generation procedure
+
+Generate child seeds using a deterministic hash of the parent seed, object type and child identifier.
+
+Do not use a single global random number generator whose state depends on generation order.
+
+All generation must be reproducible independently of exploration order, thread scheduling or cache state.
+
+Use hierarchical integer-based coordinates and local floating-point reference frames.
+
+Do not represent the entire universe using a single global floating-point coordinate.
+
+Support spatial scales from approximately 10^26 metres to 10^-10 metres.
+
+Use logarithmic scaling and hierarchical spatial transformations where appropriate.
+
+The world should be effectively unbounded through recursive addressing. Do not claim mathematically infinite precision or fully simulate an infinite number of objects.
+
+3. MACRO GENERATION
+
+Implement the following systems.
+
+COSMIC WEB
+- Multiscale deterministic density fields
+- Voronoi-inspired filaments
+- Galaxy clusters and superclusters
+- Large voids
+- Spatially correlated galaxy distributions
+
+GALAXIES
+- Spiral galaxies
+- Elliptical galaxies
+- Irregular galaxies
+- Bulges, discs, arms and haloes
+- Variable stellar density
+- Gas and dust distributions
+- Approximate stellar populations and chemical enrichment
+
+STAR SYSTEMS
+- Deterministic star generation
+- Stellar masses, radii, temperatures and luminosities
+- Multiple-star systems
+- Planetary orbits
+- Asteroid belts
+- Comets and small bodies
+- Keplerian motion for stable approximate orbits
+
+Use analytic density representations and sampled objects.
+
+Never instantiate every star in a galaxy.
+
+Generate only objects relevant to the current view or requested spatial query.
+
+4. MIDI-SCALE GENERATION
+
+PLANETS AND MOONS
+Implement:
+- Spherical planetary surfaces
+- Cube-sphere quadtrees
+- Adaptive terrain subdivision
+- Large-scale elevation fields
+- Procedural plate boundaries
+- Mountains, valleys, craters and basins
+- Atmospheric properties
+- Ice, oceans and other appropriate surface materials
+- Geological variation
+
+Use combinations of:
+- Voronoi tectonics
+- Domain-warped multifractal noise
+- Crater fields
+- Procedural erosion
+- Spatially varying material distributions
+
+Terrain generation must be deterministic, continuous across region boundaries, and dependent on planetary properties.
+
+SMALL OBJECTS
+Generate:
+- Asteroids
+- Boulders
+- Rock formations
+- Fragments
+- Caves
+- Cavities
+- Debris
+- Surface deposits
+
+Use signed distance fields and adaptive meshing where appropriate.
+
+Support distinct material types, including metallic, silicate, carbonaceous and icy structures.
+
+5. MICRO GENERATION
+
+When approaching an individual object, reveal a different class of procedural structure.
+
+Generate:
+- Mineral grains
+- Crystalline aggregates
+- Porous structures
+- Microfractures
+- Deposits
+- Sedimentary layers
+- Small-scale inclusions
+- Material boundaries
+
+Use combinations of:
+- Voronoi grain models
+- Cellular automata
+- Reaction–diffusion
+- Diffusion-limited aggregation
+- Stochastic packing
+- Fracture propagation
+
+Do not simply magnify the same terrain-noise function.
+
+The microscopic properties must be constrained by the object's composition, temperature history, pressure history and formation process.
+
+6. NANO GENERATION
+
+Implement a simplified material-aware atomic and molecular representation.
+
+Support:
+- Crystal lattice structures
+- Different unit-cell geometries
+- Element-specific atomic sites
+- Lattice defects
+- Grain boundaries
+- Vacancies and dislocations
+- Simple molecular structures
+- Bond graph visualisation
+
+Atomic arrangements should depend on the selected material.
+
+Use procedural lattice generation, constrained graph grammars and deterministic defect distributions.
+
+Render atomic structures using efficient instancing or procedural representations.
+
+Do not claim these structures are accurate molecular dynamics simulations unless a suitable physical model is actually implemented.
+
+The initial system may use a limited set of well-defined, physically motivated materials.
+
+7. CROSS-SCALE CONSISTENCY
+
+This is one of the highest priorities.
+
+The universe must not be a collection of unrelated procedural scenes.
+
+Properties must propagate through the hierarchy.
+
+Examples:
+
+Galaxy composition influences stellar populations.
+
+Stellar properties influence planetary environments.
+
+Planetary chemistry influences geological materials.
+
+Geological history influences mineral structures.
+
+Mineral identity determines crystalline arrangements.
+
+A generated object must retain its identity when viewed at different scales.
+
+Implement a shared material and environmental descriptor system.
+
+Procedural detail should refine existing information rather than contradict it.
+
+8. PROCEDURAL HISTORY
+
+Give major structures deterministic formation histories.
+
+Possible events include:
+- Accretion
+- Collision
+- Heating
+- Cooling
+- Erosion
+- Deposition
+- Fragmentation
+- Crystallisation
+- Chemical alteration
+
+Do not perform expensive full-history simulations across the entire universe.
+
+Instead, generate event histories and derive present-day properties from these events.
+
+Use deterministic event seeds and cached checkpoints.
+
+Allow geological and microscopic structures to reflect their formation histories.
+
+9. RENDERING AND LEVEL OF DETAIL
+
+Implement a scale-aware rendering pipeline.
+
+Use:
+- Sparse octrees for volumetric regions where useful
+- Quadtrees for planetary surfaces
+- GPU instancing for repeated geometry
+- Point and density rendering for distant astronomical objects
+- Procedural surface meshes for nearby geometry
+- SDF-based rendering or meshing for irregular solids
+- Instance-based lattice rendering at atomic scales
+
+Only generate geometric detail that is relevant to the current view.
+
+Base LOD on projected screen-space error, visual importance and generation cost.
+
+Implement:
+- View-frustum culling
+- Asynchronous region generation
+- Cache eviction
+- Cancellation of obsolete generation tasks
+- Graceful LOD transitions
+- Stable local coordinate frames
+
+Avoid large memory spikes when changing scale.
+
+Render distant structures as aggregate representations rather than individual objects.
+
+10. CAMERA AND NAVIGATION
+
+Create a free-flight 3D camera with logarithmic scale navigation.
+
+Controls:
+- WASD: movement
+- Mouse: camera orientation
+- Mouse wheel: logarithmic zoom
+- Shift: faster movement
+- Click: select object
+- F: focus selected object
+- Backspace: return to parent scale
+- Tab: toggle minimal information overlay
+- R: reset camera
+
+Navigation must adapt to scale.
+
+Movement near a galaxy should not use the same speed as movement near an individual atom.
+
+Implement smooth focus transitions that preserve object identity.
+
+Make it possible to travel continuously through a hierarchy:
+
+Galaxy
+→ Star system
+→ Planet
+→ Surface
+→ Mountain
+→ Rock
+→ Mineral grain
+→ Crystal lattice
+
+Do not use ordinary double-precision world coordinates for all of these scales.
+
+11. VISUAL DIRECTION
+
+Use a minimal, austere, precise scientific visual style.
+
+Prioritise:
+- Strong geometric clarity
+- Large uninterrupted views
+- Vivid but controlled colour
+- Dramatic lighting
+- Clear distinction between materials
+- Minimal interface elements
+- Readable spatial depth
+
+Avoid excessive UI panels, decorative borders and generic sci-fi interface styling.
+
+A subtle overlay may show:
+- Current object
+- Hierarchical location
+- Current physical scale
+- Distance or magnification
+- Material composition
+- Frame rate
+- Generation statistics
+
+The universe itself should dominate the display.
+
+12. PERSISTENCE
+
+All unmodified structures should be reproducible from their seeds.
+
+Store only:
+- User modifications
+- Persistent simulation changes
+- Discoveries or markers where needed
+- Explicitly saved state
+
+Use a sparse modification layer rather than saving generated universe geometry.
+
+Revisiting an object must reproduce the same structure.
+
+13. PERFORMANCE
+
+Target interactive desktop performance.
+
+Aim for 60 FPS at 1920x1080 on a capable desktop GPU, while making performance measurable rather than assuming the target is met.
+
+Procedural generation must not routinely block the rendering thread.
+
+Prioritise:
+- Bounded memory use
+- Deterministic generation
+- Minimal allocation during rendering
+- Background generation
+- Cache reuse
+- Efficient geometry representations
+- GPU-friendly data structures
+
+Use profiling and instrumentation.
+
+14. ARCHITECTURE
+
+Organise the project into clear systems:
+
+Core
+  HierarchicalAddress
+  DeterministicRandom
+  CoordinateSystem
+  Math
+  TaskScheduler
+
+Universe
+  UniverseGenerator
+  CosmicWebGenerator
+  GalaxyGenerator
+  StarSystemGenerator
+
+Planet
+  PlanetGenerator
+  TerrainGenerator
+  GeologyGenerator
+
+Matter
+  MaterialLibrary
+  MicrostructureGenerator
+  CrystalGenerator
+
+History
+  FormationHistory
+  EventGenerator
+
+Rendering
+  Renderer
+  Camera
+  LODManager
+  GeometryCache
+
+World
+  SpatialQuery
+  RegionCache
+  Persistence
+
+Application
+  Input
+  Navigation
+  UI
+  MainLoop
+
+Treat this as a suggested separation of responsibilities, not a demand for unnecessary files or abstract classes.
+
+Keep public interfaces small and coherent.
+
+15. DEVELOPMENT STRATEGY
+
+Build the engine in phases, with a working application at the end of each phase.
+
+PHASE 1 — FOUNDATION
+- CMake project
+- SDL3 window
+- bgfx renderer
+- Fly camera
+- Logarithmic zoom
+- Hierarchical coordinates
+- Deterministic generation
+- Debug overlay
+- Basic tests
+
+PHASE 2 — COSMIC STRUCTURE
+- Procedural spatial density
+- Galaxy distribution
+- Galaxy visualisation
+- Star systems
+- Adaptive astronomical LOD
+
+PHASE 3 — PLANETARY STRUCTURE
+- Selectable star systems
+- Planets and moons
+- Planetary terrain
+- Surface navigation
+- Geologically constrained generation
+
+PHASE 4 — OBJECT STRUCTURE
+- Procedural rocks
+- SDF geometry
+- Material distributions
+- Fractures and cavities
+- Adaptive object detail
+
+PHASE 5 — MICRO AND NANO
+- Mineral grains
+- Crystalline structures
+- Lattice generation
+- Material-aware defects
+- Continuous zoom through these representations
+
+PHASE 6 — HISTORY AND PERSISTENCE
+- Formation histories
+- Cross-scale inheritance
+- Sparse modification persistence
+- Performance optimisation
+- Automated regression tests
+
+Do not leave the application unbuildable between phases.
+
+16. AUTOMATED TESTING
+
+Write tests for:
+
+DETERMINISM
+The same seed and hierarchical address always produce the same result.
+
+GENERATION ORDER
+Visiting regions in different orders produces identical structures.
+
+BOUNDARIES
+Neighbouring generated regions have continuous shared boundaries where continuity is required.
+
+COORDINATES
+Extreme-scale navigation avoids unacceptable precision loss.
+
+IDENTITY
+An object remains unchanged when approached, left and revisited.
+
+LOD
+Changing detail level preserves large-scale structure.
+
+CACHE
+Evicting and regenerating unmodified regions produces equivalent results.
+
+PERSISTENCE
+Saved modifications survive application restarts.
+
+PERFORMANCE
+Measure generation times, frame times and memory consumption.
+
+17. FIRST DELIVERABLE
+
+Begin by implementing an end-to-end vertical slice.
+
+It must be a real executable with an interactive 3D view.
+
+Provide a procedural galaxy containing selectable star systems.
+
+Allow the user to focus on a star system, approach a planet, examine its surface, select a procedural rock and continue into a simplified mineral and atomic-lattice representation.
+
+The first version does not need all advanced algorithms.
+
+However, it must establish the real hierarchical addressing, deterministic generation, coordinate transformations, scale navigation and LOD interfaces that later phases will use.
+
+Use simple but genuine procedural implementations rather than hardcoded objects or disconnected visual demonstrations.
+
+Once this vertical slice is functional, deepen each scale using the algorithms specified above.
+
+18. WORKING REQUIREMENTS
+
+Inspect the repository and available toolchain first.
+
+Create a practical implementation plan and begin coding immediately.
+
+Do not stop after delivering a plan.
+
+Build and run automated tests after substantial changes.
+
+Correct compiler errors and test failures.
+
+Do not silently replace difficult features with placeholders.
+
+If a feature cannot be completed, record precisely what is implemented, what remains incomplete and the next concrete task.
+
+Maintain a README containing:
+- Build instructions
+- Controls
+- Architecture
+- Generation algorithms
+- Current capabilities
+- Known limitations
+
+Document any third-party dependencies and licences.
+
+At the end of each implementation phase, summarise:
+- What actually works
+- What has been tested
+- What remains incomplete
+- What should be implemented next
+
+PRIORITY ORDER
+
+1. Correct hierarchical spatial addressing
+2. Deterministic reproducibility
+3. A working, navigable 3D universe
+4. Cross-scale consistency
+5. Adaptive detail and bounded resource use
+6. Increasing procedural complexity
+7. Sophisticated graphics and visual effects
+
+Start implementing Phase 1 and the smallest working end-to-end vertical slice now.

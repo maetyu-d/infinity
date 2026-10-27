@@ -1,0 +1,21 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 1: universe_regressions
+1/8 Test #1: universe_regressions .............   Passed    0.25 sec
+    Start 2: persistence_process_write
+2/8 Test #2: persistence_process_write ........   Passed    0.01 sec
+    Start 3: persistence_process_read
+3/8 Test #3: persistence_process_read .........   Passed    0.01 sec
+    Start 4: cross_scale_round_trip
+4/8 Test #4: cross_scale_round_trip ...........   Passed   13.07 sec
+    Start 5: continuity_restart_write
+5/8 Test #5: continuity_restart_write .........   Passed    0.94 sec
+    Start 6: continuity_restart_read
+6/8 Test #6: continuity_restart_read ..........   Passed    0.91 sec
+    Start 7: native_cross_scale_round_trip
+7/8 Test #7: native_cross_scale_round_trip ....   Passed   32.07 sec
+    Start 8: native_atomic_visibility
+8/8 Test #8: native_atomic_visibility .........   Passed    2.15 sec
+
+100% tests passed, 0 tests failed out of 8
+
+Total Test time (real) =  49.41 sec

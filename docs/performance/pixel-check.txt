@@ -1,0 +1,2 @@
+Atomic pixels: oxygen=0, iron=0, carbon=137471, cyan=157070
+PASS: 15 native captures, 1920x1080, matching return addresses and visible atoms
