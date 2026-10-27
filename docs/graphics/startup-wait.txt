@@ -1,0 +1,13 @@
+Packaged app launch diagnostic, 2026-10-27. Native fixtures and code/data section verification passed. Existing save location retained. Main thread stack while the macOS launch is waiting:
+
+Call graph:
+    858 Thread_6044983   DispatchQueue_1: com.apple.main-thread  (serial)
+    + 858 start  (in dyld) + 6992  [0x18268fda4]
+    +   858 main  (in Infinite) + 6192  [0x104656e98]
+    +     858 infinite::Persistence::Persistence(std::basic_string<char> const&, unsigned long long)  (in Infinite) + 84  [0x1046a30ac]
+    +       858 openDatabase  (in libsqlite3.dylib) + 1972  [0x18a93f150]
+    +         858 sqlite3BtreeOpen  (in libsqlite3.dylib) + 2088  [0x18a941f68]
+    +           858 unixOpen  (in libsqlite3.dylib) + 2408  [0x18a9437e8]
+    +             858 robust_open2  (in libsqlite3.dylib) + 420  [0x18a9f1fa0]
+    +               858 guarded_open_np  (in libsystem_kernel.dylib) + 36  [0x182a0b580]
+    +                 858 __guarded_open_np  (in libsystem_kernel.dylib) + 8  [0x182a0b594]

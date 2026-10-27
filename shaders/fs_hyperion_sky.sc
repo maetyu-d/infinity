@@ -24,8 +24,8 @@ void main(){
  // abundance and ink gaps. Generated star and gas positions remain live.
  vec3 tapestry=ecstatic(d,phase,t);
  float folds=smoothstep(.08,.52,max(tapestry.r,max(tapestry.g,tapestry.b)));
- c=c*.58+tapestry*(.35+cloud*1.35)*folds+silk(d.zxy,phase+.31,t)*.20;
- c+=pigment(d.y*.8+d.x*.3+phase)*thread((d.y+sin(d.x*4.+d.z)*.19)*48.,.025)*.065;
+ c=c*.58+tapestry*(.11+cloud*.85)*folds+silk(d.zxy,phase+.31,t)*.026;
+ c+=pigment(d.y*.8+d.x*.3+phase)*thread((d.y+sin(d.x*4.+d.z)*.19)*48.,.025)*.026;
  c*=exp(-cavity*.8);
  float density=.20+.80*clamp(u_sky[0].z,0.,1.);
  c=mix(vec3(.004,.007,.016),c,u_sky[0].x*density);

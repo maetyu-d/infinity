@@ -1,0 +1,97 @@
+{
+  "views": 17,
+  "exact_matches": 17,
+  "crop": [
+    0,
+    240,
+    1920,
+    900
+  ],
+  "results": [
+    {
+      "view": "0-COSMIC WEB-ORIGINAL.ppm",
+      "identical": true,
+      "mean_channel_error_255": 0.0
+    },
+    {
+      "view": "1-GALAXY-ORIGINAL.ppm",
+      "identical": true,
+      "mean_channel_error_255": 0.0
+    },
+    {
+      "view": "10-ROCK-ORIGINAL.ppm",
+      "identical": true,
+      "mean_channel_error_255": 0.0
+    },
+    {
+      "view": "11-MOUNTAIN-ORIGINAL.ppm",
+      "identical": true,
+      "mean_channel_error_255": 0.0
+    },
+    {
+      "view": "12-SURFACE-ORIGINAL.ppm",
+      "identical": true,
+      "mean_channel_error_255": 0.0
+    },
+    {
+      "view": "13-PLANET-ORIGINAL.ppm",
+      "identical": true,
+      "mean_channel_error_255": 0.0
+    },
+    {
+      "view": "14-STAR SYSTEM-ORIGINAL.ppm",
+      "identical": true,
+      "mean_channel_error_255": 0.0
+    },
+    {
+      "view": "15-GALAXY-ORIGINAL.ppm",
+      "identical": true,
+      "mean_channel_error_255": 0.0
+    },
+    {
+      "view": "16-COSMIC WEB-ORIGINAL.ppm",
+      "identical": true,
+      "mean_channel_error_255": 0.0
+    },
+    {
+      "view": "2-STAR SYSTEM-ORIGINAL.ppm",
+      "identical": true,
+      "mean_channel_error_255": 0.0
+    },
+    {
+      "view": "3-PLANET-ORIGINAL.ppm",
+      "identical": true,
+      "mean_channel_error_255": 0.0
+    },
+    {
+      "view": "4-SURFACE-ORIGINAL.ppm",
+      "identical": true,
+      "mean_channel_error_255": 0.0
+    },
+    {
+      "view": "5-MOUNTAIN-ORIGINAL.ppm",
+      "identical": true,
+      "mean_channel_error_255": 0.0
+    },
+    {
+      "view": "6-ROCK-ORIGINAL.ppm",
+      "identical": true,
+      "mean_channel_error_255": 0.0
+    },
+    {
+      "view": "7-MINERAL GRAIN-ORIGINAL.ppm",
+      "identical": true,
+      "mean_channel_error_255": 0.0
+    },
+    {
+      "view": "8-CRYSTAL LATTICE-ORIGINAL.ppm",
+      "identical": true,
+      "mean_channel_error_255": 0.0
+    },
+    {
+      "view": "9-MINERAL GRAIN-ORIGINAL.ppm",
+      "identical": true,
+      "mean_channel_error_255": 0.0
+    }
+  ]
+}

@@ -4,6 +4,7 @@ vec3 v_pattern : TEXCOORD1;
 vec3 v_sphere : TEXCOORD2;
 vec2 v_texcoord0 : TEXCOORD3;
 vec3 a_position : POSITION;
+vec2 a_normal : NORMAL;
 vec4 a_color0 : COLOR0;
 vec2 a_texcoord0 : TEXCOORD0;
 vec4 i_data0 : TEXCOORD7;

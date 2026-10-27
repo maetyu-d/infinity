@@ -1,0 +1,69 @@
+{
+  "checkpoint": "80ca1b7",
+  "files": {
+    "include/infinite/Core.hpp": {
+      "unchanged": true,
+      "sha256": "ad7a4a59a0b0dbd00d44054fddec3256c159105219096e18e67a8e1e6a16bf6f"
+    },
+    "include/infinite/Universe.hpp": {
+      "unchanged": true,
+      "sha256": "e0b5a04623f2fd84713ea7c889fa6c32fdc741508530a77a418fdb2bda57e326"
+    },
+    "include/infinite/Piloting.hpp": {
+      "unchanged": true,
+      "sha256": "c16aa7bb3309124893f5a3fab829f796ca4e28fb5cb6c63bcb96643180ed44ba"
+    },
+    "src/Core.cpp": {
+      "unchanged": true,
+      "sha256": "8b6e0854d8e8dfdfde2cc78494a31907cedab63d1512020d66c94f6d1d690cb9"
+    },
+    "src/Universe.cpp": {
+      "unchanged": true,
+      "sha256": "50a50fba72b56277ea7a5e84b5e1b9635fdb5fbfe2498d5d23ed4264b882d11e"
+    },
+    "src/Geometry.cpp": {
+      "unchanged": true,
+      "sha256": "85cb6da64b172335618247f5bb2f26c77e3ec8cee67eb887f7ff270f7fa19987"
+    },
+    "src/Processes.cpp": {
+      "unchanged": true,
+      "sha256": "67e313061245673d88153e275c3c837bad4df278beea1ee3874677c850c0dc23"
+    },
+    "src/Crystallography.cpp": {
+      "unchanged": true,
+      "sha256": "1d135fa1218cea466673723063267fcacdb5c6c56d4240ab5ca00eb0eb042dab"
+    },
+    "src/World.cpp": {
+      "unchanged": true,
+      "sha256": "a9bb5755250f322b75ed0e1c131e68d7b535ed8964620743f5c95a8f96572077"
+    },
+    "src/Navigation.cpp": {
+      "unchanged": true,
+      "sha256": "c3ad57a8d158e5f70b251697953f8515ba59be5f0a3ef2ba2bed15b823bfa713"
+    },
+    "src/Flight.cpp": {
+      "unchanged": true,
+      "sha256": "48690d99769ebeb7803f70b3ba00b3dc2489c9a2796440aea5ba04d4f972bfca"
+    },
+    "src/Streaming.cpp": {
+      "unchanged": true,
+      "sha256": "ec84a8a7d51bff48d5d9144cc5af958042d21ae9e50b08eb0826988b54cc68b4"
+    },
+    "src/Continuity.cpp": {
+      "unchanged": true,
+      "sha256": "c09a15bdb8c237eb59dc66f88ad9efef7863e93db3e957b20d120d49e152d4a8"
+    },
+    "src/Piloting.cpp": {
+      "unchanged": true,
+      "sha256": "1ac3fcc1e4204b622327cda0bd99bfb12b39bcb42bdcb3bd07d310ed74e54169"
+    },
+    "src/Activity.cpp": {
+      "unchanged": true,
+      "sha256": "0891f374a650ac4c270894282023feb3e7b98ec1f529741d2e77b4884cd506aa"
+    },
+    "src/ActivityMeshes.cpp": {
+      "unchanged": true,
+      "sha256": "f0aa893729a22ad90845f2d1d15887ae64f20b138f3d3960b759733e1a30e4cd"
+    }
+  }
+}

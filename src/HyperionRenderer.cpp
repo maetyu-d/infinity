@@ -13,6 +13,7 @@ bgfx::ShaderHandle shader(const char* name) {
     return bgfx::createShader(bgfx::copy(NAME##_##BACKEND, sizeof(NAME##_##BACKEND)))
 #define LOAD_BACKEND(BACKEND)                                                                                \
     LOAD_SHADER(vs_hyperion, BACKEND);                                                                       \
+    LOAD_SHADER(vs_hyperion_smooth, BACKEND);                                                                \
     LOAD_SHADER(fs_hyperion, BACKEND);                                                                       \
     LOAD_SHADER(fs_hyperion_flight, BACKEND);                                                                \
     LOAD_SHADER(fs_hyperion_flight_post, BACKEND);                                                           \
@@ -95,7 +96,8 @@ void HyperionRenderer::clearTargets() {
 }
 HyperionRenderer::~HyperionRenderer() {
     clearTargets();
-    for (auto p : {geometry_, glow_, blur_, post_, flightGeometry_, flightPost_, sky_})
+    for (auto p : {geometry_, glow_, blur_, post_, flightGeometry_, flightPost_, sky_, smoothGeometry_[0],
+                   smoothGeometry_[1]})
         if (bgfx::isValid(p))
             bgfx::destroy(p);
     for (auto u : {sceneSampler_, bloomSampler_, style_, pattern_, postParams_, cavity_, depthSampler_,
@@ -103,8 +105,14 @@ HyperionRenderer::~HyperionRenderer() {
         if (bgfx::isValid(u))
             bgfx::destroy(u);
 }
-bgfx::ProgramHandle HyperionRenderer::geometryProgram() {
+bgfx::ProgramHandle HyperionRenderer::geometryProgram(bool smooth) {
     init();
+    if (smooth) {
+        auto& handle = smoothGeometry_[flight_ ? 1 : 0];
+        if (!bgfx::isValid(handle))
+            handle = program("vs_hyperion_smooth", flight_ ? "fs_hyperion_flight" : "fs_hyperion");
+        return handle;
+    }
     if (!flight_)
         return geometry_;
     if (!bgfx::isValid(flightGeometry_))

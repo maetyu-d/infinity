@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Infinite VERSION 0.15.0 LANGUAGES C CXX)
+project(Infinite VERSION 0.16.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -10,7 +10,7 @@ option(INFINITE_VIEWER "Build the SDL3/bgfx interactive application" ON)
 option(INFINITE_SANITIZE "Enable address and undefined-behaviour sanitizers" OFF)
 option(INFINITE_GPU_TESTS "Run the native tour and framebuffer checks (requires a desktop)" OFF)
 include(cmake/Dependencies.cmake)
-add_library(infinite_core src/Core.cpp src/Universe.cpp src/Processes.cpp src/Crystallography.cpp src/Geometry.cpp src/World.cpp src/Navigation.cpp src/Flight.cpp src/Streaming.cpp src/Continuity.cpp src/Presentation.cpp src/Piloting.cpp src/Cockpit.cpp src/Activity.cpp src/ActivityMeshes.cpp)
+add_library(infinite_core src/Core.cpp src/Universe.cpp src/Processes.cpp src/Crystallography.cpp src/Geometry.cpp src/World.cpp src/Navigation.cpp src/Flight.cpp src/Streaming.cpp src/Continuity.cpp src/Presentation.cpp src/SurfaceShading.cpp src/Piloting.cpp src/Cockpit.cpp src/Activity.cpp src/ActivityMeshes.cpp)
 target_include_directories(infinite_core PUBLIC include)
 target_link_libraries(infinite_core PUBLIC glm::glm FastNoise TBB::tbb SQLite::SQLite3 libzstd_static)
 target_compile_features(infinite_core PUBLIC cxx_std_20)
@@ -76,6 +76,9 @@ add_test(NAME free_flight_navigation COMMAND infinite_navigation_tests)
 set_tests_properties(free_flight_navigation PROPERTIES TIMEOUT 30)
 add_executable(infinite_presentation_tests tests/PresentationTests.cpp)
 target_link_libraries(infinite_presentation_tests PRIVATE infinite_core)
+add_executable(infinite_shading_tests tests/SurfaceShadingTests.cpp)
+target_link_libraries(infinite_shading_tests PRIVATE infinite_core)
+add_test(NAME surface_shading_preserves_mesh COMMAND infinite_shading_tests)
 add_test(NAME rendering_preserves_universe COMMAND infinite_presentation_tests)
 set_tests_properties(rendering_preserves_universe PROPERTIES TIMEOUT 90)
 add_test(NAME performance_invariants COMMAND infinite_performance_tests)
@@ -96,7 +99,8 @@ add_test(NAME continuity_restart_read COMMAND infinite_continuity_tests --read "
 set_tests_properties(continuity_restart_read PROPERTIES FIXTURES_REQUIRED continuity_restart TIMEOUT 90)
 if(INFINITE_VIEWER)
   include(cmake/EmbedShaders.cmake)
-  if(WIN32 AND (NOT EXISTS "${PROJECT_SOURCE_DIR}/shaders/bin/dxbc/fs_hyperion.bin"
+  if(WIN32 AND (NOT EXISTS "${PROJECT_SOURCE_DIR}/shaders/bin/dxbc/vs_hyperion_smooth.bin"
+      OR NOT EXISTS "${PROJECT_SOURCE_DIR}/shaders/bin/dxbc/fs_hyperion.bin"
       OR NOT EXISTS "${PROJECT_SOURCE_DIR}/shaders/bin/dxbc/fs_hyperion_flight.bin"
       OR NOT EXISTS "${PROJECT_SOURCE_DIR}/shaders/bin/dxbc/fs_hyperion_flight_post.bin"
       OR NOT EXISTS "${PROJECT_SOURCE_DIR}/shaders/bin/dxbc/fs_hyperion_sky.bin"))

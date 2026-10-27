@@ -1,0 +1,69 @@
+{
+  "version": "0.16.0",
+  "checkpoint": "80ca1b7",
+  "backend": "Metal",
+  "resolution": [
+    1440,
+    900
+  ],
+  "before": {
+    "median_frame_ms": 16.6611,
+    "p95_frame_ms": 17.5003,
+    "frames": 1791,
+    "peak_rss_bytes": 155533312,
+    "effect_target_bytes": 17856000,
+    "peak_geometry_and_activity_gpu_bytes": 1777228,
+    "stationary_hyperion_orbit": {
+      "samples": 19,
+      "median_cpu_ms": 2.75583,
+      "median_gpu_ms": 8.2525
+    }
+  },
+  "after": {
+    "median_frame_ms": 16.6695,
+    "p95_frame_ms": 17.5243,
+    "frames": 1791,
+    "peak_rss_bytes": 158613504,
+    "effect_target_bytes": 17856000,
+    "peak_geometry_and_activity_gpu_bytes": 1993012,
+    "stationary_hyperion_orbit": {
+      "samples": 19,
+      "median_cpu_ms": 2.87183,
+      "median_gpu_ms": 9.22508
+    }
+  },
+  "notes": "Same native flight fixture, seed, resolution and fixed visual time. Orbit timing uses the first contiguous HYPERION block, excluding five frames at each end. Single-run observations; VSync limits frame comparisons. The extra shared 24x40 atom display mesh costs 39,440 bytes outside the existing geometry/activity GPU counter. No target allocation or cache limit increases.",
+  "world_recipe": 3,
+  "population_recipe": 1,
+  "unchanged_simulation_files": 16,
+  "release_suite": {
+    "passed": 28,
+    "failed": 0,
+    "seconds": 186.39
+  },
+  "mode_proof": {
+    "scales": 9,
+    "checkpoints": 17,
+    "images": 51,
+    "camera_identical": true,
+    "geometry_identical": true,
+    "generation_unchanged": true
+  },
+  "original_image_comparison": {
+    "views": 17,
+    "exact_matches": 17,
+    "crop": [
+      0,
+      240,
+      1920,
+      900
+    ]
+  },
+  "package": {
+    "version": "0.16.0",
+    "code_and_data_sections": 28,
+    "all_sections_match_tested_binary": true,
+    "signature_verified": true,
+    "live_launch": "Running process; startup waiting in SQLite guarded_open_np for existing Documents save; macOS response pending."
+  }
+}

@@ -2,6 +2,7 @@
 #include "HyperionRenderer.hpp"
 #include "infinite/Cockpit.hpp"
 #include "infinite/Streaming.hpp"
+#include "infinite/SurfaceShading.hpp"
 #include <InstanceShaders.hpp>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_metal.h>
@@ -19,6 +20,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <map>
 #include <numbers>
+#include <oneapi/tbb/task_group.h>
 #include <stdexcept>
 #include <unordered_set>
 #include <vs_debugdraw_lines.bin.h>
@@ -78,8 +80,14 @@ static void destroy(GPUMesh& m) {
         bgfx::destroy(m.indices);
     m = {};
 }
+struct NormalWork {
+    std::atomic<bool> cancel{false}, ready{false};
+    std::vector<ShadingNormal> result;
+};
 struct GPUGeometry {
     GPUMesh solid, lines;
+    bgfx::VertexBufferHandle normals = BGFX_INVALID_HANDLE;
+    std::shared_ptr<NormalWork> normalWork;
     bgfx::VertexBufferHandle instances = BGFX_INVALID_HANDLE;
     std::weak_ptr<const Geometry> source;
     uint64_t lastUsed = 0;
@@ -99,10 +107,12 @@ struct Renderer::Impl {
     const Universe& universe;
     SDL_Window* window;
     Callbacks callbacks;
-    bgfx::VertexLayout layout, instanceLayout;
+    bgfx::VertexLayout layout, instanceLayout, normalLayout;
+    oneapi::tbb::task_group normalTasks;
+    std::atomic<unsigned> normalJobs{0};
     bgfx::ProgramHandle colorProgram = BGFX_INVALID_HANDLE, instanceProgram = BGFX_INVALID_HANDLE;
     bgfx::SwapChain swapChain;
-    std::array<GPUMesh, 3> atomSpheres;
+    std::array<GPUMesh, 4> atomSpheres;
     GPUMesh billboardMesh, hyperionBillboardMesh;
     GPUMesh cabin;
     double cabinAspect = 0;
@@ -155,10 +165,16 @@ struct Renderer::Impl {
         return instruments ? 2 : 0; // Flight sky precedes terrain (1) and opaque local geometry (2).
     }
     ~Impl() {
+        for (auto& [key, g] : gpu)
+            if (g.normalWork)
+                g.normalWork->cancel.store(true);
+        normalTasks.wait();
         if (initialized) {
             for (auto& [key, g] : gpu) {
                 destroy(g.solid);
                 destroy(g.lines);
+                if (bgfx::isValid(g.normals))
+                    bgfx::destroy(g.normals);
                 if (bgfx::isValid(g.instances))
                     bgfx::destroy(g.instances);
             }
@@ -259,6 +275,10 @@ struct Renderer::Impl {
             gpuBytes -= it->second.bytes;
             destroy(it->second.solid);
             destroy(it->second.lines);
+            if (it->second.normalWork)
+                it->second.normalWork->cancel.store(true);
+            if (bgfx::isValid(it->second.normals))
+                bgfx::destroy(it->second.normals);
             if (bgfx::isValid(it->second.instances))
                 bgfx::destroy(it->second.instances);
             gpu.erase(it);
@@ -288,7 +308,41 @@ struct Renderer::Impl {
         gpu.emplace(geometry.get(), std::move(item));
         return true;
     }
-    void drawMesh(const GPUMesh& m, const glm::mat4& model, float opacity = 1, bool lines = false) {
+    void prepareNormals(GPUGeometry& item, const std::shared_ptr<const Geometry>& geometry) {
+        // One bounded CPU task at a time. Keep the original flat-shaded mesh
+        // visible until its read-only lighting stream is ready.
+        const auto count = geometry->solid.vertices.size();
+        if (mode == RenderMode::Original || bgfx::isValid(item.normals) || !count || count > 65536 ||
+            geometry->address.kind() >= Kind::Grain)
+            return;
+        if (item.normalWork && item.normalWork->ready.load(std::memory_order_acquire)) {
+            auto& data = item.normalWork->result;
+            const size_t bytes = data.size() * sizeof(ShadingNormal);
+            if (bytes && staticUploadBytes + bytes <= 2 * 1024 * 1024) {
+                item.normals =
+                    bgfx::createVertexBuffer(bgfx::copy(data.data(), uint32_t(bytes)), normalLayout);
+                item.bytes += bytes;
+                gpuBytes += bytes;
+                stats.uploadBytes += bytes;
+                staticUploadBytes += bytes;
+                item.normalWork.reset();
+            }
+        } else if (!item.normalWork && normalJobs.load() == 0) {
+            auto work = item.normalWork = std::make_shared<NormalWork>();
+            ++normalJobs;
+            normalTasks.run([this, geometry, work] {
+                try {
+                    work->result = surfaceNormals(geometry->solid, &work->cancel);
+                } catch (...) {
+                    work->cancel.store(true);
+                }
+                work->ready.store(true, std::memory_order_release);
+                --normalJobs;
+            });
+        }
+    }
+    void drawMesh(const GPUMesh& m, const glm::mat4& model, float opacity = 1, bool lines = false,
+                  bgfx::VertexBufferHandle normals = BGFX_INVALID_HANDLE) {
         if (!bgfx::isValid(m.vertices) || !bgfx::isValid(m.indices) ||
             bgfx::getAvailInstanceDataBuffer(1, 80) < 1)
             return;
@@ -298,6 +352,9 @@ struct Renderer::Impl {
         std::memcpy(idb.data, &item, sizeof(item));
         bgfx::setVertexBuffer(0, m.vertices);
         bgfx::setIndexBuffer(m.indices);
+        const bool smooth = mode != RenderMode::Original && bgfx::isValid(normals);
+        if (smooth)
+            bgfx::setVertexBuffer(1, normals);
         bgfx::setInstanceDataBuffer(&idb);
         uint64_t state =
             BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_MSAA;
@@ -309,7 +366,7 @@ struct Renderer::Impl {
             state |= BGFX_STATE_BLEND_ALPHA;
         bgfx::setState(state);
         bgfx::submit(worldView(),
-                     mode == RenderMode::Original ? instanceProgram : hyperion->geometryProgram());
+                     mode == RenderMode::Original ? instanceProgram : hyperion->geometryProgram(smooth));
     }
     void drawLines(const GPUMesh& m, const glm::mat4& model) {
         if (!bgfx::isValid(m.vertices))
@@ -425,14 +482,15 @@ struct Renderer::Impl {
             return;
         auto& item = gpu.at(geometry.get());
         item.lastUsed = frame;
+        prepareNormals(item, geometry);
         stats.vertices += geometry->solid.vertices.size();
         stats.triangles += geometry->solid.indexCount() / 3;
         auto model = glm::translate(glm::mat4(1), glm::vec3(pose.position)) *
                      glm::mat4_cast(glm::quat(pose.orientation)) *
                      glm::scale(glm::mat4(1), glm::vec3(static_cast<float>(r)));
         if (mode != RenderMode::Original && bgfx::isValid(item.solid.vertices))
-            bindPresentation(*geometry, node, nav, model, pose, r, 0);
-        drawMesh(item.solid, model, opacity);
+            bindPresentation(*geometry, node, nav, model, pose, r, bgfx::isValid(item.normals) ? .25f : 0.f);
+        drawMesh(item.solid, model, opacity, false, item.normals);
         if (mode != RenderMode::Original && bgfx::isValid(item.lines.vertices))
             bindPresentation(*geometry, node, nav, model, pose, r, 2);
         drawMesh(item.lines, model, opacity, true);
@@ -496,11 +554,13 @@ struct Renderer::Impl {
             double diameter =
                 LOD::pixels(r * geometry->lattice.atoms.front().radius,
                             std::max(.05, glm::length(cameraSpace(pose.position)) - r), height, 1);
-            unsigned level = diameter > 18 ? 2 : diameter > 6 ? 1 : 0;
-            unsigned rings = level == 2   ? 12
+            unsigned level = atomPresentationLevel(diameter, mode == RenderMode::Original);
+            unsigned rings = level == 3   ? 24
+                             : level == 2 ? 12
                              : level == 1 ? 8
                                           : 4,
-                     sectors = level == 2   ? 20
+                     sectors = level == 3   ? 40
+                               : level == 2 ? 20
                                : level == 1 ? 12
                                             : 6;
             size_t count = geometry->lattice.atoms.size();
@@ -971,6 +1031,10 @@ struct Renderer::Impl {
             gpuBytes -= victim->second.bytes;
             destroy(victim->second.solid);
             destroy(victim->second.lines);
+            if (victim->second.normalWork)
+                victim->second.normalWork->cancel.store(true);
+            if (bgfx::isValid(victim->second.normals))
+                bgfx::destroy(victim->second.normals);
             if (bgfx::isValid(victim->second.instances))
                 bgfx::destroy(victim->second.instances);
             gpu.erase(victim);
@@ -1015,6 +1079,7 @@ Renderer::Renderer(SDL_Window* window, const Universe& universe)
         .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
         .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
         .end();
+    p.normalLayout.begin().add(bgfx::Attrib::Normal, 2, bgfx::AttribType::Int16, true).end();
     p.colorProgram = bgfx::createProgram(
         bgfx::createEmbeddedShader(embedded, bgfx::getRendererType(), "vs_debugdraw_lines"),
         bgfx::createEmbeddedShader(embedded, bgfx::getRendererType(), "fs_debugdraw_lines"), true);
@@ -1022,9 +1087,17 @@ Renderer::Renderer(SDL_Window* window, const Universe& universe)
         bgfx::createProgram(p.loadShader("vs_instancing"), p.loadShader("fs_instancing"), true);
     if (!bgfx::isValid(p.colorProgram) || !bgfx::isValid(p.instanceProgram))
         throw std::runtime_error("bgfx shader program creation failed");
-    for (unsigned i = 0; i < 3; ++i) {
+    for (unsigned i = 0; i < 4; ++i) {
         Mesh sphere;
-        appendSphere(sphere, {}, 1, {1, 1, 1}, i == 2 ? 12 : i == 1 ? 8 : 4, i == 2 ? 20 : i == 1 ? 12 : 6);
+        appendSphere(sphere, {}, 1, {1, 1, 1},
+                     i == 3   ? 24
+                     : i == 2 ? 12
+                     : i == 1 ? 8
+                              : 4,
+                     i == 3   ? 40
+                     : i == 2 ? 20
+                     : i == 1 ? 12
+                              : 6);
         p.atomSpheres[i] = p.upload(sphere);
     }
     Mesh quad;

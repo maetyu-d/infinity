@@ -18,7 +18,7 @@ class HyperionRenderer {
               const glm::mat4& pattern, float primitive, double visualTime, glm::vec4 cavity = {},
               const glm::mat4& micro = glm::mat4(0), float relief = 0);
     void bindEmissions(const Node&, const glm::mat4& pattern, double visualTime);
-    bgfx::ProgramHandle geometryProgram();
+    bgfx::ProgramHandle geometryProgram(bool smooth = false);
     bgfx::ProgramHandle glowProgram() const {
         return glow_;
     }
@@ -35,6 +35,7 @@ class HyperionRenderer {
     size_t bytes_ = 0;
     bgfx::FrameBufferHandle scene_ = BGFX_INVALID_HANDLE;
     std::array<bgfx::FrameBufferHandle, 2> bloom_{{BGFX_INVALID_HANDLE, BGFX_INVALID_HANDLE}};
+    std::array<bgfx::ProgramHandle, 2> smoothGeometry_{{BGFX_INVALID_HANDLE, BGFX_INVALID_HANDLE}};
     bgfx::ProgramHandle geometry_ = BGFX_INVALID_HANDLE, glow_ = BGFX_INVALID_HANDLE;
     bgfx::ProgramHandle blur_ = BGFX_INVALID_HANDLE, post_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle sceneSampler_ = BGFX_INVALID_HANDLE, bloomSampler_ = BGFX_INVALID_HANDLE;
