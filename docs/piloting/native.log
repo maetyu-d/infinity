@@ -1,0 +1,10 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+PILOT_FIXTURE 0,0,0/1:0/2:9/3:0 temperature=247.702
+Infinite / Metal / seed 5282236693612155973
+PILOT_MODE_PROOF identical camera and planet geometry in all three cockpit modes / sky stars=0 atmosphere=1
+PILOT_STELLAR_SKY addressed stars=4448
+PILOT_TOUCHDOWN agl=0.000592118 hull=100
+PILOT_DEPARTURE agl=31.7697
+PASS: native cockpit mode identity, geological touchdown, persisted ship, thrust launch and atomic survey; atoms=1631
+FRAME median_ms=16.6621 p95_ms=17.0756 frames=1387 cache_bytes=12171644
+peak_rss_bytes=135462912

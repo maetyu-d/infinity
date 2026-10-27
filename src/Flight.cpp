@@ -169,6 +169,7 @@ void FlightController::update(glm::dvec3 axes, double dt, bool fast, bool precis
         // by the nearby sampling tile, rather than descending into empty atoms.
         clearance = std::min(clearance, std::max(std::abs(glm::length(eye) - surface), clearance * .1));
     }
+    clearanceMetres_ = std::max(1e-12, clearance * std::pow(10., nav_.logDistance));
     const double desiredLog =
         std::clamp(nav_.logDistance + std::log10(std::max(clearance, 1e-100)), -10.5, 26.8);
     const double oldLog = nav_.logDistance;

@@ -14,6 +14,8 @@ bgfx::ShaderHandle shader(const char* name) {
 #define LOAD_BACKEND(BACKEND)                                                                                \
     LOAD_SHADER(vs_hyperion, BACKEND);                                                                       \
     LOAD_SHADER(fs_hyperion, BACKEND);                                                                       \
+    LOAD_SHADER(fs_hyperion_flight, BACKEND);                                                                \
+    LOAD_SHADER(fs_hyperion_flight_post, BACKEND);                                                           \
     LOAD_SHADER(fs_hyperion_glow, BACKEND);                                                                  \
     LOAD_SHADER(vs_hyperion_screen, BACKEND);                                                                \
     LOAD_SHADER(fs_hyperion_blur, BACKEND);                                                                  \
@@ -61,9 +63,14 @@ void HyperionRenderer::init() {
     post_ = program("vs_hyperion_screen", "fs_hyperion_post");
     sceneSampler_ = bgfx::createUniform("s_scene", bgfx::UniformType::Sampler);
     bloomSampler_ = bgfx::createUniform("s_bloom", bgfx::UniformType::Sampler);
+    depthSampler_ = bgfx::createUniform("s_opaqueDepth", bgfx::UniformType::Sampler);
+    atmosphere_ = bgfx::createUniform("u_atmosphere", bgfx::UniformType::Vec4, 4);
+    atmosphereRotation_ = bgfx::createUniform("u_atmosphereRotation", bgfx::UniformType::Mat4);
     style_ = bgfx::createUniform("u_hyperion", bgfx::UniformType::Vec4, 4);
     pattern_ = bgfx::createUniform("u_pattern", bgfx::UniformType::Mat4);
     cavity_ = bgfx::createUniform("u_cavity", bgfx::UniformType::Vec4);
+    micro_ = bgfx::createUniform("u_micro", bgfx::UniformType::Mat4);
+    microParams_ = bgfx::createUniform("u_microParams", bgfx::UniformType::Vec4);
     postParams_ = bgfx::createUniform("u_post", bgfx::UniformType::Vec4, 2);
     screenLayout_.begin()
         .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
@@ -84,14 +91,25 @@ void HyperionRenderer::clearTargets() {
 }
 HyperionRenderer::~HyperionRenderer() {
     clearTargets();
-    for (auto p : {geometry_, glow_, blur_, post_})
+    for (auto p : {geometry_, glow_, blur_, post_, flightGeometry_, flightPost_})
         if (bgfx::isValid(p))
             bgfx::destroy(p);
-    for (auto u : {sceneSampler_, bloomSampler_, style_, pattern_, postParams_, cavity_})
+    for (auto u : {sceneSampler_, bloomSampler_, style_, pattern_, postParams_, cavity_, depthSampler_,
+                   atmosphere_, atmosphereRotation_, micro_, microParams_})
         if (bgfx::isValid(u))
             bgfx::destroy(u);
 }
-void HyperionRenderer::begin(RenderMode mode, int width, int height) {
+bgfx::ProgramHandle HyperionRenderer::geometryProgram() {
+    init();
+    if (!flight_)
+        return geometry_;
+    if (!bgfx::isValid(flightGeometry_))
+        flightGeometry_ = program("vs_hyperion", "fs_hyperion_flight");
+    return flightGeometry_;
+}
+void HyperionRenderer::begin(RenderMode mode, int width, int height, bool opticalDepth, bool flight) {
+    flight_ = flight;
+    atmosphereData_ = {};
     const auto previousMode = mode_;
     mode_ = mode;
     if (mode == RenderMode::Original) {
@@ -104,15 +122,17 @@ void HyperionRenderer::begin(RenderMode mode, int width, int height) {
         return;
     }
     init();
-    const bool replaceTarget = width_ != width || height_ != height;
-    if (width_ != width || height_ != height) {
+    const bool replaceTarget = width_ != width || height_ != height || readableDepth_ != opticalDepth;
+    if (replaceTarget) {
         clearTargets();
+        readableDepth_ = opticalDepth;
         width_ = width;
         height_ = height;
         auto color = bgfx::createTexture2D(width, height, false, 1, bgfx::TextureFormat::RGBA16F,
                                            BGFX_TEXTURE_RT | sampling);
-        auto depth = bgfx::createTexture2D(width, height, false, 1, bgfx::TextureFormat::D32F,
-                                           BGFX_TEXTURE_RT_WRITE_ONLY);
+        auto depth =
+            bgfx::createTexture2D(width, height, false, 1, bgfx::TextureFormat::D32F,
+                                  opticalDepth ? BGFX_TEXTURE_RT | sampling : BGFX_TEXTURE_RT_WRITE_ONLY);
         bgfx::TextureHandle attachments[] = {color, depth};
         scene_ = bgfx::createFrameBuffer(2, attachments, true);
         for (auto& target : bloom_)
@@ -129,14 +149,28 @@ void HyperionRenderer::begin(RenderMode mode, int width, int height) {
     // clear API's RGBA8 input; the HDR display transform is applied later.
     bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x010204ff, 1.f, 0);
 }
+void HyperionRenderer::atmosphere(glm::vec3 eye, glm::vec3 light, const glm::mat4& rotation, float radius,
+                                  float height, float strength, float aspect) {
+    atmosphereData_[0] = glm::vec4(eye, strength);
+    atmosphereData_[1] = glm::vec4(light, height);
+    atmosphereData_[2] = {radius, .00005f, 10000.f, 0};
+    atmosphereData_[3] = {aspect * .7002075f, .7002075f, bgfx::getCaps()->originBottomLeft ? 1.f : -1.f, 0};
+    atmosphereMatrix_ = rotation;
+}
 void HyperionRenderer::bind(const ScenePresentation& p, const glm::vec3& eye, const glm::vec3& light,
-                            const glm::mat4& pattern, float primitive, double seconds, glm::vec4 cavity) {
+                            const glm::mat4& pattern, float primitive, double seconds, glm::vec4 cavity,
+                            const glm::mat4& micro, float relief) {
     init();
     std::array<glm::vec4, 4> data = {glm::vec4(p.strength, float(seconds), p.phase, primitive), p.material,
                                      glm::vec4(eye, 1), glm::vec4(light, 0)};
     bgfx::setUniform(style_, data.data(), 4);
     bgfx::setUniform(pattern_, glm::value_ptr(pattern));
     bgfx::setUniform(cavity_, glm::value_ptr(cavity));
+    if (flight_) {
+        bgfx::setUniform(micro_, glm::value_ptr(micro));
+        const glm::vec4 microParams{relief, 0, 0, 0};
+        bgfx::setUniform(microParams_, glm::value_ptr(microParams));
+    }
 }
 void HyperionRenderer::bindEmissions(const Node& node, const glm::mat4& pattern, double seconds) {
     float phase = float(node.seed % 10000) * .0371f;
@@ -183,6 +217,15 @@ void HyperionRenderer::finish() {
     bgfx::setUniform(postParams_, params.data(), 2);
     bgfx::setTexture(0, sceneSampler_, bgfx::getTexture(scene_), sampling);
     bgfx::setTexture(1, bloomSampler_, bgfx::getTexture(bloom_[1]), sampling);
-    screen(83, post_);
+    const bool optical = readableDepth_ && atmosphereData_[0].w > 0;
+    if (optical) {
+        if (!bgfx::isValid(flightPost_))
+            flightPost_ = program("vs_hyperion_screen", "fs_hyperion_flight_post");
+        bgfx::setTexture(2, depthSampler_, bgfx::getTexture(scene_, 1),
+                         sampling | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT);
+        bgfx::setUniform(atmosphere_, atmosphereData_.data(), 4);
+        bgfx::setUniform(atmosphereRotation_, glm::value_ptr(atmosphereMatrix_));
+    }
+    screen(83, optical ? flightPost_ : post_);
 }
 } // namespace infinite

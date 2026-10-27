@@ -17,6 +17,12 @@ class FlightController {
     const std::optional<Address>& target() const {
         return target_;
     }
+    double clearanceMetres() const {
+        return clearanceMetres_;
+    }
+    void resume() {
+        holdForFlight_ = false;
+    }
 
   private:
     const Universe& universe_;
@@ -25,6 +31,7 @@ class FlightController {
     uint64_t frameChanges_ = 0;
     std::optional<Address> target_;
     bool holdForFlight_ = false;
+    double clearanceMetres_ = 1e21;
     std::shared_ptr<const Geometry> galaxySamples_;
     void changeFrame(const Address&);
 };

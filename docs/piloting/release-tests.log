@@ -1,0 +1,49 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+      Start  1: ship_dynamics_and_landing
+ 1/22 Test  #1: ship_dynamics_and_landing ........   Passed    2.38 sec
+      Start  2: unbounded_spatial_streaming
+ 2/22 Test  #2: unbounded_spatial_streaming ......   Passed    1.45 sec
+      Start  3: seamless_scale_flight
+ 3/22 Test  #3: seamless_scale_flight ............   Passed    1.77 sec
+      Start  4: free_flight_navigation
+ 4/22 Test  #4: free_flight_navigation ...........   Passed    0.33 sec
+      Start  5: rendering_preserves_universe
+ 5/22 Test  #5: rendering_preserves_universe .....   Passed    0.79 sec
+      Start  6: performance_invariants
+ 6/22 Test  #6: performance_invariants ...........   Passed    0.54 sec
+      Start  7: structural_processes
+ 7/22 Test  #7: structural_processes .............   Passed    0.73 sec
+      Start  8: universe_regressions
+ 8/22 Test  #8: universe_regressions .............   Passed    0.56 sec
+      Start  9: persistence_process_write
+ 9/22 Test  #9: persistence_process_write ........   Passed    0.01 sec
+      Start 10: persistence_process_read
+10/22 Test #10: persistence_process_read .........   Passed    0.01 sec
+      Start 11: cross_scale_round_trip
+11/22 Test #11: cross_scale_round_trip ...........   Passed    4.77 sec
+      Start 12: continuity_restart_write
+12/22 Test #12: continuity_restart_write .........   Passed    0.48 sec
+      Start 13: continuity_restart_read
+13/22 Test #13: continuity_restart_read ..........   Passed    0.45 sec
+      Start 14: native_piloting_loop
+14/22 Test #14: native_piloting_loop .............   Passed   25.00 sec
+      Start 15: native_cockpit_images
+15/22 Test #15: native_cockpit_images ............   Passed    1.72 sec
+      Start 16: native_boundary_streaming
+16/22 Test #16: native_boundary_streaming ........   Passed   11.83 sec
+      Start 17: native_boundary_pixels
+17/22 Test #17: native_boundary_pixels ...........   Passed    5.32 sec
+      Start 18: native_seamless_scale_flight
+18/22 Test #18: native_seamless_scale_flight .....   Passed   37.64 sec
+      Start 19: native_cross_scale_round_trip
+19/22 Test #19: native_cross_scale_round_trip ....   Passed   29.22 sec
+      Start 20: native_atomic_visibility
+20/22 Test #20: native_atomic_visibility .........   Passed    1.41 sec
+      Start 21: native_render_mode_round_trip
+21/22 Test #21: native_render_mode_round_trip ....   Passed   41.40 sec
+      Start 22: native_render_mode_images
+22/22 Test #22: native_render_mode_images ........   Passed    8.75 sec
+
+100% tests passed, 0 tests failed out of 22
+
+Total Test time (real) = 176.57 sec

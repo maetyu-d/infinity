@@ -1,7 +1,9 @@
 #include "FlightValidation.hpp"
+#include "PilotValidation.hpp"
 #include "StreamingValidation.hpp"
 #include "infinite/Continuity.hpp"
 #include "infinite/Flight.hpp"
+#include "infinite/Piloting.hpp"
 #include "infinite/Renderer.hpp"
 #include <SDL3/SDL.h>
 #include <algorithm>
@@ -27,6 +29,7 @@ struct Options {
     bool compareModes = false;
     bool flightTest = false;
     bool streamingTest = false;
+    bool pilotTest = false, explicitMode = false;
 };
 static Options options(int argc, char** argv) {
     Options o;
@@ -49,11 +52,15 @@ static Options options(int argc, char** argv) {
         } else if (arg == "--streaming-test") {
             o.streamingTest = o.benchmark = o.smoke = o.fresh = true;
             o.visualTime = 12;
+        } else if (arg == "--pilot-test") {
+            o.pilotTest = o.benchmark = o.smoke = o.fresh = true;
+            o.visualTime = 12;
         } else if (arg == "--fresh")
             o.fresh = true;
-        else if (arg == "--render-mode")
+        else if (arg == "--render-mode") {
             o.renderMode = parseRenderMode(value());
-        else if (arg == "--visual-time")
+            o.explicitMode = true;
+        } else if (arg == "--visual-time")
             o.visualTime = std::stod(value());
         else if (arg == "--compare-modes") {
             o.compareModes = o.benchmark = o.smoke = o.tour = o.fresh = true;
@@ -73,12 +80,15 @@ static Options options(int argc, char** argv) {
         else if (arg == "--data")
             o.data = value();
         else if (arg == "--help") {
-            std::cout << "Infinite: WASD fly, Q/E down/up, C toggle mouse look, right-drag look, "
+            std::cout << "Infinite pilot: W/S throttle, A/D strafe, Q/E lift, U/O roll, B brake, X assist, "
+                         "J navigate, L land, Enter launch, G gear, N cruise, Z survey, V explorer. "
+                         "C mouse helm, arrows pitch/yaw, right-drag look, "
                          "-/+ speed, Shift boost, Ctrl fine, scroll scale, click select, F focus, "
                          "Backspace parent, Tab overlay, R reset, M marker, P screenshot, T tour, Esc "
                          "release mouse / quit.\nCLI: --fresh --tour --smoke-test --frames N --width N "
                          "--height N --seed N "
-                         "--benchmark-tour --flight-test --streaming-test --capture-dir DIR --profile CSV "
+                         "--benchmark-tour --flight-test --streaming-test --pilot-test --capture-dir DIR "
+                         "--profile CSV "
                          "--data DIR\n";
             std::cout << "H cycles ORIGINAL / HYPERION / HYBRID. --render-mode original|hyperion|hybrid "
                          "--compare-modes --visual-time SECONDS\n";
@@ -123,6 +133,8 @@ int main(int argc, char** argv) {
             nav.parent();
         RegionCache cache(universe);
         FlightController flight(universe, nav, cache);
+        Pilot pilot(universe, nav, flight);
+        bool pilotEnabled = !opt.smoke || opt.pilotTest;
         std::unique_ptr<FlightValidation> flightProof;
         if (opt.flightTest)
             flightProof = std::make_unique<FlightValidation>(universe, nav);
@@ -144,7 +156,33 @@ int main(int argc, char** argv) {
             std::filesystem::create_directories(opt.captures);
         {
             Renderer renderer(window, universe);
+            if (!opt.smoke && !opt.explicitMode) {
+                opt.renderMode = RenderMode::Hyperion;
+                std::ifstream settings(data / "display.txt");
+                std::string selected;
+                if (std::getline(settings, selected)) {
+                    for (char& c : selected)
+                        if (c >= 'A' && c <= 'Z')
+                            c = char(c - 'A' + 'a');
+                    try {
+                        opt.renderMode = parseRenderMode(selected);
+                    } catch (...) {
+                    }
+                }
+            }
             renderer.setMode(opt.renderMode);
+            std::unique_ptr<PilotValidation> pilotProof;
+            if (opt.pilotTest)
+                pilotProof = std::make_unique<PilotValidation>(universe, nav, pilot);
+            bool shipRestored = false;
+            if (!opt.fresh && !opt.smoke) {
+                std::ifstream saved(data / ("ship-" + std::to_string(universe.seed()) + ".txt"));
+                std::string state;
+                if (std::getline(saved, state))
+                    shipRestored = pilot.restore(state);
+            }
+            if (!shipRestored && !opt.smoke && nav.anchor.kind() >= Kind::Rock && !pilot.ship().survey)
+                pilot.toggleSurvey();
             renderer.freezeVisualTime(opt.visualTime);
             std::unique_ptr<RoundTripVerifier> proof;
             if (opt.smoke && !opt.benchmark)
@@ -171,8 +209,7 @@ int main(int argc, char** argv) {
             std::vector<std::pair<Address, uint64_t>> visited;
             std::vector<double> frameTimes;
             double fps = 60, noticeTime = 6;
-            std::string notice =
-                "C: mouse flight / WASD + Q/E to move. Approach objects to descend automatically.";
+            std::string notice = "C mouse helm / W-S throttle / J navigate / L land / B brake / V explorer";
             auto captureLook = [&] {
                 const bool enabled = mouseFlight || rightLook;
                 if (enabled == looking)
@@ -197,6 +234,7 @@ int main(int argc, char** argv) {
                 previous = now;
                 double dt = std::clamp(wall, .0001, .05);
                 fps = glm::mix(fps, 1 / std::max(wall, .0001), .035);
+                double mouseX = 0, mouseY = 0;
                 SDL_Event event;
                 while (SDL_PollEvent(&event)) {
                     // Offline/native fixtures must not consume incidental mouse
@@ -225,7 +263,8 @@ int main(int argc, char** argv) {
                             const double y = looking ? ph * .5 : event.button.y * ph / h;
                             if (auto a = renderer.pick(x, y)) {
                                 nav.select(*a);
-                                notice = "Selected " + universe.describe(*a).label() + " / F to focus";
+                                notice = "Selected " + universe.describe(*a).label() +
+                                         " / J navigate / F explorer focus";
                                 noticeTime = 4;
                             }
                         }
@@ -236,11 +275,19 @@ int main(int argc, char** argv) {
                     }
                     if (event.type == SDL_EVENT_MOUSE_MOTION && looking &&
                         (event.motion.xrel != 0 || event.motion.yrel != 0)) {
-                        nav.rotate(event.motion.xrel, event.motion.yrel);
+                        if (pilotEnabled) {
+                            mouseX += event.motion.xrel;
+                            mouseY += event.motion.yrel;
+                        } else
+                            nav.rotate(event.motion.xrel, event.motion.yrel);
                         opt.tour = false;
                     }
                     if (event.type == SDL_EVENT_MOUSE_WHEEL && event.wheel.y != 0) {
                         nav.zoom(event.wheel.y);
+                        if (pilotEnabled) {
+                            pilotEnabled = false;
+                            pilot.resetMotion();
+                        }
                         opt.tour = false;
                     }
                     if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat) {
@@ -269,12 +316,68 @@ int main(int argc, char** argv) {
                             nav.adjustSpeed(-1);
                             break;
                         case SDL_SCANCODE_F:
+                            pilotEnabled = false;
+                            pilot.resetMotion();
                             nav.focus();
                             opt.tour = false;
                             break;
                         case SDL_SCANCODE_BACKSPACE:
+                            pilotEnabled = false;
+                            pilot.resetMotion();
                             nav.parent();
                             opt.tour = false;
+                            break;
+                        case SDL_SCANCODE_V:
+                            pilotEnabled = !pilotEnabled;
+                            pilot.resetMotion();
+                            if (pilotEnabled && nav.anchor.kind() >= Kind::Rock && !pilot.ship().survey)
+                                pilot.toggleSurvey();
+                            opt.tour = false;
+                            notice = pilotEnabled
+                                         ? "Pilot helm engaged / W-S throttle / B brake"
+                                         : "Explorer camera / existing WASD controls / V returns to ship";
+                            noticeTime = 5;
+                            break;
+                        case SDL_SCANCODE_B:
+                            if (pilotEnabled)
+                                pilot.brake();
+                            break;
+                        case SDL_SCANCODE_X:
+                            if (pilotEnabled)
+                                pilot.toggleAssist();
+                            break;
+                        case SDL_SCANCODE_N:
+                            if (pilotEnabled)
+                                pilot.toggleCruise();
+                            break;
+                        case SDL_SCANCODE_G:
+                            if (pilotEnabled)
+                                pilot.toggleGear();
+                            break;
+                        case SDL_SCANCODE_Z:
+                            if (pilotEnabled)
+                                pilot.toggleSurvey();
+                            break;
+                        case SDL_SCANCODE_J:
+                            if (pilotEnabled && nav.selected)
+                                pilot.navigate(*nav.selected);
+                            break;
+                        case SDL_SCANCODE_L:
+                            if (pilotEnabled) {
+                                notice =
+                                    pilot.land()
+                                        ? "Landing site acquired on existing terrain / assisted approach"
+                                        : "Approach a planet in ship mode before selecting a landing site";
+                                noticeTime = 5;
+                            }
+                            break;
+                        case SDL_SCANCODE_RETURN:
+                            if (pilotEnabled) {
+                                if (pilot.ship().landed)
+                                    pilot.launch();
+                                else if (nav.selected)
+                                    pilot.navigate(*nav.selected);
+                            }
                             break;
                         case SDL_SCANCODE_TAB:
                             overlay = !overlay;
@@ -286,6 +389,7 @@ int main(int argc, char** argv) {
                             break;
                         case SDL_SCANCODE_R:
                             nav.reset();
+                            pilot.resetMotion();
                             opt.tour = false;
                             break;
                         case SDL_SCANCODE_M:
@@ -303,6 +407,8 @@ int main(int argc, char** argv) {
                             break;
                         }
                         case SDL_SCANCODE_T:
+                            pilotEnabled = false;
+                            pilot.resetMotion();
                             releaseLook();
                             nav.reset();
                             opt.tour = true;
@@ -326,10 +432,23 @@ int main(int argc, char** argv) {
                     const glm::dvec3 axes{static_cast<double>(keys[SDL_SCANCODE_D]) - keys[SDL_SCANCODE_A],
                                           static_cast<double>(keys[SDL_SCANCODE_E]) - keys[SDL_SCANCODE_Q],
                                           static_cast<double>(keys[SDL_SCANCODE_S]) - keys[SDL_SCANCODE_W]};
-                    if (glm::length(axes) > 0) {
+                    if (glm::length(axes) > 0)
                         opt.tour = false;
-                    }
-                    if (!opt.tour)
+                    if (!opt.tour && pilotEnabled) {
+                        HelmInput helm;
+                        helm.throttle = -axes.z;
+                        helm.strafe = axes.x;
+                        helm.lift = axes.y;
+                        helm.pitch = std::clamp(-mouseY * .15 / (60 * dt), -1., 1.) + keys[SDL_SCANCODE_UP] -
+                                     keys[SDL_SCANCODE_DOWN];
+                        helm.yaw = std::clamp(mouseX * .15 / (60 * dt), -1., 1.) + keys[SDL_SCANCODE_RIGHT] -
+                                   keys[SDL_SCANCODE_LEFT];
+                        helm.roll = double(keys[SDL_SCANCODE_O]) - keys[SDL_SCANCODE_U];
+                        helm.boost = keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT];
+                        helm.precision = keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL];
+                        helm.brake = keys[SDL_SCANCODE_B];
+                        pilot.update(helm, dt, renderer.submittedGeometry(nav.anchor));
+                    } else if (!opt.tour)
                         flight.update(axes, dt, keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT],
                                       keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL],
                                       renderer.submittedGeometry(nav.anchor));
@@ -339,6 +458,9 @@ int main(int argc, char** argv) {
                     flightProof->advance(flight, renderer);
                 if (streamingProof)
                     streamingProof->advance(flight, renderer);
+                if (pilotProof)
+                    pilotProof->advance(renderer);
+                renderer.setCockpit(pilotEnabled ? &pilot.instruments() : nullptr);
                 auto stats = renderer.render(nav, cache, overlay, fps, persistence.markerCount(),
                                              noticeTime > 0 ? notice : "", looking);
                 if (flightProof) {
@@ -355,6 +477,11 @@ int main(int argc, char** argv) {
                 ++frame;
                 if (frame > 10)
                     frameTimes.push_back(wall * 1000);
+                if (pilotProof) {
+                    pilotProof->observe(stats, renderer, opt.captures);
+                    if (pilotProof->finished())
+                        running = false;
+                }
                 auto gen = cache.stats();
                 if (!gen.error.empty())
                     throw std::runtime_error(gen.error);
@@ -475,8 +602,23 @@ int main(int argc, char** argv) {
                 if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED)
                     std::this_thread::sleep_for(std::chrono::milliseconds(25));
             }
-            if (!opt.smoke)
+            if (!opt.smoke) {
                 persistence.saveState(nav.serialize());
+                auto saveText = [&](const char* name, const std::string& text) {
+                    auto path = data / name, pending = path;
+                    pending += ".pending";
+                    {
+                        std::ofstream out(pending);
+                        out << text << '\n';
+                        out.flush();
+                        if (!out)
+                            throw std::runtime_error("Unable to save flight settings");
+                    }
+                    std::filesystem::rename(pending, path);
+                };
+                saveText(("ship-" + std::to_string(universe.seed()) + ".txt").c_str(), pilot.serialize());
+                saveText("display.txt", std::string(renderModeName(renderer.mode())));
+            }
             cache.wait();
             if (proof)
                 proof->finish();
@@ -495,7 +637,10 @@ int main(int argc, char** argv) {
             std::cout << "peak_rss_bytes=" << usage.ru_maxrss * 1024 << '\n';
 #endif
 #endif
-            if (opt.streamingTest) {
+            if (opt.pilotTest) {
+                if (!pilotProof->finished())
+                    throw std::runtime_error("Native piloting test incomplete");
+            } else if (opt.streamingTest) {
                 if (!streamingProof->finished())
                     throw std::runtime_error("Native streaming test incomplete");
             } else if (opt.flightTest) {

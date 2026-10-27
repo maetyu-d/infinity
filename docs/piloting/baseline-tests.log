@@ -1,0 +1,43 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+      Start  1: unbounded_spatial_streaming
+ 1/19 Test  #1: unbounded_spatial_streaming ......   Passed    1.21 sec
+      Start  2: seamless_scale_flight
+ 2/19 Test  #2: seamless_scale_flight ............   Passed    1.28 sec
+      Start  3: free_flight_navigation
+ 3/19 Test  #3: free_flight_navigation ...........   Passed    0.01 sec
+      Start  4: rendering_preserves_universe
+ 4/19 Test  #4: rendering_preserves_universe .....   Passed    0.39 sec
+      Start  5: performance_invariants
+ 5/19 Test  #5: performance_invariants ...........   Passed    0.13 sec
+      Start  6: structural_processes
+ 6/19 Test  #6: structural_processes .............   Passed    0.30 sec
+      Start  7: universe_regressions
+ 7/19 Test  #7: universe_regressions .............   Passed    0.16 sec
+      Start  8: persistence_process_write
+ 8/19 Test  #8: persistence_process_write ........   Passed    0.01 sec
+      Start  9: persistence_process_read
+ 9/19 Test  #9: persistence_process_read .........   Passed    0.01 sec
+      Start 10: cross_scale_round_trip
+10/19 Test #10: cross_scale_round_trip ...........   Passed    3.48 sec
+      Start 11: continuity_restart_write
+11/19 Test #11: continuity_restart_write .........   Passed    0.44 sec
+      Start 12: continuity_restart_read
+12/19 Test #12: continuity_restart_read ..........   Passed    0.43 sec
+      Start 13: native_boundary_streaming
+13/19 Test #13: native_boundary_streaming ........   Passed   10.79 sec
+      Start 14: native_boundary_pixels
+14/19 Test #14: native_boundary_pixels ...........   Passed    5.40 sec
+      Start 15: native_seamless_scale_flight
+15/19 Test #15: native_seamless_scale_flight .....   Passed   22.31 sec
+      Start 16: native_cross_scale_round_trip
+16/19 Test #16: native_cross_scale_round_trip ....   Passed   16.96 sec
+      Start 17: native_atomic_visibility
+17/19 Test #17: native_atomic_visibility .........   Passed    1.43 sec
+      Start 18: native_render_mode_round_trip
+18/19 Test #18: native_render_mode_round_trip ....   Passed   40.31 sec
+      Start 19: native_render_mode_images
+19/19 Test #19: native_render_mode_images ........   Passed    8.84 sec
+
+100% tests passed, 0 tests failed out of 19
+
+Total Test time (real) = 113.89 sec

@@ -9,15 +9,15 @@ namespace infinite {
 class HyperionRenderer {
   public:
     ~HyperionRenderer();
-    void begin(RenderMode, int width, int height);
+    void begin(RenderMode, int width, int height, bool opticalDepth = false, bool flight = false);
     void finish();
+    void atmosphere(glm::vec3 eye, glm::vec3 light, const glm::mat4& cameraToPlanet, float radiusRenderUnits,
+                    float scaleHeightRatio, float strength, float aspect);
     void bind(const ScenePresentation&, const glm::vec3& eye, const glm::vec3& light,
-              const glm::mat4& pattern, float primitive, double visualTime, glm::vec4 cavity = {});
+              const glm::mat4& pattern, float primitive, double visualTime, glm::vec4 cavity = {},
+              const glm::mat4& micro = glm::mat4(0), float relief = 0);
     void bindEmissions(const Node&, const glm::mat4& pattern, double visualTime);
-    bgfx::ProgramHandle geometryProgram() {
-        init();
-        return geometry_;
-    }
+    bgfx::ProgramHandle geometryProgram();
     bgfx::ProgramHandle glowProgram() const {
         return glow_;
     }
@@ -41,5 +41,13 @@ class HyperionRenderer {
                         postParams_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle cavity_ = BGFX_INVALID_HANDLE;
     bgfx::VertexLayout screenLayout_;
+    bgfx::UniformHandle depthSampler_ = BGFX_INVALID_HANDLE, atmosphere_ = BGFX_INVALID_HANDLE,
+                        atmosphereRotation_ = BGFX_INVALID_HANDLE;
+    std::array<glm::vec4, 4> atmosphereData_{};
+    glm::mat4 atmosphereMatrix_{1};
+    bool readableDepth_ = false;
+    bool flight_ = false;
+    bgfx::ProgramHandle flightGeometry_ = BGFX_INVALID_HANDLE, flightPost_ = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle micro_ = BGFX_INVALID_HANDLE, microParams_ = BGFX_INVALID_HANDLE;
 };
 } // namespace infinite

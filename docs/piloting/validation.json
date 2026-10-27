@@ -1,0 +1,214 @@
+{
+  "version": "0.9.0",
+  "generation_recipe": 3,
+  "checkpoint": "256eb8e",
+  "protected_files_identical": {
+    "src/Universe.cpp": "2ae1538cc94d9291b3ab2fa5e61efbac5329a106301db6e519740a2580c7ccf4",
+    "src/Processes.cpp": "67e313061245673d88153e275c3c837bad4df278beea1ee3874677c850c0dc23",
+    "src/Crystallography.cpp": "1d135fa1218cea466673723063267fcacdb5c6c56d4240ab5ca00eb0eb042dab",
+    "src/Core.cpp": "8b6e0854d8e8dfdfde2cc78494a31907cedab63d1512020d66c94f6d1d690cb9",
+    "src/Geometry.cpp": "a250eed09f8be9190ecba96cbdf65d5ab56b946e49e0ed543dc4d4886683d4bb",
+    "src/Streaming.cpp": "ec84a8a7d51bff48d5d9144cc5af958042d21ae9e50b08eb0826988b54cc68b4",
+    "src/World.cpp": "a9bb5755250f322b75ed0e1c131e68d7b535ed8964620743f5c95a8f96572077",
+    "src/Navigation.cpp": "c3ad57a8d158e5f70b251697953f8515ba59be5f0a3ef2ba2bed15b823bfa713",
+    "include/infinite/Universe.hpp": "82dfc3d6a82e0c9c2c4fed0d55a801b81ef09108cbd2af5e67640566f181c225",
+    "include/infinite/Core.hpp": "ad7a4a59a0b0dbd00d44054fddec3256c159105219096e18e67a8e1e6a16bf6f",
+    "include/infinite/Geometry.hpp": "afae6337cb95690a5ac4de90ab7851cdcf573154c22d0d84e976deb84b6496a6",
+    "include/infinite/World.hpp": "8ae780f142a7c13dbb504d73387fa5c7e0e38847a9c98aed5724f1d3d0a5dea5",
+    "include/infinite/Navigation.hpp": "8cdb72bdfca28c194b828ed68aee9a9362bb97be474c515b32cc2be474126cfa"
+  },
+  "legacy_fragment_binaries_identical": true,
+  "cpu_checks": 6014,
+  "all_scale_propulsion_round_trip": {
+    "inward_scales": 9,
+    "outward_scales": 9,
+    "render_unit_velocity_invariant": true
+  },
+  "release_suite": {
+    "passed": 22,
+    "failed": 0,
+    "seconds": 176.57
+  },
+  "final_focused_suite": {
+    "passed": 3,
+    "failed": 0
+  },
+  "measurement_method": "Single sequential paired 1440x900 Metal Hyperion viewer tour, frozen visual time 12 s; no outstanding generation or LOD transitions; equal weighting of eight scale medians. macOS/VSync pacing and allocator/driver variance are included. The separate cockpit fixture uses different views and is not an incremental-cost comparison.",
+  "paired_viewer": {
+    "before": {
+      "stable_frames": 525,
+      "per_scale_medians": {
+        "CRYSTAL LATTICE": {
+          "cpu_ms": 3.97908,
+          "gpu_ms": 8.33538,
+          "wall_ms": 16.7772,
+          "submit_ms": 12.21
+        },
+        "GALAXY": {
+          "cpu_ms": 3.9570600000000002,
+          "gpu_ms": 4.1751249999999995,
+          "wall_ms": 16.6983,
+          "submit_ms": 12.42785
+        },
+        "MINERAL GRAIN": {
+          "cpu_ms": 3.78027,
+          "gpu_ms": 7.053435,
+          "wall_ms": 16.685000000000002,
+          "submit_ms": 12.8659
+        },
+        "MOUNTAIN": {
+          "cpu_ms": 4.817645000000001,
+          "gpu_ms": 6.83502,
+          "wall_ms": 16.660600000000002,
+          "submit_ms": 11.7558
+        },
+        "PLANET": {
+          "cpu_ms": 4.582085,
+          "gpu_ms": 3.689755,
+          "wall_ms": 16.66655,
+          "submit_ms": 11.9387
+        },
+        "ROCK": {
+          "cpu_ms": 3.668,
+          "gpu_ms": 4.96921,
+          "wall_ms": 16.6432,
+          "submit_ms": 12.7716
+        },
+        "STAR SYSTEM": {
+          "cpu_ms": 3.09579,
+          "gpu_ms": 1.28058,
+          "wall_ms": 16.66885,
+          "submit_ms": 13.379650000000002
+        },
+        "SURFACE": {
+          "cpu_ms": 3.608205,
+          "gpu_ms": 5.412875,
+          "wall_ms": 16.644,
+          "submit_ms": 12.80415
+        }
+      },
+      "equal_scale_mean_of_medians": {
+        "cpu_ms": 3.936016875,
+        "gpu_ms": 5.2189225,
+        "wall_ms": 16.6804625,
+        "submit_ms": 12.51920625
+      },
+      "peak_rss_bytes": 130400256
+    },
+    "after": {
+      "stable_frames": 525,
+      "per_scale_medians": {
+        "CRYSTAL LATTICE": {
+          "cpu_ms": 4.713,
+          "gpu_ms": 9.01538,
+          "wall_ms": 16.6545,
+          "submit_ms": 11.816
+        },
+        "GALAXY": {
+          "cpu_ms": 4.581955000000001,
+          "gpu_ms": 3.889625,
+          "wall_ms": 16.703249999999997,
+          "submit_ms": 12.0054
+        },
+        "MINERAL GRAIN": {
+          "cpu_ms": 3.941705,
+          "gpu_ms": 6.52056,
+          "wall_ms": 16.658900000000003,
+          "submit_ms": 12.34695
+        },
+        "MOUNTAIN": {
+          "cpu_ms": 4.77954,
+          "gpu_ms": 5.517775,
+          "wall_ms": 16.669,
+          "submit_ms": 11.8138
+        },
+        "PLANET": {
+          "cpu_ms": 4.51923,
+          "gpu_ms": 3.62438,
+          "wall_ms": 16.6529,
+          "submit_ms": 11.942350000000001
+        },
+        "ROCK": {
+          "cpu_ms": 4.42802,
+          "gpu_ms": 4.13546,
+          "wall_ms": 16.665750000000003,
+          "submit_ms": 11.9789
+        },
+        "STAR SYSTEM": {
+          "cpu_ms": 3.075145,
+          "gpu_ms": 1.282295,
+          "wall_ms": 16.68155,
+          "submit_ms": 13.379349999999999
+        },
+        "SURFACE": {
+          "cpu_ms": 4.55475,
+          "gpu_ms": 5.085395,
+          "wall_ms": 16.70385,
+          "submit_ms": 12.14135
+        }
+      },
+      "equal_scale_mean_of_medians": {
+        "cpu_ms": 4.324168125,
+        "gpu_ms": 4.88385875,
+        "wall_ms": 16.6737125,
+        "submit_ms": 12.1780125
+      },
+      "peak_rss_bytes": 140853248
+    }
+  },
+  "native_piloting": {
+    "cpu_ms": {
+      "median": 4.59063,
+      "p95": 5.55283,
+      "max": 8.62813
+    },
+    "gpu_ms": {
+      "median": 6.9925,
+      "p95": 9.30162,
+      "max": 24.3408
+    },
+    "wall_ms": {
+      "median": 16.6625,
+      "p95": 17.0585,
+      "max": 83.2966
+    },
+    "submit_ms": {
+      "median": 11.5891,
+      "p95": 14.0507,
+      "max": 76.2865
+    },
+    "cpu_cache_bytes": {
+      "median": 7868624.0,
+      "p95": 12171644.0,
+      "max": 12171644.0
+    },
+    "gpu_bytes": {
+      "median": 0.0,
+      "p95": 1500372.0,
+      "max": 1500372.0
+    },
+    "effect_bytes": {
+      "median": 17856000.0,
+      "p95": 17856000.0,
+      "max": 17856000.0
+    },
+    "peak_rss_bytes": 135462912,
+    "addressed_sky_stars": 4448,
+    "touchdown_agl_m": 0.000592118,
+    "atomic_survey_atoms": 1631
+  },
+  "limits_unchanged": {
+    "cpu_geometry_cache_bytes": 33554432,
+    "gpu_geometry_cache_bytes": 33554432,
+    "workers": 3,
+    "entries": 512,
+    "terrain_leaves": 192,
+    "hdr_effect_bytes_at_1440x900": 17856000,
+    "new_cockpit_static_mesh_bytes": 26784
+  },
+  "build_binary_sha256": "c381f1d4345b42ce91f3d720dfc71bebca68c43176637a1ee6c11dd1839247cc",
+  "packaged_binary_sha256": "38cb39e133eb7957238fe27a63811e5b70c15c8f334cb00ab49df21526a929c6",
+  "packaged_version": "0.9.0",
+  "packaged_native_loop_passed": true,
+  "packaged_save_restart_passed": true
+}

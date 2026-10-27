@@ -1,0 +1,211 @@
+#pragma once
+#include "infinite/Piloting.hpp"
+#include "infinite/Renderer.hpp"
+#include <filesystem>
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
+
+namespace infinite {
+class PilotValidation {
+  public:
+    PilotValidation(const Universe& u, Navigation& n, Pilot& p) : u_(u), n_(n), p_(p) {
+        auto system = u_.children(u_.describe(n_.anchor), 1).front();
+        planet_ = u_.children(u_.describe(system), 1).front();
+        for (const auto& a : u_.children(u_.describe(system))) {
+            auto body = u_.describe(a);
+            if (body.environment.temperature > 200 && body.environment.temperature < 600 &&
+                body.environment.waterActivity > .15) {
+                planet_ = a;
+                break;
+            }
+        }
+        for (uint64_t star = 0; star < 64; star++) {
+            bool found = false;
+            system = n_.anchor.child(Kind::System, star);
+            for (const auto& a : u_.children(u_.describe(system))) {
+                const auto body = u_.describe(a);
+                if (body.environment.temperature > 220 && body.environment.temperature < 500 &&
+                    body.environment.waterActivity > .15) {
+                    planet_ = a;
+                    found = true;
+                    break;
+                }
+            }
+            if (found)
+                break;
+        }
+        descriptor_ = descriptorFingerprint(u_.describe(planet_));
+        std::cout << "PILOT_FIXTURE " << planet_.str()
+                  << " temperature=" << u_.describe(planet_).environment.temperature << '\n';
+        place(true);
+    }
+    void advance(Renderer& renderer) {
+        ++age_;
+        if (stage_ == 0)
+            return;
+        if (stage_ == 1)
+            p_.update({}, 1. / 30, renderer.submittedGeometry(n_.anchor));
+        if (stage_ == 2)
+            p_.update({}, 1. / 30, renderer.submittedGeometry(n_.anchor));
+        if (stage_ == 3 && !n_.transitioning) {
+            if (!p_.ship().survey)
+                p_.toggleSurvey();
+            p_.update({}, 1. / 30, renderer.submittedGeometry(n_.anchor));
+        }
+    }
+    void observe(const FrameStats& stats, Renderer& renderer, const std::string& directory) {
+        if (descriptorFingerprint(u_.describe(planet_)) != descriptor_)
+            throw std::runtime_error("Piloting altered planet identity");
+        auto capture = [&](const char* name) {
+            if (!directory.empty())
+                renderer.screenshot(
+                    (std::filesystem::path(directory) / (std::string(name) + ".ppm")).string());
+        };
+        if (stage_ == 0 && age_ >= 90 && stats.visibleObjects && stats.uploadDeferred == 0) {
+            auto geometry = renderer.submittedGeometry(n_.anchor);
+            if (!geometry)
+                return;
+            const auto hash = geometryFingerprint(*geometry);
+            if (mode_ == 0) {
+                camera_ = n_.serialize();
+                geometry_ = hash;
+            } else if (n_.serialize() != camera_ || hash != geometry_)
+                throw std::runtime_error("Cockpit mode changed scene geometry or camera");
+            if (!queued_) {
+                capture(mode_ == 0 ? "orbit-original" : mode_ == 1 ? "orbit-hyperion" : "orbit-hybrid");
+                queued_ = true;
+                hold_ = 4;
+                return;
+            }
+            if (--hold_ > 0)
+                return;
+            queued_ = false;
+            if (++mode_ < 3) {
+                renderer.setMode(static_cast<RenderMode>(mode_));
+                age_ = 65;
+                return;
+            }
+            std::cout << "PILOT_MODE_PROOF identical camera and planet geometry in all three cockpit modes / "
+                         "sky stars="
+                      << stats.skyStars << " atmosphere=" << stats.atmospheres << '\n';
+            renderer.setMode(RenderMode::Hyperion);
+            // Look toward the physical galaxy centre: the orbital comparison
+            // deliberately faces a hemisphere where the disc is behind us.
+            auto galaxy = planet_;
+            while (galaxy.kind() > Kind::Galaxy)
+                galaxy = galaxy.parent();
+            const auto eye = n_.cameraPosition();
+            const auto direction =
+                glm::normalize(u_.relative(galaxy, n_.anchor, n_.logDistance).position - eye);
+            const auto up = std::abs(direction.y) > .95 ? glm::dvec3(1, 0, 0) : glm::dvec3(0, 1, 0);
+            n_.orientation = glm::quatLookAtRH(direction, up);
+            n_.offset = eye - n_.orientation * glm::dvec3(0, 0, 1);
+            p_.resetMotion();
+            stage_ = 5;
+            age_ = 0;
+        } else if (stage_ == 5 && age_ == 30) {
+            if (stats.skyStars < 10)
+                throw std::runtime_error("Addressed galactic stars disappeared from the cockpit sky");
+            capture("stellar-background");
+            std::cout << "PILOT_STELLAR_SKY addressed stars=" << stats.skyStars << '\n';
+        } else if (stage_ == 5 && age_ == 40) {
+            place(false);
+            p_.land();
+            stage_ = 1;
+            age_ = 0;
+        } else if (stage_ == 1) {
+            if (age_ == 20)
+                capture("landing-approach");
+            if (p_.ship().landed) {
+                if (std::abs(p_.instruments().altitude) > .15 || p_.ship().hull != 100)
+                    throw std::runtime_error("Native touchdown was unsafe");
+                const auto saved = p_.serialize();
+                if (!p_.restore(saved) || !p_.ship().landed)
+                    throw std::runtime_error("Native landed save failed");
+                capture("landed");
+                std::cout << "PILOT_TOUCHDOWN agl=" << p_.instruments().altitude << " hull=" << p_.ship().hull
+                          << '\n';
+                stage_ = 2;
+                age_ = 0;
+            }
+        } else if (stage_ == 2) {
+            if (age_ == 15) {
+                const auto eye = n_.cameraPosition();
+                p_.launch();
+                if (n_.cameraPosition() != eye)
+                    throw std::runtime_error("Native launch teleported");
+            }
+            if (age_ == 210) {
+                if (p_.ship().landed || p_.instruments().altitude < 10)
+                    throw std::runtime_error("Native launch did not clear terrain");
+                capture("departure");
+                std::cout << "PILOT_DEPARTURE agl=" << p_.instruments().altitude << '\n';
+                auto a = FlightController::surfaceAt(planet_, direction_);
+                while (a.kind() != Kind::Lattice)
+                    a = u_.children(u_.describe(a), 1).front();
+                n_.focus(a);
+                p_.resetMotion();
+                stage_ = 3;
+                age_ = 0;
+            }
+        } else if (stage_ == 3 && age_ > 120 && !n_.transitioning && stats.atoms > 0) {
+            if (stats.atmospheres)
+                throw std::runtime_error("Atomic probe retained an optical atmosphere pass");
+            capture("atomic-survey");
+            std::cout << "PASS: native cockpit mode identity, geological touchdown, persisted ship, thrust "
+                         "launch and atomic survey; atoms="
+                      << stats.atoms << '\n';
+            stage_ = 4;
+            age_ = 0;
+        } else if (stage_ == 4 && age_ > 10) {
+            finished_ = true;
+        }
+        if (age_ > 4000)
+            throw std::runtime_error("Native piloting phase timed out");
+    }
+    bool finished() const {
+        return finished_;
+    }
+
+  private:
+    const Universe& u_;
+    Navigation& n_;
+    Pilot& p_;
+    Address planet_;
+    glm::dvec3 direction_{};
+    uint64_t descriptor_ = 0, geometry_ = 0;
+    std::string camera_;
+    int stage_ = 0, age_ = 0, mode_ = 0, hold_ = 0;
+    bool finished_ = false, queued_ = false;
+    void place(bool orbit) {
+        auto p = u_.describe(planet_);
+        double radius = std::pow(10., p.frame.logRadius);
+        direction_ = glm::normalize(glm::dvec3(.3, 1, .4));
+        for (int i = 0; i < 100; i++) {
+            auto d = glm::normalize(glm::dvec3(std::sin(i * 1.7), 1, std::cos(i * 2.1)));
+            if (glm::dot(d, u_.terrainNormal(p, d)) > .995) {
+                direction_ = d;
+                break;
+            }
+        }
+        auto up = u_.terrainNormal(p, direction_);
+        auto forward = glm::normalize(glm::cross(up, glm::dvec3(1, 0, 0)));
+        auto q =
+            glm::quatLookAtRH(orbit ? -direction_ : glm::normalize(forward - up * .06), orbit ? forward : up);
+        const auto eye = direction_ * (orbit ? 2.2 : 1 + (u_.terrainHeight(p, direction_) + 42) / radius);
+        const auto offset = eye - q * glm::dvec3(0, 0, 1);
+        std::ostringstream s;
+        s.precision(17);
+        s << planet_.str() << ' ' << p.frame.logRadius << ' ' << q.w << ' ' << q.x << ' ' << q.y << ' ' << q.z
+          << ' ' << offset.x << ' ' << offset.y << ' ' << offset.z;
+        if (!n_.restore(s.str()))
+            throw std::runtime_error("Native piloting placement failed");
+        if (!orbit) {
+            n_.changeFrame(FlightController::surfaceAt(planet_, direction_));
+            n_.setRenderScale(2);
+        }
+        p_.resetMotion();
+    }
+};
+} // namespace infinite

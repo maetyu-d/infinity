@@ -1,6 +1,8 @@
 # INFINITE
 
-A standalone C++20 procedural-universe vertical slice, rendered with SDL3 and bgfx. Fly with WASD and Q/E through a galaxy, star system, planet, terrain region, mountain-scale patch, SDF rock, mineral grain and material-specific atomic specimen. Viewing scale and local reference frame adapt automatically as you approach objects or fly away.
+A standalone C++20 procedural universe rendered with SDL3 and bgfx. Pilot a ship with throttle, inertia, assisted or inertial handling, a beveled Hyperion cockpit and a destination–approach–landing–launch loop. The same galaxy, star systems, planetary geology, rocks, mineral grains and atomic specimens remain explorable. Viewing units and local reference frames adapt automatically while physical velocity remains in metres per second.
+
+Version **0.9** adds the piloting layer without changing the universe recipe, fields, seeds, identities or original geometry generators. See [PILOTING.md](docs/PILOTING.md) for controls, source references and validation.
 
 Version 0.8 removes the isolated terrain windows and single-root-cell flight restriction. A complete, stitched planetary surface streams beneath the camera, with continuous mesh morphing as detail changes. Neighbouring cosmic cells preload and hand off without changing the physical camera; blended collars fill their former sampling gaps. The same world fields, seeds and objects remain authoritative. See [STREAMING.md](docs/STREAMING.md) for implementation, image checks and resource bounds.
 
@@ -46,36 +48,37 @@ ctest --test-dir build-core --output-on-failure
 
 ## Explore
 
-Press **C** to capture the mouse and fly freely. Move the mouse to turn from your current position; use **WASD** and **Q/E** to move. **Escape** releases the mouse so you can select objects with the pointer. While captured, a crosshair marks the centre used by click selection. Right-drag also provides temporary mouse look.
+The application starts at the saved view with the pilot cockpit and the last rendering choice (Hyperion on a first launch). Press **C** for the mouse helm. **W/S changes persistent throttle**; releasing W keeps the chosen throttle. **B** commands a controlled stop. **X** switches flight assistance; with assistance off the ship keeps its momentum and rotation.
 
-Aim at a star, planet, rock or mineral and fly closer. The nearest physical structures control movement scale, and the camera automatically enters their local frames. Terrain lookup works beyond the original survey sites. Fly away to move back up the hierarchy. Locator lights and the highlighted nearest object help you steer toward features that are initially too small to resolve.
+Click a visible object and press **J** (or Enter) to navigate toward it. On planetary approach press **L** to choose the real terrain underfoot as a landing site, lower the gear and descend under thrust. **Enter** launches after touchdown. No pad or flattened terrain is generated; steep terrain is rejected. The HUD shows bearing/range, prograde drift, speed, stopping distance, altitude, descent, throttle, hull and gear state.
 
-Use **-/+** (or **[ / ]**) to halve/double speed, **Shift** for a boost and **Ctrl** for fine movement. Speed is relative to the current physical scale, so the same controls work around a galaxy or an atomic specimen. **R** resets the view and speed. Speed adjustment is local to the session.
+The cruise drive automatically changes its speed envelope as you approach smaller structures. The HUD distinguishes **CRUISE / SCALE DRIVE**, **LOCAL / SHIP** and **SURVEY / VIRTUAL PROBE**, and indicates refining/widening view scale. **Z** engages the survey probe to inspect rocks, minerals and atoms without ship collisions; approaching and retreating still changes reference frames automatically. Render-unit changes never rescale physical momentum. Ship mode cannot materialize inside solid terrain.
 
-**F** optionally focuses a selected object; click visible objects/locators to select it. Logarithmic focusing crosses the actual physical scale gap; ancestors and children use the same camera-relative transforms throughout. Flying, looking or scrolling interrupts the guided tour. Moving or looking interrupts active focus, while a completed manual focus/parent view remains stable until flight resumes.
+**V** parks the helm and restores the original explorer camera. The original focus, parent, wheel, discovery and guided-tour controls remain available. Focus/parent/wheel commands explicitly enter explorer mode; V resumes piloting at that view.
 
-| Control | Action |
+| Control | Pilot action |
 |---|---|
-| WASD | Fly relative to camera orientation |
-| Approach / fly away | Automatically refine / return to larger physical scales |
-| Q / E | Descend / ascend |
-| C | Toggle captured mouse look |
-| Right mouse drag | Temporary mouse look |
-| Mouse wheel | Logarithmic scale navigation (0.23 decades per wheel unit) |
-| - / + or [ / ] | Halve / double flight speed (1/64×–256×) |
-| Shift / Ctrl | Boost / precision movement |
-| Click | Select at the pointer, or the crosshair while looking |
-| H | Cycle original, Hyperion and hybrid rendering |
-| F | Smoothly focus the selected child |
-| Backspace | Focus the parent |
-| Tab | Toggle the minimal overlay |
-| R | Reset to the galaxy |
-| M | Persist a discovery for the current address |
-| P | Save a lossless PPM screenshot |
-| T | Guided descent to the lattice and return |
-| Escape | Release mouse capture; press again to save and quit |
+| W / S | Increase / decrease persistent throttle |
+| A / D; Q / E | Strafe; descend / ascend |
+| Mouse / arrow keys | Pitch and yaw rate commands |
+| U / O | Roll |
+| C / right drag | Capture mouse helm / temporary helm |
+| B / X | Brake / toggle flight assistance |
+| Shift / Ctrl | Boost / precision handling |
+| J or Enter | Navigate to the selected destination |
+| L / G | Assisted landing underfoot / toggle gear |
+| Enter when landed | Lift off under thrust |
+| N / Z | Cruise envelope / virtual survey probe |
+| V | Switch pilot / original explorer controls |
+| - / + or [ / ] | Halve / double drive speed envelope |
+| Click | Select an object at pointer or central reticle |
+| H | Original → Hyperion → hybrid; choice is saved |
+| F / Backspace / wheel | Explorer focus / parent / logarithmic navigation |
+| Tab | Hide cockpit and HUD |
+| R / M / P / T | Reset / save discovery / screenshot / original guided tour |
+| Escape | Release mouse; press again to save and quit |
 
-Camera state and compressed discovery notes are stored in `build/user-data/universe.sqlite` for the command-line executable, or `user-data/universe.sqlite` beside `Infinite.app`. `--data DIR` changes the location. `--fresh` ignores the saved camera. `--seed N` selects a universe (persistence is namespaced by seed). Generated geometry is never saved as authoritative world data.
+Camera state and compressed discovery notes are stored in `build/user-data/universe.sqlite` for the command-line executable, or `user-data/universe.sqlite` beside `Infinite.app`. `--data DIR` changes the location. `--fresh` ignores the saved camera and ship state. Ship motion is stored beside it in a versioned `ship-<seed>.txt`; `display.txt` remembers the render mode. `--seed N` selects a universe (persistence is namespaced by seed). Generated geometry is never saved as authoritative world data.
 
 Backspace restores the previous local camera view and selected branch. New saves retain those breadcrumbs across restarts. Outward wheel navigation promotes the reference frame while preserving the physical zoom pivot.
 
@@ -85,6 +88,7 @@ Backspace restores the previous local camera view and selected branch. New saves
 ./build/infinite --frames 300 --fresh
 ./build/infinite --flight-test --render-mode hyperion --capture-dir build/flight-captures
 ./build/infinite --streaming-test --render-mode hyperion --capture-dir build/streaming-captures
+./build/infinite --pilot-test --capture-dir build/pilot-captures
 ./build/infinite_benchmark > build/generation.csv
 ```
 
@@ -119,7 +123,7 @@ Up to three concurrent cache tasks, four oneTBB workers, a 32 MiB CPU payload bu
 
 `infinite_tests` currently exercises 251 checks covering hash vectors, address parsing, signed-coordinate extremes, generation order, independent threaded generation, cube/tile boundaries, LOD field consistency, finite transforms spanning 36 decades, material inheritance, Kepler periodicity, all five mineral lattices, valid finite mesh buffers at every scale, cancellation, cache eviction and camera serialization. CTest also launches separate writer/reader processes to check SQLite persistence across application restarts. See [generation benchmarks](docs/benchmark-v0.3.csv) and [benchmark memory](docs/benchmark-memory-v0.3.txt) for current measured generation costs on this machine. The native tour checks and records the actual backbuffer resolution; on Retina screens it uses a smaller logical window to render the requested pixel count.
 
-`infinite_continuity_tests` verifies full non-default round trips, every LOD, shared terrain samples/materials, SDF convergence, query-stable sites/vacancies/bonds for all five minerals, saved ancestry, exact camera restoration, local sections and parallel regeneration. Restart processes repeat the ascent after SQLite reopen. `infinite_process_tests` checks structural diversity, environmental causality, population statistics, phase-specific stoichiometry and coordination, and inherited constraints. `infinite_navigation_tests` checks stationary free look, frame rates, speed controls, interrupted transitions and saved flying views at all nine scales and three seeds. `infinite_flight_tests` adds complete automatic inward/outward flights, canonical terrain lookup, lateral tile handoffs, camera continuity and manual-view compatibility. The nineteen-case desktop suite includes streaming topology/morph proofs, native boundary pixels, automatic flight, presentation preservation, a three-mode round trip and 51 mode-image captures. Current rendering measurements are in [HYPERION_RENDERING.md](docs/HYPERION_RENDERING.md); generation/performance invariants remain documented in [PERFORMANCE.md](docs/PERFORMANCE.md). Recipe-3 model evidence is in [PROCESS_DIVERSITY.md](docs/PROCESS_DIVERSITY.md); [CONTINUITY_AUDIT.md](docs/CONTINUITY_AUDIT.md) and [VALIDATION.md](docs/VALIDATION.md) retain historical evidence for versions 0.2 and 0.1.
+`infinite_continuity_tests` verifies full non-default round trips, every LOD, shared terrain samples/materials, SDF convergence, query-stable sites/vacancies/bonds for all five minerals, saved ancestry, exact camera restoration, local sections and parallel regeneration. Restart processes repeat the ascent after SQLite reopen. `infinite_process_tests` checks structural diversity, environmental causality, population statistics, phase-specific stoichiometry and coordination, and inherited constraints. `infinite_navigation_tests` checks stationary free look, frame rates, speed controls, interrupted transitions and saved flying views at all nine scales and three seeds. `infinite_flight_tests` adds complete automatic inward/outward flights, canonical terrain lookup, lateral tile handoffs, camera continuity and manual-view compatibility. The 22-case desktop suite includes streaming topology/morph proofs, native boundary pixels, automatic flight, presentation preservation, a three-mode round trip and 51 mode-image captures. Piloting validation and current rendering measurements are in [PILOTING.md](docs/PILOTING.md); the earlier shader integration is in [HYPERION_RENDERING.md](docs/HYPERION_RENDERING.md); generation/performance invariants remain documented in [PERFORMANCE.md](docs/PERFORMANCE.md). Recipe-3 model evidence is in [PROCESS_DIVERSITY.md](docs/PROCESS_DIVERSITY.md); [CONTINUITY_AUDIT.md](docs/CONTINUITY_AUDIT.md) and [VALIDATION.md](docs/VALIDATION.md) retain historical evidence for versions 0.2 and 0.1.
 
 ## Current limits and next concrete work
 

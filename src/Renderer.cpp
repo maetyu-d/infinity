@@ -1,5 +1,6 @@
 #include "infinite/Renderer.hpp"
 #include "HyperionRenderer.hpp"
+#include "infinite/Cockpit.hpp"
 #include "infinite/Streaming.hpp"
 #include <InstanceShaders.hpp>
 #include <SDL3/SDL.h>
@@ -102,6 +103,9 @@ struct Renderer::Impl {
     bgfx::SwapChain swapChain;
     std::array<GPUMesh, 3> atomSpheres;
     GPUMesh billboardMesh, hyperionBillboardMesh;
+    GPUMesh cabin;
+    double cabinAspect = 0;
+    std::optional<FlightInstruments> instruments;
     std::unique_ptr<HyperionRenderer> hyperion;
     RenderMode mode = RenderMode::Original;
     double visualTime = 0, fixedVisualTime = -1;
@@ -131,7 +135,7 @@ struct Renderer::Impl {
     std::map<Address, DetailState> details;
     std::map<std::string, DetailState> localSections;
     std::chrono::steady_clock::time_point previousTime = std::chrono::steady_clock::now();
-    double frameSeconds = 0;
+    double frameSeconds = 0, fieldOfView = 1;
     std::string sectionLabel;
     TerrainStreamer terrain;
     bool terrainActive = false;
@@ -147,6 +151,7 @@ struct Renderer::Impl {
             for (auto& mesh : atomSpheres)
                 destroy(mesh);
             destroy(billboardMesh);
+            destroy(cabin);
             destroy(hyperionBillboardMesh);
             hyperion.reset();
             if (bgfx::isValid(colorProgram))
@@ -294,7 +299,8 @@ struct Renderer::Impl {
                        BGFX_STATE_MSAA);
         bgfx::submit(0, colorProgram);
     }
-    void transient(const Mesh& mesh, bgfx::ViewId viewId, bool lines, bool additive) {
+    void transient(const Mesh& mesh, bgfx::ViewId viewId, bool lines, bool additive, bool depth = true,
+                   bool writeDepth = false) {
         if (mesh.vertices.empty())
             return;
         uint32_t nv = static_cast<uint32_t>(mesh.vertices.size()),
@@ -312,11 +318,15 @@ struct Renderer::Impl {
         bgfx::setIndexBuffer(&ib);
         uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_MSAA;
         if (lines)
-            state |= BGFX_STATE_PT_LINES;
-        else
+            state |= BGFX_STATE_PT_LINES | (viewId == 0 && depth ? BGFX_STATE_DEPTH_TEST_LEQUAL : 0);
+        else if (depth)
             state |= BGFX_STATE_DEPTH_TEST_LEQUAL;
+        if (writeDepth)
+            state |= BGFX_STATE_WRITE_Z;
         if (additive)
             state |= BGFX_STATE_BLEND_ADD;
+        else if (!depth)
+            state |= BGFX_STATE_BLEND_ALPHA;
         bgfx::setState(state);
         bgfx::submit(viewId, colorProgram);
     }
@@ -339,12 +349,46 @@ struct Renderer::Impl {
         auto pattern = glm::mat4(mapping);
         if (primitive == 1) {
             auto localEye = glm::inverse(pose.orientation) * (eye - pose.position) / radius;
-            hyperion->bind(presentation, glm::vec3(localEye), {.6, .7, -.4}, pattern, primitive, visualTime);
+            const auto light = instruments ? glm::inverse(pose.orientation) * lightAt(materialAddress, nav)
+                                           : glm::dvec3(.6, .7, -.4);
+            hyperion->bind(presentation, glm::vec3(localEye), glm::vec3(light), pattern, primitive,
+                           visualTime);
         } else {
-            auto light = poseFor(materialAddress, nav).orientation * glm::dvec3(.6, .7, -.4);
+            auto light = lightAt(materialAddress, nav);
+            glm::mat4 micro(0);
+            float relief = 0;
+            if (instruments && node.address.kind() >= Kind::Planet) {
+                const double materialRadius = std::pow(10., materialFrames.back().logRadius);
+                const double spacing =
+                    materialAddress.kind() == Kind::Planet ? 8. : std::max(1e-12, materialRadius * .02);
+                const auto localEye = glm::inverse(pose.orientation) * (eye - pose.position) / radius;
+                const auto canonical = mapping * glm::dvec4(localEye, 1);
+                const auto materialPose = poseFor(materialAddress, nav);
+                const glm::dmat3 linear = glm::mat3_cast(glm::inverse(materialPose.orientation)) *
+                                          (std::pow(10., nav.logDistance) / spacing);
+                for (unsigned i = 0; i < 3; i++)
+                    micro[i] = glm::vec4(glm::vec3(linear[i]), 0);
+                micro[3] = glm::vec4(
+                    glm::vec3(glm::mod(glm::dvec3(canonical) * (materialRadius / spacing), glm::dvec3(64))),
+                    1);
+                relief = float(spacing * .045 / std::pow(10., nav.logDistance));
+            }
             hyperion->bind(presentation, glm::vec3(eye), glm::vec3(light), pattern * glm::inverse(model),
-                           primitive, visualTime);
+                           primitive, visualTime, {}, micro, relief);
         }
+    }
+    glm::dvec3 lightAt(const Address& material, const Navigation& nav) {
+        if (instruments) {
+            auto system = material;
+            while (system.kind() > Kind::System)
+                system = system.parent();
+            if (system.kind() == Kind::System && material.kind() > Kind::System) {
+                const auto vector = poseFor(system, nav).position - poseFor(material, nav).position;
+                if (glm::length(vector) > 1e-30)
+                    return glm::normalize(vector);
+            }
+        }
+        return poseFor(material, nav).orientation * glm::dvec3(.6, .7, -.4);
     }
     void drawGeometry(const std::shared_ptr<const Geometry>& geometry, const Node& node,
                       const Navigation& nav, float opacity) {
@@ -418,7 +462,7 @@ struct Renderer::Impl {
                 continue;
             double size = std::clamp(static_cast<double>(particle.radius) * r * distanceScale, -p.z * .0005,
                                      -p.z * .035);
-            if (LOD::visible(p, size, static_cast<double>(width) / height, 1))
+            if (LOD::visible(p, size, static_cast<double>(width) / height, fieldOfView))
                 addBillboard(position, size, particle.color * (opacity * attenuation),
                              geometry->address.kind() == Kind::Cosmic);
         }
@@ -462,6 +506,45 @@ struct Renderer::Impl {
         drawGeometry(state.blend.previous, node, nav, opacity * (1 - state.blend.weight()));
         drawGeometry(state.blend.current, node, nav, opacity * state.blend.weight());
     }
+    void stellarSky(const Node& galaxy, const Navigation& nav, RegionCache& cache) {
+        if (!instruments)
+            return;
+        // Share the ordinary galaxy's fade interval so magnification never
+        // removes its stars before a smaller reference frame becomes ready.
+        const double radius = std::pow(10., galaxy.frame.logRadius - nav.logDistance);
+        if (radius <= 3)
+            return;
+        const float handoff = float(smoothstep(3., 12., radius));
+        auto geometry = cache.request(galaxy, 0, 6);
+        if (!geometry)
+            return;
+        const auto galaxyEye = universe.pointRelative(
+            nav.anchor, eye * std::pow(10., nav.logDistance - anchorFrames.back().logRadius), galaxy.address,
+            galaxy.frame.logRadius);
+        const auto orientation = poseFor(galaxy.address, nav).orientation;
+        const double factor = std::pow(10., geometry->logUnits - galaxy.frame.logRadius);
+        uint64_t active = UINT64_MAX;
+        if (nav.anchor.path.size() > galaxy.address.path.size())
+            active = nav.anchor.path[galaxy.address.path.size()].id;
+        for (const auto& star : geometry->particles) {
+            if (star.objectId == UINT64_MAX || star.objectId == active)
+                continue;
+            const auto delta = orientation * (star.position * factor - galaxyEye);
+            const double distance = glm::length(delta);
+            if (distance < 1e-15)
+                continue;
+            const auto direction = delta / distance;
+            const auto local = cameraInverse * direction;
+            if (local.z >= 0)
+                continue;
+            const double angular = std::clamp(double(star.radius) * factor / distance, .00025, .0016);
+            const double size = 500 * angular;
+            if (LOD::visible(local * 500., size, double(width) / height, fieldOfView)) {
+                addBillboard(eye + direction * 500., size, star.color * handoff, true);
+                ++stats.skyStars;
+            }
+        }
+    }
     void renderNode(const Node& node, const Navigation& nav, RegionCache& cache, unsigned maximum = 4) {
         auto pose = poseFor(node.address, nav);
         auto cp = cameraSpace(pose.position);
@@ -475,12 +558,12 @@ struct Renderer::Impl {
             double physical = std::pow(10.0, std::log10(node.stellarRadiusMetres) - nav.logDistance) * 2.5;
             double radius = std::clamp(physical, -cp.z * .001, -cp.z * .035);
             float intensity = static_cast<float>(.35 + .65 * std::min(node.massSolar / 3, 1.0));
-            if (LOD::visible(cp, radius, static_cast<double>(width) / height, 1))
+            if (LOD::visible(cp, radius, static_cast<double>(width) / height, fieldOfView))
                 addBillboard(pose.position, radius, stellarColor(node.temperatureK) * intensity);
         } else if (node.address == nav.anchor && pixels < 1.5 && cp.z < 0 && kind != Kind::Cosmic)
             addBillboard(pose.position, -cp.z * .0015, material(node.environment.mineral).color);
         if (kind != Kind::Cosmic && (r < 1e-8 || r > 1e4 || pixels < .7 ||
-                                     !LOD::visible(cp, r, static_cast<double>(width) / height, 1)))
+                                     !LOD::visible(cp, r, static_cast<double>(width) / height, fieldOfView)))
             return;
         float opacity = node.address.ancestorOf(nav.anchor) && node.address != nav.anchor
                             ? static_cast<float>(1 - smoothstep(3, 12, r))
@@ -566,7 +649,7 @@ struct Renderer::Impl {
             double radius = 0;
             for (auto p : points)
                 radius = std::max(radius, glm::length(p - centre));
-            if (!LOD::visible(cameraInverse * centre, radius, double(width) / height, 1))
+            if (!LOD::visible(cameraInverse * centre, radius, double(width) / height, fieldOfView))
                 continue;
             const uint32_t count = uint32_t(g.solid.indexCount());
             if (bgfx::getAvailTransientVertexBuffer(81, layout) < 81 ||
@@ -589,11 +672,22 @@ struct Renderer::Impl {
             const Instance identity{glm::mat4(1), glm::vec4(1)};
             std::memcpy(instances.data, &identity, sizeof(identity));
             auto presentation = extractPresentation(planet, g, mode);
-            const auto light = poseFor(planet.address, nav).orientation * glm::dvec3(.6, .7, -.4);
+            const auto light = lightAt(planet.address, nav);
             glm::vec4 cavity{};
             if (nav.anchor.kind() >= Kind::Rock)
                 cavity = glm::vec4(glm::vec3(-eye), float(std::max(1.3, glm::length(eye) * 1.1)));
-            hyperion->bind(presentation, {}, glm::vec3(light), glm::mat4(pattern), -1, visualTime, cavity);
+            glm::mat4 micro(0);
+            float relief = 0;
+            if (instruments) {
+                const double frequency = std::pow(10., planet.frame.logRadius) / 8.;
+                for (unsigned i = 0; i < 3; i++)
+                    micro[i] = glm::vec4(glm::vec3(pattern[i]) * float(frequency), 0);
+                micro[3] =
+                    glm::vec4(glm::vec3(glm::mod(glm::dvec3(pattern[3]) * frequency, glm::dvec3(64))), 1);
+                relief = float(.36 / std::pow(10., nav.logDistance));
+            }
+            hyperion->bind(presentation, {}, glm::vec3(light), glm::mat4(pattern), -1, visualTime, cavity,
+                           micro, relief);
             bgfx::setVertexBuffer(0, &vertices);
             bgfx::setIndexBuffer(&indices);
             bgfx::setInstanceDataBuffer(&instances);
@@ -713,6 +807,12 @@ RenderMode Renderer::mode() const {
 void Renderer::freezeVisualTime(double seconds) {
     impl_->fixedVisualTime = seconds;
 }
+void Renderer::setCockpit(const FlightInstruments* instruments) {
+    if (instruments)
+        impl_->instruments = *instruments;
+    else
+        impl_->instruments.reset();
+}
 std::shared_ptr<const Geometry> Renderer::submittedGeometry(const Address& address) const {
     auto found = impl_->details.find(address);
     return found == impl_->details.end() ? nullptr : found->second.blend.current;
@@ -755,11 +855,18 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     p.cameraInverse = glm::inverse(p.cameraQ);
     p.eye = nav.cameraPosition();
     p.view = glm::mat4_cast(glm::inverse(nav.orientation)) * glm::translate(glm::dmat4(1), -p.eye);
+    const double fov = p.instruments ? 70. * std::numbers::pi / 180. : 1.;
+    p.fieldOfView = fov;
     p.projection = bgfx::getCaps()->homogeneousDepth
-                       ? glm::perspectiveRH_NO(1.0, static_cast<double>(p.width) / p.height, .00005, 10000.0)
-                       : glm::perspectiveRH_ZO(1.0, static_cast<double>(p.width) / p.height, .00005, 10000.0);
+                       ? glm::perspectiveRH_NO(fov, static_cast<double>(p.width) / p.height, .00005, 10000.0)
+                       : glm::perspectiveRH_ZO(fov, static_cast<double>(p.width) / p.height, .00005, 10000.0);
     glm::mat4 v(p.view), proj(p.projection);
-    p.hyperion->begin(p.mode, p.width, p.height);
+    const bool opticalDepth =
+        p.instruments && !p.instruments->survey && std::any_of(nodes.begin(), nodes.end(), [](const Node& n) {
+            return n.address.kind() == Kind::Planet && n.environment.temperature > 140 &&
+                   n.environment.temperature < 950 && n.environment.waterActivity > .01;
+        });
+    p.hyperion->begin(p.mode, p.width, p.height, opticalDepth, bool(p.instruments));
     bgfx::setViewTransform(0, glm::value_ptr(v), glm::value_ptr(proj));
     bgfx::setViewRect(0, 0, 0, static_cast<uint16_t>(p.width), static_cast<uint16_t>(p.height));
     bgfx::touch(0);
@@ -784,6 +891,9 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         p.renderNode(*it, nav, cache);
         rendered.insert(it->address);
     }
+    for (const auto& node : nodes)
+        if (node.address.kind() == Kind::Galaxy)
+            p.stellarSky(node, nav, cache);
     std::vector<Node> rootNodes;
     const Address anchorRoot{nav.anchor.cell, {}};
     const auto anchorRootEye = p.universe.pointRelative(
@@ -905,7 +1015,100 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     };
     drawBillboards(p.cosmicBillboards, true);
     drawBillboards(p.billboards, false);
+    if (p.instruments && p.mode != RenderMode::Original && !p.instruments->survey && !p.instruments->landed &&
+        p.instruments->speed > 24) {
+        // Hyperion drawMotion's bounded, world-grid-anchored navigation streaks.
+        // These are optical cues, never additional stars or collision objects.
+        Mesh trails;
+        const double unitMetres = std::pow(10., nav.logDistance);
+        const double driveScale = std::max(1., p.instruments->driveSpeed / 450.);
+        const double spacing = 180. * driveScale / unitMetres;
+        const auto grid = glm::floor(p.eye / spacing);
+        const auto velocity = nav.orientation * p.instruments->localVelocity;
+        const auto direction = glm::normalize(velocity);
+        const auto forward = nav.orientation * glm::dvec3(0, 0, -1);
+        const double strength = std::clamp(p.instruments->speed / (450. * driveScale), 0., 1.);
+        for (int x = -2; x <= 2; x++)
+            for (int y = -2; y <= 2; y++)
+                for (int z = -2; z <= 2; z++) {
+                    auto cell = grid + glm::dvec3(x, y, z);
+                    double h =
+                        std::sin(glm::dot(glm::mod(cell, glm::dvec3(4096)), glm::dvec3(127.1, 311.7, 74.7))) *
+                        43758.5453;
+                    h -= std::floor(h);
+                    const auto point =
+                        (cell + glm::dvec3(h, std::fmod(h * 17, 1.), std::fmod(h * 31, 1.))) * spacing;
+                    const double distance = glm::length(point - p.eye);
+                    if (distance < spacing / 6 || distance > spacing * 2 ||
+                        glm::dot(point - p.eye, forward) < spacing / 9)
+                        continue;
+                    const auto length = (driveScale + p.instruments->speed * .028) / unitMetres;
+                    addLine(trails, point, point - direction * length,
+                            glm::vec3(.28, .78, .91) *
+                                float((1 - distance / (spacing * 2)) * strength * .36));
+                }
+        p.transient(trails, 0, true, true);
+    }
+    if (p.instruments && !p.instruments->survey && p.mode != RenderMode::Original) {
+        for (const auto& planet : nodes)
+            if (planet.address.kind() == Kind::Planet) {
+                const auto pose = p.poseFor(planet.address, nav);
+                const double radius = std::pow(10., planet.frame.logRadius - nav.logDistance);
+                const auto localEye = glm::inverse(pose.orientation) * (p.eye - pose.position) / radius;
+                // Optical presentation follows inherited warmth and available water.
+                // Cold dry bodies retain their airless appearance; no cloud, terrain
+                // or atmospheric simulation is generated by the renderer.
+                const double warm = smoothstep(140., 240., planet.environment.temperature) *
+                                    (1 - smoothstep(650., 950., planet.environment.temperature));
+                const float strength = float(warm * planet.environment.waterActivity);
+                if (glm::length(localEye) < 8 && glm::length(localEye) > .99 && strength > .01f) {
+                    auto rotation =
+                        glm::mat4_cast(glm::quat(glm::inverse(pose.orientation) * nav.orientation));
+                    auto light = glm::inverse(pose.orientation) * p.lightAt(planet.address, nav);
+                    const float height =
+                        float(std::clamp(8500. / std::pow(10., planet.frame.logRadius), 1e-5, .02));
+                    p.hyperion->atmosphere(glm::vec3(localEye), glm::vec3(light), rotation, float(radius),
+                                           height, strength, float(p.width) / p.height);
+                    ++p.stats.atmospheres;
+                }
+            }
+    }
     p.hyperion->finish();
+    if (p.instruments && overlay) {
+        const double aspect = double(p.width) / p.height;
+        if (p.cabinAspect != aspect) {
+            destroy(p.cabin);
+            p.cabin = p.upload(cockpitMesh(aspect));
+            p.cabinAspect = aspect;
+        }
+        const glm::mat4 cabinView(1);
+        const auto cabinProjection = bgfx::getCaps()->homogeneousDepth
+                                         ? glm::perspectiveRH_NO(float(fov), float(aspect), .025f, 6.f)
+                                         : glm::perspectiveRH_ZO(float(fov), float(aspect), .025f, 6.f);
+        bgfx::setViewRect(84, 0, 0, uint16_t(p.width), uint16_t(p.height));
+        bgfx::setViewTransform(84, glm::value_ptr(cabinView), glm::value_ptr(cabinProjection));
+        bgfx::setViewClear(84, BGFX_CLEAR_DEPTH, 0, 1.f, 0);
+        bgfx::setVertexBuffer(0, p.cabin.vertices);
+        bgfx::setIndexBuffer(p.cabin.indices);
+        bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS |
+                       BGFX_STATE_MSAA);
+        bgfx::submit(84, p.colorProgram);
+    } else
+        bgfx::setViewClear(84, BGFX_CLEAR_NONE);
+
+    if (p.instruments && overlay) {
+        const double aspect = double(p.width) / p.height;
+        const auto hud = cockpitOverlay(*p.instruments, aspect, renderModeName(p.mode), notice);
+        const auto projection = bgfx::getCaps()->homogeneousDepth
+                                    ? glm::orthoRH_NO(0.f, float(900 * aspect), 900.f, 0.f, -1.f, 1.f)
+                                    : glm::orthoRH_ZO(0.f, float(900 * aspect), 900.f, 0.f, -1.f, 1.f);
+        bgfx::setViewRect(254, 0, 0, uint16_t(p.width), uint16_t(p.height));
+        bgfx::setViewTransform(254, nullptr, glm::value_ptr(projection));
+        bgfx::setViewMode(254, bgfx::ViewMode::Sequential);
+        p.transient(hud.panels, 254, false, false, false);
+        p.transient(hud.strokes, 254, true, false, false);
+        p.transient(hud.lettering, 254, false, false, false);
+    }
     auto ortho =
         glm::orthoRH_NO(0.f, static_cast<float>(p.width), static_cast<float>(p.height), 0.f, -1.f, 1.f);
     if (!bgfx::getCaps()->homogeneousDepth)
@@ -913,11 +1116,12 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
             glm::orthoRH_ZO(0.f, static_cast<float>(p.width), static_cast<float>(p.height), 0.f, -1.f, 1.f);
     bgfx::setViewTransform(255, nullptr, glm::value_ptr(ortho));
     bgfx::setViewRect(255, 0, 0, static_cast<uint16_t>(p.width), static_cast<uint16_t>(p.height));
-    p.transient(locators, 255, true, false);
+    if (!p.instruments)
+        p.transient(locators, 255, true, false);
     bgfx::dbgTextClear();
-    if (looking)
+    if (looking && !p.instruments)
         bgfx::dbgTextPrintf(p.width / 16, p.height / 32, 0x0f, "+");
-    if (overlay) {
+    if (overlay && !p.instruments) {
         const auto& node = nodes.back();
         auto info = cache.stats();
         int bottom = std::max(10, p.height / 16 - 9);

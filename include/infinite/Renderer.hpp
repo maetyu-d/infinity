@@ -1,5 +1,6 @@
 #pragma once
 #include "Navigation.hpp"
+#include "Piloting.hpp"
 #include "Presentation.hpp"
 #include "World.hpp"
 #include <memory>
@@ -14,6 +15,8 @@ struct FrameStats {
     size_t uploadDeferred = 0, atomTriangles = 0;
     size_t effectBytes = 0;
     size_t terrainTiles = 0, rootCells = 0;
+    size_t atmospheres = 0;
+    size_t skyStars = 0;
 };
 class Renderer {
   public:
@@ -31,6 +34,7 @@ class Renderer {
     void setMode(RenderMode);
     RenderMode mode() const;
     void freezeVisualTime(double seconds);
+    void setCockpit(const FlightInstruments*);
 
   private:
     struct Impl;

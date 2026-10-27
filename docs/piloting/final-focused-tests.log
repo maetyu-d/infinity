@@ -1,0 +1,11 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start  1: ship_dynamics_and_landing
+1/3 Test  #1: ship_dynamics_and_landing ........   Passed    1.76 sec
+    Start 14: native_piloting_loop
+2/3 Test #14: native_piloting_loop .............   Passed   24.78 sec
+    Start 15: native_cockpit_images
+3/3 Test #15: native_cockpit_images ............   Passed    1.93 sec
+
+100% tests passed, 0 tests failed out of 3
+
+Total Test time (real) =  28.48 sec

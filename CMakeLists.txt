@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Infinite VERSION 0.8.0 LANGUAGES C CXX)
+project(Infinite VERSION 0.9.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -10,7 +10,7 @@ option(INFINITE_VIEWER "Build the SDL3/bgfx interactive application" ON)
 option(INFINITE_SANITIZE "Enable address and undefined-behaviour sanitizers" OFF)
 option(INFINITE_GPU_TESTS "Run the native tour and framebuffer checks (requires a desktop)" OFF)
 include(cmake/Dependencies.cmake)
-add_library(infinite_core src/Core.cpp src/Universe.cpp src/Processes.cpp src/Crystallography.cpp src/Geometry.cpp src/World.cpp src/Navigation.cpp src/Flight.cpp src/Streaming.cpp src/Continuity.cpp src/Presentation.cpp)
+add_library(infinite_core src/Core.cpp src/Universe.cpp src/Processes.cpp src/Crystallography.cpp src/Geometry.cpp src/World.cpp src/Navigation.cpp src/Flight.cpp src/Streaming.cpp src/Continuity.cpp src/Presentation.cpp src/Piloting.cpp src/Cockpit.cpp)
 target_include_directories(infinite_core PUBLIC include)
 target_link_libraries(infinite_core PUBLIC glm::glm FastNoise TBB::tbb SQLite::SQLite3 libzstd_static)
 target_compile_features(infinite_core PUBLIC cxx_std_20)
@@ -39,6 +39,10 @@ else()
   target_compile_options(infinite_performance_tests PRIVATE -ffp-contract=off)
 endif()
 enable_testing()
+add_executable(infinite_piloting_tests tests/PilotingTests.cpp)
+target_link_libraries(infinite_piloting_tests PRIVATE infinite_core)
+add_test(NAME ship_dynamics_and_landing COMMAND infinite_piloting_tests)
+set_tests_properties(ship_dynamics_and_landing PROPERTIES TIMEOUT 90)
 add_executable(infinite_streaming_tests tests/StreamingTests.cpp)
 target_link_libraries(infinite_streaming_tests PRIVATE infinite_core)
 add_test(NAME unbounded_spatial_streaming COMMAND infinite_streaming_tests)
@@ -73,7 +77,9 @@ add_test(NAME continuity_restart_read COMMAND infinite_continuity_tests --read "
 set_tests_properties(continuity_restart_read PROPERTIES FIXTURES_REQUIRED continuity_restart TIMEOUT 90)
 if(INFINITE_VIEWER)
   include(cmake/EmbedShaders.cmake)
-  if(WIN32 AND NOT EXISTS "${PROJECT_SOURCE_DIR}/shaders/bin/dxbc/fs_hyperion.bin")
+  if(WIN32 AND (NOT EXISTS "${PROJECT_SOURCE_DIR}/shaders/bin/dxbc/fs_hyperion.bin"
+      OR NOT EXISTS "${PROJECT_SOURCE_DIR}/shaders/bin/dxbc/fs_hyperion_flight.bin"
+      OR NOT EXISTS "${PROJECT_SOURCE_DIR}/shaders/bin/dxbc/fs_hyperion_flight_post.bin"))
     find_program(INFINITE_SHADERC NAMES shaderc REQUIRED)
     find_package(Python3 3.9 COMPONENTS Interpreter REQUIRED)
     execute_process(COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/compile_shaders.py"
@@ -88,6 +94,13 @@ if(INFINITE_VIEWER)
   endif()
   if(INFINITE_GPU_TESTS)
     find_package(Python3 3.9 COMPONENTS Interpreter REQUIRED)
+    add_test(NAME native_piloting_loop COMMAND "${CMAKE_COMMAND}"
+      "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/pilot-native"
+      -P "${PROJECT_SOURCE_DIR}/cmake/RunPilot.cmake")
+    set_tests_properties(native_piloting_loop PROPERTIES FIXTURES_SETUP cockpit_captures TIMEOUT 150)
+    add_test(NAME native_cockpit_images COMMAND "${Python3_EXECUTABLE}"
+      "${PROJECT_SOURCE_DIR}/tools/check_cockpit_captures.py" "${CMAKE_BINARY_DIR}/pilot-native/captures")
+    set_tests_properties(native_cockpit_images PROPERTIES FIXTURES_REQUIRED cockpit_captures)
     add_test(NAME native_boundary_streaming COMMAND "${CMAKE_COMMAND}"
       "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/streaming-native"
       -P "${PROJECT_SOURCE_DIR}/cmake/RunStreaming.cmake")
