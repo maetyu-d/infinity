@@ -101,6 +101,9 @@ class PilotValidation {
             std::cout << "PILOT_ACTIVITY population=" << stats.activityBodies
                       << " visible=" << stats.activityVisible << " template_bytes=" << stats.activityBytes
                       << '\n';
+            if (renderer.pick(1170, 189) || renderer.pickActivity(1170, 189) || renderer.pick(600, 800) ||
+                renderer.pickActivity(600, 800))
+                throw std::runtime_error("Cockpit panels allow selection of hidden world contacts");
             renderer.setMode(RenderMode::Hyperion);
             const auto contacts = renderer.celestialContacts();
             auto target = std::find_if(contacts.begin(), contacts.end(), [&](const CelestialContact& c) {
@@ -306,6 +309,19 @@ class PilotValidation {
             stage_ = 11;
             age_ = 0;
         } else if (stage_ == 11 && age_ == 10) {
+            camera_ = n_.serialize();
+            renderer.toggleCockpitHelp();
+            stage_ = 12;
+            age_ = 0;
+        } else if (stage_ == 12 && age_ == 12) {
+            if (n_.serialize() != camera_ || renderer.pick(1170, 217) || renderer.pickActivity(152, 217))
+                throw std::runtime_error("Cockpit guide changed the view or allowed click-through");
+            capture("controls");
+            stage_ = 13;
+            age_ = 0;
+        } else if (stage_ == 13 && age_ == 10) {
+            renderer.toggleCockpitHelp();
+            std::cout << "PILOT_COCKPIT_GUIDE unchanged camera, blocked click-through, guide capture=PASS\n";
             finished_ = true;
         }
         if (age_ > 4000)

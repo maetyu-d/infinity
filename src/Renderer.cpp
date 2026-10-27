@@ -107,6 +107,8 @@ struct Renderer::Impl {
     GPUMesh cabin;
     double cabinAspect = 0;
     std::optional<FlightInstruments> instruments;
+    bool cockpitHelp = false, cockpitVisible = false;
+    std::vector<CockpitRect> cockpitHitRegions;
     std::shared_ptr<const Geometry> skyGeometry;
     std::vector<CelestialContact> contacts;
     std::vector<CelestialContact> skyOccluders;
@@ -1057,6 +1059,9 @@ void Renderer::setCockpit(const FlightInstruments* instruments) {
     else
         impl_->instruments.reset();
 }
+void Renderer::toggleCockpitHelp() {
+    impl_->cockpitHelp = !impl_->cockpitHelp;
+}
 std::shared_ptr<const Geometry> Renderer::galaxySamples() const {
     return impl_->skyGeometry;
 }
@@ -1071,17 +1076,21 @@ void Renderer::setActivity(const ActivityState* state) {
 }
 std::optional<ActivityId> Renderer::pickActivity(double x, double y) const {
     const auto& p = *impl_;
+    if (p.cockpitVisible && p.cockpitHelp)
+        return {};
     if (!p.activity || !p.activity->enabled)
         return {};
-    if (p.instruments && (!p.instruments->shrinking || p.instruments->hullMetres >= .001)) {
+    if (p.cockpitVisible && (!p.instruments->shrinking || p.instruments->hullMetres >= .001)) {
         const double scale = 900. / p.height;
-        const double px = x * scale, py = y * scale;
-        if (px >= 28 && px <= 330 && py >= 205) {
-            const auto row = size_t((py - 205) / 34);
-            if (row < std::min(size_t(6), p.activityContacts.size()))
-                return p.activityContacts[row].body.id;
-        }
+        const auto rows = cockpitActivityRows(p.activityContacts);
+        if (auto row =
+                CockpitLayout(double(p.width) / p.height).trafficRow({x * scale, y * scale}, rows.size()))
+            return p.activityContacts[rows[*row]].body.id;
     }
+    if (p.cockpitVisible &&
+        std::any_of(p.cockpitHitRegions.begin(), p.cockpitHitRegions.end(),
+                    [&](const auto& r) { return r.contains({x * 900. / p.height, y * 900. / p.height}); }))
+        return {};
     double best = 18 * 18;
     std::optional<ActivityId> selected;
     for (const auto& [id, point] : p.activityPicks) {
@@ -1125,6 +1134,8 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     p.cosmicBillboards.clear();
     p.frameFrames.clear();
     p.framePoses.clear();
+    p.cockpitVisible = p.instruments.has_value() && overlay;
+    p.cockpitHitRegions.clear();
     p.atomView = p.instruments ? 3 : 2;
     p.contacts.clear();
     p.skyOccluders.clear();
@@ -1441,7 +1452,8 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     if (p.instruments && overlay) {
         const double aspect = double(p.width) / p.height;
         const auto hud = cockpitOverlay(*p.instruments, aspect, renderModeName(p.mode), notice, p.contacts,
-                                        p.activityContacts);
+                                        p.activityContacts, p.cockpitHelp);
+        p.cockpitHitRegions = hud.hitRegions;
         const auto projection = bgfx::getCaps()->homogeneousDepth
                                     ? glm::orthoRH_NO(0.f, float(900 * aspect), 900.f, 0.f, -1.f, 1.f)
                                     : glm::orthoRH_ZO(0.f, float(900 * aspect), 900.f, 0.f, -1.f, 1.f);
@@ -1542,15 +1554,18 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
 }
 std::optional<Address> Renderer::pick(double x, double y) const {
     const auto& p = *impl_;
-    if (p.instruments && (!p.instruments->shrinking || p.instruments->hullMetres >= .001)) {
+    if (p.cockpitVisible && p.cockpitHelp)
+        return {};
+    if (p.cockpitVisible && (!p.instruments->shrinking || p.instruments->hullMetres >= .001)) {
         const double scale = 900. / p.height;
-        const double px = x * scale, py = y * scale, w = p.width * scale;
-        if (px >= w - 310 && px <= w - 40 && py >= 205) {
-            const auto row = size_t((py - 205) / 34);
-            if (row < std::min(size_t(8), p.contacts.size()))
-                return p.contacts[row].address;
-        }
+        if (auto row = CockpitLayout(double(p.width) / p.height)
+                           .celestialRow({x * scale, y * scale}, p.contacts.size()))
+            return p.contacts[*row].address;
     }
+    if (p.cockpitVisible &&
+        std::any_of(p.cockpitHitRegions.begin(), p.cockpitHitRegions.end(),
+                    [&](const auto& r) { return r.contains({x * 900. / p.height, y * 900. / p.height}); }))
+        return {};
     const Pick* chosen = nullptr;
     double best = 40 * 40;
     for (auto& candidate : p.picks) {

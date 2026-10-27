@@ -6,8 +6,8 @@
 
 namespace infinite {
 namespace {
-const glm::vec3 ink{.018, .035, .052}, muted{.35, .53, .59}, ice{.49, .85, .93}, mint{.44, .93, .74},
-    amber{1, .65, .28}, pearl{.84, .92, .91};
+const glm::vec3 ink{.018, .035, .052}, muted{.43, .60, .66}, ice{.49, .85, .93}, mint{.44, .93, .74},
+    amber{1, .65, .28}, pearl{.84, .92, .91}, trafficInk{.90, .61, .76};
 void triangle(Mesh& m, glm::dvec3 a, glm::dvec3 b, glm::dvec3 c, glm::vec3 color, float alpha = 1) {
     const auto first = uint32_t(m.vertices.size());
     for (auto p : {a, b, c})
@@ -44,22 +44,56 @@ const std::map<char, std::string_view> glyphs{
     {'/', "00001000010001000100010001000010000"}, {'-', "00000000000000011111000000000000000"},
     {'+', "00000001000010011111001000010000000"}, {',', "00000000000000000000001100010001000"},
     {'.', "00000000000000000000000000011000110"}, {':', "00000011000110000000011000110000000"},
-    {'%', "11001110100001000100010001001100011"}};
+    {'%', "11001110100001000100010001001100011"}, {'m', "00000000001101010101101011010110101"},
+    {'k', "10000100001001010100110001010010010"}, {'n', "00000000001111010001100011000110001"},
+    {'p', "00000000001111010001111101000010000"}, {'u', "00000000001000110001100011001101101"},
+    {'s', "00000000000111110000011100000111110"}, {'e', "00000000000111010001111111000001111"}};
 void text(Mesh& m, std::string_view s, double x, double y, double size, glm::vec3 color,
-          size_t maxChars = 100) {
+          size_t maxChars = 100, bool literal = false) {
     const double pixel = size / 7.;
     size_t count = 0;
     for (char c : s) {
         if (count++ >= maxChars)
             break;
-        if (c >= 'a' && c <= 'z')
+        if (!literal && c >= 'a' && c <= 'z')
             c = char(c - 'a' + 'A');
         if (auto it = glyphs.find(c); it != glyphs.end())
             for (int row = 0; row < 7; row++)
-                for (int col = 0; col < 5; col++)
-                    if (it->second[size_t(row * 5 + col)] == '1')
-                        rect(m, x + col * pixel, y + row * pixel, pixel, pixel, color);
+                for (int col = 0; col < 5;) {
+                    if (it->second[size_t(row * 5 + col)] != '1') {
+                        ++col;
+                        continue;
+                    }
+                    const int start = col++;
+                    while (col < 5 && it->second[size_t(row * 5 + col)] == '1')
+                        ++col;
+                    rect(m, x + start * pixel, y + row * pixel, (col - start) * pixel, pixel, color);
+                }
         x += pixel * 6;
+    }
+}
+std::string elide(std::string_view value, double width, double size) {
+    const size_t count = size_t(std::max(0., std::floor(width / (size * 6 / 7))));
+    if (value.size() <= count)
+        return std::string(value);
+    return count > 3 ? std::string(value.substr(0, count - 3)) + "..." : std::string{};
+}
+void fitted(Mesh& m, std::string_view s, double x, double y, double width, double size, glm::vec3 color,
+            bool literal = false) {
+    text(m, elide(s, width, size), x, y, size, color, 200, literal);
+}
+void card(CockpitOverlay& h, CockpitRect r, glm::vec3 tint) {
+    h.hitRegions.push_back(r);
+    rect(h.panels, r.x, r.y, r.w, r.h, ink, .94f);
+    rect(h.panels, r.x, r.y, 2, r.h, tint * .55f);
+    line(h.strokes, r.x + 2, r.y, r.x + r.w, r.y, tint * .38f);
+    line(h.strokes, r.x + 2, r.y + r.h, r.x + r.w, r.y + r.h, tint * .15f);
+}
+void diamond(Mesh& m, glm::dvec2 p, double radius, glm::vec3 color) {
+    for (int i = 0; i < 4; ++i) {
+        const double a = i * 1.570796326795, b = (i + 1) * 1.570796326795;
+        line(m, p.x + std::cos(a) * radius, p.y + std::sin(a) * radius, p.x + std::cos(b) * radius,
+             p.y + std::sin(b) * radius, color);
     }
 }
 void bar(Mesh& m, double x, double y, double w, double value, glm::vec3 color) {
@@ -71,7 +105,7 @@ std::string flightQuantity(double v, bool speed) {
     char b[64];
     const double a = std::abs(v);
     double divisor = 1;
-    const char* suffix = "M";
+    const char* suffix = "m";
     if (a >= 9.4607304725808e15) {
         divisor = 9.4607304725808e15;
         suffix = "LY";
@@ -80,27 +114,99 @@ std::string flightQuantity(double v, bool speed) {
         suffix = "AU";
     } else if (a >= 1000) {
         divisor = 1000;
-        suffix = "KM";
+        suffix = "km";
     } else if (a > 0 && a < 1e-9) {
         divisor = 1e-12;
-        suffix = "PM";
+        suffix = "pm";
     } else if (a > 0 && a < 1e-6) {
         divisor = 1e-9;
-        suffix = "NM";
+        suffix = "nm";
     } else if (a > 0 && a < .001) {
         divisor = 1e-6;
-        suffix = "UM";
+        suffix = "um";
     } else if (a > 0 && a < 1) {
         divisor = .001;
-        suffix = "MM";
+        suffix = "mm";
     }
     const double n = v / divisor;
     if (std::abs(n) > 99999)
-        std::snprintf(b, sizeof(b), "%.2e %s%s", n, suffix, speed ? "/S" : "");
+        std::snprintf(b, sizeof(b), "%.2e %s%s", n, suffix, speed ? "/s" : "");
     else
         std::snprintf(b, sizeof(b), std::abs(n) < 100 ? "%.1f %s%s" : "%.0f %s%s", n, suffix,
-                      speed ? "/S" : "");
+                      speed ? "/s" : "");
     return b;
+}
+bool CockpitRect::contains(glm::dvec2 p) const {
+    return p.x >= x && p.x < x + w && p.y >= y && p.y < y + h;
+}
+bool CockpitRect::overlaps(const CockpitRect& r) const {
+    return x < r.x + r.w && x + w > r.x && y < r.y + r.h && y + h > r.y;
+}
+CockpitLayout::CockpitLayout(double aspect)
+    : width(900 * aspect), traffic{24, 176, 274, 263}, celestial{width - 310, 176, 286, 331},
+      navigation{24, 758, std::clamp((width - 48) * .31, 240., 430.), 124}, flight{}, scope{},
+      systems{width - 24 - std::clamp((width - 48) * .22, 185., 290.), 758,
+              std::clamp((width - 48) * .22, 185., 290.), 124},
+      windscreen{traffic.x + traffic.w + 18, 166, celestial.x - traffic.x - traffic.w - 36, 472} {
+    const double mid = systems.x - navigation.x - navigation.w - 36;
+    flight = {navigation.x + navigation.w + 12, 758, mid * .48, 124};
+    scope = {flight.x + flight.w + 12, 758, mid * .52, 124};
+}
+namespace {
+std::optional<size_t> contactRow(glm::dvec2 p, CockpitRect r, size_t count, size_t capacity) {
+    if (!r.contains(p) || p.y < 205 || p.y >= 205 + 34 * std::min(count, capacity))
+        return {};
+    return size_t((p.y - 205) / 34);
+}
+} // namespace
+std::optional<size_t> CockpitLayout::trafficRow(glm::dvec2 p, size_t count) const {
+    return contactRow(p, traffic, count, 6);
+}
+std::optional<size_t> CockpitLayout::celestialRow(glm::dvec2 p, size_t count) const {
+    return contactRow(p, celestial, count, 8);
+}
+std::vector<size_t> cockpitActivityRows(std::span<const ActivityContact> contacts) {
+    std::vector<size_t> rows;
+    for (size_t i = 0; i < std::min(size_t(6), contacts.size()); ++i)
+        rows.push_back(i);
+    for (size_t i = rows.size(); i < contacts.size(); ++i)
+        if (contacts[i].selected) {
+            rows.back() = i;
+            break;
+        }
+    return rows;
+}
+CockpitTargetMarker cockpitTargetMarker(glm::dvec3 d, double aspect) {
+    CockpitLayout l(aspect);
+    const glm::dvec2 center{l.width * .5, 450};
+    CockpitTargetMarker result;
+    result.point = center;
+    const double length = glm::length(d);
+    if (!std::isfinite(length) || length < 1e-30)
+        return result;
+    d /= length;
+    result.aft = d.z >= 0;
+    glm::dvec2 offset{d.x, -d.y};
+    if (!result.aft) {
+        const auto projected = center + offset * (450 / .7002075 / -d.z);
+        if (l.windscreen.contains(projected)) {
+            result.point = projected;
+            return result;
+        }
+    }
+    result.offscreen = true;
+    if (glm::length(offset) < 1e-12)
+        offset = {0, 1};
+    offset = glm::normalize(offset);
+    result.direction = offset;
+    const double limitX =
+        (offset.x < 0 ? center.x - l.windscreen.x : l.windscreen.x + l.windscreen.w - center.x) - 12;
+    const double limitY =
+        (offset.y < 0 ? center.y - l.windscreen.y : l.windscreen.y + l.windscreen.h - center.y) - 12;
+    const double distance =
+        std::min(limitX / std::max(1e-12, std::abs(offset.x)), limitY / std::max(1e-12, std::abs(offset.y)));
+    result.point = center + offset * distance;
+    return result;
 }
 Mesh cockpitMesh(double aspect) {
     Mesh m;
@@ -141,7 +247,7 @@ Mesh cockpitMesh(double aspect) {
         }
     };
     const glm::vec3 titanium{.176, .255, .306}, dark{.067, .114, .149}, copper{.357, .255, .173};
-    constexpr double top = .052, deck = .865;
+    constexpr double top = .052, deck = .842;
     panel({{0, top - .05}, {.24, top - .025}, {.21, top + .009}, {0, top + .035}}, titanium, .86);
     panel({{1, top - .05}, {.76, top - .025}, {.79, top + .009}, {1, top + .035}}, titanium, .86);
     panel({{0, top}, {.032, top + .032}, {.085, deck - .045}, {.054, deck + .03}, {0, deck - .005}}, titanium,
@@ -174,217 +280,364 @@ Mesh cockpitMesh(double aspect) {
 }
 CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::string_view mode,
                               std::string_view notice, std::span<const CelestialContact> contacts,
-                              std::span<const ActivityContact> activity) {
+                              std::span<const ActivityContact> activity, bool help) {
     CockpitOverlay h;
-    const double w = 900 * aspect, center = w * .5, deck = 790;
-    rect(h.panels, 0, 0, w, 40, ink, .98f);
-    text(h.lettering, "INFINITE", 25, 15, 15, pearl);
-    text(h.lettering, mode, w - 180, 16, 11, mint);
-    text(h.lettering, t.drive, center - 128, 16, 11, ice);
-    rect(h.panels, 24, deck, w - 48, 92, ink, .96f);
-    line(h.strokes, 24, deck, w - 24, deck, muted * .5f);
-    const double left = 44, right = w - 298;
-    text(h.lettering, t.destination, left, deck + 15, 12, pearl,
-         size_t(std::max(12., (center - 180 - left) / 10.3)));
-    text(h.lettering, t.phase, left, deck + 39, 10, t.landed ? mint : ice, 43);
-    text(h.lettering, t.assist ? "ASSIST ON" : "ASSIST OFF", left, deck + 64, 9, muted);
-    text(h.lettering, t.gear ? "GEAR DOWN" : "GEAR UP", left + 120, deck + 64, 9, t.gear ? mint : muted);
-    text(h.lettering, "VELOCITY", center - 158, deck + 12, 9, muted);
-    text(h.lettering, flightQuantity(t.speed, true), center - 158, deck + 29, 15, pearl, 24);
-    text(h.lettering, "STOP " + flightQuantity(t.stoppingDistance), center - 158, deck + 60, 9, ice, 27);
-    text(h.lettering, "THROTTLE", right, deck + 12, 9, muted);
+    const CockpitLayout l(aspect);
+    const double w = l.width, center = w * .5;
+    const double ratio = std::max(1e-12, t.hullMetres / 12);
+    const bool surface = t.altitude >= 0 && (t.gear || t.altitude < 5000 * ratio);
+    const bool catalogues = !t.shrinking || t.hullMetres >= .001;
+    auto label = [&](std::string_view s, double x, double y, double width, glm::vec3 color = muted) {
+        fitted(h.lettering, s, x, y, width, 10.5, color);
+    };
+    auto quantity = [&](std::string_view s, double x, double y, double width, double size = 14,
+                        glm::vec3 color = pearl) {
+        // Unit case is intentional: mm and m must remain distinguishable.
+        size = std::min(size, width * 7 / (6 * std::max(size_t(1), s.size())));
+        fitted(h.lettering, s, x, y, width, size, color, true);
+    };
+    auto duration = [](double seconds) {
+        if (!(seconds >= 0) || !std::isfinite(seconds))
+            return std::string("--");
+        const auto total = uint64_t(std::min(seconds, 1e15));
+        char b[64];
+        std::snprintf(b, sizeof(b), "%llu:%02llu:%02llu", (unsigned long long)(total / 3600),
+                      (unsigned long long)(total / 60 % 60), (unsigned long long)(total % 60));
+        return std::string(b);
+    };
     char value[80];
-    std::snprintf(value, sizeof(value), "%.0f%%", t.throttle * 100);
-    text(h.lettering, value, right, deck + 29, 15, pearl);
-    bar(h.panels, right, deck + 59, 100, t.throttle, ice);
-    text(h.lettering, "HULL", right + 135, deck + 12, 9, muted);
-    std::snprintf(value, sizeof(value), "%.0f%%", t.hull);
-    text(h.lettering, value, right + 135, deck + 29, 15, t.hull > 30 ? pearl : amber);
-    bar(h.panels, right + 135, deck + 59, 100, t.hull / 100, mint);
-    // Hyperion's flattened contact scope with real target and velocity bearings.
-    const double radarX = center + 115, radarY = deck + 48;
-    for (int i = 0; i < 48; i++) {
-        double a = i * 6.283185307 / 48, b = (i + 1) * 6.283185307 / 48;
-        line(h.strokes, radarX + std::cos(a) * 60, radarY + std::sin(a) * 19, radarX + std::cos(b) * 60,
-             radarY + std::sin(b) * 19, muted * .65f);
-    }
-    line(h.strokes, radarX, radarY - 5, radarX - 4, radarY + 5, mint);
-    line(h.strokes, radarX - 4, radarY + 5, radarX + 4, radarY + 5, mint);
-    line(h.strokes, radarX + 4, radarY + 5, radarX, radarY - 5, mint);
-    if (!t.shrinking || t.hullMetres >= .001) {
-        const glm::vec3 trafficInk{1, .64, .78};
-        size_t shown = 0;
-        for (const auto& c : activity) {
-            const auto v = c.localDirection;
-            if (shown < 24) {
-                const double x = radarX + v.x * 52, y = radarY + v.z * 15 - v.y * 17;
-                rect(h.panels, x - 1, y - 1, c.selected ? 4 : 2, c.selected ? 4 : 2,
-                     c.selected ? amber : trafficInk);
-            }
-            if (shown < 6) {
-                const double y = 211 + shown * 34;
-                text(h.lettering, (c.selected ? "+ " : "  ") + c.body.name, 28, y, 10,
-                     c.selected ? amber : trafficInk, 28);
-                text(h.lettering, flightQuantity(c.distance) + " / " + c.body.status, 45, y + 15, 8, muted,
-                     36);
-            }
-            ++shown;
-            if (!c.occluded && c.localDirection.z < 0 &&
-                (c.selected || c.body.kind == ActivityKind::Harbour)) {
-                const double x = center + v.x / -v.z * 450 / .7002075, y = 450 - v.y / -v.z * 450 / .7002075;
-                if (x > 350 && x < w - 345 && y > 180 && y < 660) {
-                    for (int side : {-1, 1})
-                        line(h.strokes, x + side * 9, y - 6, x + side * 9, y + 6, trafficInk);
-                    text(h.lettering, c.body.name, x + 14, y - 13, 8, trafficInk, 25);
-                    text(h.lettering, flightQuantity(c.distance), x + 14, y + 2, 8, muted, 20);
-                }
-            }
-        }
-        if (!activity.empty())
-            text(h.lettering, "LOCAL TRAFFIC / K SELECT / I HAIL", 28, 189, 10, trafficInk);
-    }
-    for (const auto& contact : contacts) {
-        if (contact.selected)
-            continue; // The active target is drawn in amber below.
-        const auto v = contact.localDirection;
-        const double x = radarX + v.x * 49, y = radarY + v.z * 14;
-        const auto color = contact.address.kind() == Kind::System ? pearl : ice;
-        line(h.strokes, x, y, x, y - v.y * 17, color * .6f);
-        rect(h.panels, x - 1.4, y - v.y * 17 - 1.4, 2.8, 2.8, color);
-    }
-    if (t.targetVisible) {
-        auto v = glm::normalize(t.localTarget);
-        double x = radarX + v.x * 49, y = radarY + v.z * 14;
-        line(h.strokes, x, y, x, y - v.y * 17, amber);
-        rect(h.panels, x - 2, y - v.y * 17 - 2, 4, 4, amber);
-    }
-    // Fixed reticle and a separate prograde marker make lateral drift visible.
-    const double cy = 450;
-    for (int side : {-1, 1}) {
-        line(h.strokes, center + side * 9, cy, center + side * 24, cy, ice);
-        line(h.strokes, center + side * 24, cy, center + side * 24, cy + 4, ice);
-    }
-    if (t.speed > 1e-15 && -t.localVelocity.z > t.speed * .12) {
-        double x = center + t.localVelocity.x / -t.localVelocity.z * 450 / .7002075,
-               y = cy - t.localVelocity.y / -t.localVelocity.z * 450 / .7002075;
-        if (x > 60 && x < w - 60 && y > 70 && y < 750) {
-            for (int i = 0; i < 20; i++) {
-                double a = i * 6.283185307 / 20, b = (i + 1) * 6.283185307 / 20;
-                line(h.strokes, x + std::cos(a) * 7, y + std::sin(a) * 7, x + std::cos(b) * 7,
-                     y + std::sin(b) * 7, mint);
-            }
-            line(h.strokes, x - 15, y, x - 8, y, mint);
-            line(h.strokes, x + 8, y, x + 15, y, mint);
-        }
-    }
-    if (t.targetVisible) {
-        auto d = t.localTarget;
-        double x = center, y = 450;
-        bool ahead = d.z < 0;
-        if (ahead) {
-            x += d.x / -d.z * 450 / .7002075;
-            y -= d.y / -d.z * 450 / .7002075;
+    rect(h.panels, 0, 0, w, 46, ink, .98f);
+    h.hitRegions.push_back({0, 0, w, 46});
+    text(h.lettering, "INFINITE", 26, 15, 17.5, pearl);
+    fitted(h.lettering, t.drive, center - 160, 19, 320, 10.5, t.shrinking ? amber : ice);
+    label(mode, w - 155, 19, 130, mint);
+    line(h.strokes, 24, 45, w - 24, 45, muted * .3f);
+
+    // Scale changes and physical ship size share one backed instrument. They
+    // remain separate quantities; reference-frame refinement never resizes it.
+    const CockpitRect scale{24, 64, 274, t.shrinking ? 96. : 76.};
+    card(h, scale, t.shrinking ? amber : ice);
+    label(t.shrinking ? "SHRINK FIELD / HULL" : "SHIP / FULL SIZE", 38, 75, 245, t.shrinking ? amber : muted);
+    quantity(flightQuantity(t.hullMetres), 38, 94, 245, 17.5, t.shrinking ? amber : pearl);
+    quantity("VIEW " + flightQuantity(std::pow(10., t.logMetres)), 38, 120, 166, 10.5, muted);
+    label(std::abs(t.scaleRate) <= .02 ? "STABLE"
+          : t.scaleRate < 0            ? "REFINING"
+                                       : "WIDENING",
+          211, 120, 77, std::abs(t.scaleRate) > .02 ? amber : mint);
+    if (t.shrinking)
+        quantity((t.growthBlocked ? "BLOCKED / "
+                  : t.autoShrink  ? "AUTO / "
+                                  : "MANUAL / ") +
+                     flightQuantity(t.targetHullMetres),
+                 38, 145, 245, 10.5, t.growthBlocked ? amber : muted);
+
+    if (t.altitude >= 0) {
+        card(h, {w - 310, 64, 286, 96}, surface ? mint : ice);
+        label(t.shrinking ? "PARENT TERRAIN / AGL"
+              : surface   ? "SURFACE / ALTITUDE AGL"
+                          : "ALTITUDE AGL",
+              w - 296, 75, 258);
+        quantity(flightQuantity(std::max(0., t.altitude)), w - 296, 94, 258, 17.5, pearl);
+        if (surface) {
+            quantity(std::string(t.descent < 0 ? "UP " : "DOWN ") + flightQuantity(std::abs(t.descent), true),
+                     w - 296, 121, 155, 10.5, t.descent > 2 * ratio ? amber : ice);
+            const auto status = t.landed ? "LANDED" : t.safe ? "STABLE" : !t.gear ? "GEAR UP" : "ALIGN";
+            label(status, w - 131, 121, 107, t.landed || t.safe ? mint : amber);
+            quantity("DRIFT " + flightQuantity(t.drift, true), w - 296, 142, 258, 10.5, muted);
         } else {
-            x += std::copysign(w * .38, d.x);
-            y -= std::copysign(250., d.y);
+            label(t.shrinking ? "SHRINK FIELD ACTIVE" : "ORBITAL FLIGHT", w - 296, 125, 258, muted);
         }
-        x = std::clamp(x, 80., w - 80.);
-        y = std::clamp(y, 90., 710.);
+    }
+
+    // Hyperion's separated navigation, instrument, scope and systems rails.
+    card(h, l.navigation, mint);
+    card(h, l.flight, ice);
+    card(h, l.scope, ice);
+    card(h, l.systems, mint);
+    const auto nav = l.navigation, flight = l.flight, scope = l.scope, systems = l.systems;
+    label("NAVIGATION", nav.x + 14, nav.y + 12, nav.w - 28, mint);
+    auto destination = t.destination;
+    if (auto pos = destination.find(" / J NAVIGATE"); pos != std::string::npos)
+        destination.resize(pos);
+    if (!t.targetVisible && destination.starts_with("SELECT A DESTINATION"))
+        destination = "SELECT A DESTINATION";
+    fitted(h.lettering, destination, nav.x + 14, nav.y + 33, nav.w - 28, 17.5, pearl);
+    if (t.targetVisible) {
+        quantity(flightQuantity(t.range), nav.x + 14, nav.y + 60, nav.w * .53, 10.5, ice);
+        label("ETA " + duration(t.etaSeconds), nav.x + nav.w * .57, nav.y + 60, nav.w * .40, muted);
+    }
+    const auto phase = t.phase.starts_with("PLANETARY FLIGHT / Y") ? "PLANETARY FLIGHT" : t.phase;
+    label(phase, nav.x + 14, nav.y + 81, nav.w - 28, t.landed ? mint : muted);
+    const auto primary = t.landed          ? "ENTER  LAUNCH"
+                         : t.navigating    ? "B  TAKE HELM"
+                         : t.targetVisible ? "J  APPROACH"
+                                           : "Y  NEXT WORLD";
+    label(primary, nav.x + 14, nav.y + 105, nav.w * .52, mint);
+    label(t.landed          ? ""
+          : surface         ? "L  LAND"
+          : t.targetVisible ? "Y  WORLDS"
+                            : "K  TRAFFIC",
+          nav.x + nav.w * .59, nav.y + 105, nav.w * .37, ice);
+
+    label("VELOCITY", flight.x + 14, flight.y + 12, flight.w - 28);
+    quantity(flightQuantity(t.speed, true), flight.x + 14, flight.y + 36, flight.w - 28,
+             flight.w < 210 ? 17.5 : 21, pearl);
+    quantity("STOP " + flightQuantity(t.stoppingDistance), flight.x + 14, flight.y + 70, flight.w - 28, 10.5,
+             ice);
+    label(t.assist ? "X  ASSIST ON" : "X  INERTIAL", flight.x + 14, flight.y + 105, flight.w - 28,
+          t.assist ? mint : amber);
+    const double gaugeWidth = (systems.w - 42) * .5;
+    for (int i = 0; i < 2; ++i) {
+        const double x = systems.x + 14 + i * (gaugeWidth + 14);
+        label(i ? "HULL" : "THROTTLE", x, systems.y + 12, gaugeWidth);
+        std::snprintf(value, sizeof(value), "%.0f%%", i ? t.hull : t.throttle * 100);
+        text(h.lettering, value, x, systems.y + 36, 21, i && t.hull < 30 ? amber : pearl);
+        bar(h.panels, x, systems.y + 70, gaugeWidth, i ? t.hull / 100 : t.throttle,
+            i ? (t.hull < 30 ? amber : mint) : ice);
+    }
+    label(t.gear ? "G  GEAR DOWN" : "G  GEAR UP", systems.x + 14, systems.y + 105, systems.w - 28,
+          t.gear ? mint : muted);
+    const double radarX = scope.x + scope.w * .5, radarY = scope.y + 72;
+    const double radarRadius = std::min(90., (scope.w - 28) * .5);
+    label(surface ? "LANDING DIRECTOR" : "CONTACT SCOPE", scope.x + 14, scope.y + 12, scope.w - 28,
+          surface ? mint : ice);
+    for (double r : {.5, 1.})
+        for (int i = 0; i < 64; ++i) {
+            const double a = i * 6.283185307 / 64, b = (i + 1) * 6.283185307 / 64;
+            line(h.strokes, radarX + std::cos(a) * radarRadius * r, radarY + std::sin(a) * 25 * r,
+                 radarX + std::cos(b) * radarRadius * r, radarY + std::sin(b) * 25 * r,
+                 muted * float(r == 1 ? .7 : .25));
+        }
+    line(h.strokes, radarX - radarRadius, radarY, radarX + radarRadius, radarY, muted * .22f);
+    line(h.strokes, radarX, radarY - 25, radarX, radarY + 25, muted * .22f);
+    auto scopePoint = [&](glm::dvec3 v, glm::vec3 color, bool selected, bool world) {
+        const double x = radarX + v.x * radarRadius * .88, y = radarY + v.z * 22;
+        const glm::dvec2 tip{x, y - v.y * 20};
+        line(h.strokes, x, y, tip.x, tip.y, color * .48f);
+        if (selected || world)
+            diamond(h.strokes, tip, selected ? 5 : 2.5, color);
+        else
+            rect(h.panels, tip.x - 1.5, tip.y - 1.5, 3, 3, color);
+    };
+    if (catalogues && !surface) {
+        for (const auto& contact : contacts)
+            if (!contact.selected)
+                scopePoint(contact.localDirection, contact.occluded ? muted * .6f : ice, false, true);
+        for (size_t i = 0; i < activity.size(); ++i)
+            if (i < 32 || activity[i].selected)
+                scopePoint(activity[i].localDirection, activity[i].selected ? amber : trafficInk,
+                           activity[i].selected, false);
+    }
+    if (!surface && t.targetVisible && glm::length(t.localTarget) > 1e-30)
+        scopePoint(glm::normalize(t.localTarget), amber, true, true);
+    if (surface) {
+        const double shift = std::clamp(t.pitch * 38, -18., 18.);
         for (int side : {-1, 1}) {
-            line(h.strokes, x + side * 10, y - 10, x + side * 16, y - 10, amber);
-            line(h.strokes, x + side * 16, y - 10, x + side * 16, y + 10, amber);
-            line(h.strokes, x + side * 16, y + 10, x + side * 10, y + 10, amber);
+            const double a = side * 12., b = side * radarRadius * .8;
+            line(h.strokes, radarX + a * std::cos(t.roll), radarY + shift - a * .28 * std::sin(t.roll),
+                 radarX + b * std::cos(t.roll), radarY + shift - b * .28 * std::sin(t.roll),
+                 t.safe ? mint : amber);
         }
-        text(h.lettering, flightQuantity(t.range), x + 22, y - 4, 10, amber, 22);
+        diamond(h.strokes, {radarX, radarY}, 4, pearl);
+        label(t.landed ? "LANDED"
+              : t.safe ? "STABLE"
+                       : "LEVEL SHIP",
+              radarX - 44, scope.y + 31, 115, t.safe || t.landed ? mint : amber);
+        std::snprintf(value, sizeof(value), scope.w < 240 ? "R %.0f / P %.0f" : "ROLL %.0f / PITCH %.0f",
+                      t.roll * 57.2957795, t.pitch * 57.2957795);
+        label(value, scope.x + 14, scope.y + 105, scope.w - 28);
+    } else {
+        line(h.strokes, radarX, radarY - 5, radarX - 4, radarY + 4, mint);
+        line(h.strokes, radarX - 4, radarY + 4, radarX + 4, radarY + 4, mint);
+        line(h.strokes, radarX + 4, radarY + 4, radarX, radarY - 5, mint);
+        label("FORWARD", radarX - 31, scope.y + 31, 80, muted);
+        label(scope.w < 240 ? "WORLDS / SHIPS" : "WORLD / TRAFFIC / TARGET", scope.x + 14, scope.y + 105,
+              scope.w - 28);
     }
-    if (t.altitude >= -1e-3) {
-        text(h.lettering, "AGL " + flightQuantity(std::max(0., t.altitude)), w - 300, 98, 12, ice);
-        text(h.lettering, "DOWN " + flightQuantity(t.descent, true), w - 300, 120, 10,
-             t.descent > 6 ? amber : muted);
-        text(h.lettering, t.safe ? "APPROACH STABLE" : "CHECK GEAR / DRIFT / ATTITUDE", w - 300, 142, 9,
-             t.safe ? mint : muted);
-        const auto cs = std::cos(t.roll), sn = std::sin(t.roll);
-        double yy = cy + t.pitch * 220;
-        for (int side : {-1, 1})
-            line(h.strokes, center + side * 45 * cs, yy - side * 45 * sn, center + side * 95 * cs,
-                 yy - side * 95 * sn, muted);
+
+    // Only a compact hint remains at the bottom; the full guide is opt-in.
+    label("F1 CONTROLS", 26, 889, 145, muted);
+    quantity("FLIGHT " + duration(t.flightSeconds) + " / " + flightQuantity(t.travelMetres),
+             std::max(178., center - 180), 889, std::max(180., w - 490), 9, muted);
+    label("H RENDER / TAB HUD", w - 200, 889, 178, muted);
+    if (help) {
+        const CockpitRect guide{center - std::min(700., w - 80) * .5, 205, std::min(700., w - 80), 394};
+        card(h, guide, mint);
+        fitted(h.lettering, "FLIGHT CONTROLS", guide.x + 22, guide.y + 22, guide.w - 44, 17.5, pearl);
+        const std::pair<const char*, const char*> controls[]{{"W / S", "THROTTLE"},
+                                                             {"A / D   Q / E", "STRAFE / LIFT"},
+                                                             {"C / MOUSE / ARROWS", "HELM / LOOK"},
+                                                             {"U / O", "ROLL"},
+                                                             {"B / X", "BRAKE / ASSIST"},
+                                                             {"Y / SHIFT-Y", "PLANETS / MOONS"},
+                                                             {"K / I / J", "TRAFFIC / HAIL / APPROACH"},
+                                                             {"L / G / ENTER", "LAND / GEAR / LAUNCH"},
+                                                             {"N / - / +", "LONG CRUISE / DRIVE SPEED"},
+                                                             {"Z / , / .", "SHRINK / SMALLER / LARGER"},
+                                                             {"SHIFT-Z / V", "FULL SIZE / EXPLORER"},
+                                                             {"F6 / H / TAB", "TRAFFIC / RENDER / HUD"},
+                                                             {"F1 / ESC", "CLOSE GUIDE / RELEASE HELM"}};
+        for (size_t i = 0; i < std::size(controls); ++i) {
+            label(controls[i].first, guide.x + 22, guide.y + 65 + i * 24, guide.w * .42, ice);
+            label(controls[i].second, guide.x + guide.w * .46, guide.y + 65 + i * 24, guide.w * .50, pearl);
+        }
+        return h;
     }
-    if (!contacts.empty() && (!t.shrinking || t.hullMetres >= .001)) {
-        const double x = w - 310;
+
+    if (catalogues && !activity.empty()) {
+        card(h, l.traffic, trafficInk);
+        label("LOCAL TRAFFIC", 38, 188, 160, trafficInk);
+        label("K / I", 238, 188, 56, muted);
+        const auto rows = cockpitActivityRows(activity);
+        for (size_t row = 0; row < rows.size(); ++row) {
+            const auto& c = activity[rows[row]];
+            const double y = 211 + row * 34;
+            if (c.selected)
+                rect(h.panels, 28, y - 5, 266, 33, amber * .16f, .8f);
+            fitted(h.lettering, (c.selected ? "+ " : "  ") + c.body.name, 36, y, 246, 10.5,
+                   c.selected   ? amber
+                   : c.occluded ? muted
+                                : pearl);
+            auto status = c.body.status.substr(0, c.body.status.find(" / "));
+            if (c.occluded)
+                status = "OCCULTED";
+            quantity(flightQuantity(c.distance) + " / " + status, 52, y + 16, 234, 9,
+                     c.selected ? amber : muted);
+        }
+        label(std::to_string(activity.size()) + " CONTACTS / K SELECT", 38, 421, 246, muted);
+    }
+    if (catalogues && !contacts.empty()) {
+        card(h, l.celestial, ice);
         const auto moons =
             std::count_if(contacts.begin(), contacts.end(), [](const auto& c) { return c.moon; });
         const auto planets = std::count_if(contacts.begin(), contacts.end(), [](const auto& c) {
             return c.address.kind() == Kind::Planet && !c.moon;
         });
-        text(h.lettering, "Y PLANETS / SHIFT-Y MOONS", x, 171, 8, muted);
-        text(h.lettering, "SYSTEM " + std::to_string(planets) + "P / " + std::to_string(moons) + "M", x, 189,
-             10, ice);
-        size_t index = 0;
-        for (const auto& contact : contacts) {
-            if (index >= 8)
-                break;
-            const auto color = contact.selected ? amber : (contact.occluded ? muted * .8f : pearl);
-            const double y = 211 + index * 34;
-            text(h.lettering, (contact.selected ? "+ " : "  ") + contact.label, x, y, 10, color, 25);
-            text(h.lettering,
-                 flightQuantity(contact.distanceMetres) + " / " +
-                     (contact.occluded               ? "OCCULTED"
-                      : contact.localDirection.z < 0 ? "AHEAD"
-                                                     : "AFT"),
-                 x + 17, y + 15, 8, contact.selected ? amber : muted, 33);
-            ++index;
-            if (!contact.occluded && contact.localDirection.z < 0 && contact.angularRadius < .008) {
-                const auto d = contact.localDirection;
-                const double px = center + d.x / -d.z * 450 / .7002075;
-                const double py = 450 - d.y / -d.z * 450 / .7002075;
-                if (px > 70 && px < w - 70 && py > 180 && py < 660 && (px < w - 350 || py > 570)) {
-                    for (int side : {-1, 1}) {
-                        line(h.strokes, px + side * 6, py - 4, px + side * 6, py + 4,
-                             contact.selected ? amber : ice * .6f);
-                    }
-                    if (!contact.selected) {
-                        text(h.lettering, contact.label, px + 10, py - 10, 8, ice, 20);
-                        text(h.lettering, flightQuantity(contact.distanceMetres), px + 10, py + 4, 8, muted,
-                             20);
-                    }
-                }
+        label("SYSTEM " + std::to_string(planets) + "P / " + std::to_string(moons) + "M", w - 296, 188, 258,
+              ice);
+        for (size_t i = 0; i < std::min(size_t(8), contacts.size()); ++i) {
+            const auto& c = contacts[i];
+            const double x = w - 296, y = 211 + i * 34;
+            if (c.selected)
+                rect(h.panels, w - 306, y - 5, 278, 33, amber * .16f, .8f);
+            const auto color = c.selected ? amber : c.occluded ? muted : pearl;
+            fitted(h.lettering, (c.selected ? "+ " : "  ") + c.label, x, y, 258, 10.5, color);
+            quantity(flightQuantity(c.distanceMetres) + " / " +
+                         (c.occluded               ? "OCCULTED"
+                          : c.localDirection.z < 0 ? "AHEAD"
+                                                   : "AFT"),
+                     x + 17, y + 16, 243, 9, c.selected ? amber : muted);
+        }
+        label("Y PLANETS / SHIFT-Y MOONS", w - 296, 490, 258, muted);
+    }
+
+    // Readable world labels reserve rectangles, avoid all fixed panels and the
+    // reticle, and cap at three secondary labels. Geometry and picking stay full.
+    const CockpitRect aim{center - 42, 423, 84, 54};
+    auto worldLabel = [&](glm::dvec2 anchor, std::string_view name, std::string_view range, glm::vec3 color) {
+        const double width = std::min(184., l.windscreen.w - 12);
+        for (int placement : {0, 1, 2, 3}) {
+            const int side = placement == 1 ? -1 : 1;
+            CockpitRect r{side > 0 ? anchor.x + 18 : anchor.x - width - 18,
+                          anchor.y + (placement == 2   ? 32
+                                      : placement == 3 ? -68
+                                                       : -16),
+                          width, 39};
+            r.x = std::clamp(r.x, l.windscreen.x, l.windscreen.x + l.windscreen.w - width);
+            r.y = std::clamp(r.y, l.windscreen.y, l.windscreen.y + l.windscreen.h - r.h);
+            if (r.overlaps(aim) || std::any_of(h.worldLabels.begin(), h.worldLabels.end(),
+                                               [&](auto other) { return r.overlaps(other); }))
+                continue;
+            h.worldLabels.push_back(r);
+            rect(h.panels, r.x, r.y, r.w, r.h, ink, .94f);
+            line(h.strokes, anchor.x, anchor.y, side > 0 ? r.x : r.x + r.w, r.y + 18, color * .5f);
+            fitted(h.lettering, name, r.x + 7, r.y + 6, r.w - 14, 9, color);
+            quantity(range, r.x + 7, r.y + 22, r.w - 14, 9, muted);
+            return true;
+        }
+        return false;
+    };
+    if (t.targetVisible) {
+        const auto marker = cockpitTargetMarker(t.localTarget, aspect);
+        const auto p = marker.point;
+        if (marker.offscreen) {
+            const auto d = marker.direction, across = glm::dvec2(-d.y, d.x);
+            line(h.strokes, p.x, p.y, p.x - d.x * 12 + across.x * 6, p.y - d.y * 12 + across.y * 6, amber);
+            line(h.strokes, p.x, p.y, p.x - d.x * 12 - across.x * 6, p.y - d.y * 12 - across.y * 6, amber);
+        } else {
+            for (int side : {-1, 1}) {
+                line(h.strokes, p.x + side * 10, p.y - 12, p.x + side * 17, p.y - 12, amber);
+                line(h.strokes, p.x + side * 17, p.y - 12, p.x + side * 17, p.y + 12, amber);
+                line(h.strokes, p.x + side * 17, p.y + 12, p.x + side * 10, p.y + 12, amber);
             }
         }
+        worldLabel(p, marker.aft ? "TARGET AFT" : "TARGET", flightQuantity(t.range), amber);
     }
-    std::snprintf(value, sizeof(value), "VIEW SCALE %s / %s",
-                  flightQuantity(std::pow(10., t.logMetres)).c_str(),
-                  std::abs(t.scaleRate) > .02 ? (t.scaleRate < 0 ? "REFINING" : "WIDENING") : "STABLE");
-    text(h.lettering, value, 28, 61, 9, t.shrinking ? amber : muted);
-    text(h.lettering,
-         "SHIP SIZE " + flightQuantity(t.hullMetres) + (t.shrinking ? " / SHRINK FIELD" : " / FULL SIZE"), 28,
-         84, 11, t.shrinking ? amber : ice);
-    if (t.shrinking) {
-        text(h.lettering,
-             "TARGET " + flightQuantity(t.targetHullMetres) + (t.autoShrink ? " / AUTO" : " / MANUAL"), 28,
-             105, 9, muted);
-        text(h.lettering,
-             t.growthBlocked ? "GROWTH BLOCKED / MOVE CLEAR" : ", SMALLER  . LARGER  SHIFT-Z FULL SIZE", 28,
-             124, 9, t.growthBlocked ? amber : muted);
+    for (int side : {-1, 1}) {
+        line(h.strokes, center + side * 9, 450, center + side * 23, 450, ice);
+        line(h.strokes, center + side * 23, 450, center + side * 23, 454, ice);
     }
-    auto duration = [](double seconds) {
-        char b[64];
-        if (seconds < 0)
-            return std::string("--");
-        const auto total = uint64_t(std::min(seconds, 1e15));
-        std::snprintf(b, sizeof(b), "%llu:%02llu:%02llu", (unsigned long long)(total / 3600),
-                      (unsigned long long)(total / 60 % 60), (unsigned long long)(total % 60));
-        return std::string(b);
-    };
-    text(h.lettering, "FLIGHT " + duration(t.flightSeconds) + " / " + flightQuantity(t.travelMetres), 28,
-         t.shrinking ? 148 : 108, 9, muted);
-    if (t.navigating)
-        text(h.lettering, "ETA " + duration(t.etaSeconds), 28, t.shrinking ? 167 : 128, 9, ice);
-    text(h.lettering, "W/S THROTTLE  A/D STRAFE  Q/E LIFT  U/O ROLL  B BRAKE  X ASSIST", 30, 721, 9, muted);
-    text(h.lettering,
-         "Y PLANETS  SHIFT-Y MOONS  J NAVIGATE  L LAND  ENTER LAUNCH  N LONG CRUISE  Z SHRINK  V EXPLORER",
-         30, 740, 9, muted);
-    if (!notice.empty())
-        text(h.lettering, notice, 30, 690, 10, ice, size_t(std::max(30., (w - 60) / 8.6)));
+    rect(h.panels, center - 1, 449, 2, 2, pearl);
+    if (t.speed > 1e-15 && -t.localVelocity.z > t.speed * .12) {
+        const glm::dvec2 p{center + t.localVelocity.x / -t.localVelocity.z * 450 / .7002075,
+                           450 - t.localVelocity.y / -t.localVelocity.z * 450 / .7002075};
+        if (l.windscreen.contains(p)) {
+            for (int i = 0; i < 24; ++i) {
+                const double a = i * 6.283185307 / 24, b = (i + 1) * 6.283185307 / 24;
+                line(h.strokes, p.x + std::cos(a) * 7, p.y + std::sin(a) * 7, p.x + std::cos(b) * 7,
+                     p.y + std::sin(b) * 7, mint);
+            }
+            line(h.strokes, p.x - 16, p.y, p.x - 9, p.y, mint);
+            line(h.strokes, p.x + 9, p.y, p.x + 16, p.y, mint);
+        }
+    }
+    size_t secondary = 0;
+    if (catalogues) {
+        auto marker = [&](glm::dvec3 d, std::string_view name, double range, glm::vec3 color) {
+            if (d.z >= -.01 || secondary >= 3)
+                return;
+            const glm::dvec2 p{center + d.x / -d.z * 450 / .7002075, 450 - d.y / -d.z * 450 / .7002075};
+            if (!l.windscreen.contains(p) || aim.contains(p))
+                return;
+            if (worldLabel(p, name, flightQuantity(range), color)) {
+                diamond(h.strokes, p, 4, color);
+                ++secondary;
+            }
+        };
+        for (const auto& c : activity)
+            if (!c.selected && !c.occluded && c.body.kind == ActivityKind::Harbour && c.distance < 2e7)
+                marker(c.localDirection, c.body.name, c.distance, trafficInk);
+        for (const auto& c : contacts)
+            if (!c.selected && !c.occluded && c.angularRadius < .008)
+                marker(c.localDirection, c.label, c.distanceMetres, ice);
+    }
+    if (surface) {
+        // Local terrain normal drives the horizon; it is unrelated to galaxy up.
+        const double cs = std::cos(t.roll), sn = std::sin(t.roll);
+        for (int pitch : {-20, -10, 0, 10, 20}) {
+            const double y = (t.pitch - pitch * .01745329252) * 220;
+            if (std::abs(y) > 140)
+                continue;
+            for (int side : {-1, 1}) {
+                const double a = side * (pitch ? 57. : 46.), b = side * (pitch ? 83. : 108.);
+                line(h.strokes, center + a * cs + y * sn, 450 - a * sn + y * cs, center + b * cs + y * sn,
+                     450 - b * sn + y * cs, pitch ? muted * .5f : mint * .7f);
+            }
+        }
+        const bool danger = t.descent > 2 * ratio && t.stoppingDistance > std::max(0., t.altitude);
+        if (danger || t.growthBlocked) {
+            const std::string warning =
+                t.growthBlocked ? "GROWTH BLOCKED / MOVE CLEAR" : "BRAKE / TERRAIN APPROACH";
+            const double width = std::min(300., l.windscreen.w);
+            card(h, {center - width * .5, 664, width, 29}, amber);
+            fitted(h.lettering, warning, center - width * .5 + 10, 674, width - 20, 10.5, amber);
+        }
+    }
+    if (!notice.empty()) {
+        const double width = std::min(650., w - 80);
+        card(h, {center - width * .5, 714, width, 29}, ice);
+        fitted(h.lettering, notice, center - width * .5 + 12, 723, width - 24, 10.5, ice);
+    }
     return h;
 }
 } // namespace infinite

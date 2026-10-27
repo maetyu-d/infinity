@@ -80,17 +80,18 @@ static Options options(int argc, char** argv) {
         else if (arg == "--data")
             o.data = value();
         else if (arg == "--help") {
-            std::cout << "Infinite pilot: W/S throttle, A/D strafe, Q/E lift, U/O roll, B brake, X assist, "
-                         "J navigate, L land, Enter launch, G gear, N long cruise, Z shrink, comma/period "
-                         "size, Y planets, Shift-Y moons, V explorer. "
-                         "C mouse helm, arrows pitch/yaw, right-drag look, "
-                         "-/+ speed, Shift boost, Ctrl fine, scroll scale, click select, F focus, "
-                         "Backspace parent, Tab overlay, R reset, M marker, P screenshot, T tour, Esc "
-                         "release mouse / quit.\nCLI: --fresh --tour --smoke-test --frames N --width N "
-                         "--height N --seed N "
-                         "--benchmark-tour --flight-test --streaming-test --pilot-test --capture-dir DIR "
-                         "--profile CSV "
-                         "--data DIR\n";
+            std::cout
+                << "Infinite pilot: W/S throttle, A/D strafe, Q/E lift, U/O roll, B brake, X assist, "
+                   "J navigate, L land, Enter launch, G gear, N long cruise, Z shrink, comma/period "
+                   "size, Y planets, Shift-Y moons, V explorer. "
+                   "C mouse helm, arrows pitch/yaw, right-drag look, "
+                   "-/+ speed, Shift boost, Ctrl fine, scroll scale, click select, F focus, "
+                   "Backspace parent, F1 controls, Tab overlay, R reset, M marker, P screenshot, T tour, Esc "
+                   "release mouse / quit.\nCLI: --fresh --tour --smoke-test --frames N --width N "
+                   "--height N --seed N "
+                   "--benchmark-tour --flight-test --streaming-test --pilot-test --capture-dir DIR "
+                   "--profile CSV "
+                   "--data DIR\n";
             std::cout << "H cycles ORIGINAL / HYPERION / HYBRID. --render-mode original|hyperion|hybrid "
                          "--compare-modes --visual-time SECONDS\n";
             std::cout << "Local activity: K cycles traffic, I hails, J approaches/matches course, F6 "
@@ -380,6 +381,10 @@ int main(int argc, char** argv) {
                             pilot.resetMotion();
                             nav.focus();
                             opt.tour = false;
+                            break;
+                        case SDL_SCANCODE_F1:
+                            if (pilotEnabled)
+                                renderer.toggleCockpitHelp();
                             break;
                         case SDL_SCANCODE_BACKSPACE:
                             activity.selected.reset();

@@ -1,0 +1,33 @@
+{
+  "version": "0.14.0",
+  "checkpoint": "4c41677",
+  "backend": "Metal",
+  "resolution": [
+    1440,
+    900
+  ],
+  "native_flight": {
+    "median_frame_ms": 16.6632,
+    "p95_frame_ms": 17.2078,
+    "frames": 1791,
+    "final_cache_bytes": 12644936,
+    "peak_rss_bytes": 154091520,
+    "captures": 14,
+    "guide_camera_and_input_proof": true
+  },
+  "unchanged_simulation_files": 16,
+  "notes": "Single native full-flight fixture with the original/Hyperion/hybrid views, picking, landing, launch, micro/nano flight, real moon family and new controls guide. No other native viewer or build ran alongside it. VSync limits median wall time; no general speed-up is claimed.",
+  "release_suite": {
+    "passed": 27,
+    "failed": 0,
+    "seconds": 166.43
+  },
+  "package": {
+    "version": "0.14.0",
+    "signature_verified": true,
+    "ship_schema_unchanged": 3,
+    "activity_schema_unchanged": 1,
+    "live_F1_open_and_close": true,
+    "normal_saved_flight_resumed": true
+  }
+}

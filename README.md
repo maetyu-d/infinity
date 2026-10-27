@@ -1,6 +1,8 @@
 # INFINITE
 
-A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.13 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.14 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+
+Version 0.14 improves the cockpit with recessed, high-contrast instruments, larger navigation and velocity readings, a larger contact scope, a terrain-relative landing director, and uncluttered target cues. Labels avoid each other and the reticle; off-screen targets retain their actual bearing. **F1** opens the control guide. All universe generators and ship dynamics remain unchanged. [COCKPIT.md](docs/COCKPIT.md) records the Hyperion source reference, interface changes and validation.
 
 Version 0.13 expands each system to **13–21 primary worlds**, with real moons wherever the host's Hill sphere permits stable satellite orbits. Existing planets keep their exact identities, orbits and material structures. New rocky and dwarf worlds fill suitable inner or orbital gaps and extend the outer family. Moons have their own terrain, geology and atomic depth. **Y** cycles primary worlds; **Shift-Y** cycles the selected or current planet's moons; **J** approaches and **L** lands. The cockpit shows system totals and the nearest eight celestial contacts, including a selected destination. [PLANETARY_POPULATIONS.md](docs/PLANETARY_POPULATIONS.md) records generation, preservation and validation.
 
@@ -84,6 +86,7 @@ The cockpit shows planet/moon totals and the nearest eight celestial contacts wi
 | Shift / Ctrl | Boost / precision handling |
 | V | Original explorer / deploy ship at the inspected scale |
 | H / Tab | Cycle rendering modes / hide cockpit and HUD |
+| F1 | Show/hide the flight control guide |
 | F / Backspace / wheel | Original inspector focus / parent / scale navigation |
 | R | Return to planetary orbit in pilot mode; galaxy overview in explorer mode |
 | M / P / T | Discovery / screenshot / original guided tour |

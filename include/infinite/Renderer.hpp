@@ -44,6 +44,7 @@ class Renderer {
     RenderMode mode() const;
     void freezeVisualTime(double seconds);
     void setCockpit(const FlightInstruments*);
+    void toggleCockpitHelp();
 
   private:
     struct Impl;
