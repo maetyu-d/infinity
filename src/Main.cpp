@@ -118,7 +118,7 @@ int main(int argc, char** argv) {
         if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
             throw std::runtime_error(SDL_GetError());
         window = SDL_CreateWindow("INFINITE / A deterministic universe", opt.width, opt.height,
-                                  SDL_WINDOW_RESIZABLE | (opt.smoke ? SDL_WINDOW_HIGH_PIXEL_DENSITY : 0));
+                                  opt.smoke ? SDL_WINDOW_HIGH_PIXEL_DENSITY : SDL_WINDOW_RESIZABLE);
         if (!window)
             throw std::runtime_error(SDL_GetError());
         if (opt.smoke) {

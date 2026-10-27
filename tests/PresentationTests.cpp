@@ -36,6 +36,8 @@ int main() {
                   "HDR display bounded");
         }
         check(glm::length(hyperionDisplay({0, 0, 0})) == 0, "Black remains black");
+        const auto highlight = hyperionDisplay({8, .03, .4});
+        check(highlight.r - highlight.g > .5f, "Bright spectral pigments washed out to white");
         {
             Universe u;
             Navigation nav(u);
@@ -50,6 +52,22 @@ int main() {
             check(nav.restore(placement.str()), "Invalid planetary contact fixture");
             nav.selected = planets.back().address;
             const auto view = nav.serialize();
+            const auto sky = extractSpectralSky(u, nav);
+            check(sky.strength > .5 && sky.gas >= 0 && sky.gas <= 1,
+                  "Planetary flight lost its inherited spectral medium");
+            nav.changeFrame(system.address);
+            const auto rebasedSky = extractSpectralSky(u, nav);
+            check(sky.phase == rebasedSky.phase && sky.gas == rebasedSky.gas &&
+                      std::abs(sky.strength - rebasedSky.strength) < 1e-7 &&
+                      glm::length(sky.cameraToField * glm::dvec3(.2, .3, -.5) -
+                                  rebasedSky.cameraToField * glm::dvec3(.2, .3, -.5)) < 1e-11,
+                  "Changing precision frames moved the optical field");
+            nav.setRenderScale(-12);
+            check(extractSpectralSky(u, nav).strength == 0,
+                  "Atomic inspection replaced the specimen with a cosmic backdrop");
+            check(nav.restore(view), "Spectral medium test did not restore the exact view");
+            check(extractSpectralSky(u, nav).phase == sky.phase,
+                  "Returning to planetary flight changed the inherited visual phase");
             const auto fingerprint = descriptorFingerprint(system);
             const auto contacts = extractCelestialContacts(u, nav, system, planets);
             check(contacts.size() == planets.size() + 1, "Planetary view retains every system contact");
@@ -129,13 +147,14 @@ int main() {
                     check(inserted || phase->second == scene.phase,
                           "Nested material uses the same inherited pigment phase");
                     if (scale >= 3 && scale <= 5)
-                        check(scene.materialFrame.kind() == Kind::Planet,
+                        check(scene.materialFrame.kind() == Kind::Planet && scene.domain.x == 1,
                               "Terrain patches share the planet material frame");
                     if (scale >= 6)
                         check(scene.materialFrame.kind() == Kind::Rock,
                               "Nested matter shares the host material frame");
                     if (scale == 8)
-                        check(scene.material.w == 0, "Lattice remains free of decorative fibres");
+                        check(scene.material.w == 0 && scene.domain.x == 2,
+                              "Lattice remains identifiable and free of decorative fibres");
                 }
                 visited.emplace_back(address, hash);
                 auto children = u.children(node, 1);

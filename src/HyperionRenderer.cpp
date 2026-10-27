@@ -16,6 +16,7 @@ bgfx::ShaderHandle shader(const char* name) {
     LOAD_SHADER(fs_hyperion, BACKEND);                                                                       \
     LOAD_SHADER(fs_hyperion_flight, BACKEND);                                                                \
     LOAD_SHADER(fs_hyperion_flight_post, BACKEND);                                                           \
+    LOAD_SHADER(fs_hyperion_sky, BACKEND);                                                                   \
     LOAD_SHADER(fs_hyperion_glow, BACKEND);                                                                  \
     LOAD_SHADER(vs_hyperion_screen, BACKEND);                                                                \
     LOAD_SHADER(fs_hyperion_blur, BACKEND);                                                                  \
@@ -71,6 +72,9 @@ void HyperionRenderer::init() {
     cavity_ = bgfx::createUniform("u_cavity", bgfx::UniformType::Vec4);
     micro_ = bgfx::createUniform("u_micro", bgfx::UniformType::Mat4);
     microParams_ = bgfx::createUniform("u_microParams", bgfx::UniformType::Vec4);
+    domain_ = bgfx::createUniform("u_materialDomain", bgfx::UniformType::Vec4);
+    skyParams_ = bgfx::createUniform("u_sky", bgfx::UniformType::Vec4, 2);
+    skyRotation_ = bgfx::createUniform("u_skyRotation", bgfx::UniformType::Mat4);
     postParams_ = bgfx::createUniform("u_post", bgfx::UniformType::Vec4, 2);
     screenLayout_.begin()
         .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
@@ -91,11 +95,11 @@ void HyperionRenderer::clearTargets() {
 }
 HyperionRenderer::~HyperionRenderer() {
     clearTargets();
-    for (auto p : {geometry_, glow_, blur_, post_, flightGeometry_, flightPost_})
+    for (auto p : {geometry_, glow_, blur_, post_, flightGeometry_, flightPost_, sky_})
         if (bgfx::isValid(p))
             bgfx::destroy(p);
     for (auto u : {sceneSampler_, bloomSampler_, style_, pattern_, postParams_, cavity_, depthSampler_,
-                   atmosphere_, atmosphereRotation_, micro_, microParams_})
+                   atmosphere_, atmosphereRotation_, micro_, microParams_, domain_, skyParams_, skyRotation_})
         if (bgfx::isValid(u))
             bgfx::destroy(u);
 }
@@ -150,10 +154,10 @@ void HyperionRenderer::begin(RenderMode mode, int width, int height, bool optica
     bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x010204ff, 1.f, 0);
 }
 void HyperionRenderer::atmosphere(glm::vec3 eye, glm::vec3 light, const glm::mat4& rotation, float radius,
-                                  float height, float strength, float aspect) {
+                                  float height, float strength, float aspect, float phase) {
     atmosphereData_[0] = glm::vec4(eye, strength);
     atmosphereData_[1] = glm::vec4(light, height);
-    atmosphereData_[2] = {radius, .00005f, 10000.f, 0};
+    atmosphereData_[2] = {radius, .00005f, 10000.f, phase};
     atmosphereData_[3] = {aspect * .7002075f, .7002075f, bgfx::getCaps()->originBottomLeft ? 1.f : -1.f, 0};
     atmosphereMatrix_ = rotation;
 }
@@ -165,6 +169,7 @@ void HyperionRenderer::bind(const ScenePresentation& p, const glm::vec3& eye, co
                                      glm::vec4(eye, 1), glm::vec4(light, 0)};
     bgfx::setUniform(style_, data.data(), 4);
     bgfx::setUniform(pattern_, glm::value_ptr(pattern));
+    bgfx::setUniform(domain_, glm::value_ptr(p.domain));
     bgfx::setUniform(cavity_, glm::value_ptr(cavity));
     if (flight_) {
         bgfx::setUniform(micro_, glm::value_ptr(micro));
@@ -172,9 +177,25 @@ void HyperionRenderer::bind(const ScenePresentation& p, const glm::vec3& eye, co
         bgfx::setUniform(microParams_, glm::value_ptr(microParams));
     }
 }
+void HyperionRenderer::sky(const SpectralSky& sky, double seconds, float aspect, float tanHalfFov) {
+    if (mode_ == RenderMode::Original || sky.strength <= .001f)
+        return;
+    init();
+    if (!bgfx::isValid(sky_))
+        sky_ = program("vs_hyperion_screen", "fs_hyperion_sky");
+    const std::array<glm::vec4, 2> parameters{
+        glm::vec4(sky.strength * (mode_ == RenderMode::Hybrid ? .24f : 1.f), sky.phase, sky.gas,
+                  float(seconds)),
+        glm::vec4(aspect * tanHalfFov, tanHalfFov, bgfx::getCaps()->originBottomLeft ? 1.f : -1.f, 0)};
+    const auto rotation = glm::mat4_cast(glm::quat(sky.cameraToField));
+    bgfx::setUniform(skyParams_, parameters.data(), 2);
+    bgfx::setUniform(skyRotation_, glm::value_ptr(rotation));
+    // First in sequential view 0, before stars and all opaque/depth-tested
+    // universe geometry. The optical field never writes depth or adds objects.
+    screen(0, sky_);
+}
 void HyperionRenderer::bindEmissions(const Node& node, const glm::mat4& pattern, double seconds) {
-    float phase = float(node.seed % 10000) * .0371f;
-    phase -= std::floor(phase);
+    const float phase = hyperionPhase(node.seed);
     std::array<glm::vec4, 4> data{};
     data[0] = {mode_ == RenderMode::Hybrid ? .24f : 1.f, float(seconds), phase, 3};
     bgfx::setUniform(style_, data.data(), 4);

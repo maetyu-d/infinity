@@ -239,14 +239,17 @@ struct Renderer::Impl {
         framePoses.emplace(address, pose);
         return pose;
     }
-    void addBillboard(glm::dvec3 p, double radius, glm::vec3 color, bool cosmic = false) {
+    void addBillboard(glm::dvec3 p, double radius, glm::vec3 color, bool cosmic = false,
+                      float opticalMaterial = 0) {
         ++stats.particles;
         auto right = cameraQ * glm::dvec3(radius, 0, 0), up = cameraQ * glm::dvec3(0, radius, 0);
         glm::mat4 transform(1);
         transform[0] = glm::vec4(glm::vec3(right), 0);
         transform[1] = glm::vec4(glm::vec3(up), 0);
         transform[3] = glm::vec4(glm::vec3(p), 1);
-        (cosmic ? cosmicBillboards : billboards).push_back({transform, glm::vec4(color, 1)});
+        (cosmic ? cosmicBillboards : billboards)
+            .push_back(
+                {transform, glm::vec4(color, mode == RenderMode::Original ? 1.f : 1.f + opticalMaterial)});
     }
     bool prepareGPU(const std::shared_ptr<const Geometry>& geometry) {
         if (!geometry)
@@ -483,7 +486,11 @@ struct Renderer::Impl {
                                      -p.z * .035);
             if (LOD::visible(p, size, static_cast<double>(width) / height, fieldOfView))
                 addBillboard(position, size, particle.color * (opacity * attenuation),
-                             geometry->address.kind() == Kind::Cosmic);
+                             geometry->address.kind() == Kind::Cosmic,
+                             geometry->address.kind() == Kind::Cosmic ? 2.f
+                             : geometry->address.kind() == Kind::Galaxy && particle.objectId == UINT64_MAX
+                                 ? 1.f
+                                 : 0.f);
         }
         if (!geometry->lattice.atoms.empty() && bgfx::isValid(item.instances) && atomView < 64) {
             double diameter =
@@ -571,7 +578,7 @@ struct Renderer::Impl {
                 if (celestialOccluded(local, physicalDistance, skyOccluders))
                     continue;
                 const auto point = eye + direction * 500.;
-                addBillboard(point, size, star.color * (handoff * (gas ? .5f : 1.f)), true);
+                addBillboard(point, size, star.color * (handoff * (gas ? .5f : 1.f)), true, gas ? 1.f : 0.f);
                 if (gas)
                     ++stats.skyGas;
                 else {
@@ -1163,8 +1170,13 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                                          n.environment.waterActivity > .01;
                               });
     p.hyperion->begin(p.mode, p.width, p.height, opticalDepth, bool(p.instruments));
+    bgfx::setViewMode(0,
+                      p.mode == RenderMode::Original ? bgfx::ViewMode::Default : bgfx::ViewMode::Sequential);
     bgfx::setViewTransform(0, glm::value_ptr(v), glm::value_ptr(proj));
     bgfx::setViewRect(0, 0, 0, static_cast<uint16_t>(p.width), static_cast<uint16_t>(p.height));
+    if (p.mode != RenderMode::Original)
+        p.hyperion->sky(extractSpectralSky(p.universe, nav), p.visualTime, float(p.width) / p.height,
+                        float(std::tan(fov * .5)));
     if (p.instruments) {
         bgfx::setViewTransform(2, glm::value_ptr(v), glm::value_ptr(proj));
         bgfx::setViewRect(2, 0, 0, uint16_t(p.width), uint16_t(p.height));
@@ -1420,8 +1432,10 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                     auto light = glm::inverse(pose.orientation) * p.lightAt(planet.address, nav);
                     const float height =
                         float(std::clamp(8500. / std::pow(10., planet.frame.logRadius), 1e-5, .02));
-                    p.hyperion->atmosphere(glm::vec3(localEye), glm::vec3(light), rotation, float(radius),
-                                           height, strength, float(p.width) / p.height);
+                    p.hyperion->atmosphere(
+                        glm::vec3(localEye), glm::vec3(light), rotation, float(radius), height, strength,
+                        float(p.width) / p.height,
+                        hyperionPhase(planet.planetSeed ? planet.planetSeed : planet.seed));
                     ++p.stats.atmospheres;
                 }
             }

@@ -19,12 +19,17 @@ void main() {
     vec3 neighbourhood=(a+b+d+e)*.25;
     float clarity=(1.-smoothstep(.12,.32,(hi-lo)/max(hi,.02)))*smoothstep(.015,.08,luma(c));
     c=max(vec3(0.,0.,0.),c+(c-neighbourhood)*clarity*.24);
-    c+=texture2D(s_bloom,uv).rgb*.38;
+    // Hyperion psychedelic post: bright pigment retains its hue at the shoulder.
+    c+=texture2D(s_bloom,uv).rgb*.82;
+    vec2 fringe=(uv-.5)*texel*1.6*smoothstep(.15,.65,length(uv-.5));
+    vec3 split=vec3(texture2D(s_scene,uv+fringe).r,original.g,texture2D(s_scene,uv-fringe).b);
+    c+=max(vec3(0.),split-original)*.24;
     vec2 v=(uv-.5)*2.;c*=1.-.10*dot(v,v);
+    float saturationLuma=luma(c);c=max(vec3(0.),mix(vec3(saturationLuma),c,1.19));
     c=max(c*1.30,vec3(0.,0.,0.));
     float peak=max(c.r,max(c.g,c.b)),mappedPeak=(peak*(2.51*peak+.03))/(peak*(2.43*peak+.59)+.14);
     vec3 film=(c*(2.51*c+.03))/(c*(2.43*c+.59)+.14);
-    c=clamp(mix(film,c/max(peak,.0001)*mappedPeak,.48),vec3(0.,0.,0.),vec3(1.,1.,1.));
+    c=clamp(mix(film,c/max(peak,.0001)*mappedPeak,.86),vec3(0.,0.,0.),vec3(1.,1.,1.));
     c=pow(c,vec3(1./2.2,1./2.2,1./2.2));
     gl_FragColor=vec4(mix(original,c,u_post[0].z),1.);
 }

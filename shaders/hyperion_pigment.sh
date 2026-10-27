@@ -1,7 +1,7 @@
 // Ported verbatim from Hyperion src/flight/shaders.hpp PRISM_PIGMENT_GLSL.
 
-// Standard Hyperion look. No simulation uniforms or world generation.
-#define psychedelic 0.0
+// Actual Hyperion psychedelic look. No simulation state or world generation.
+#define psychedelic 1.0
 #define extremeQuality 0.0
 vec3 pigment(float h){return pow(.5+.5*cos(6.283185*(h+vec3(0.,.68,.34))),vec3(psychedelic>.5?1.85:1.35));}
 float thread(float p,float width){float span=fwidth(p),aa=clamp(span*.8,.002,.75),resolved=1.-smoothstep(.65,1.75,span);float strand=1.-smoothstep(width,width+aa,abs(sin(p)));float coverage=2.*asin(clamp(width,0.,1.))/3.14159265;return mix(coverage,strand,resolved);}

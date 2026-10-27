@@ -17,10 +17,20 @@ struct ScenePresentation {
     glm::vec4 material; // roughness, metallic, pigment amount, fibre amount
     float phase;
     float strength;
+    glm::vec4 domain{3, 0, 0, 0}; // object class, inherited strain/activity/ice
 };
 ScenePresentation extractPresentation(const Node&, const Geometry&, RenderMode);
+float hyperionPhase(uint64_t inheritedKey);
 glm::vec3 hyperionPigment(float phase);      // CPU reference for shader validation
 glm::vec3 hyperionDisplay(glm::vec3 linear); // flight HDR transform reference
+
+// Optical pigment only: the actual universe still supplies every star, galaxy
+// and gas particle. Orientation is anchored to the host galaxy across rebases.
+struct SpectralSky {
+    glm::dquat cameraToField{1, 0, 0, 0};
+    float phase = 0, gas = 0, strength = 0;
+};
+SpectralSky extractSpectralSky(const Universe&, const Navigation&);
 
 // Unresolved celestial lights and cockpit contacts retain the real addresses,
 // bearings and distances. Their screen footprint never changes world geometry.

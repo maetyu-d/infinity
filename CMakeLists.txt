@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Infinite VERSION 0.14.0 LANGUAGES C CXX)
+project(Infinite VERSION 0.15.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -98,7 +98,8 @@ if(INFINITE_VIEWER)
   include(cmake/EmbedShaders.cmake)
   if(WIN32 AND (NOT EXISTS "${PROJECT_SOURCE_DIR}/shaders/bin/dxbc/fs_hyperion.bin"
       OR NOT EXISTS "${PROJECT_SOURCE_DIR}/shaders/bin/dxbc/fs_hyperion_flight.bin"
-      OR NOT EXISTS "${PROJECT_SOURCE_DIR}/shaders/bin/dxbc/fs_hyperion_flight_post.bin"))
+      OR NOT EXISTS "${PROJECT_SOURCE_DIR}/shaders/bin/dxbc/fs_hyperion_flight_post.bin"
+      OR NOT EXISTS "${PROJECT_SOURCE_DIR}/shaders/bin/dxbc/fs_hyperion_sky.bin"))
     find_program(INFINITE_SHADERC NAMES shaderc REQUIRED)
     find_package(Python3 3.9 COMPONENTS Interpreter REQUIRED)
     execute_process(COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/compile_shaders.py"

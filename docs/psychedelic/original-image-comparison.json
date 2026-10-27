@@ -1,0 +1,87 @@
+[
+  {
+    "view": "0-COSMIC WEB-ORIGINAL",
+    "exact_world_pixels": true,
+    "mean_absolute_channel_error_255": 0.0
+  },
+  {
+    "view": "1-GALAXY-ORIGINAL",
+    "exact_world_pixels": true,
+    "mean_absolute_channel_error_255": 0.0
+  },
+  {
+    "view": "10-ROCK-ORIGINAL",
+    "exact_world_pixels": true,
+    "mean_absolute_channel_error_255": 0.0
+  },
+  {
+    "view": "11-MOUNTAIN-ORIGINAL",
+    "exact_world_pixels": true,
+    "mean_absolute_channel_error_255": 0.0
+  },
+  {
+    "view": "12-SURFACE-ORIGINAL",
+    "exact_world_pixels": true,
+    "mean_absolute_channel_error_255": 0.0
+  },
+  {
+    "view": "13-PLANET-ORIGINAL",
+    "exact_world_pixels": true,
+    "mean_absolute_channel_error_255": 0.0
+  },
+  {
+    "view": "14-STAR SYSTEM-ORIGINAL",
+    "exact_world_pixels": true,
+    "mean_absolute_channel_error_255": 0.0
+  },
+  {
+    "view": "15-GALAXY-ORIGINAL",
+    "exact_world_pixels": true,
+    "mean_absolute_channel_error_255": 0.0
+  },
+  {
+    "view": "16-COSMIC WEB-ORIGINAL",
+    "exact_world_pixels": true,
+    "mean_absolute_channel_error_255": 0.0
+  },
+  {
+    "view": "2-STAR SYSTEM-ORIGINAL",
+    "exact_world_pixels": true,
+    "mean_absolute_channel_error_255": 0.0
+  },
+  {
+    "view": "3-PLANET-ORIGINAL",
+    "exact_world_pixels": true,
+    "mean_absolute_channel_error_255": 0.0
+  },
+  {
+    "view": "4-SURFACE-ORIGINAL",
+    "exact_world_pixels": true,
+    "mean_absolute_channel_error_255": 0.0
+  },
+  {
+    "view": "5-MOUNTAIN-ORIGINAL",
+    "exact_world_pixels": true,
+    "mean_absolute_channel_error_255": 0.0
+  },
+  {
+    "view": "6-ROCK-ORIGINAL",
+    "exact_world_pixels": true,
+    "mean_absolute_channel_error_255": 0.0
+  },
+  {
+    "view": "7-MINERAL GRAIN-ORIGINAL",
+    "exact_world_pixels": true,
+    "mean_absolute_channel_error_255": 0.0
+  },
+  {
+    "view": "8-CRYSTAL LATTICE-ORIGINAL",
+    "exact_world_pixels": true,
+    "mean_absolute_channel_error_255": 0.0
+  },
+  {
+    "view": "9-MINERAL GRAIN-ORIGINAL",
+    "exact_world_pixels": true,
+    "mean_absolute_channel_error_255": 0.0
+  }
+]

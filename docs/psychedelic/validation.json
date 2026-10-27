@@ -1,0 +1,69 @@
+{
+  "version": "0.15.0",
+  "checkpoint": "db01c26",
+  "backend": "Metal",
+  "resolution": [
+    1440,
+    900
+  ],
+  "world_recipe": 3,
+  "population_recipe": 1,
+  "unchanged_simulation_files": 16,
+  "before": {
+    "median_frame_ms": 16.6632,
+    "p95_frame_ms": 17.2078,
+    "frames": 1791,
+    "peak_rss_bytes": 154091520,
+    "effect_target_bytes": 17856000,
+    "stationary_hyperion_orbit": {
+      "samples": 19,
+      "median_cpu_ms": 3.01992,
+      "median_gpu_ms": 3.47713
+    }
+  },
+  "after": {
+    "median_frame_ms": 16.6611,
+    "p95_frame_ms": 17.5003,
+    "frames": 1791,
+    "peak_rss_bytes": 155533312,
+    "effect_target_bytes": 17856000,
+    "stationary_hyperion_orbit": {
+      "samples": 19,
+      "median_cpu_ms": 2.75583,
+      "median_gpu_ms": 8.2525
+    }
+  },
+  "notes": "Same native flight fixture, resolution, seed and fixed visual time. Before is the measured 0.14 release fixture; after is the final 0.15 release fixture, including the same three modes, landing/launch, micro/nano, moon family and control guide. No other native game or build ran alongside the after cockpit fixture. Single-run observations; VSync limits median frame comparisons.",
+  "release_suite": {
+    "passed": 27,
+    "failed": 0,
+    "seconds": 189.11
+  },
+  "mode_proof": {
+    "scales": 9,
+    "checkpoints": 17,
+    "images": 51,
+    "camera_identical": true,
+    "geometry_identical": true,
+    "generation_unchanged": true
+  },
+  "original_image_comparison": {
+    "world_crop": [
+      0,
+      240,
+      1920,
+      900
+    ],
+    "views": 17,
+    "exact_matches": 17,
+    "largest_mean_channel_error_255": 0.0
+  },
+  "package": {
+    "version": "0.15.0",
+    "signature_verified": true,
+    "ship_schema": 3,
+    "activity_schema": 1,
+    "normal_saved_flight_resumed": true,
+    "live_hyperion_mode_verified": true
+  }
+}

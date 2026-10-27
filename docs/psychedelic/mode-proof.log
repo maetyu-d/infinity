@@ -1,0 +1,39 @@
+BACKBUFFER 1920x1080 (requested 1920x1080)
+Infinite / Metal / seed 5282236693612155973
+MODE_PROOF 0,0,0 geometry=3744238199189607544 camera=identical generation=unchanged modes=3
+TOUR 0 COSMIC WEB 0,0,0 scale=26.4914 draws=8 atoms=0 mineral=0
+MODE_PROOF 0,0,0/1:0 geometry=10201896341164389795 camera=identical generation=unchanged modes=3
+TOUR 1 GALAXY 0,0,0/1:0 scale=21.177 draws=7 atoms=0 mineral=0
+MODE_PROOF 0,0,0/1:0/2:0 geometry=16899495381898477542 camera=identical generation=unchanged modes=3
+TOUR 2 STAR SYSTEM 0,0,0/1:0/2:0 scale=12.8714 draws=10 atoms=0 mineral=0
+MODE_PROOF 0,0,0/1:0/2:0/3:0 geometry=9011686554674910669 camera=identical generation=unchanged modes=3
+TOUR 3 PLANET 0,0,0/1:0/2:0/3:0 scale=7.15953 draws=200 atoms=0 mineral=3
+MODE_PROOF 0,0,0/1:0/2:0/3:0/4:115964125760 geometry=15190808566179866898 camera=identical generation=unchanged modes=3
+TOUR 4 SURFACE 0,0,0/1:0/2:0/3:0/4:115964125760 scale=5.05232 draws=80 atoms=0 mineral=3
+MODE_PROOF 0,0,0/1:0/2:0/3:0/4:115964125760/5:0 geometry=6884299069862265184 camera=identical generation=unchanged modes=3
+TOUR 5 MOUNTAIN 0,0,0/1:0/2:0/3:0/4:115964125760/5:0 scale=3.65232 draws=69 atoms=0 mineral=3
+MODE_PROOF 0,0,0/1:0/2:0/3:0/4:115964125760/5:0/6:0 geometry=15217023398913421264 camera=identical generation=unchanged modes=3
+TOUR 6 ROCK 0,0,0/1:0/2:0/3:0/4:115964125760/5:0/6:0 scale=0.37986 draws=60 atoms=0 mineral=3
+MODE_PROOF 0,0,0/1:0/2:0/3:0/4:115964125760/5:0/6:0/7:0 geometry=9635996340448088074 camera=identical generation=unchanged modes=3
+TOUR 7 MINERAL GRAIN 0,0,0/1:0/2:0/3:0/4:115964125760/5:0/6:0/7:0 scale=-2.32639 draws=13 atoms=0 mineral=4
+MODE_PROOF 0,0,0/1:0/2:0/3:0/4:115964125760/5:0/6:0/7:0/8:0 geometry=178132420512081507 camera=identical generation=unchanged modes=3
+TOUR 8 CRYSTAL LATTICE 0,0,0/1:0/2:0/3:0/4:115964125760/5:0/6:0/7:0/8:0 scale=-8.33938 draws=12 atoms=1395 mineral=4
+MODE_PROOF 0,0,0/1:0/2:0/3:0/4:115964125760/5:0/6:0/7:0 geometry=9635996340448088074 camera=identical generation=unchanged modes=3
+TOUR 9 MINERAL GRAIN 0,0,0/1:0/2:0/3:0/4:115964125760/5:0/6:0/7:0 scale=-2.32639 draws=13 atoms=0 mineral=4
+MODE_PROOF 0,0,0/1:0/2:0/3:0/4:115964125760/5:0/6:0 geometry=15217023398913421264 camera=identical generation=unchanged modes=3
+TOUR 10 ROCK 0,0,0/1:0/2:0/3:0/4:115964125760/5:0/6:0 scale=0.37986 draws=60 atoms=0 mineral=3
+MODE_PROOF 0,0,0/1:0/2:0/3:0/4:115964125760/5:0 geometry=6884299069862265184 camera=identical generation=unchanged modes=3
+TOUR 11 MOUNTAIN 0,0,0/1:0/2:0/3:0/4:115964125760/5:0 scale=3.65232 draws=69 atoms=0 mineral=3
+MODE_PROOF 0,0,0/1:0/2:0/3:0/4:115964125760 geometry=15190808566179866898 camera=identical generation=unchanged modes=3
+TOUR 12 SURFACE 0,0,0/1:0/2:0/3:0/4:115964125760 scale=5.05232 draws=80 atoms=0 mineral=3
+MODE_PROOF 0,0,0/1:0/2:0/3:0 geometry=9011686554674910669 camera=identical generation=unchanged modes=3
+TOUR 13 PLANET 0,0,0/1:0/2:0/3:0 scale=7.15953 draws=200 atoms=0 mineral=3
+MODE_PROOF 0,0,0/1:0/2:0 geometry=16899495381898477542 camera=identical generation=unchanged modes=3
+TOUR 14 STAR SYSTEM 0,0,0/1:0/2:0 scale=12.8714 draws=10 atoms=0 mineral=0
+MODE_PROOF 0,0,0/1:0 geometry=10201896341164389795 camera=identical generation=unchanged modes=3
+TOUR 15 GALAXY 0,0,0/1:0 scale=21.177 draws=7 atoms=0 mineral=0
+MODE_PROOF 0,0,0 geometry=3744238199189607544 camera=identical generation=unchanged modes=3
+TOUR 16 COSMIC WEB 0,0,0 scale=26.4914 draws=8 atoms=0 mineral=0
+FRAME median_ms=16.6677 p95_ms=17.3576 frames=2320 cache_bytes=12997344
+peak_rss_bytes=168837120
+PASS: native GPU journey visited 9 scales and returned with matching identities.

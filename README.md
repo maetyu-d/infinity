@@ -1,6 +1,8 @@
 # INFINITE
 
-A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.14 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.15 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+
+Version 0.15 applies Hyperion's **psychedelic** rendering to the existing universe: direction-anchored folded spectral light, mineral pigments, filtered luminous seams, iridescent grazing light, coloured atmospheric scattering and a hue-preserving HDR display curve. The same geometry, objects, seeds, worlds and ship state remain authoritative. **HYPERION** uses the new aesthetic, **HYBRID** reduces its strength, and **ORIGINAL** retains the previous rendering. **H** cycles them. [PSYCHEDELIC_PRESENTATION.md](docs/PSYCHEDELIC_PRESENTATION.md) records the source reference, preservation evidence, comparisons and measured cost.
 
 Version 0.14 improves the cockpit with recessed, high-contrast instruments, larger navigation and velocity readings, a larger contact scope, a terrain-relative landing director, and uncluttered target cues. Labels avoid each other and the reticle; off-screen targets retain their actual bearing. **F1** opens the control guide. All universe generators and ship dynamics remain unchanged. [COCKPIT.md](docs/COCKPIT.md) records the Hyperion source reference, interface changes and validation.
 

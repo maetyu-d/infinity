@@ -11,8 +11,9 @@ class HyperionRenderer {
     ~HyperionRenderer();
     void begin(RenderMode, int width, int height, bool opticalDepth = false, bool flight = false);
     void finish();
+    void sky(const SpectralSky&, double visualTime, float aspect, float tanHalfFov);
     void atmosphere(glm::vec3 eye, glm::vec3 light, const glm::mat4& cameraToPlanet, float radiusRenderUnits,
-                    float scaleHeightRatio, float strength, float aspect);
+                    float scaleHeightRatio, float strength, float aspect, float phase);
     void bind(const ScenePresentation&, const glm::vec3& eye, const glm::vec3& light,
               const glm::mat4& pattern, float primitive, double visualTime, glm::vec4 cavity = {},
               const glm::mat4& micro = glm::mat4(0), float relief = 0);
@@ -49,5 +50,8 @@ class HyperionRenderer {
     bool flight_ = false;
     bgfx::ProgramHandle flightGeometry_ = BGFX_INVALID_HANDLE, flightPost_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle micro_ = BGFX_INVALID_HANDLE, microParams_ = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle domain_ = BGFX_INVALID_HANDLE, skyParams_ = BGFX_INVALID_HANDLE,
+                        skyRotation_ = BGFX_INVALID_HANDLE;
+    bgfx::ProgramHandle sky_ = BGFX_INVALID_HANDLE;
 };
 } // namespace infinite
