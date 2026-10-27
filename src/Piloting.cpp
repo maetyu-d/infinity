@@ -97,27 +97,250 @@ void Pilot::toggleAssist() {
             glm::dot(ship_.velocity, nav_.orientation * glm::dvec3(0, 0, -1)) / speedLimit(), 0., 1.);
     phase_ = ship_.assist ? "ASSIST / MATCHING VELOCITY" : "INERTIAL / MOMENTUM RETAINED";
 }
-void Pilot::toggleSurvey() {
-    if (ship_.survey) {
-        if (auto g = ground(); g && g->altitude < 2.) {
-            phase_ = "PROBE / CLEAR SOLID BEFORE SHIP MODE";
-            instrument();
-            return;
-        }
+void Pilot::toggleCruise() {
+    if (ship_.shrinking || ship_.logSize < -.0001) {
+        phase_ = "REGROW BEFORE LONG-RANGE CRUISE";
+        instrument();
+        return;
     }
-    ship_.survey = !ship_.survey;
+    ship_.cruise = !ship_.cruise;
+    phase_ = ship_.cruise ? "LONG-RANGE DRIVE ENGAGED" : "PLANETARY FLIGHT / DRIVE BRAKING";
+    instrument();
+}
+void Pilot::adjustDrive(double steps) {
+    if (!std::isfinite(steps))
+        return;
+    if (ship_.cruise)
+        ship_.cruiseSpeed =
+            std::clamp(ship_.cruiseSpeed * std::exp2(std::clamp(steps, -40., 40.)), 1e6, 1e28);
+    else
+        nav_.adjustSpeed(steps);
+    instrument();
+}
+void Pilot::toggleShrink() {
+    if (ship_.shrinking) {
+        restoreFullSize();
+        return;
+    }
+    ship_.shrinking = true;
+    ship_.autoShrink = true;
+    ship_.targetLogSize = -3;
+    ship_.cruise = false;
     ship_.landed = false;
+    brake();
+    phase_ = "SHRINK FIELD / AUTOMATIC FIT";
+    instrument();
+}
+void Pilot::adjustSize(double decades) {
+    if (!std::isfinite(decades))
+        return;
+    if (!ship_.shrinking && decades >= 0) {
+        phase_ = "FULL SIZE / PLANETARY FLIGHT";
+        instrument();
+        return;
+    }
+    if (!ship_.shrinking) {
+        ship_.shrinking = true;
+        ship_.targetLogSize = ship_.logSize;
+        ship_.cruise = false;
+        ship_.landed = false;
+        brake();
+    }
+    ship_.autoShrink = false;
+    ship_.targetLogSize = std::clamp(ship_.targetLogSize + std::clamp(decades, -12., 12.), -12., 0.);
+    phase_ = "SHRINK FIELD / MANUAL SIZE";
+    instrument();
+}
+void Pilot::restoreFullSize() {
+    ship_.autoShrink = false;
+    ship_.targetLogSize = 0;
+    phase_ = "RESTORING FULL SIZE";
+    instrument();
+}
+void Pilot::fitToView() {
+    if (nav_.anchor.kind() < Kind::Rock)
+        return;
+    const auto n = universe_.describe(nav_.anchor);
+    ship_.logSize = ship_.targetLogSize = std::clamp(
+        std::log10(std::min(.012, material(n.environment.mineral).cellMetres * .08) / 12.), -12., -3.);
+    ship_.shrinking = true;
+    ship_.cruise = false;
+    ship_.autoShrink = true;
+    phase_ = "SCALED SHIP DEPLOYED / SHRINK FIELD";
+    instrument();
+}
+void Pilot::startInSystem() {
+    Address galaxy = nav_.anchor;
+    while (galaxy.kind() > Kind::Galaxy)
+        galaxy = galaxy.parent();
+    if (galaxy.kind() == Kind::Cosmic)
+        galaxy = galaxy.child(Kind::Galaxy, 0);
+    auto system = galaxy.child(Kind::System, 0);
+    auto planet = universe_.children(universe_.describe(system), 1).front();
+    for (uint64_t i = 0; i < 64; i++) {
+        bool found = false;
+        system = galaxy.child(Kind::System, i);
+        for (const auto& a : universe_.children(universe_.describe(system))) {
+            const auto p = universe_.describe(a);
+            if (p.environment.temperature > 220 && p.environment.temperature < 500 &&
+                p.environment.waterActivity > .15) {
+                planet = a;
+                found = true;
+                break;
+            }
+        }
+        if (found)
+            break;
+    }
+    nav_.changeFrame(planet);
+    const auto p = universe_.describe(planet);
+    nav_.setRenderScale(p.frame.logRadius);
+    const auto direction = unit(glm::dvec3(.3, 1, .4));
+    nav_.orientation = glm::quatLookAtRH(-direction, unit(glm::cross(direction, glm::dvec3(1, 0, 0))));
+    nav_.offset = direction * 2.2 - nav_.orientation * glm::dvec3(0, 0, 1);
+    ship_ = ShipState{};
+    destination_.reset();
+    landingPlanet_.reset();
+    resetMotion();
+    selectNextPlanet();
+    phase_ = "PLANETARY FLIGHT / Y NEXT PLANET / J NAVIGATE";
+    instrument();
+}
+void Pilot::selectNextPlanet() {
+    auto system = nav_.anchor;
+    while (system.kind() > Kind::System)
+        system = system.parent();
+    if (system.kind() != Kind::System) {
+        phase_ = "ENTER A STAR SYSTEM TO CYCLE PLANETS";
+        instrument();
+        return;
+    }
+    auto planets = universe_.children(universe_.describe(system));
+    if (planets.empty())
+        return;
+    uint64_t current = UINT64_MAX;
+    if (nav_.selected && system.ancestorOf(*nav_.selected) && nav_.selected->path.size() > system.path.size())
+        current = nav_.selected->path[system.path.size()].id;
+    const auto next = current == UINT64_MAX ? 0 : (current + 1) % planets.size();
+    nav_.select(planets[next]);
+    destination_.reset();
+    landingPlanet_.reset();
     autopilot_ = landing_ = false;
-    phase_ = ship_.survey ? "SURVEY / VIRTUAL PROBE" : "SHIP / PHYSICAL CONTACT";
+    phase_ = "DESTINATION SELECTED / J NAVIGATE";
+    instrument();
 }
 double Pilot::speedLimit() const {
-    const double scale = std::max(1e-12, spatial_.clearanceMetres() * .32);
-    const double base = ship_.survey ? scale : (ship_.cruise ? std::max(350., scale) : 350.);
-    double limit = std::min(1e28, base * nav_.speedMultiplier() * (1 + 1.4 * ship_.boost));
-    if (!ship_.survey)
-        if (auto g = ground(); g && g->altitude < 10000)
-            limit = std::min(limit, 350. + std::max(0., g->altitude - 100.) * .12);
+    const double scale = std::max(1e-12, operatingClearance() * .32);
+    const double ratio = sizeRatio();
+    const double base = ship_.cruise ? std::min(ship_.cruiseSpeed, std::max(85000., scale))
+                                     : std::clamp(scale, 350. * ratio, 85000.);
+    double limit =
+        std::min(1e28, base * (ship_.cruise ? 1. : nav_.speedMultiplier()) * (1 + 1.4 * ship_.boost));
+    if (auto g = ground())
+        limit = std::min(limit, (350. + std::max(0., g->altitude - 100.) * .12));
     return limit;
+}
+double Pilot::operatingClearance() const {
+    double clearance = spatial_.clearanceMetres();
+    if (!ship_.shrinking || nav_.anchor.kind() < Kind::Rock)
+        return clearance;
+    auto a = nav_.anchor;
+    if (a.kind() != Kind::Lattice) {
+        const auto n = universe_.describe(a);
+        const double radius = std::pow(10., n.frame.logRadius);
+        const auto point = nav_.cameraPosition() * std::pow(10., nav_.logDistance - n.frame.logRadius);
+        const double sdf =
+            a.kind() == Kind::Rock ? universe_.rockSdf(n, point) : universe_.grainSdf(n, point);
+        if (sdf > 0)
+            clearance = std::min(clearance, sdf * radius);
+    }
+    if (collisionGeometry_ && collisionGeometry_->address == nav_.anchor &&
+        !collisionGeometry_->lattice.atoms.empty()) {
+        const auto& g = *collisionGeometry_;
+        const double units = std::pow(10., g.logUnits);
+        const auto pose = universe_.relative(g.referenceFrame, nav_.anchor, nav_.logDistance);
+        const auto point = glm::inverse(pose.orientation) * (nav_.cameraPosition() - pose.position) *
+                           std::pow(10., nav_.logDistance) / units;
+        for (const auto& atom : g.lattice.atoms)
+            clearance =
+                std::min(clearance,
+                         std::max(0., glm::length(point - glm::dvec3(atom.position)) - atom.radius) * units);
+    }
+    return std::max(1e-12, clearance);
+}
+bool Pilot::continuumContact() const {
+    if (!ship_.shrinking)
+        return true;
+    const auto n = universe_.describe(nav_.anchor);
+    return 12 * sizeRatio() > material(n.environment.mineral).cellMetres * .1;
+}
+bool Pilot::fits(double log) const {
+    const double radius = 2 * std::pow(10., log);
+    if (auto g = ground(); g && nav_.anchor.kind() < Kind::Rock && g->altitude < radius)
+        return false;
+    auto a = nav_.anchor;
+    if (a.kind() >= Kind::Rock) {
+        if (a.kind() == Kind::Lattice)
+            a = a.parent();
+        const auto n = universe_.describe(a);
+        if (12 * std::pow(10., log) > material(n.environment.mineral).cellMetres * .1) {
+            const auto pose = universe_.relative(a, nav_.anchor, nav_.logDistance);
+            const double r = std::pow(10., n.frame.logRadius);
+            const auto p = glm::inverse(pose.orientation) * (nav_.cameraPosition() - pose.position) *
+                           std::pow(10., nav_.logDistance) / r;
+            const double value = a.kind() == Kind::Rock ? universe_.rockSdf(n, p) : universe_.grainSdf(n, p);
+            if (value < radius / r)
+                return false;
+        }
+    }
+    if (collisionGeometry_ && collisionGeometry_->address == nav_.anchor &&
+        !collisionGeometry_->lattice.atoms.empty()) {
+        const auto& g = *collisionGeometry_;
+        const auto pose = universe_.relative(g.referenceFrame, nav_.anchor, nav_.logDistance);
+        const double units = std::pow(10., g.logUnits);
+        const auto p = glm::inverse(pose.orientation) * (nav_.cameraPosition() - pose.position) *
+                       std::pow(10., nav_.logDistance) / units;
+        for (const auto& atom : g.lattice.atoms)
+            if (glm::length(p - glm::dvec3(atom.position)) < atom.radius + radius / units)
+                return false;
+    }
+    return true;
+}
+void Pilot::resize(double dt) {
+    growthBlocked_ = false;
+    if (!ship_.shrinking)
+        return;
+    if (ship_.autoShrink) {
+        const auto n = universe_.describe(nav_.anchor);
+        double desired = std::min(.012, operatingClearance() * .03);
+        if (n.address.kind() >= Kind::Rock) {
+            desired = std::min(desired, std::pow(10., n.frame.logRadius) * .03);
+            if (n.address.kind() >= Kind::Grain)
+                desired = std::min(desired, material(n.environment.mineral).cellMetres * .08);
+            const auto pose = universe_.relative(n.address, nav_.anchor, nav_.logDistance);
+            const auto p = glm::inverse(pose.orientation) * (nav_.cameraPosition() - pose.position) *
+                           std::pow(10., nav_.logDistance - n.frame.logRadius);
+            if (n.address.kind() == Kind::Rock && universe_.rockSdf(n, p) <= 0)
+                desired = std::min(desired, material(n.environment.mineral).cellMetres * .08);
+        }
+        ship_.targetLogSize = std::clamp(std::log10(std::max(1.2e-11, desired) / 12.), -12., -3.);
+    }
+    const double next = ship_.logSize + std::clamp(ship_.targetLogSize - ship_.logSize, -2 * dt, 2 * dt);
+    if (next < ship_.logSize &&
+        glm::length(ship_.velocity) > speedLimit() * std::pow(10., next - ship_.logSize) * 1.5) {
+        phase_ = "SHRINK FIELD / BRAKING FIRST";
+        return;
+    }
+    if (next > ship_.logSize && !fits(next)) {
+        growthBlocked_ = true;
+        phase_ = "GROWTH BLOCKED / MOVE TO OPEN SPACE";
+        return;
+    }
+    ship_.logSize = next;
+    if (ship_.logSize == 0 && ship_.targetLogSize == 0) {
+        ship_.shrinking = false;
+        phase_ = "FULL SIZE / PLANETARY FLIGHT";
+    }
 }
 glm::dvec3 Pilot::gravityAt(const Ground& g) const {
     const double radius = std::pow(10., g.planet.frame.logRadius),
@@ -162,7 +385,7 @@ void Pilot::navigate(const Address& a) {
     landing_ = false;
     ship_.assist = true;
     ship_.landed = false;
-    if (auto planet = planetOf(a); planet && a.kind() <= Kind::Mountain && !ship_.survey) {
+    if (auto planet = planetOf(a); planet && a.kind() <= Kind::Mountain && !ship_.shrinking) {
         landingPlanet_ = planet;
         const auto p = universe_.describe(*planet);
         const auto pose = universe_.relative(*planet, nav_.anchor, nav_.logDistance);
@@ -177,7 +400,7 @@ void Pilot::navigate(const Address& a) {
 }
 bool Pilot::land() {
     auto g = ground();
-    if (!g || ship_.survey || g->slope > .61)
+    if (!g || !continuumContact() || g->slope > .61)
         return false;
     landingPlanet_ = g->planet.address;
     landingDirection_ = g->direction;
@@ -203,9 +426,10 @@ glm::dvec3 Pilot::destinationPoint() const {
         const auto p = universe_.describe(*landingPlanet_);
         const double radius = std::pow(10., p.frame.logRadius);
         const double h = universe_.terrainHeight(p, landingDirection_);
-        return universe_.pointRelative(p.address,
-                                       landingDirection_ * (1 + (h + (landing_ ? 2. : 5000.)) / radius),
-                                       nav_.anchor, nav_.logDistance);
+        return universe_.pointRelative(
+            p.address,
+            landingDirection_ * (1 + (h + (landing_ ? collisionRadius() : 5000. * sizeRatio())) / radius),
+            nav_.anchor, nav_.logDistance);
     }
     if (!destination_)
         return nav_.cameraPosition();
@@ -234,14 +458,12 @@ void Pilot::step(const HelmInput& input, double dt) {
     ship_.boost += ((input.boost && !input.precision && !autopilot_ ? 1. : 0.) - ship_.boost) *
                    (1 - std::exp(-dt / .18));
     ship_.throttle = std::clamp(ship_.throttle + input.throttle * dt * .36, 0., 1.);
-    const auto beforeGround = ship_.survey ? std::optional<Ground>{} : ground();
+    const auto beforeGround = continuumContact() ? ground() : std::optional<Ground>{};
     const auto up = beforeGround ? beforeGround->normal : nav_.orientation * glm::dvec3(0, 1, 0);
     double limit = speedLimit() * (input.precision ? .18 : 1.);
-    if (beforeGround && beforeGround->altitude < 10000)
-        limit = std::min(limit, 350. + std::max(0., beforeGround->altitude - 100.) * .12);
     // Hyperion's asymmetric jet envelope, rate governor and 120 ms spool.
     const double gain =
-        std::max(ship_.survey ? 1e-14 : 1., std::max(limit, glm::length(ship_.velocity) * .7) / 85.);
+        std::max(1e-14, std::max(sizeRatio(), std::max(limit, glm::length(ship_.velocity) * .7) / 85.));
     const glm::dvec3 caps{22 * gain, 26 * gain, 52 * gain};
     const double retro = 32 * gain;
     glm::dvec3 wanted = nav_.orientation * glm::dvec3(input.strafe * limit * .28, input.lift * limit * .30,
@@ -295,21 +517,25 @@ void Pilot::step(const HelmInput& input, double dt) {
         spin = angularTarget(nav_.orientation, heading, up);
         double speed = std::min(limit, std::sqrt(std::max(0., 2 * retro * distance)) * .55);
         if (landing_)
-            speed = std::min(speed, std::max(.04, distance * .65));
-        if (landing_ && distance < 100)
-            speed = std::min(speed, 1.5);
+            speed = std::min(speed, std::max(.04 * sizeRatio(), distance * .65));
+        if (landing_ && distance < 100 * sizeRatio())
+            speed = std::min(speed, 1.5 * sizeRatio());
         const double alignment = std::max(0., glm::dot(nav_.orientation * glm::dvec3(0, 0, -1), direction));
         if (!landing_ || distance > 500)
             speed *= alignment * alignment;
+        const auto target = universe_.describe(*destination_);
+        const double targetRadius = std::pow(10., target.frame.logRadius);
+        double arrival = std::clamp(targetRadius * .00001, 2. * sizeRatio(), 500. * sizeRatio());
+        if (target.address.kind() <= Kind::System)
+            arrival = std::max(arrival, targetRadius * 1e-6);
+        if (!landing_ && distance < arrival)
+            speed = 0;
         wanted = direction * speed;
         ship_.throttle = std::clamp(speed / limit, 0., 1.);
         phase_ = landing_                                 ? "LANDING / CONTROLLED DESCENT"
                  : distance < std::max(10000., limit * 4) ? "APPROACH / BRAKING"
                                                           : "TRANSIT / NAVIGATING";
-        if (!landing_ &&
-            distance < std::clamp(std::pow(10., universe_.describe(*destination_).frame.logRadius) * .00001,
-                                  2., 500.) &&
-            glm::length(ship_.velocity) < std::max(2., limit * .005)) {
+        if (!landing_ && distance < arrival && glm::length(ship_.velocity) < 2. * sizeRatio()) {
             autopilot_ = false;
             ship_.throttle = 0;
             wanted = {};
@@ -317,7 +543,7 @@ void Pilot::step(const HelmInput& input, double dt) {
         }
     }
     if (launchTime_ > 0) {
-        wanted = up * 8.;
+        wanted = up * (8. * sizeRatio());
         spin = {};
         launchTime_ = std::max(0., launchTime_ - dt);
         if (launchTime_ == 0) {
@@ -336,7 +562,7 @@ void Pilot::step(const HelmInput& input, double dt) {
     if (angle > 1e-15)
         nav_.orientation = glm::normalize(nav_.orientation * glm::angleAxis(angle, glm::normalize(midSpin)));
     // Ship-only point gravity; no world descriptor or orbit is advanced.
-    const auto gravity = beforeGround ? gravityAt(*beforeGround) : glm::dvec3(0);
+    const auto gravity = beforeGround ? gravityAt(*beforeGround) * sizeRatio() : glm::dvec3(0);
     auto local =
         glm::inverse(nav_.orientation) * (ship_.assist ? (wanted - ship_.velocity) * 1.6 : wanted * .6);
     auto support = ship_.assist ? glm::inverse(nav_.orientation) * -gravity : glm::dvec3(0);
@@ -350,14 +576,16 @@ void Pilot::step(const HelmInput& input, double dt) {
                                       ship_.thrusters.z * (ship_.thrusters.z < 0 ? caps.z : retro));
     const auto oldVelocity = ship_.velocity;
     ship_.velocity += (thrust + gravity) * dt;
-    // The fictional cruise/probe field has its own proximity braking. It acts
+    // The cruise/shrinking field has its own proximity braking. It acts
     // on SI momentum through a clearance-dependent acceleration, never through
     // render units. This lets it shed interstellar speed before local thrusters
     // take over; assistance-off vacuum flight retains its momentum.
     fieldBraking_ = false;
     const double speed = glm::length(ship_.velocity);
-    if (ship_.assist && (ship_.cruise || ship_.survey) && speed > limit * 1.05) {
-        const double tau = std::max(1e-100, .35 * spatial_.clearanceMetres() / speed);
+    if (ship_.assist && speed > limit * 1.05) {
+        double tau = std::max(1e-100, .35 * operatingClearance() / speed);
+        if (ship_.shrinking && ship_.targetLogSize < ship_.logSize)
+            tau = std::min(tau, .12);
         const double next = limit + (speed - limit) * std::exp(-dt / tau);
         ship_.velocity *= next / speed;
         fieldBraking_ = true;
@@ -369,15 +597,18 @@ void Pilot::step(const HelmInput& input, double dt) {
     // Retain sub-ULP travel instead of discarding small metre displacements
     // while the camera happens to use galactic-sized units.
     ship_.positionResidual = displacement - (nav_.cameraPosition() - oldEye) * units;
-    if (!ship_.survey) {
-        if (auto g = ground(); g && g->altitude < 2.06) {
+    ship_.flightSeconds += dt;
+    ship_.travelMetres += glm::length((oldVelocity + ship_.velocity) * (.5 * dt));
+    if (continuumContact()) {
+        if (auto g = ground(); g && g->altitude < collisionRadius() * 1.03) {
             const double sink = -glm::dot(ship_.velocity, g->normal);
             const double drift = glm::length(ship_.velocity + g->normal * sink);
             const double tilt =
                 std::acos(std::clamp(glm::dot(nav_.orientation * glm::dvec3(0, 1, 0), g->normal), -1., 1.));
-            const bool safe = ship_.gear && std::abs(sink) < 2. && drift < 2. && tilt < .26 && g->slope < .61;
-            if (launchTime_ <= 0 && (g->altitude < 2. || (landing_ && safe))) {
-                nav_.offset = g->point + g->normal * (2. / std::pow(10., nav_.logDistance)) -
+            const bool safe = ship_.gear && std::abs(sink) < 2. * sizeRatio() && drift < 2. * sizeRatio() &&
+                              tilt < .26 && g->slope < .61;
+            if (launchTime_ <= 0 && (g->altitude < collisionRadius() || (landing_ && safe))) {
+                nav_.offset = g->point + g->normal * (collisionRadius() / std::pow(10., nav_.logDistance)) -
                               nav_.orientation * glm::dvec3(0, 0, 1);
                 ship_.positionResidual = {};
                 if (safe) {
@@ -391,11 +622,95 @@ void Pilot::step(const HelmInput& input, double dt) {
                 } else {
                     ship_.velocity += g->normal * std::max(0., sink);
                     ship_.velocity *= .5;
-                    ship_.hull = std::max(0., ship_.hull - std::max(0., sink - 2.) * .3);
+                    ship_.hull = std::max(0., ship_.hull - std::max(0., sink / sizeRatio() - 2.) * .3);
                     phase_ = "SURFACE CONTACT / GEAR / LEVEL / SLOW";
                 }
             }
         }
+    }
+    matterContact(collisionGeometry_, oldEye);
+}
+void Pilot::matterContact(const std::shared_ptr<const Geometry>& geometry, glm::dvec3 previousEye) {
+    if (nav_.anchor.kind() < Kind::Rock)
+        return;
+    auto apply = [&](glm::dvec3 normal, double penetration) {
+        const double inward = std::max(0., -glm::dot(ship_.velocity, normal));
+        const auto eye = nav_.cameraPosition();
+        nav_.offset = eye + normal * (penetration / std::pow(10., nav_.logDistance)) -
+                      nav_.orientation * glm::dvec3(0, 0, 1);
+        ship_.velocity += normal * inward;
+        ship_.positionResidual = {};
+        ship_.hull = std::max(0., ship_.hull - std::max(0., inward / sizeRatio() - 2) * .1);
+        phase_ = "MATERIAL CONTACT / SHRINK OR STEER CLEAR";
+    };
+    if (continuumContact()) {
+        auto address = nav_.anchor;
+        if (address.kind() == Kind::Lattice)
+            address = address.parent();
+        const auto n = universe_.describe(address);
+        const auto pose = universe_.relative(address, nav_.anchor, nav_.logDistance);
+        const double radius = std::pow(10., n.frame.logRadius);
+        const auto p = glm::inverse(pose.orientation) * (nav_.cameraPosition() - pose.position) *
+                       std::pow(10., nav_.logDistance) / radius;
+        auto sdf = [&](glm::dvec3 v) {
+            return address.kind() == Kind::Rock ? universe_.rockSdf(n, v) : universe_.grainSdf(n, v);
+        };
+        const double value = sdf(p), r = collisionRadius() / radius;
+        if (value < r) {
+            const double e = std::max(1e-8, std::min(.001, r * .25));
+            glm::dvec3 gradient;
+            for (int i = 0; i < 3; i++) {
+                glm::dvec3 delta(0);
+                delta[i] = e;
+                gradient[i] = (sdf(p + delta) - sdf(p - delta)) / (2 * e);
+            }
+            const double slope = std::max(.1, glm::length(gradient));
+            apply(pose.orientation * unit(gradient), std::min((r - value) / slope, r * .5) * radius);
+        }
+    }
+    if (geometry && geometry->address == nav_.anchor && nav_.anchor.kind() == Kind::Lattice) {
+        const double units = std::pow(10., geometry->logUnits);
+        const auto pose = universe_.relative(geometry->referenceFrame, nav_.anchor, nav_.logDistance);
+        const auto local = glm::inverse(pose.orientation) * (nav_.cameraPosition() - pose.position) *
+                           std::pow(10., nav_.logDistance) / units;
+        const auto previous = glm::inverse(pose.orientation) * (previousEye - pose.position) *
+                              std::pow(10., nav_.logDistance) / units;
+        const auto segment = local - previous;
+        double first = 2;
+        glm::dvec3 hitNormal;
+        if (glm::dot(segment, segment) > 1e-30)
+            for (const auto& atom : geometry->lattice.atoms) {
+                const auto offset = previous - glm::dvec3(atom.position);
+                const double radius = atom.radius + collisionRadius() / units;
+                const double a = glm::dot(segment, segment), b = glm::dot(offset, segment),
+                             c = glm::dot(offset, offset) - radius * radius;
+                const double disc = b * b - a * c;
+                if (c <= 0 || b >= 0 || disc < 0)
+                    continue;
+                const double t = (-b - std::sqrt(disc)) / a;
+                if (t >= 0 && t <= 1 && t < first) {
+                    first = t;
+                    hitNormal = pose.orientation * unit(offset + segment * t);
+                }
+            }
+        if (first <= 1) {
+            nav_.offset = previousEye + (nav_.cameraPosition() - previousEye) * first -
+                          nav_.orientation * glm::dvec3(0, 0, 1);
+            apply(hitNormal, 0);
+            return;
+        }
+        double deepest = 0;
+        glm::dvec3 normal;
+        for (const auto& atom : geometry->lattice.atoms) {
+            const auto delta = local - glm::dvec3(atom.position);
+            const double overlap = atom.radius + collisionRadius() / units - glm::length(delta);
+            if (overlap > deepest) {
+                deepest = overlap;
+                normal = pose.orientation * unit(delta);
+            }
+        }
+        if (deepest > 0)
+            apply(normal, deepest * units);
     }
 }
 void Pilot::update(const HelmInput& input, double dt, const std::shared_ptr<const Geometry>& visible) {
@@ -409,6 +724,10 @@ void Pilot::update(const HelmInput& input, double dt, const std::shared_ptr<cons
          {&bounded.throttle, &bounded.strafe, &bounded.lift, &bounded.pitch, &bounded.yaw, &bounded.roll})
         *value = std::clamp(*value, -1., 1.);
     synchronizeFrame();
+    if (visible && visible->address == nav_.anchor)
+        collisionGeometry_ = visible;
+    if (collisionGeometry_ && collisionGeometry_->address != nav_.anchor)
+        collisionGeometry_.reset();
     nav_.stopMotion();
     spatial_.resume();
     precisionScale_ = input.precision ? .18 : 1.;
@@ -418,8 +737,11 @@ void Pilot::update(const HelmInput& input, double dt, const std::shared_ptr<cons
         spatial_.update({}, std::min(.01, remaining), false, false, visible);
         synchronizeFrame();
         const double speed = glm::length(ship_.velocity);
-        const double safeStep = std::max(1e-100, spatial_.clearanceMetres() * .08 / std::max(1e-30, speed));
+        double safeStep = std::max(1e-100, spatial_.clearanceMetres() * .08 / std::max(1e-30, speed));
+        if (nav_.anchor.kind() >= Kind::Rock && nav_.anchor.kind() < Kind::Lattice && continuumContact())
+            safeStep = std::min(safeStep, .5 * collisionRadius() / std::max(1e-30, speed));
         const double stepTime = std::min({.01, remaining, safeStep});
+        resize(stepTime);
         step(bounded, stepTime);
         remaining -= stepTime;
     }
@@ -434,10 +756,10 @@ void Pilot::instrument() {
     t.localVelocity = glm::inverse(nav_.orientation) * ship_.velocity;
     t.speed = glm::length(ship_.velocity);
     t.driveSpeed = speedLimit() * precisionScale_;
-    const double gain = std::max(ship_.survey ? 1e-14 : 1., std::max(t.driveSpeed, t.speed * .7) / 85.);
+    const double gain = std::max(1e-14, std::max(sizeRatio(), std::max(t.driveSpeed, t.speed * .7) / 85.));
     const glm::dvec3 caps{22 * gain, 26 * gain, 52 * gain};
     const auto g = ground();
-    const auto gravity = g && !ship_.survey ? gravityAt(*g) : glm::dvec3(0);
+    const auto gravity = g && continuumContact() ? gravityAt(*g) * sizeRatio() : glm::dvec3(0);
     if (t.speed > 1e-30) {
         const auto inverse = glm::inverse(nav_.orientation);
         const auto direction = ship_.velocity / t.speed;
@@ -456,24 +778,34 @@ void Pilot::instrument() {
     t.gear = ship_.gear;
     t.landed = ship_.landed;
     t.assist = ship_.assist;
-    t.survey = ship_.survey;
+    t.shrinking = ship_.shrinking;
+    t.hullMetres = 12 * sizeRatio();
+    t.targetHullMetres = 12 * std::pow(10., ship_.targetLogSize);
+    t.autoShrink = ship_.autoShrink;
+    t.growthBlocked = growthBlocked_;
+    t.flightSeconds = ship_.flightSeconds;
+    t.travelMetres = ship_.travelMetres;
     t.navigating = autopilot_;
     t.phase = phase_;
     t.logMetres = nav_.logDistance;
     t.scaleRate = scaleRate_;
-    t.drive = ship_.survey          ? "SURVEY / VIRTUAL PROBE"
-              : t.driveSpeed > 1400 ? "CRUISE / SCALE DRIVE"
-                                    : "LOCAL / SHIP";
+    t.drive = ship_.shrinking ? (t.driveSpeed > 350 * sizeRatio() * 4 ? "SHRINK FIELD / SCALE TRANSIT"
+                                                                      : "SHRUNK SHIP / MANOEUVRE")
+              : ship_.cruise  ? "LONG-RANGE CRUISE"
+                              : "PLANETARY FLIGHT";
     if (fieldBraking_)
-        t.drive = ship_.survey ? "SURVEY / FIELD BRAKING" : "CRUISE / FIELD BRAKING";
+        t.drive = ship_.shrinking ? "SHRINK FIELD / BRAKING"
+                  : ship_.cruise  ? "CRUISE / FIELD BRAKING"
+                                  : "PLANETARY / BRAKING";
     if (g) {
-        t.altitude = g->altitude - 2.;
+        t.altitude = g->altitude - collisionRadius();
         t.localUp = glm::inverse(nav_.orientation) * g->normal;
         t.descent = -glm::dot(ship_.velocity, g->normal);
         t.drift = glm::length(ship_.velocity + g->normal * t.descent);
         t.pitch = std::asin(std::clamp(-t.localUp.z, -1., 1.));
         t.roll = std::atan2(t.localUp.x, t.localUp.y);
-        t.safe = ship_.gear && std::abs(t.descent) < 2 && t.drift < 2 && t.localUp.y > .966 && g->slope < .61;
+        t.safe = ship_.gear && std::abs(t.descent) < 2 * sizeRatio() && t.drift < 2 * sizeRatio() &&
+                 t.localUp.y > .966 && g->slope < .61;
     }
     if (destination_) {
         const auto delta = destinationPoint() - nav_.cameraPosition();
@@ -489,19 +821,26 @@ void Pilot::instrument() {
         t.targetVisible = glm::length(delta) > 1e-30;
         t.destination = universe_.describe(*nav_.selected).label() + " / J NAVIGATE";
     }
+    if (t.targetVisible) {
+        const double closing = -glm::dot(t.localVelocity, unit(-t.localTarget));
+        if (closing > 1e-30)
+            t.etaSeconds = t.range / closing;
+    }
 }
 std::string Pilot::serialize() const {
     std::ostringstream out;
     out.imbue(std::locale::classic());
     out << std::setprecision(17);
-    out << "INFINITE_SHIP 2 " << ship_.frame.str();
+    out << "INFINITE_SHIP 3 " << ship_.frame.str();
     for (auto v : {ship_.velocity, ship_.angularVelocity, ship_.thrusters, ship_.positionResidual})
         out << ' ' << v.x << ' ' << v.y << ' ' << v.z;
     out << ' ' << ship_.throttle << ' ' << ship_.boost << ' ' << ship_.hull << ' ' << ship_.assist << ' '
-        << ship_.cruise << ' ' << ship_.survey << ' ' << ship_.gear << ' ' << ship_.landed;
+        << ship_.cruise << ' ' << ship_.shrinking << ' ' << ship_.gear << ' ' << ship_.landed;
     out << ' ' << (destination_ ? destination_->str() : "-") << ' '
         << (landingPlanet_ ? landingPlanet_->str() : "-");
     out << ' ' << landingDirection_.x << ' ' << landingDirection_.y << ' ' << landingDirection_.z;
+    out << ' ' << ship_.autoShrink << ' ' << ship_.logSize << ' ' << ship_.targetLogSize << ' '
+        << ship_.cruiseSpeed << ' ' << ship_.flightSeconds << ' ' << ship_.travelMetres;
     return out.str();
 }
 bool Pilot::restore(std::string_view text) {
@@ -512,21 +851,20 @@ bool Pilot::restore(std::string_view text) {
         int version;
         ShipState candidate;
         glm::dvec3 direction;
-        if (!(in >> header >> version >> frame) || header != "INFINITE_SHIP" ||
-            (version != 1 && version != 2))
+        if (!(in >> header >> version >> frame) || header != "INFINITE_SHIP" || (version < 1 || version > 3))
             return false;
         candidate.frame = Address::parse(frame);
         for (auto* v : {&candidate.velocity, &candidate.angularVelocity, &candidate.thrusters})
             if (!(in >> v->x >> v->y >> v->z) || !std::isfinite(glm::length(*v)) || glm::length(*v) > 1e30)
                 return false;
-        if (version == 2)
+        if (version >= 2)
             if (!(in >> candidate.positionResidual.x >> candidate.positionResidual.y >>
                   candidate.positionResidual.z) ||
                 !std::isfinite(glm::length(candidate.positionResidual)) ||
                 glm::length(candidate.positionResidual) > 1e30)
                 return false;
         if (!(in >> candidate.throttle >> candidate.boost >> candidate.hull >> candidate.assist >>
-              candidate.cruise >> candidate.survey >> candidate.gear >> candidate.landed >> destination >>
+              candidate.cruise >> candidate.shrinking >> candidate.gear >> candidate.landed >> destination >>
               planet >> direction.x >> direction.y >> direction.z))
             return false;
         if (!(candidate.throttle >= 0 && candidate.throttle <= 1 && candidate.boost >= 0 &&
@@ -535,6 +873,27 @@ bool Pilot::restore(std::string_view text) {
             return false;
         auto dest = destination == "-" ? std::optional<Address>{} : Address::parse(destination);
         auto body = planet == "-" ? std::optional<Address>{} : Address::parse(planet);
+        if (version == 3) {
+            if (!(in >> candidate.autoShrink >> candidate.logSize >> candidate.targetLogSize >>
+                  candidate.cruiseSpeed >> candidate.flightSeconds >> candidate.travelMetres))
+                return false;
+            if (!(candidate.logSize >= -12 && candidate.logSize <= 0 && candidate.targetLogSize >= -12 &&
+                  candidate.targetLogSize <= 0 && candidate.cruiseSpeed >= 1e6 &&
+                  candidate.cruiseSpeed <= 1e28 && candidate.flightSeconds >= 0 &&
+                  candidate.travelMetres >= 0) ||
+                !std::isfinite(candidate.flightSeconds) || !std::isfinite(candidate.travelMetres) ||
+                (!candidate.shrinking && candidate.logSize != 0) || (candidate.shrinking && candidate.cruise))
+                return false;
+        } else {
+            candidate.cruise = false;
+            if (candidate.shrinking) {
+                const auto n = universe_.describe(nav_.anchor);
+                candidate.logSize = candidate.targetLogSize = std::clamp(
+                    std::log10(std::min(.012, material(n.environment.mineral).cellMetres * .08) / 12.), -12.,
+                    -3.);
+                candidate.landed = false;
+            }
+        }
         universe_.describe(candidate.frame);
         if (dest)
             universe_.describe(*dest);
@@ -544,7 +903,7 @@ bool Pilot::restore(std::string_view text) {
             return false;
         in >> std::ws;
         if (!in.eof() || (body && body->kind() != Kind::Planet) ||
-            (candidate.landed && (!body || !candidate.gear || candidate.survey)))
+            (candidate.landed && (!body || !candidate.gear)))
             return false;
         ship_ = candidate;
         destination_ = dest;

@@ -23,6 +23,12 @@ class FlightController {
     void resume() {
         holdForFlight_ = false;
     }
+    void observeGalaxy(const std::shared_ptr<const Geometry>& geometry) {
+        if (geometry && geometry->address.kind() == Kind::Galaxy &&
+            geometry->address.ancestorOf(nav_.anchor) &&
+            geometry->seed == seedOf(geometry->address, universe_.seed()))
+            galaxySamples_ = geometry;
+    }
 
   private:
     const Universe& universe_;

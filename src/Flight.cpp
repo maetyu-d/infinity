@@ -68,6 +68,11 @@ void FlightController::update(glm::dvec3 axes, double dt, bool fast, bool precis
         if (auto catalog = cache_.catalog(parent))
             for (const auto& child : *catalog)
                 considerSibling(child.address, child.frame.position);
+        if (node.address.kind() == Kind::System && nav_.selected && nav_.selected->kind() == Kind::System &&
+            nav_.selected->parent() == parent.address) {
+            const auto selected = universe_.describe(*nav_.selected);
+            considerSibling(selected.address, selected.frame.position);
+        }
         if (node.address.kind() == Kind::System && galaxySamples_ &&
             galaxySamples_->address == parent.address) {
             uint64_t closest = UINT64_MAX;

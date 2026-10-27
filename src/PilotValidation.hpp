@@ -46,11 +46,11 @@ class PilotValidation {
             return;
         if (stage_ == 1)
             p_.update({}, 1. / 30, renderer.submittedGeometry(n_.anchor));
-        if (stage_ == 2)
+        if (stage_ == 2 || stage_ == 6)
             p_.update({}, 1. / 30, renderer.submittedGeometry(n_.anchor));
         if (stage_ == 3 && !n_.transitioning) {
-            if (!p_.ship().survey)
-                p_.toggleSurvey();
+            if (!p_.ship().shrinking)
+                p_.toggleShrink();
             p_.update({}, 1. / 30, renderer.submittedGeometry(n_.anchor));
         }
     }
@@ -144,17 +144,30 @@ class PilotValidation {
                 auto a = FlightController::surfaceAt(planet_, direction_);
                 while (a.kind() != Kind::Lattice)
                     a = u_.children(u_.describe(a), 1).front();
-                n_.focus(a);
+                nanoAddress_ = a;
+                p_.toggleShrink();
+                p_.adjustSize(-12);
+                stage_ = 6;
+                age_ = 0;
+            }
+        } else if (stage_ == 6) {
+            if (!microCaptured_ && p_.instruments().hullMetres <= 1.2e-5) {
+                capture("micro-shrink");
+                microCaptured_ = true;
+                std::cout << "PILOT_MICRO_SHIP hull_m=" << p_.instruments().hullMetres << '\n';
+            }
+            if (p_.ship().logSize <= -12) {
+                n_.focus(nanoAddress_);
                 p_.resetMotion();
                 stage_ = 3;
                 age_ = 0;
             }
         } else if (stage_ == 3 && age_ > 120 && !n_.transitioning && stats.atoms > 0) {
-            if (stats.atmospheres)
-                throw std::runtime_error("Atomic probe retained an optical atmosphere pass");
-            capture("atomic-survey");
+            if (p_.instruments().hullMetres > 1.21e-11)
+                throw std::runtime_error("Atomic flight did not use the physically shrunken ship");
+            capture("atomic-shrink");
             std::cout << "PASS: native cockpit mode identity, geological touchdown, persisted ship, thrust "
-                         "launch and atomic survey; atoms="
+                         "launch and nano-size ship; atoms="
                       << stats.atoms << '\n';
             stage_ = 4;
             age_ = 0;
@@ -172,7 +185,8 @@ class PilotValidation {
     const Universe& u_;
     Navigation& n_;
     Pilot& p_;
-    Address planet_;
+    Address planet_, nanoAddress_;
+    bool microCaptured_ = false;
     glm::dvec3 direction_{};
     uint64_t descriptor_ = 0, geometry_ = 0;
     std::string camera_;

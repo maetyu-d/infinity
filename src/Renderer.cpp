@@ -106,6 +106,7 @@ struct Renderer::Impl {
     GPUMesh cabin;
     double cabinAspect = 0;
     std::optional<FlightInstruments> instruments;
+    std::shared_ptr<const Geometry> skyGeometry;
     std::unique_ptr<HyperionRenderer> hyperion;
     RenderMode mode = RenderMode::Original;
     double visualTime = 0, fixedVisualTime = -1;
@@ -518,6 +519,7 @@ struct Renderer::Impl {
         auto geometry = cache.request(galaxy, 0, 6);
         if (!geometry)
             return;
+        skyGeometry = geometry;
         const auto galaxyEye = universe.pointRelative(
             nav.anchor, eye * std::pow(10., nav.logDistance - anchorFrames.back().logRadius), galaxy.address,
             galaxy.frame.logRadius);
@@ -813,6 +815,9 @@ void Renderer::setCockpit(const FlightInstruments* instruments) {
     else
         impl_->instruments.reset();
 }
+std::shared_ptr<const Geometry> Renderer::galaxySamples() const {
+    return impl_->skyGeometry;
+}
 std::shared_ptr<const Geometry> Renderer::submittedGeometry(const Address& address) const {
     auto found = impl_->details.find(address);
     return found == impl_->details.end() ? nullptr : found->second.blend.current;
@@ -832,6 +837,8 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     auto start = std::chrono::steady_clock::now();
     auto& p = *impl_;
     ++p.frame;
+    if (p.skyGeometry && !p.skyGeometry->address.ancestorOf(nav.anchor))
+        p.skyGeometry.reset();
     p.frameSeconds = std::clamp(std::chrono::duration<double>(start - p.previousTime).count(), 0.0, .1);
     p.previousTime = start;
     p.visualTime = p.fixedVisualTime >= 0 ? p.fixedVisualTime : p.visualTime + p.frameSeconds;
@@ -861,11 +868,12 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                        ? glm::perspectiveRH_NO(fov, static_cast<double>(p.width) / p.height, .00005, 10000.0)
                        : glm::perspectiveRH_ZO(fov, static_cast<double>(p.width) / p.height, .00005, 10000.0);
     glm::mat4 v(p.view), proj(p.projection);
-    const bool opticalDepth =
-        p.instruments && !p.instruments->survey && std::any_of(nodes.begin(), nodes.end(), [](const Node& n) {
-            return n.address.kind() == Kind::Planet && n.environment.temperature > 140 &&
-                   n.environment.temperature < 950 && n.environment.waterActivity > .01;
-        });
+    const bool opticalDepth = p.instruments && p.instruments->altitude >= 0 &&
+                              std::any_of(nodes.begin(), nodes.end(), [](const Node& n) {
+                                  return n.address.kind() == Kind::Planet &&
+                                         n.environment.temperature > 140 && n.environment.temperature < 950 &&
+                                         n.environment.waterActivity > .01;
+                              });
     p.hyperion->begin(p.mode, p.width, p.height, opticalDepth, bool(p.instruments));
     bgfx::setViewTransform(0, glm::value_ptr(v), glm::value_ptr(proj));
     bgfx::setViewRect(0, 0, 0, static_cast<uint16_t>(p.width), static_cast<uint16_t>(p.height));
@@ -1015,8 +1023,8 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     };
     drawBillboards(p.cosmicBillboards, true);
     drawBillboards(p.billboards, false);
-    if (p.instruments && p.mode != RenderMode::Original && !p.instruments->survey && !p.instruments->landed &&
-        p.instruments->speed > 24) {
+    if (p.instruments && p.mode != RenderMode::Original && !p.instruments->shrinking &&
+        !p.instruments->landed && p.instruments->speed > 24) {
         // Hyperion drawMotion's bounded, world-grid-anchored navigation streaks.
         // These are optical cues, never additional stars or collision objects.
         Mesh trails;
@@ -1049,7 +1057,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                 }
         p.transient(trails, 0, true, true);
     }
-    if (p.instruments && !p.instruments->survey && p.mode != RenderMode::Original) {
+    if (opticalDepth && p.mode != RenderMode::Original) {
         for (const auto& planet : nodes)
             if (planet.address.kind() == Kind::Planet) {
                 const auto pose = p.poseFor(planet.address, nav);

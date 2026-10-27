@@ -1,0 +1,9 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 1: operating_regimes_and_shrinking
+1/2 Test #1: operating_regimes_and_shrinking ...   Passed    1.25 sec
+    Start 2: ship_dynamics_and_landing
+2/2 Test #2: ship_dynamics_and_landing .........   Passed    0.79 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =   2.05 sec

@@ -1,8 +1,8 @@
 # INFINITE
 
-A standalone C++20 procedural universe rendered with SDL3 and bgfx. Pilot a ship with throttle, inertia, assisted or inertial handling, a beveled Hyperion cockpit and a destination–approach–landing–launch loop. The same galaxy, star systems, planetary geology, rocks, mineral grains and atomic specimens remain explorable. Viewing units and local reference frames adapt automatically while physical velocity remains in metres per second.
+A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.10 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
 
-Version **0.9** adds the piloting layer without changing the universe recipe, fields, seeds, identities or original geometry generators. See [PILOTING.md](docs/PILOTING.md) for controls, source references and validation.
+The universe remains at its original physical scale. Its generators, hierarchical addresses, seeds, geology, rocks, minerals and atomic structures are unchanged. Camera precision changes never resize the normal ship. See [OPERATING_SCALES.md](docs/OPERATING_SCALES.md) for the three operating regimes, controls and validation.
 
 Version 0.8 removes the isolated terrain windows and single-root-cell flight restriction. A complete, stitched planetary surface streams beneath the camera, with continuous mesh morphing as detail changes. Neighbouring cosmic cells preload and hand off without changing the physical camera; blended collars fill their former sampling gaps. The same world fields, seeds and objects remain authoritative. See [STREAMING.md](docs/STREAMING.md) for implementation, image checks and resource bounds.
 
@@ -48,34 +48,34 @@ ctest --test-dir build-core --output-on-failure
 
 ## Explore
 
-The application starts at the saved view with the pilot cockpit and the last rendering choice (Hyperion on a first launch). Press **C** for the mouse helm. **W/S changes persistent throttle**; releasing W keeps the chosen throttle. **B** commands a controlled stop. **X** switches flight assistance; with assistance off the ship keeps its momentum and rotation.
+New games begin in planetary orbit with a **12 m ship** and cruise disengaged. Existing version-3 saves resume their exact view, motion, size and drive settings. **C** captures the mouse helm; **W/S** changes persistent throttle and **B** brakes.
 
-Click a visible object and press **J** (or Enter) to navigate toward it. On planetary approach press **L** to choose the real terrain underfoot as a landing site, lower the gear and descend under thrust. **Enter** launches after touchdown. No pad or flattened terrain is generated; steep terrain is rejected. The HUD shows bearing/range, prograde drift, speed, stopping distance, altitude, descent, throttle, hull and gear state.
+Use **Y** to cycle the current system's existing planets, then **J** to navigate. **L** chooses the real terrain underfoot for an assisted landing; **Enter** lifts off. Normal handling has a nominal 85 km/s open-space envelope that decreases smoothly toward 350 m/s near terrain, with boost and speed adjustment available.
 
-The cruise drive automatically changes its speed envelope as you approach smaller structures. The HUD distinguishes **CRUISE / SCALE DRIVE**, **LOCAL / SHIP** and **SURVEY / VIRTUAL PROBE**, and indicates refining/widening view scale. **Z** engages the survey probe to inspect rocks, minerals and atoms without ship collisions; approaching and retreating still changes reference frames automatically. Render-unit changes never rescale physical momentum. Ship mode cannot materialize inside solid terrain.
+**N** explicitly enables long-range cruise. Its initial ceiling is **100 light years per second**, with proximity braking near structures. **-/+** changes the cruise ceiling while it is engaged. Voyages remain continuous and can last as long as desired; elapsed flight time, travelled distance and ETA are displayed and saved. Cruise continues when the open app loses focus.
 
-**V** parks the helm and restores the original explorer camera. The original focus, parent, wheel, discovery and guided-tour controls remain available. Focus/parent/wheel commands explicitly enter explorer mode; V resumes piloting at that view.
+**Z** activates the ship's shrinking field. It starts at millimetre size and automatically fits progressively smaller surroundings, down to a **12 pm hull**. **Comma / period** manually request smaller/larger sizes by decades; **Shift-Z** or Z again requests full size. The real contact radius and handling change with the hull. Regrowth is blocked where the ship would overlap material. A size-dependent transit field keeps movement between nearby micro/nano structures practical; contacts resolve against existing SDFs and generated atoms. Camera magnification is displayed separately from ship size.
 
-| Control | Pilot action |
+| Control | Action |
 |---|---|
 | W / S | Increase / decrease persistent throttle |
 | A / D; Q / E | Strafe; descend / ascend |
-| Mouse / arrow keys | Pitch and yaw rate commands |
-| U / O | Roll |
-| C / right drag | Capture mouse helm / temporary helm |
+| Mouse / arrow keys; U / O | Pitch/yaw; roll |
+| C / right drag | Capture / temporarily use mouse helm |
 | B / X | Brake / toggle flight assistance |
+| Y / J | Select next planet / navigate to selected destination |
+| L / G / Enter | Assisted landing / gear / lift off when landed |
+| N | Toggle long-range cruise |
+| - / + or [ / ] | Normal speed multiplier, or cruise speed ceiling |
+| Z | Activate automatic shrinking / request full-size return |
+| Comma / period | Manually request smaller / larger hull |
+| Shift-Z | Request full size, subject to available space |
 | Shift / Ctrl | Boost / precision handling |
-| J or Enter | Navigate to the selected destination |
-| L / G | Assisted landing underfoot / toggle gear |
-| Enter when landed | Lift off under thrust |
-| N / Z | Cruise envelope / virtual survey probe |
-| V | Switch pilot / original explorer controls |
-| - / + or [ / ] | Halve / double drive speed envelope |
-| Click | Select an object at pointer or central reticle |
-| H | Original → Hyperion → hybrid; choice is saved |
-| F / Backspace / wheel | Explorer focus / parent / logarithmic navigation |
-| Tab | Hide cockpit and HUD |
-| R / M / P / T | Reset / save discovery / screenshot / original guided tour |
+| V | Original explorer / deploy ship at the inspected scale |
+| H / Tab | Cycle rendering modes / hide cockpit and HUD |
+| F / Backspace / wheel | Original inspector focus / parent / scale navigation |
+| R | Return to planetary orbit in pilot mode; galaxy overview in explorer mode |
+| M / P / T | Discovery / screenshot / original guided tour |
 | Escape | Release mouse; press again to save and quit |
 
 Camera state and compressed discovery notes are stored in `build/user-data/universe.sqlite` for the command-line executable, or `user-data/universe.sqlite` beside `Infinite.app`. `--data DIR` changes the location. `--fresh` ignores the saved camera and ship state. Ship motion is stored beside it in a versioned `ship-<seed>.txt`; `display.txt` remembers the render mode. `--seed N` selects a universe (persistence is namespaced by seed). Generated geometry is never saved as authoritative world data.
@@ -123,7 +123,7 @@ Up to three concurrent cache tasks, four oneTBB workers, a 32 MiB CPU payload bu
 
 `infinite_tests` currently exercises 251 checks covering hash vectors, address parsing, signed-coordinate extremes, generation order, independent threaded generation, cube/tile boundaries, LOD field consistency, finite transforms spanning 36 decades, material inheritance, Kepler periodicity, all five mineral lattices, valid finite mesh buffers at every scale, cancellation, cache eviction and camera serialization. CTest also launches separate writer/reader processes to check SQLite persistence across application restarts. See [generation benchmarks](docs/benchmark-v0.3.csv) and [benchmark memory](docs/benchmark-memory-v0.3.txt) for current measured generation costs on this machine. The native tour checks and records the actual backbuffer resolution; on Retina screens it uses a smaller logical window to render the requested pixel count.
 
-`infinite_continuity_tests` verifies full non-default round trips, every LOD, shared terrain samples/materials, SDF convergence, query-stable sites/vacancies/bonds for all five minerals, saved ancestry, exact camera restoration, local sections and parallel regeneration. Restart processes repeat the ascent after SQLite reopen. `infinite_process_tests` checks structural diversity, environmental causality, population statistics, phase-specific stoichiometry and coordination, and inherited constraints. `infinite_navigation_tests` checks stationary free look, frame rates, speed controls, interrupted transitions and saved flying views at all nine scales and three seeds. `infinite_flight_tests` adds complete automatic inward/outward flights, canonical terrain lookup, lateral tile handoffs, camera continuity and manual-view compatibility. The 22-case desktop suite includes streaming topology/morph proofs, native boundary pixels, automatic flight, presentation preservation, a three-mode round trip and 51 mode-image captures. Piloting validation and current rendering measurements are in [PILOTING.md](docs/PILOTING.md); the earlier shader integration is in [HYPERION_RENDERING.md](docs/HYPERION_RENDERING.md); generation/performance invariants remain documented in [PERFORMANCE.md](docs/PERFORMANCE.md). Recipe-3 model evidence is in [PROCESS_DIVERSITY.md](docs/PROCESS_DIVERSITY.md); [CONTINUITY_AUDIT.md](docs/CONTINUITY_AUDIT.md) and [VALIDATION.md](docs/VALIDATION.md) retain historical evidence for versions 0.2 and 0.1.
+`infinite_continuity_tests` verifies full non-default round trips, every LOD, shared terrain samples/materials, SDF convergence, query-stable sites/vacancies/bonds for all five minerals, saved ancestry, exact camera restoration, local sections and parallel regeneration. Restart processes repeat the ascent after SQLite reopen. `infinite_process_tests` checks structural diversity, environmental causality, population statistics, phase-specific stoichiometry and coordination, and inherited constraints. `infinite_navigation_tests` checks stationary free look, frame rates, speed controls, interrupted transitions and saved flying views at all nine scales and three seeds. `infinite_flight_tests` adds complete automatic inward/outward flights, canonical terrain lookup, lateral tile handoffs, camera continuity and manual-view compatibility. The 23-case desktop suite includes streaming topology/morph proofs, native boundary pixels, automatic flight, presentation preservation, a three-mode round trip and 51 mode-image captures. Current operating-scale validation is in [OPERATING_SCALES.md](docs/OPERATING_SCALES.md); the earlier piloting integration and measurements are in [PILOTING.md](docs/PILOTING.md); the earlier shader integration is in [HYPERION_RENDERING.md](docs/HYPERION_RENDERING.md); generation/performance invariants remain documented in [PERFORMANCE.md](docs/PERFORMANCE.md). Recipe-3 model evidence is in [PROCESS_DIVERSITY.md](docs/PROCESS_DIVERSITY.md); [CONTINUITY_AUDIT.md](docs/CONTINUITY_AUDIT.md) and [VALIDATION.md](docs/VALIDATION.md) retain historical evidence for versions 0.2 and 0.1.
 
 ## Current limits and next concrete work
 

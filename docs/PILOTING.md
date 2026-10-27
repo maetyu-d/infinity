@@ -1,5 +1,7 @@
 # Hyperion piloting — Infinite 0.9
 
+This records the 0.9 integration. The current ship model, controls and shrinking ability are documented in [OPERATING_SCALES.md](OPERATING_SCALES.md).
+
 The pilot is a consumer of the existing universe. Generation recipe 3, all original geometry generators, hierarchical addresses, coordinate transforms, environmental fields and deterministic seeds remain authoritative. Checkpoint `256eb8e` preserves the working 0.8 application before this change. The baseline build passed all 19 tests with desktop access; an initial sandboxed attempt could not connect to the macOS window server.
 
 ## Flight and scale

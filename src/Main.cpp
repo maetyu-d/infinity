@@ -81,7 +81,8 @@ static Options options(int argc, char** argv) {
             o.data = value();
         else if (arg == "--help") {
             std::cout << "Infinite pilot: W/S throttle, A/D strafe, Q/E lift, U/O roll, B brake, X assist, "
-                         "J navigate, L land, Enter launch, G gear, N cruise, Z survey, V explorer. "
+                         "J navigate, L land, Enter launch, G gear, N long cruise, Z shrink, comma/period "
+                         "size, Y planets, V explorer. "
                          "C mouse helm, arrows pitch/yaw, right-drag look, "
                          "-/+ speed, Shift boost, Ctrl fine, scroll scale, click select, F focus, "
                          "Backspace parent, Tab overlay, R reset, M marker, P screenshot, T tour, Esc "
@@ -134,7 +135,7 @@ int main(int argc, char** argv) {
         RegionCache cache(universe);
         FlightController flight(universe, nav, cache);
         Pilot pilot(universe, nav, flight);
-        bool pilotEnabled = !opt.smoke || opt.pilotTest;
+        bool pilotEnabled = (!opt.smoke && !opt.tour) || opt.pilotTest;
         std::unique_ptr<FlightValidation> flightProof;
         if (opt.flightTest)
             flightProof = std::make_unique<FlightValidation>(universe, nav);
@@ -174,15 +175,22 @@ int main(int argc, char** argv) {
             std::unique_ptr<PilotValidation> pilotProof;
             if (opt.pilotTest)
                 pilotProof = std::make_unique<PilotValidation>(universe, nav, pilot);
-            bool shipRestored = false;
+            bool shipRestored = false, legacyShip = false;
             if (!opt.fresh && !opt.smoke) {
                 std::ifstream saved(data / ("ship-" + std::to_string(universe.seed()) + ".txt"));
                 std::string state;
-                if (std::getline(saved, state))
+                if (std::getline(saved, state)) {
+                    legacyShip = state.rfind("INFINITE_SHIP 3 ", 0) != 0;
                     shipRestored = pilot.restore(state);
+                }
             }
-            if (!shipRestored && !opt.smoke && nav.anchor.kind() >= Kind::Rock && !pilot.ship().survey)
-                pilot.toggleSurvey();
+            if (pilotEnabled && !opt.smoke && (!shipRestored || legacyShip) &&
+                nav.anchor.kind() < Kind::System)
+                pilot.startInSystem();
+            else if (!shipRestored && !opt.smoke && nav.anchor.kind() >= Kind::Rock &&
+                     !pilot.ship().shrinking) {
+                pilot.fitToView();
+            }
             renderer.freezeVisualTime(opt.visualTime);
             std::unique_ptr<RoundTripVerifier> proof;
             if (opt.smoke && !opt.benchmark)
@@ -209,7 +217,8 @@ int main(int argc, char** argv) {
             std::vector<std::pair<Address, uint64_t>> visited;
             std::vector<double> frameTimes;
             double fps = 60, noticeTime = 6;
-            std::string notice = "C mouse helm / W-S throttle / J navigate / L land / B brake / V explorer";
+            std::string notice =
+                "C mouse helm / Y next planet / J navigate / N long cruise / Z shrink / B brake";
             auto captureLook = [&] {
                 const bool enabled = mouseFlight || rightLook;
                 if (enabled == looking)
@@ -308,12 +317,18 @@ int main(int argc, char** argv) {
                         case SDL_SCANCODE_EQUALS:
                         case SDL_SCANCODE_KP_PLUS:
                         case SDL_SCANCODE_RIGHTBRACKET:
-                            nav.adjustSpeed(1);
+                            if (pilotEnabled)
+                                pilot.adjustDrive(1);
+                            else
+                                nav.adjustSpeed(1);
                             break;
                         case SDL_SCANCODE_MINUS:
                         case SDL_SCANCODE_KP_MINUS:
                         case SDL_SCANCODE_LEFTBRACKET:
-                            nav.adjustSpeed(-1);
+                            if (pilotEnabled)
+                                pilot.adjustDrive(-1);
+                            else
+                                nav.adjustSpeed(-1);
                             break;
                         case SDL_SCANCODE_F:
                             pilotEnabled = false;
@@ -330,8 +345,8 @@ int main(int argc, char** argv) {
                         case SDL_SCANCODE_V:
                             pilotEnabled = !pilotEnabled;
                             pilot.resetMotion();
-                            if (pilotEnabled && nav.anchor.kind() >= Kind::Rock && !pilot.ship().survey)
-                                pilot.toggleSurvey();
+                            if (pilotEnabled && nav.anchor.kind() >= Kind::Rock && !pilot.ship().shrinking)
+                                pilot.fitToView();
                             opt.tour = false;
                             notice = pilotEnabled
                                          ? "Pilot helm engaged / W-S throttle / B brake"
@@ -355,8 +370,24 @@ int main(int argc, char** argv) {
                                 pilot.toggleGear();
                             break;
                         case SDL_SCANCODE_Z:
+                            if (pilotEnabled) {
+                                if (event.key.mod & SDL_KMOD_SHIFT)
+                                    pilot.restoreFullSize();
+                                else
+                                    pilot.toggleShrink();
+                            }
+                            break;
+                        case SDL_SCANCODE_COMMA:
                             if (pilotEnabled)
-                                pilot.toggleSurvey();
+                                pilot.adjustSize(-1);
+                            break;
+                        case SDL_SCANCODE_PERIOD:
+                            if (pilotEnabled)
+                                pilot.adjustSize(1);
+                            break;
+                        case SDL_SCANCODE_Y:
+                            if (pilotEnabled)
+                                pilot.selectNextPlanet();
                             break;
                         case SDL_SCANCODE_J:
                             if (pilotEnabled && nav.selected)
@@ -388,8 +419,12 @@ int main(int argc, char** argv) {
                             noticeTime = 3;
                             break;
                         case SDL_SCANCODE_R:
-                            nav.reset();
-                            pilot.resetMotion();
+                            if (pilotEnabled)
+                                pilot.startInSystem();
+                            else {
+                                nav.reset();
+                                pilot.resetMotion();
+                            }
                             opt.tour = false;
                             break;
                         case SDL_SCANCODE_M:
@@ -428,6 +463,7 @@ int main(int argc, char** argv) {
                 if (!running)
                     break;
                 const bool* keys = SDL_GetKeyboardState(nullptr);
+                flight.observeGalaxy(renderer.galaxySamples());
                 if (!opt.smoke && (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS)) {
                     const glm::dvec3 axes{static_cast<double>(keys[SDL_SCANCODE_D]) - keys[SDL_SCANCODE_A],
                                           static_cast<double>(keys[SDL_SCANCODE_E]) - keys[SDL_SCANCODE_Q],
@@ -453,6 +489,9 @@ int main(int argc, char** argv) {
                                       keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL],
                                       renderer.submittedGeometry(nav.anchor));
                 }
+                if (!opt.smoke && !opt.tour && pilotEnabled && pilot.ship().cruise &&
+                    !(SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS))
+                    pilot.update({}, dt, renderer.submittedGeometry(nav.anchor));
                 nav.update((opt.benchmark ? 1.0 / 60 : dt) * (opt.tour ? 3 : 1));
                 if (flightProof)
                     flightProof->advance(flight, renderer);

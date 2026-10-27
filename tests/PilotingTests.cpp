@@ -75,7 +75,6 @@ int main() {
         // Cruise disengaged: test local dynamics independently of scene scale.
         nav.reset();
         pilot.resetMotion();
-        pilot.toggleCruise();
         pilot.setVelocity({100, 0, 0});
         pilot.toggleAssist();
         for (int i = 0; i < 60; i++)
@@ -171,8 +170,8 @@ int main() {
         check(!pilot.ship().landed && pilot.instruments().altitude > 10,
               "launch did not depart under thrust");
         const auto speedBefore = glm::length(pilot.ship().velocity);
-        pilot.toggleSurvey();
-        check(pilot.ship().survey && glm::length(pilot.ship().velocity) == speedBefore,
+        pilot.toggleShrink();
+        check(pilot.ship().shrinking && glm::length(pilot.ship().velocity) == speedBefore,
               "survey activation reset momentum");
         for (double aspect : {1., 4. / 3, 16. / 9, 2.4}) {
             auto cabin = cockpitMesh(aspect);
@@ -183,68 +182,6 @@ int main() {
                   "flight instruments were not drawn");
             for (const auto& v : cabin.vertices)
                 check(std::isfinite(v.x) && std::isfinite(v.y) && v.z < 0, "cockpit vertex is invalid");
-        }
-        {
-            Navigation journey(u);
-            RegionCache flightCache(u);
-            FlightController frames(u, journey, flightCache);
-            Pilot vessel(u, journey, frames);
-            place(journey, Address{}, 26, {.1, .2, .8});
-            vessel.resetMotion();
-            vessel.toggleSurvey();
-            std::set<Kind> visited{Kind::Cosmic};
-            HelmInput drive;
-            drive.throttle = 1;
-            drive.boost = true;
-            for (int frame = 0; frame < 9000 && journey.anchor.kind() != Kind::Lattice; frame++) {
-                flightCache.beginFrame();
-                auto visible = flightCache.request(u.describe(journey.anchor), 0, 0);
-                auto target = frames.target();
-                if (target) {
-                    const auto delta = u.relative(*target, journey.anchor, journey.logDistance).position -
-                                       journey.cameraPosition();
-                    if (glm::length(delta) > 1e-20) {
-                        auto eye = journey.cameraPosition();
-                        auto direction = glm::normalize(delta);
-                        auto up = std::abs(direction.y) > .95 ? glm::dvec3(1, 0, 0) : glm::dvec3(0, 1, 0);
-                        journey.orientation = glm::quatLookAtRH(direction, up);
-                        journey.offset = eye - journey.orientation * glm::dvec3(0, 0, 1);
-                    }
-                }
-                vessel.update(drive, 1. / 30, visible);
-                flightCache.finishFrame();
-                flightCache.wait();
-                if (visited.insert(journey.anchor.kind()).second)
-                    std::cout << "PILOT_SCALE " << kindName(journey.anchor.kind()) << " frame=" << frame
-                              << '\n';
-            }
-            check(visited.size() == 9, "ship propulsion failed the automatic cosmic-to-atomic journey");
-            std::set<Kind> returned{Kind::Lattice};
-            for (int frame = 0; frame < 9000 && journey.anchor.kind() != Kind::Cosmic; frame++) {
-                flightCache.beginFrame();
-                const auto child = u.describe(journey.anchor);
-                const auto radial = glm::length(child.frame.position) > 1e-20
-                                        ? glm::normalize(child.frame.position)
-                                        : glm::dvec3(0, 1, 0);
-                const auto goal = u.pointRelative(journey.anchor.parent(), radial * 2.5, journey.anchor,
-                                                  journey.logDistance);
-                const auto delta = goal - journey.cameraPosition();
-                if (glm::length(delta) > 1e-30) {
-                    auto eye = journey.cameraPosition();
-                    auto direction = glm::normalize(delta);
-                    auto up = std::abs(direction.y) > .95 ? glm::dvec3(1, 0, 0) : glm::dvec3(0, 1, 0);
-                    journey.orientation = glm::quatLookAtRH(direction, up);
-                    journey.offset = eye - journey.orientation * glm::dvec3(0, 0, 1);
-                }
-                auto visible = flightCache.request(child, 0, 0);
-                vessel.update(drive, 1. / 30, visible);
-                flightCache.finishFrame();
-                flightCache.wait();
-                if (returned.insert(journey.anchor.kind()).second)
-                    std::cout << "PILOT_RETURN " << kindName(journey.anchor.kind()) << " frame=" << frame
-                              << '\n';
-            }
-            check(returned.size() == 9, "ship propulsion failed the atomic-to-cosmic return");
         }
         cache.wait();
         std::cout << "PASS: " << checks

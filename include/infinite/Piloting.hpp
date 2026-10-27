@@ -1,5 +1,6 @@
 #pragma once
 #include "Flight.hpp"
+#include <cmath>
 
 namespace infinite {
 struct HelmInput {
@@ -12,14 +13,20 @@ struct ShipState {
     Address frame;
     glm::dvec3 velocity{}, angularVelocity{}, thrusters{}, positionResidual{};
     double throttle = 0, boost = 0, hull = 100;
-    bool assist = true, cruise = true, survey = false, gear = false, landed = false;
+    bool assist = true, cruise = false, shrinking = false, gear = false, landed = false;
+    bool autoShrink = true;
+    double logSize = 0, targetLogSize = 0;
+    double cruiseSpeed = 9.4607304725808e17; // 100 light years per second, optional drive.
+    double flightSeconds = 0, travelMetres = 0;
 };
 struct FlightInstruments {
     glm::dvec3 localVelocity{}, localTarget{}, localUp{0, 1, 0};
     double speed = 0, stoppingDistance = 0, altitude = -1, descent = 0, drift = 0;
     double range = 0, throttle = 0, engine = 0, hull = 100, logMetres = 0, scaleRate = 0;
     double roll = 0, pitch = 0, driveSpeed = 0;
-    bool gear = false, landed = false, assist = true, survey = false, navigating = false;
+    bool gear = false, landed = false, assist = true, shrinking = false, navigating = false;
+    bool autoShrink = false, growthBlocked = false;
+    double hullMetres = 12, targetHullMetres = 12, flightSeconds = 0, travelMetres = 0, etaSeconds = -1;
     bool targetVisible = false, safe = false;
     std::string phase = "MANUAL", drive = "CRUISE", destination = "SELECT A DESTINATION / J NAVIGATE";
 };
@@ -36,14 +43,24 @@ class Pilot {
     void synchronizeFrame();
     void brake();
     void toggleAssist();
-    void toggleCruise() {
-        ship_.cruise = !ship_.cruise;
-    }
+    void toggleCruise();
+    void adjustDrive(double steps);
     void toggleGear() {
         if (!ship_.landed)
             ship_.gear = !ship_.gear;
     }
-    void toggleSurvey();
+    void toggleShrink();
+    void adjustSize(double decades);
+    void restoreFullSize();
+    void startInSystem();
+    void selectNextPlanet();
+    void fitToView(); // Explicit deployment from the legacy inspector, not a flight rebase.
+    double sizeRatio() const {
+        return std::pow(10., ship_.logSize);
+    }
+    double collisionRadius() const {
+        return 2 * sizeRatio();
+    }
     void navigate(const Address&);
     bool land();
     void launch();
@@ -67,13 +84,20 @@ class Pilot {
     glm::dvec3 landingDirection_{0, 1, 0};
     bool autopilot_ = false, landing_ = false;
     bool fieldBraking_ = false;
+    bool growthBlocked_ = false;
     double launchTime_ = 0, lastLog_ = 0, scaleRate_ = 0, precisionScale_ = 1;
     std::string phase_ = "MANUAL";
     std::optional<Ground> ground() const;
     glm::dvec3 gravityAt(const Ground&) const;
     glm::dvec3 destinationPoint() const;
     double speedLimit() const;
+    double operatingClearance() const;
     void step(const HelmInput&, double dt);
     void instrument();
+    void resize(double dt);
+    bool fits(double logSize) const;
+    bool continuumContact() const;
+    void matterContact(const std::shared_ptr<const Geometry>&, glm::dvec3 previousEye);
+    std::shared_ptr<const Geometry> collisionGeometry_;
 };
 } // namespace infinite

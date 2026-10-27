@@ -42,8 +42,9 @@ const std::map<char, std::string_view> glyphs{
     {'6', "01110100001000011110100011000101110"}, {'7', "11111000010001000100010000100001000"},
     {'8', "01110100011000101110100011000101110"}, {'9', "01110100011000101111000010000101110"},
     {'/', "00001000010001000100010001000010000"}, {'-', "00000000000000011111000000000000000"},
-    {'+', "00000001000010011111001000010000000"}, {'.', "00000000000000000000000000011000110"},
-    {':', "00000011000110000000011000110000000"}, {'%', "11001110100001000100010001001100011"}};
+    {'+', "00000001000010011111001000010000000"}, {',', "00000000000000000000001100010001000"},
+    {'.', "00000000000000000000000000011000110"}, {':', "00000011000110000000011000110000000"},
+    {'%', "11001110100001000100010001001100011"}};
 void text(Mesh& m, std::string_view s, double x, double y, double size, glm::vec3 color,
           size_t maxChars = 100) {
     const double pixel = size / 7.;
@@ -80,6 +81,9 @@ std::string flightQuantity(double v, bool speed) {
     } else if (a >= 1000) {
         divisor = 1000;
         suffix = "KM";
+    } else if (a > 0 && a < 1e-9) {
+        divisor = 1e-12;
+        suffix = "PM";
     } else if (a > 0 && a < 1e-6) {
         divisor = 1e-9;
         suffix = "NM";
@@ -266,9 +270,33 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     std::snprintf(value, sizeof(value), "VIEW SCALE %s / %s",
                   flightQuantity(std::pow(10., t.logMetres)).c_str(),
                   std::abs(t.scaleRate) > .02 ? (t.scaleRate < 0 ? "REFINING" : "WIDENING") : "STABLE");
-    text(h.lettering, value, 28, 61, 9, t.survey ? amber : muted);
+    text(h.lettering, value, 28, 61, 9, t.shrinking ? amber : muted);
+    text(h.lettering,
+         "SHIP SIZE " + flightQuantity(t.hullMetres) + (t.shrinking ? " / SHRINK FIELD" : " / FULL SIZE"), 28,
+         84, 11, t.shrinking ? amber : ice);
+    if (t.shrinking) {
+        text(h.lettering,
+             "TARGET " + flightQuantity(t.targetHullMetres) + (t.autoShrink ? " / AUTO" : " / MANUAL"), 28,
+             105, 9, muted);
+        text(h.lettering,
+             t.growthBlocked ? "GROWTH BLOCKED / MOVE CLEAR" : ", SMALLER  . LARGER  SHIFT-Z FULL SIZE", 28,
+             124, 9, t.growthBlocked ? amber : muted);
+    }
+    auto duration = [](double seconds) {
+        char b[64];
+        if (seconds < 0)
+            return std::string("--");
+        const auto total = uint64_t(std::min(seconds, 1e15));
+        std::snprintf(b, sizeof(b), "%llu:%02llu:%02llu", (unsigned long long)(total / 3600),
+                      (unsigned long long)(total / 60 % 60), (unsigned long long)(total % 60));
+        return std::string(b);
+    };
+    text(h.lettering, "FLIGHT " + duration(t.flightSeconds) + " / " + flightQuantity(t.travelMetres), 28,
+         t.shrinking ? 148 : 108, 9, muted);
+    if (t.navigating)
+        text(h.lettering, "ETA " + duration(t.etaSeconds), 28, t.shrinking ? 167 : 128, 9, ice);
     text(h.lettering, "W/S THROTTLE  A/D STRAFE  Q/E LIFT  U/O ROLL  B BRAKE  X ASSIST", 30, 721, 9, muted);
-    text(h.lettering, "J NAVIGATE  L LAND  ENTER LAUNCH  G GEAR  N CRUISE  Z SURVEY  V EXPLORER  H LOOK", 30,
+    text(h.lettering, "Y PLANETS  J NAVIGATE  L LAND  ENTER LAUNCH  N LONG CRUISE  Z SHRINK  V EXPLORER", 30,
          740, 9, muted);
     if (!notice.empty())
         text(h.lettering, notice, 30, 690, 10, ice, size_t(std::max(30., (w - 60) / 8.6)));

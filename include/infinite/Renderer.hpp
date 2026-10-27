@@ -31,6 +31,7 @@ class Renderer {
     void screenshot(const std::string& path);
     std::string backend() const;
     std::shared_ptr<const Geometry> submittedGeometry(const Address&) const;
+    std::shared_ptr<const Geometry> galaxySamples() const;
     void setMode(RenderMode);
     RenderMode mode() const;
     void freezeVisualTime(double seconds);
