@@ -1,0 +1,2402 @@
+[
+  {
+    "file": "src/actor_storage.hpp",
+    "lines": 14,
+    "sha256": "1d8c7a33f5a9adfb49c333463e5d17d4c39a5c8b6b960fed72039bf50c066195",
+    "includes": [
+      "flight/threat.hpp",
+      "json.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "encodeGenome",
+      "decodeGenome"
+    ]
+  },
+  {
+    "file": "src/audio.cpp",
+    "lines": 28,
+    "sha256": "d10ac154ab7b03a2899f3038085dd2a080064e9c6d61c6cf867289c346715e8a",
+    "includes": [
+      "audio.hpp",
+      "audio_synthesis.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "Audio::toggle",
+      "Audio::play"
+    ]
+  },
+  {
+    "file": "src/audio.hpp",
+    "lines": 11,
+    "sha256": "bff0f521ee36dbf80a2b97ccde4739e414d5f949ae4745d7aeef54cda81dc136",
+    "includes": [
+      "raylib.h"
+    ],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/audio_synthesis.hpp",
+    "lines": 40,
+    "sha256": "0330a17d3b6b1338d1bbfdd2e5964e613c0f38e9848a122598eadbfcfd238870",
+    "includes": [],
+    "render_calls": 0,
+    "functions": [
+      "synthesizeSound"
+    ]
+  },
+  {
+    "file": "src/biosphere.cpp",
+    "lines": 36,
+    "sha256": "13ec4af1970d0b6215333c7a3c6ef1d86d585206d2babff86f6222f316f16f77",
+    "includes": [
+      "biosphere.hpp",
+      "flight/threat.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "phenotype",
+      "biologicalTraits",
+      "habitatFeature"
+    ]
+  },
+  {
+    "file": "src/biosphere.hpp",
+    "lines": 8,
+    "sha256": "633dbb25eb9c8659e4c8421dc27ac032080e21b85a1517488928c4463627e923",
+    "includes": [
+      "universe.hpp"
+    ],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/boarding.cpp",
+    "lines": 86,
+    "sha256": "441f964f16f90e7c051267f1ffce02e50b57178f05dac171846cefde8e805d1f",
+    "includes": [
+      "game.hpp",
+      "flight/destruction.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "returnParty",
+      "returnDefenders",
+      "danger",
+      "Game::boardingActive",
+      "Game::boardingQuote",
+      "Game::boardingAction",
+      "Game::syncBoarding",
+      "Game::prizeAction"
+    ]
+  },
+  {
+    "file": "src/continuity.cpp",
+    "lines": 49,
+    "sha256": "c44b39a2d9fc853447dc5bbf4b3dc68b2fdc8e195baf715aed3db3e8801659f7",
+    "includes": [
+      "game.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "Game::openStrategy",
+      "Game::rememberSurvey",
+      "Game::restoreSurvey",
+      "Game::transferPlan"
+    ]
+  },
+  {
+    "file": "src/display_preferences.hpp",
+    "lines": 50,
+    "sha256": "e272dadaec77924d63e6391dc7e359dc2c85a83a96b008a7aec365e13c5455ed",
+    "includes": [
+      "graphics_quality.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "loadGraphicsQuality",
+      "saveGraphicsQuality",
+      "loadLowGraphics",
+      "saveLowGraphics",
+      "loadEnhancedHUD",
+      "saveEnhancedHUD",
+      "loadPsychedelicLook",
+      "savePsychedelicLook"
+    ]
+  },
+  {
+    "file": "src/economy.cpp",
+    "lines": 518,
+    "sha256": "7471386b728e4e20f556324f65d1af3867c0353d016dad04544f7d495f000fbe",
+    "includes": [
+      "economy.hpp",
+      "flight/weather.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "stock",
+      "has",
+      "subtract",
+      "deficits",
+      "identifier",
+      "ownedCount",
+      "policyName",
+      "findSettlement",
+      "findSettlement",
+      "stockTotal",
+      "storageCapacity",
+      "reserveFor",
+      "marketPrice",
+      "tradeOrderPrice",
+      "tradeUnitPrice",
+      "conditions",
+      "settlementStatus",
+      "economicEvent",
+      "initializeEconomy",
+      "discoverEconomy",
+      "requestSupplies",
+      "updateSettlement",
+      "updateRoute",
+      "advanceEconomy",
+      "foundSettlement",
+      "construct",
+      "rebuildInfrastructure",
+      "repairSettlement",
+      "transferCargo",
+      "trade",
+      "commissionRoute",
+      "fulfillContract",
+      "commissionResearch",
+      "diplomaticMission",
+      "recruitColonists",
+      "buyFreighter"
+    ]
+  },
+  {
+    "file": "src/economy.hpp",
+    "lines": 190,
+    "sha256": "65e622bcccdde67a4bc55b04ea19db20535ee188b513831993211fc85c37e186",
+    "includes": [
+      "universe.hpp",
+      "ecosystem.hpp",
+      "missions.hpp",
+      "flight/game.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "workingBuildings",
+      "facilityIntegrity"
+    ]
+  },
+  {
+    "file": "src/economy_game.cpp",
+    "lines": 166,
+    "sha256": "f920a98ba93b63a97d7f122161e3e63be9178f0d57aa8bc3aba0e514bcc0939d",
+    "includes": [
+      "game.hpp",
+      "wildlife.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "Game::ensureEconomy",
+      "Game::registerExpeditionHabitat",
+      "Game::syncEconomy",
+      "Game::shipStock",
+      "Game::storeShipStock",
+      "Game::collectStockGains",
+      "Game::canDock",
+      "Game::dock",
+      "Game::waitHours",
+      "fields",
+      "Game::economicAction"
+    ]
+  },
+  {
+    "file": "src/economy_renderer.cpp",
+    "lines": 159,
+    "sha256": "fc056dda3dadb53149e33884449de8053bf3b2703c0ff79845a48b88553f91a9",
+    "includes": [
+      "renderer.hpp",
+      "biosphere.hpp"
+    ],
+    "render_calls": 6,
+    "functions": [
+      "number",
+      "materialList",
+      "Renderer::civicResearchPanel",
+      "Renderer::economyPanel",
+      "Renderer::colonyMarkers"
+    ]
+  },
+  {
+    "file": "src/economy_storage.cpp",
+    "lines": 107,
+    "sha256": "4cd3e178a5a352afdbf2ee46d07bf44dbf7caa3c97c08d451b563a1888b76da4",
+    "includes": [
+      "economy_storage.hpp",
+      "world_damage_storage.hpp",
+      "ecosystem_storage.hpp",
+      "security_storage.hpp",
+      "shipyard_storage.hpp",
+      "missions_storage.hpp",
+      "ocean_storage.hpp",
+      "recovery_society_storage.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "encodeEconomy",
+      "n",
+      "t",
+      "array",
+      "decodeEconomy"
+    ]
+  },
+  {
+    "file": "src/economy_storage.hpp",
+    "lines": 7,
+    "sha256": "1d6605e5b2cb617e57c671ae4e8788745adabc4254aec7bd430170ff02b9bf84",
+    "includes": [
+      "economy.hpp",
+      "json.hpp"
+    ],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/ecosystem.cpp",
+    "lines": 116,
+    "sha256": "bab485feba4f60bb5fdd86e6fe73d1fbdb9ce5ffb2f5cc34ee7b06385967fbc5",
+    "includes": [
+      "ecosystem.hpp",
+      "economy.hpp",
+      "biosphere.hpp",
+      "flight/threat.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "layerAt",
+      "key",
+      "address",
+      "depthOf",
+      "ratio",
+      "target",
+      "floorMass",
+      "eats",
+      "ecologyStep",
+      "guildName",
+      "harvestPolicyName",
+      "harvestTargetName",
+      "contactGuild",
+      "ecosystemKey",
+      "generateEcosystem",
+      "ensureEcosystem",
+      "ensureContactHabitat",
+      "contactHabitat",
+      "settlementHabitat",
+      "settlementHabitat",
+      "initializeEcosystems",
+      "guildMass",
+      "guildCapacity",
+      "ecosystemMass",
+      "biodiversity",
+      "ecosystemServices",
+      "harvestAvailable",
+      "harvestEcosystem",
+      "populationPresence",
+      "samplePopulation",
+      "restoreEcosystem",
+      "advanceEcosystems",
+      "ecosystemSummary",
+      "populationReport"
+    ]
+  },
+  {
+    "file": "src/ecosystem.hpp",
+    "lines": 35,
+    "sha256": "a38ddb70f4e54e31dba0d704e1d0a9ffa27b60593a1ef6554f107b6feda62d64",
+    "includes": [
+      "universe.hpp"
+    ],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/ecosystem_storage.cpp",
+    "lines": 32,
+    "sha256": "4d0db238e45eae7ef75d6d8838c8a8ce30b37d7bb5f86ace9629d73a29c78660",
+    "includes": [
+      "ecosystem_storage.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "n",
+      "integer",
+      "text",
+      "encodeEcosystems",
+      "decodeEcosystems"
+    ]
+  },
+  {
+    "file": "src/ecosystem_storage.hpp",
+    "lines": 7,
+    "sha256": "b54946f702305978d9270af080b371db46874c00ad18a5cdcdeaa8a75445d9ce",
+    "includes": [
+      "economy.hpp",
+      "json.hpp"
+    ],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/field_renderer.cpp",
+    "lines": 64,
+    "sha256": "481ddbeb68a5486d97ede2263855556597b6b385e16e164f9b0569ea571548cb",
+    "includes": [
+      "renderer.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "number",
+      "Renderer::nextMoves"
+    ]
+  },
+  {
+    "file": "src/fieldwork.cpp",
+    "lines": 124,
+    "sha256": "30587552ae0cf5163d7c8fe3368b437d9aa8f3a86517c34c1cbd11f61d976858",
+    "includes": [
+      "game.hpp",
+      "biosphere.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "recorded",
+      "taken",
+      "living",
+      "fieldDistance",
+      "research",
+      "number",
+      "gains",
+      "Game::fieldSites",
+      "Game::fieldQuote",
+      "Game::fieldAction",
+      "Game::followFieldRoute"
+    ]
+  },
+  {
+    "file": "src/flight/architecture.hpp",
+    "lines": 248,
+    "sha256": "5a6c88e9f80b741cb86ad3dad6f666eb15833c7f5c2fead22658c39b6b91fd84",
+    "includes": [],
+    "render_calls": 0,
+    "functions": [
+      "structureHash",
+      "structureBump",
+      "structureLight",
+      "windowInterior",
+      "buildingField",
+      "buildingDetailField",
+      "plateSurface",
+      "buildingPlates",
+      "main"
+    ]
+  },
+  {
+    "file": "src/flight/building_material.hpp",
+    "lines": 74,
+    "sha256": "9ea2d6b28e38a8b8c9834a522878a091f6447c00424221207a5c704bb2eb67a8",
+    "includes": [],
+    "render_calls": 0,
+    "functions": [
+      "materialNoise",
+      "bakeBuildingMaterial",
+      "bakeBuildingDetail"
+    ]
+  },
+  {
+    "file": "src/flight/combat.cpp",
+    "lines": 249,
+    "sha256": "f6d2988aa75115b46020a6f260c0d98a391a9aa4fd23b4454a1e300bc76a6d40",
+    "includes": [
+      "game.hpp",
+      "destruction.hpp",
+      "world_collision.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "sphereHit",
+      "segmentDistance",
+      "turn",
+      "weaponDef",
+      "primaryWeapon",
+      "focusName",
+      "interceptTime",
+      "enemyStateName",
+      "systemName",
+      "enemyDef",
+      "Game::enemiesOf",
+      "Game::protectedPort",
+      "Game::terrainHit",
+      "Game::lineOfSight",
+      "Game::combatTargetIndex",
+      "Game::cycleCombatTarget",
+      "Game::selectWeapon",
+      "Game::effect",
+      "splashWorld",
+      "Game::damageWorld",
+      "Game::damageShip",
+      "Game::damageTraffic",
+      "Game::chainArc",
+      "Game::prepareCombat",
+      "Game::updateCombat"
+    ]
+  },
+  {
+    "file": "src/flight/combat_renderer.cpp",
+    "lines": 198,
+    "sha256": "f8e1faee8695cf3a52201e03e43c8ab73b53f373c3b7cc3353c8008749cf8b2d",
+    "includes": [
+      "renderer.hpp",
+      "destruction.hpp",
+      "rlgl.h"
+    ],
+    "render_calls": 13,
+    "functions": [
+      "alpha",
+      "pigment",
+      "vec",
+      "line",
+      "tube",
+      "ring",
+      "seed",
+      "spectrum",
+      "shockFront",
+      "radial",
+      "Renderer::drawCombat"
+    ]
+  },
+  {
+    "file": "src/flight/controls.hpp",
+    "lines": 12,
+    "sha256": "0c97a738780c795cde64a22df4bd72968613e97a6246d6719f831b149c86de7e",
+    "includes": [],
+    "render_calls": 0,
+    "functions": [
+      "pointerLook"
+    ]
+  },
+  {
+    "file": "src/flight/destruction.hpp",
+    "lines": 21,
+    "sha256": "a5b2aaa3f7e16ff082bd22a7cbbfc0c0d9d5c9a9645b320b6981ff510878a091",
+    "includes": [
+      "game.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "craftModel",
+      "hullRemains",
+      "debrisNoise",
+      "hullFragment",
+      "debrisPose",
+      "debrisPoint"
+    ]
+  },
+  {
+    "file": "src/flight/game.cpp",
+    "lines": 174,
+    "sha256": "5ece1ed594637e9163451c2927aec92eca1ff8963346d39ee575b2f2be8f441f",
+    "includes": [
+      "game.hpp",
+      "world_collision.hpp",
+      "../worldgen.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "terrain",
+      "terrainNormal",
+      "materialElevation",
+      "Game::orient",
+      "Game::message",
+      "Game::nearestPlanet",
+      "Game::landing",
+      "Game::altitude",
+      "Game::launch",
+      "Game::dockAt",
+      "Game::dock",
+      "Game::cancelNavigation",
+      "Game::selectTarget",
+      "intersects",
+      "transferRoute",
+      "freightPose",
+      "Game::navigate",
+      "Game::update",
+      "Game::recordIds"
+    ]
+  },
+  {
+    "file": "src/flight/game.hpp",
+    "lines": 138,
+    "sha256": "cc1b7ea0e2d46247eb8ad78e548fa572f568d2519ea6a1d59111c3bd6fdd60b7",
+    "includes": [
+      "../world_damage.hpp",
+      "vessel.hpp",
+      "threat.hpp",
+      "../minor_bodies.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "enemyDef"
+    ]
+  },
+  {
+    "file": "src/flight/geology.hpp",
+    "lines": 105,
+    "sha256": "ac053ba6a3f24f3447f6f70096a98656e1268c5276dba7f0171ee39dea37351c",
+    "includes": [],
+    "render_calls": 0,
+    "functions": [
+      "noise",
+      "fbm",
+      "random3",
+      "pigment",
+      "impacts",
+      "main"
+    ]
+  },
+  {
+    "file": "src/flight/ground_objects.hpp",
+    "lines": 29,
+    "sha256": "232e78e84afbff7e72764ff8f113be37cf37f3c858ee25f669bf5a9f62acf68e",
+    "includes": [
+      "game.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "rockHash",
+      "rockCube",
+      "groundRocks"
+    ]
+  },
+  {
+    "file": "src/flight/handling.cpp",
+    "lines": 223,
+    "sha256": "81cb6040d479e458149d0fca93b29d9b0e6702c454bb9415581c6c5fa8022ac5",
+    "includes": [
+      "game.hpp",
+      "weather.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "limited",
+      "axes",
+      "authority",
+      "retroAuthority",
+      "normalizedForce",
+      "allocateForce",
+      "angularTarget",
+      "Game::inertialMass",
+      "Game::gravity",
+      "Game::atmosphereDensity",
+      "Game::thrustLimit",
+      "Game::manualSpeedLimit",
+      "Game::setAssist",
+      "Game::brake",
+      "Game::stoppingDistance",
+      "Game::stepHandling"
+    ]
+  },
+  {
+    "file": "src/flight/hud.hpp",
+    "lines": 59,
+    "sha256": "c17f7219c64f12f1c86e843d497fedc30a32869909afde253b1d811ec2768a7b",
+    "includes": [
+      "game.hpp",
+      "../screen_layout.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "hudContains",
+      "hudClip",
+      "hudBearing",
+      "hudTelemetry",
+      "hudClosing",
+      "hudCues"
+    ]
+  },
+  {
+    "file": "src/flight/life.cpp",
+    "lines": 39,
+    "sha256": "7bd34c88f6c17b87e7663d25a78688112adc7d4354a1e9a85b12483cf78cf818",
+    "includes": [
+      "renderer.hpp",
+      "life_mesh.hpp",
+      "life_shaders.hpp",
+      "life_visibility.hpp",
+      "rlgl.h"
+    ],
+    "render_calls": 10,
+    "functions": [
+      "Renderer::clearLife",
+      "Renderer::drawLife"
+    ]
+  },
+  {
+    "file": "src/flight/life_mesh.hpp",
+    "lines": 113,
+    "sha256": "ba543a0a9307e2cdef41642cf53b58f9750d09fdb0bc6e25fa5a6bc29bba14c1",
+    "includes": [
+      "game.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "lifeMesh"
+    ]
+  },
+  {
+    "file": "src/flight/life_shaders.hpp",
+    "lines": 51,
+    "sha256": "77da9feff05ae94bed509b9c38cb22721917b6f0b3551f67a94e8afc9f78005d",
+    "includes": [],
+    "render_calls": 0,
+    "functions": [
+      "main",
+      "palette",
+      "main"
+    ]
+  },
+  {
+    "file": "src/flight/life_visibility.hpp",
+    "lines": 48,
+    "sha256": "189f1fb6653dac0e0c973be96e10b7283e1ef59e26d956d0a23a102faf107bd0",
+    "includes": [
+      "scene.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "lifeSmooth",
+      "lifeChartCoverage",
+      "lifeDrawList"
+    ]
+  },
+  {
+    "file": "src/flight/lighting.hpp",
+    "lines": 62,
+    "sha256": "cc1e948cd48fe36c9896aea816f4c8f0da6dc1170575301b6f126ff7350a647a",
+    "includes": [],
+    "render_calls": 0,
+    "functions": [
+      "main",
+      "ringField",
+      "ringVisibility",
+      "nearSunVisibility"
+    ]
+  },
+  {
+    "file": "src/flight/math.hpp",
+    "lines": 21,
+    "sha256": "f2c62d54b6f1de2a12162d5740fb57704823a3977f7e8085211e83a1e1c17ec3",
+    "includes": [],
+    "render_calls": 0,
+    "functions": [
+      "dot",
+      "cross",
+      "length",
+      "unit",
+      "mix",
+      "rotate",
+      "finite"
+    ]
+  },
+  {
+    "file": "src/flight/minor_bodies.cpp",
+    "lines": 31,
+    "sha256": "59e9eab138344785b86f97c4ee1d751b23c356bbfe8e4dd6d9cfb4b9b119101d",
+    "includes": [
+      "game.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "Game::updateMinorBodies",
+      "Game::navigationBodies",
+      "Game::minorHit",
+      "Game::minorContacts"
+    ]
+  },
+  {
+    "file": "src/flight/minor_material_layout.hpp",
+    "lines": 14,
+    "sha256": "056feeba744516d8fbf8020263cbb71ff93b884bd17805a64938f1a52e5dc5de",
+    "includes": [],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/flight/minor_renderer.cpp",
+    "lines": 84,
+    "sha256": "fec5b5427ee641db639887d2094bb6bf84a9649ff89219aa1cdfed889a1a1ea7",
+    "includes": [
+      "renderer.hpp",
+      "rlgl.h",
+      "minor_material_layout.hpp"
+    ],
+    "render_calls": 25,
+    "functions": [
+      "vec",
+      "uniform",
+      "uniform",
+      "bodyMesh",
+      "Renderer::bakeMinorField",
+      "Renderer::prepareMinorBodies",
+      "Renderer::minorDetailFields",
+      "Renderer::minorMaterialWidth",
+      "Renderer::exportMinorMaterial",
+      "Renderer::clearMinorBodies",
+      "Renderer::drawMinorBodies",
+      "Renderer::drawCometTails"
+    ]
+  },
+  {
+    "file": "src/flight/minor_shaders.hpp",
+    "lines": 133,
+    "sha256": "c0d7dce4a0b7dd566ec445c1d9996fe1757a55b23a791048b778124626acf653",
+    "includes": [],
+    "render_calls": 0,
+    "functions": [
+      "hash",
+      "random3",
+      "noise",
+      "filtered",
+      "pigment",
+      "smallImpacts",
+      "main",
+      "pigment",
+      "field",
+      "reliefNormal",
+      "smoothFieldNormal",
+      "main"
+    ]
+  },
+  {
+    "file": "src/flight/renderer.cpp",
+    "lines": 615,
+    "sha256": "ce51d391df474db0929c6dc2df33245d4eba082e60414e920f5b5049b111158d",
+    "includes": [
+      "renderer.hpp",
+      "world_objects.hpp",
+      "../screen_layout.hpp",
+      "shaders.hpp",
+      "minor_shaders.hpp",
+      "geology.hpp",
+      "building_material.hpp",
+      "rlgl.h",
+      "raymath.h"
+    ],
+    "render_calls": 112,
+    "functions": [
+      "texture",
+      "alpha",
+      "vec",
+      "loc",
+      "set",
+      "set",
+      "set",
+      "set",
+      "set",
+      "line",
+      "tube",
+      "ring",
+      "linearTarget",
+      "lookupNoise",
+      "material",
+      "annulus",
+      "globe",
+      "Renderer::init",
+      "Renderer::bakePlanetFields",
+      "Renderer::preparePlanetDetail",
+      "Renderer::materialFilteringValid",
+      "Renderer::rebuild",
+      "Renderer::auditGeneration",
+      "Renderer::exportMaterial",
+      "Renderer::exportDetail",
+      "Renderer::exportShadow",
+      "Renderer::shutdown",
+      "Renderer::drawRings",
+      "Renderer::drawPlanetDepth",
+      "Renderer::drawAuroras",
+      "Renderer::drawClouds",
+      "Renderer::resolveWeather",
+      "Renderer::measureCloudOcclusion",
+      "Renderer::drawSunShadows",
+      "Renderer::drawMotion",
+      "Renderer::prepare",
+      "Renderer::rebuildCockpit",
+      "Renderer::drawCockpit",
+      "Renderer::present",
+      "Renderer::project"
+    ]
+  },
+  {
+    "file": "src/flight/renderer.hpp",
+    "lines": 75,
+    "sha256": "22d52b0f0883895220426a72ca28eccee569957e6f2c3c515a670206aedea6ec",
+    "includes": [
+      "game.hpp",
+      "scene.hpp",
+      "life_visibility.hpp",
+      "../graphics_quality.hpp",
+      "raylib.h"
+    ],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/flight/scene.cpp",
+    "lines": 40,
+    "sha256": "25ba8ee6f32a4d5d401214177a6f3e9116c4a9a2094f9b921ababea95ee70200",
+    "includes": [
+      "scene.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "factionStyle",
+      "sceneHash",
+      "SettlementView::geometryKey",
+      "layoutSettlement",
+      "plantingClear",
+      "Scene::settlement",
+      "Scene::shipment"
+    ]
+  },
+  {
+    "file": "src/flight/scene.hpp",
+    "lines": 35,
+    "sha256": "c913d8ffb721f4bc4a9cb8346be14073cd8e96662319282563e24ca493eece1f",
+    "includes": [
+      "game.hpp"
+    ],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/flight/settlement_detail.hpp",
+    "lines": 91,
+    "sha256": "22dc5f858ec52c016e1741003e33fdfdcc39e877096931908efec4632d24059b",
+    "includes": [
+      "structure_mesh.hpp",
+      "scene.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "material",
+      "material",
+      "turnFrame",
+      "windowBay",
+      "habitatWindows",
+      "entrance",
+      "closeFacility",
+      "plantingClear"
+    ]
+  },
+  {
+    "file": "src/flight/settlements.cpp",
+    "lines": 463,
+    "sha256": "e0a702f9a6ad505d1d3550ac18e62f301584d74acd87a1b96750d7786fce4d3b",
+    "includes": [
+      "renderer.hpp",
+      "wreck_interior.hpp",
+      "destruction.hpp",
+      "rlgl.h",
+      "settlement_detail.hpp",
+      "structural_fracture.hpp",
+      "world_objects.hpp"
+    ],
+    "render_calls": 25,
+    "functions": [
+      "vec",
+      "colour",
+      "coded",
+      "uniform",
+      "uniform",
+      "structureState",
+      "emblem",
+      "roofUnit",
+      "domeFrame",
+      "dish",
+      "detailFacility",
+      "pavedRoad",
+      "freightContainer",
+      "facility",
+      "orbitalCore",
+      "stationWing",
+      "landingPad",
+      "loadingGantry",
+      "portMast",
+      "portTerminal",
+      "structuralSource",
+      "Renderer::architectureStats",
+      "Renderer::buildFracturedHull",
+      "Renderer::drawRemains",
+      "Renderer::drawShipRemains",
+      "Renderer::structureAge",
+      "Renderer::buildBrokenStructure",
+      "Renderer::prepareStructures",
+      "Renderer::drawStructuralRemains",
+      "Renderer::clearPortAssets",
+      "Renderer::buildPort",
+      "Renderer::drawSettlement",
+      "Renderer::drawPortActivity",
+      "Renderer::buildCraft",
+      "Renderer::drawFactionCraft"
+    ]
+  },
+  {
+    "file": "src/flight/shaders.hpp",
+    "lines": 770,
+    "sha256": "575b85e93bcbbdb7b89c12ff2f23b648967cae45441e1716534a829c8c71d517",
+    "includes": [
+      "../worldgen_glsl.hpp",
+      "surface_detail.hpp",
+      "lighting.hpp",
+      "water.hpp",
+      "architecture.hpp",
+      "weather.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "pigment",
+      "thread",
+      "silk",
+      "ecstatic",
+      "hash",
+      "noise",
+      "dust",
+      "stars",
+      "main",
+      "main",
+      "main",
+      "hash",
+      "noise",
+      "fbm",
+      "surface",
+      "geology",
+      "spectrum",
+      "bump",
+      "brdf",
+      "clouds",
+      "main",
+      "main",
+      "noise",
+      "fbm",
+      "field",
+      "main",
+      "noise",
+      "sphere",
+      "wind",
+      "weather",
+      "main",
+      "main",
+      "sphere",
+      "main",
+      "main",
+      "sphere",
+      "main",
+      "sampleLight",
+      "main",
+      "main",
+      "luma",
+      "main",
+      "noise",
+      "main"
+    ]
+  },
+  {
+    "file": "src/flight/structural_fracture.hpp",
+    "lines": 67,
+    "sha256": "6477f81d931e0cb8b945ec405f906366bef9bbaaee69f28f194351a3be222075",
+    "includes": [
+      "structure_damage.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "triangleArea",
+      "coordinate",
+      "fractureMix",
+      "clipFracture",
+      "fractureStructure"
+    ]
+  },
+  {
+    "file": "src/flight/structure_damage.hpp",
+    "lines": 55,
+    "sha256": "54a2461ae229d397c43667aaa8d7b757cc6c3b20a223ab384042eb5efaf5c232",
+    "includes": [
+      "math.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "fractureNoise",
+      "structurePoint",
+      "structureRows",
+      "structureCellSection",
+      "structureSectionName",
+      "structureCell",
+      "structureSectionAt",
+      "hasDetachedSections",
+      "sectionAge",
+      "fragmentPoint",
+      "structurePose"
+    ]
+  },
+  {
+    "file": "src/flight/structure_mesh.hpp",
+    "lines": 101,
+    "sha256": "284d37ce8edc13ffaf62c3dc14f6aac1527cdc85d269ecc05876f127deabcff0",
+    "includes": [
+      "game.hpp",
+      "raylib.h"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "settlementDetail"
+    ]
+  },
+  {
+    "file": "src/flight/surface_detail.hpp",
+    "lines": 113,
+    "sha256": "6a044fcb813af32ee7d779839489615ac29b7f40944faa68eb5baa06f10eb59e",
+    "includes": [],
+    "render_calls": 0,
+    "functions": [
+      "cellRandom",
+      "main",
+      "detailField",
+      "closeMaterial"
+    ]
+  },
+  {
+    "file": "src/flight/terrain.cpp",
+    "lines": 92,
+    "sha256": "73c015db823683a5ce2c28f9abb1d78e00a113aed8b795e9c56516dc0c759bf4",
+    "includes": [
+      "renderer.hpp",
+      "ground_objects.hpp",
+      "rlgl.h"
+    ],
+    "render_calls": 15,
+    "functions": [
+      "vec",
+      "smooth",
+      "coarsePoint",
+      "outcrop",
+      "Renderer::updateGround",
+      "Renderer::drawGroundEffects"
+    ]
+  },
+  {
+    "file": "src/flight/threat.cpp",
+    "lines": 32,
+    "sha256": "433f5e974640f799292eff96a94d481c792c4bb6479ed17e0393c11bee45d781",
+    "includes": [
+      "game.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "actorHash",
+      "actorTrait",
+      "hullVariant",
+      "pilotTemperament",
+      "vesselDesignation",
+      "enemyDef"
+    ]
+  },
+  {
+    "file": "src/flight/threat.hpp",
+    "lines": 14,
+    "sha256": "56221333b57679d73da9f71ce21dd77f10a3fb2c6b3a96ed1471f4d490d31f23",
+    "includes": [],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/flight/vessel.cpp",
+    "lines": 21,
+    "sha256": "6c2729f145d171f823ba0d620838b6ffd9200c98981041185236f9249596cdf6",
+    "includes": [
+      "vessel.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "vesselDef",
+      "vesselUpgradeName",
+      "cargoCapacity",
+      "hullCapacity",
+      "shieldCapacity",
+      "speedFactor",
+      "agilityFactor",
+      "reactorFactor",
+      "weaponFactor",
+      "sensorFactor",
+      "refitPrice"
+    ]
+  },
+  {
+    "file": "src/flight/vessel.hpp",
+    "lines": 16,
+    "sha256": "2b176010895504e85d621c65e052a4c51f791191fcf9a2e7b75e6ac70efea078",
+    "includes": [],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/flight/water.hpp",
+    "lines": 55,
+    "sha256": "e0f67c7594f25cb6d68addae79f1e327babee35cdb58a756b54d0198051902cf",
+    "includes": [],
+    "render_calls": 0,
+    "functions": [
+      "liquidSurface",
+      "liquidReflection"
+    ]
+  },
+  {
+    "file": "src/flight/weather.hpp",
+    "lines": 30,
+    "sha256": "e005fbce2ababb43ec3f8e25e5de54b2a17a6090d7ce31e44a3d347216a2b5fa",
+    "includes": [
+      "game.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "stormField",
+      "weatherAt",
+      "stormField"
+    ]
+  },
+  {
+    "file": "src/flight/world_collision.hpp",
+    "lines": 21,
+    "sha256": "ce146183ce873cc5307338be6865f606736a09f1cf21ee14c596060972ac77d8",
+    "includes": [
+      "game.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "worldObjectHit",
+      "worldContacts"
+    ]
+  },
+  {
+    "file": "src/flight/world_damage_renderer.cpp",
+    "lines": 38,
+    "sha256": "5f3716aa5b673064b2ac5270bf98118ad5043cf2a43eaa4d4e1eb5e18668cc8f",
+    "includes": [
+      "renderer.hpp",
+      "rlgl.h"
+    ],
+    "render_calls": 17,
+    "functions": [
+      "Renderer::drawWorldDamage"
+    ]
+  },
+  {
+    "file": "src/flight/world_objects.cpp",
+    "lines": 41,
+    "sha256": "36c7989338733eb14d817f1f05a1c53d78bca240c896b1d39a914f437beabb92",
+    "includes": [
+      "world_objects.hpp",
+      "ground_objects.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "portObjects",
+      "worldObjects"
+    ]
+  },
+  {
+    "file": "src/flight/world_objects.hpp",
+    "lines": 8,
+    "sha256": "5b36cbf1e8721f8095f96257af43e726ae0f58cdacc789cd3305ac76dbf18423",
+    "includes": [
+      "scene.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "portGeometryKey",
+      "facilityHalf"
+    ]
+  },
+  {
+    "file": "src/flight/wreck_interior.hpp",
+    "lines": 32,
+    "sha256": "dd576365bc0f18ad13aa8e74b1aed52b09172edb6a0541df978d2f83f0f77e72",
+    "includes": [
+      "structural_fracture.hpp",
+      "structure_mesh.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "fractureInterior",
+      "hullInterior"
+    ]
+  },
+  {
+    "file": "src/flight_game.cpp",
+    "lines": 291,
+    "sha256": "a4f3ad6166e875876b703dbda8f2013ee86c54ee38aa6d7872a31db50dcf0bd7",
+    "includes": [
+      "game.hpp",
+      "wildlife.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "Game::surfaceNormal",
+      "Game::surfacePosition",
+      "Game::flightPort",
+      "Game::ensureFlight",
+      "Game::parkFlight",
+      "Game::enterFlight",
+      "Game::disembark",
+      "Game::processFlightEvents",
+      "Game::updateFlight",
+      "Game::expireCourier",
+      "Game::flightAction"
+    ]
+  },
+  {
+    "file": "src/flight_hud.cpp",
+    "lines": 55,
+    "sha256": "94995e30c7e2df140ba04f0237152ae10f94e34e335a85e3b2a11e5d669105ce",
+    "includes": [
+      "renderer.hpp",
+      "flight/hud.hpp"
+    ],
+    "render_calls": 3,
+    "functions": [
+      "number",
+      "point",
+      "stroke",
+      "hyperion::Renderer::flightDirector"
+    ]
+  },
+  {
+    "file": "src/flight_renderer.cpp",
+    "lines": 396,
+    "sha256": "fdc632bc1dab9313e0ab0aaf31a0fb78f730c12f7291fc1303c6789844eccc13",
+    "includes": [
+      "renderer.hpp",
+      "flight/weather.hpp"
+    ],
+    "render_calls": 40,
+    "functions": [
+      "n",
+      "hudCard",
+      "hudRail",
+      "hudBar",
+      "hudDiamond",
+      "Renderer::boardingPanel",
+      "Renderer::recoveryPanel",
+      "Renderer::combatPanel",
+      "Renderer::flightHUD",
+      "Renderer::flightPanel"
+    ]
+  },
+  {
+    "file": "src/flight_scene.cpp",
+    "lines": 43,
+    "sha256": "1f669a6929d9d762e4a75260de23d4d7e1e8cc361843ac25dd14dd65234c0683",
+    "includes": [
+      "flight_scene.hpp",
+      "game.hpp",
+      "wildlife.hpp",
+      "flight/life_visibility.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "flightScene"
+    ]
+  },
+  {
+    "file": "src/flight_scene.hpp",
+    "lines": 3,
+    "sha256": "c5eb62ef0873fc502e73894a37369f4da3c860c23b2bf74fdb57a33361972df8",
+    "includes": [
+      "flight/scene.hpp"
+    ],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/flight_storage.cpp",
+    "lines": 81,
+    "sha256": "f73a0253442701534a9f2428ac755a17654dfab5841ab63d885f744360662398",
+    "includes": [
+      "flight_storage.hpp",
+      "actor_storage.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "vector",
+      "numeric",
+      "string",
+      "vector",
+      "integer",
+      "combat",
+      "combat",
+      "tactics",
+      "tactics",
+      "encodeCombatState",
+      "decodeCombatState",
+      "encodeFlight",
+      "decodeFlight"
+    ]
+  },
+  {
+    "file": "src/flight_storage.hpp",
+    "lines": 9,
+    "sha256": "7913668691c45fa7bc7a45710439e6d336fc322542a002f99403d7f9f6a76f94",
+    "includes": [
+      "game.hpp",
+      "json.hpp"
+    ],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/game.cpp",
+    "lines": 145,
+    "sha256": "d998048fe16a495e266f49e4044cea5db347b331c53da49d2d139e2d69702c93",
+    "includes": [
+      "game.hpp",
+      "biosphere.hpp",
+      "wildlife.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "modeName",
+      "Game::reset",
+      "Game::adoptGeneration",
+      "Game::notify",
+      "Game::log",
+      "Game::inOrbit",
+      "Game::resumeExpedition",
+      "Game::galaxy",
+      "Game::system",
+      "Game::travel",
+      "Game::refuel",
+      "Game::orbitScan",
+      "Game::descend",
+      "Game::launch",
+      "Game::dive",
+      "Game::surface",
+      "Game::targets",
+      "Game::catalogue",
+      "Game::scan",
+      "Game::canUpgrade",
+      "Game::purchase",
+      "Game::waypoint",
+      "Game::simulate",
+      "Game::planningAction",
+      "Game::issueOrder",
+      "Game::action"
+    ]
+  },
+  {
+    "file": "src/game.hpp",
+    "lines": 114,
+    "sha256": "c939d5b8102da6f7968f02f06c650926a5523014f5edfe45c1ebe85e74d807ff",
+    "includes": [
+      "universe.hpp",
+      "economy.hpp",
+      "flight/game.hpp"
+    ],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/graphics_quality.hpp",
+    "lines": 39,
+    "sha256": "1b0c64e3a238708307e318a40edb7e8eb9ccda7995269d27cad50a0fb2462219",
+    "includes": [],
+    "render_calls": 0,
+    "functions": [
+      "graphicsQualityName",
+      "parseGraphicsQuality",
+      "flightQualityProfile",
+      "flightRenderSize"
+    ]
+  },
+  {
+    "file": "src/legacy_save.cpp",
+    "lines": 15,
+    "sha256": "1039ba988193ab8826dda2d233cf2b6662d44758833016ce666cbc85112597f7",
+    "includes": [
+      "game.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "legacySavePath"
+    ]
+  },
+  {
+    "file": "src/main.cpp",
+    "lines": 1132,
+    "sha256": "71b48e89132bebac3d769b785d4f26d60d6e65b50540ef0f0bcbf2d2fdce6b6a",
+    "includes": [
+      "game.hpp",
+      "wildlife.hpp",
+      "flight_scene.hpp",
+      "flight/controls.hpp",
+      "save_session.hpp",
+      "renderer.hpp",
+      "audio.hpp",
+      "native_pointer.hpp",
+      "window_fit.hpp",
+      "display_preferences.hpp",
+      "flight/hud.hpp",
+      "json.hpp",
+      "raylib.h"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "prepareMinorGraphics",
+      "prepareCombatGraphics",
+      "prepareSecurityGraphics",
+      "prepareWildlifeGraphics",
+      "prepareEcosystemGraphics",
+      "prepareLivingGraphics",
+      "prepareGenerationGraphics",
+      "prepareShipyardGraphics",
+      "selectView",
+      "prepareEconomyCheck",
+      "prepareSettlementGraphics",
+      "preparePlanetGraphics",
+      "prepareMaterialGraphics",
+      "prepareSurfaceDetailGraphics",
+      "prepareWaterGraphics",
+      "prepareArchitectureGraphics",
+      "prepareCloseMaterialGraphics",
+      "prepareCloudOcclusionGraphics",
+      "prepareFlightGraphics",
+      "backupPath",
+      "prepareHUDGraphics",
+      "main"
+    ]
+  },
+  {
+    "file": "src/minor_bodies.cpp",
+    "lines": 66,
+    "sha256": "b79ac3686d6b8c7175278953fd5b1074a494b6588d05ad674fb90ea56621ae9b",
+    "includes": [
+      "minor_bodies.hpp",
+      "universe.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "systemBodyCentre",
+      "systemBodyRadius",
+      "minorKindName",
+      "minorOrbit",
+      "minorRadius",
+      "generateMinorBodies",
+      "minorDescription"
+    ]
+  },
+  {
+    "file": "src/minor_bodies.hpp",
+    "lines": 24,
+    "sha256": "48df13438152260c7bc4c9ad450e23b752435bef2975aa7cd2cd10d305c52333",
+    "includes": [
+      "worldgen.hpp"
+    ],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/missions.cpp",
+    "lines": 99,
+    "sha256": "6aca6c30dab4f496ac0c7f629aaa79d6eabbb6fd88bd9d93969120e21238306a",
+    "includes": [
+      "economy.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "missionKindName",
+      "missionStateName",
+      "missionOpen",
+      "finishMission",
+      "surveyTarget",
+      "advanceMissions",
+      "missionObjective"
+    ]
+  },
+  {
+    "file": "src/missions.hpp",
+    "lines": 19,
+    "sha256": "cb3cb0e1dd4707d0d9ffa6529ba0075e68a21dee1b442db3ada0fda4a667918c",
+    "includes": [
+      "universe.hpp"
+    ],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/missions_game.cpp",
+    "lines": 82,
+    "sha256": "70754cfeb5963db5b2c416dc84dfcc2f04e1f8e4fe140681c5085d22e4ccf291",
+    "includes": [
+      "game.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "Game::observeMissions",
+      "Game::missionEvent",
+      "Game::missionAction"
+    ]
+  },
+  {
+    "file": "src/missions_renderer.cpp",
+    "lines": 25,
+    "sha256": "f49e04c700eaf5f341e08d03b71341cf70ba6cef77040ca288536b36370ba94e",
+    "includes": [
+      "renderer.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "Renderer::missionPanel"
+    ]
+  },
+  {
+    "file": "src/missions_storage.cpp",
+    "lines": 35,
+    "sha256": "4dbe9d8463967e288b12444f36aac946a69fd5380f3c8bf5d75c62e054434aa6",
+    "includes": [
+      "missions_storage.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "encodeMissions",
+      "number",
+      "integer",
+      "text",
+      "decodeMissions"
+    ]
+  },
+  {
+    "file": "src/missions_storage.hpp",
+    "lines": 4,
+    "sha256": "bc497b1b282dade3a9903e6c513931c3dc6d17ef8c5d91344fd2d68239dca105",
+    "includes": [
+      "economy.hpp",
+      "json.hpp"
+    ],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/mode_handoff.hpp",
+    "lines": 18,
+    "sha256": "c0f3506578c5094c7c2cf758bb32459e7816852b04f71027185542dbfb7ba1f0",
+    "includes": [],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/native_pointer.hpp",
+    "lines": 43,
+    "sha256": "152dd4635c17e02a2be6d7f030923bb72212f8dbc6e97104faee8a34d58ea81c",
+    "includes": [
+      "pointer_events.hpp",
+      "raylib.h",
+      "raylib/src/external/glfw/include/GLFW/glfw3.h"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "NativePointer"
+    ]
+  },
+  {
+    "file": "src/ocean_expeditions.cpp",
+    "lines": 98,
+    "sha256": "111f8c703dca9b169610658aeb381fb886c40b98d32a3fa18cd7df254d1cd424",
+    "includes": [
+      "game.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "findOceanWreck",
+      "findOceanWreck",
+      "advanceOceanWrecks",
+      "Game::rescuedCrew",
+      "Game::wreckSites",
+      "Game::discoverOceanWreck",
+      "Game::wreckCargoGood",
+      "Game::wreckQuote",
+      "Game::wreckAction",
+      "Game::oceanWater",
+      "Game::oceanRoute"
+    ]
+  },
+  {
+    "file": "src/ocean_ops.cpp",
+    "lines": 132,
+    "sha256": "da97b50290400b379824bda7697a7af1ec1dfa6cde9058d1c5c8001ef07ba16b",
+    "includes": [
+      "game.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "separation",
+      "category",
+      "Game::diveSites",
+      "Game::beginDive",
+      "Game::oceanKnown",
+      "Game::diveAlert",
+      "Game::oceanContacts",
+      "Game::nextDiveContact",
+      "Game::diveReturnNeeded",
+      "Game::diveBrief",
+      "Game::diveSiteInfo",
+      "Game::nextDiveOrder",
+      "Game::oceanSonar",
+      "Game::finishDive",
+      "Game::oceanAction"
+    ]
+  },
+  {
+    "file": "src/ocean_renderer.cpp",
+    "lines": 115,
+    "sha256": "57f7c5e057d39b59ddbe4d31e7e10e26182c68c494f6e5212ad578572f40426d",
+    "includes": [
+      "renderer.hpp",
+      "ecosystem.hpp"
+    ],
+    "render_calls": 6,
+    "functions": [
+      "n",
+      "amount",
+      "Renderer::diveReportDetails",
+      "Renderer::wreckDeliveries",
+      "Renderer::oceanOperations",
+      "Renderer::oceanDrawer",
+      "Renderer::oceanOverlay"
+    ]
+  },
+  {
+    "file": "src/ocean_storage.cpp",
+    "lines": 26,
+    "sha256": "1576f98e7f67af883e1441409c2932bc8800dd694d2ce9a7dc63cecef73b1ecd",
+    "includes": [
+      "ocean_storage.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "encodeOceanWrecks",
+      "num",
+      "integer",
+      "str",
+      "stock",
+      "decodeOceanWrecks"
+    ]
+  },
+  {
+    "file": "src/ocean_storage.hpp",
+    "lines": 4,
+    "sha256": "149a8e95ce1ae6b158b369a1515531ef45af3e02a3e28d504890e8e948597a0e",
+    "includes": [
+      "economy.hpp",
+      "json.hpp"
+    ],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/planning.cpp",
+    "lines": 95,
+    "sha256": "5817ef4537129b1d168fef65fe7ff73d9444ac7035914e2f4262f06578a4d56c",
+    "includes": [
+      "game.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "Game::outlook",
+      "Game::upcoming",
+      "Game::waitPlanned",
+      "Game::orderHint"
+    ]
+  },
+  {
+    "file": "src/pointer_events.hpp",
+    "lines": 19,
+    "sha256": "25a7d584ee76926e7b2fbfec60bad6017c3f9b1c0b690e8f84085ce85a12843d",
+    "includes": [],
+    "render_calls": 0,
+    "functions": [
+      "push"
+    ]
+  },
+  {
+    "file": "src/procedural.cpp",
+    "lines": 94,
+    "sha256": "29255e42d72b91f8dd6f2474ecd46766d1fa94d9b288b266b0bef7e7e664602c",
+    "includes": [
+      "universe.hpp",
+      "biosphere.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "Universe::profile",
+      "generatePlanets",
+      "Universe::region",
+      "identify",
+      "generateSurface",
+      "generateOcean"
+    ]
+  },
+  {
+    "file": "src/procedural_economy.cpp",
+    "lines": 54,
+    "sha256": "75ea8631c00bfbe1f17fdacf90951228eb23584d4109a6a9c7537b31199c7b45",
+    "includes": [
+      "economy.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "produces",
+      "scoreSite",
+      "discoverProceduralEconomy"
+    ]
+  },
+  {
+    "file": "src/recovery.cpp",
+    "lines": 114,
+    "sha256": "b7395a7f1c2d7d8935386a3207d2688e54ac1f9ff3074507841d67d5050ff895",
+    "includes": [
+      "game.hpp",
+      "flight_scene.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "hasStock",
+      "repairCost",
+      "job",
+      "Game::recoveryQuote",
+      "Game::recoveryAction",
+      "Game::updateRecovery",
+      "Game::recoveryMissions",
+      "Game::registerSpaceWreck"
+    ]
+  },
+  {
+    "file": "src/recovery_society.cpp",
+    "lines": 74,
+    "sha256": "3b3a5a377653e6e56300222dc355ae4f37be6a6b5ea9788fd4f6ca000898c51c",
+    "includes": [
+      "game.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "commissioned",
+      "has",
+      "returnRoute",
+      "Game::initializeClaim",
+      "Game::salvageAuthorized",
+      "Game::advanceRecoverySociety",
+      "Game::syncRecoveryTraffic",
+      "Game::recoveryEvent"
+    ]
+  },
+  {
+    "file": "src/recovery_society_storage.cpp",
+    "lines": 40,
+    "sha256": "b34e49deb0e63bdf01d73a83efc6f2ab600ab92ac198bacc59267e7779320725",
+    "includes": [
+      "recovery_society_storage.hpp",
+      "flight_storage.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "vec",
+      "num",
+      "str",
+      "list",
+      "vector",
+      "stock",
+      "encodeRecoverySociety",
+      "decodeRecoverySociety",
+      "validateRecoverySociety"
+    ]
+  },
+  {
+    "file": "src/recovery_society_storage.hpp",
+    "lines": 8,
+    "sha256": "cacebd0047a0da1f503d6cff24e7e7329f28cfb5ee4166974e224d5e7aa86a26",
+    "includes": [
+      "economy.hpp",
+      "json.hpp"
+    ],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/renderer.cpp",
+    "lines": 467,
+    "sha256": "d1d3dc5e6350c3b90ad8c99300eaab395060a9655724d383afae76147e435215",
+    "includes": [
+      "renderer.hpp",
+      "biosphere.hpp",
+      "flight_scene.hpp",
+      "shaders.hpp",
+      "rlgl.h"
+    ],
+    "render_calls": 78,
+    "functions": [
+      "alpha",
+      "hue",
+      "v",
+      "polar",
+      "num",
+      "uniform",
+      "integer",
+      "vector",
+      "texture",
+      "line",
+      "ring",
+      "glow",
+      "contactColor",
+      "polygon",
+      "Renderer::init",
+      "Renderer::ready",
+      "Renderer::close",
+      "Renderer::targets",
+      "Renderer::updateTerrain",
+      "Renderer::background",
+      "Renderer::text",
+      "Renderer::right",
+      "Renderer::elide",
+      "Renderer::fitted",
+      "Renderer::wrapped",
+      "Renderer::disclosure",
+      "Renderer::button",
+      "Renderer::orbDraw",
+      "Renderer::planet",
+      "Renderer::galaxy",
+      "Renderer::system",
+      "Renderer::craft",
+      "Renderer::contact",
+      "Renderer::surface",
+      "Renderer::ocean",
+      "Renderer::heading",
+      "Renderer::row",
+      "Renderer::notification",
+      "Renderer::menus",
+      "Renderer::overlay",
+      "Renderer::panel",
+      "Renderer::modal",
+      "Renderer::draw",
+      "Renderer::screenshot",
+      "Renderer::makeIcon",
+      "Renderer::pointer"
+    ]
+  },
+  {
+    "file": "src/renderer.hpp",
+    "lines": 83,
+    "sha256": "3d083a0365683974094afa1d212c4c6437f4b9ce9030c12fd4590bfc5abb51a2",
+    "includes": [
+      "game.hpp",
+      "wildlife.hpp",
+      "raylib.h",
+      "flight/renderer.hpp",
+      "ui_layout.hpp",
+      "mode_handoff.hpp",
+      "strategy_workspace.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "uiViewport",
+      "uiPoint",
+      "uiMouse",
+      "flightBreakupStats"
+    ]
+  },
+  {
+    "file": "src/save_session.cpp",
+    "lines": 56,
+    "sha256": "08bda5870e301f30505c3083afc44fd44796eb1adf78f418efe6b7b61ffbb37a",
+    "includes": [
+      "save_session.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "automaticSaveSource",
+      "SaveSession::inspect",
+      "SaveSession::acknowledge",
+      "SaveSession::save"
+    ]
+  },
+  {
+    "file": "src/save_session.hpp",
+    "lines": 19,
+    "sha256": "c39182d8f818e407869c2925624194e80fe7585c94e297bf6ee71e26ea4b43cd",
+    "includes": [
+      "game.hpp"
+    ],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/screen_layout.hpp",
+    "lines": 28,
+    "sha256": "fdcddbaed86934ec368f57e2aa6349c99c39be67059932ddb5d160bf0c067bda",
+    "includes": [],
+    "render_calls": 0,
+    "functions": [
+      "fittedWindow"
+    ]
+  },
+  {
+    "file": "src/security.cpp",
+    "lines": 86,
+    "sha256": "2fb46f185c627f287cbede24a7f2a8559d79ba10a7930e22e4af9b6cf43e68e0",
+    "includes": [
+      "economy.hpp",
+      "flight/game.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "findCaptain",
+      "findPirates",
+      "factionsAtWar",
+      "pirateTrucePrice",
+      "fitShip",
+      "initializeActorProfiles",
+      "discoverSecurity",
+      "advanceSecurity"
+    ]
+  },
+  {
+    "file": "src/security_game.cpp",
+    "lines": 85,
+    "sha256": "7b666f431ac9b5645087fcccbe86a67f1937cc4b6301b9c9a8fa5d92b388f9b4",
+    "includes": [
+      "game.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "Game::storeSecurity",
+      "Game::refreshSecurity",
+      "Game::securityEvent",
+      "Game::securityAction"
+    ]
+  },
+  {
+    "file": "src/security_storage.cpp",
+    "lines": 38,
+    "sha256": "b17d20748ea57d463a012a0ec2c498e1517c3d1047aa88be1a0898def29b3b24",
+    "includes": [
+      "security_storage.hpp",
+      "actor_storage.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "encodeSecurity",
+      "n",
+      "integer",
+      "text",
+      "collection",
+      "decodeSecurity"
+    ]
+  },
+  {
+    "file": "src/security_storage.hpp",
+    "lines": 7,
+    "sha256": "63bffcedd6e73cb2aa19a5f90ea0bd4e4d6c540c49b3008616ae94dc2a69e2ff",
+    "includes": [
+      "economy.hpp",
+      "json.hpp"
+    ],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/shaders.hpp",
+    "lines": 146,
+    "sha256": "7b5ac794de5276d8ae3c2c988b5a4d733da9677ee06223abc3c9357daf767ad1",
+    "includes": [],
+    "render_calls": 0,
+    "functions": [
+      "rot",
+      "hash",
+      "noise",
+      "spectrum",
+      "thread",
+      "silk",
+      "main",
+      "spectrum",
+      "wave",
+      "main",
+      "main",
+      "main"
+    ]
+  },
+  {
+    "file": "src/shipyard.cpp",
+    "lines": 45,
+    "sha256": "28f146d7f06467127163d950b1c8b26c9e0dc573d2a11f83325c9f5de66cd8e7",
+    "includes": [
+      "economy.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "shipyardPowered",
+      "quoteVesselService",
+      "refitMaterials",
+      "vesselValue",
+      "buildStock",
+      "initializeShipyards",
+      "advanceShipyards"
+    ]
+  },
+  {
+    "file": "src/shipyard_game.cpp",
+    "lines": 38,
+    "sha256": "3b01d5edc1081748ded341e2c9a82094a40ecb6652a2614350c85863269e4302",
+    "includes": [
+      "game.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "Game::currentVessel",
+      "Game::canUseShipyard",
+      "Game::shipyardAction"
+    ]
+  },
+  {
+    "file": "src/shipyard_renderer.cpp",
+    "lines": 47,
+    "sha256": "9e02f6acbbf4373ae6ccbbe59e15c81adf4b8b234b0497f12c12639535081da1",
+    "includes": [
+      "renderer.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "n",
+      "materials",
+      "Renderer::shipyardPanel"
+    ]
+  },
+  {
+    "file": "src/shipyard_storage.cpp",
+    "lines": 27,
+    "sha256": "2344906c4131844badc8d36077b915babf1fb4e943fa410f35017d545ea41ded",
+    "includes": [
+      "shipyard_storage.hpp",
+      "flight_storage.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "vessel",
+      "number",
+      "text",
+      "array",
+      "vessel",
+      "encodeShipyard",
+      "decodeShipyard"
+    ]
+  },
+  {
+    "file": "src/shipyard_storage.hpp",
+    "lines": 7,
+    "sha256": "24af49352a494a6050ae17b989dbc5cb0776a429a19dc46cb12716acfd9215bb",
+    "includes": [
+      "economy.hpp",
+      "json.hpp"
+    ],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/storage.cpp",
+    "lines": 81,
+    "sha256": "b93763bf3933a9a4d067d8ec698dca0f3b72628a80ba75e76c8247c0d4a63c75",
+    "includes": [
+      "game.hpp",
+      "json.hpp",
+      "economy_storage.hpp",
+      "flight_storage.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "pos",
+      "encode",
+      "number",
+      "text",
+      "readPos",
+      "saveState",
+      "loadState",
+      "defaultSavePath"
+    ]
+  },
+  {
+    "file": "src/strategy_workspace.hpp",
+    "lines": 19,
+    "sha256": "efe06a2ac9c954b00066bfe9c4d448d6e02038982f57b6b6ea061bac3cb175e2",
+    "includes": [],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/turn_renderer.cpp",
+    "lines": 49,
+    "sha256": "71e2aaf414aab3d52a40eb988987642aa69071a8380c1f9cb439e930bf540d11",
+    "includes": [
+      "renderer.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "number",
+      "Renderer::turnPlanner",
+      "Renderer::turnReport"
+    ]
+  },
+  {
+    "file": "src/turns.cpp",
+    "lines": 131,
+    "sha256": "143cbd78347f1f95b56cc46aaadcc1d8d4fd2e5b1c676098f6cb599e2483e6c9",
+    "includes": [
+      "game.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "TurnReport::summary",
+      "Game::advanceTime",
+      "Game::endTurn",
+      "Game::planMove",
+      "Game::moveTurn",
+      "Game::commitMove"
+    ]
+  },
+  {
+    "file": "src/ui_layout.hpp",
+    "lines": 13,
+    "sha256": "6340af610e784665a171081c3ee62c452dfb616742553f7ff7e03d4dcc25252f",
+    "includes": [
+      "screen_layout.hpp"
+    ],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/universe.cpp",
+    "lines": 141,
+    "sha256": "f0b33d8141de2913e243318439d2ad64ee123cd3c8340aef960678b30019b068",
+    "includes": [
+      "universe.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "stringHash",
+      "Random::operator",
+      "Universe::reset",
+      "Universe::hash",
+      "Universe::noise",
+      "Universe::fbm",
+      "name",
+      "roundTo",
+      "Universe::cell",
+      "Universe::star",
+      "Universe::planets",
+      "Universe::minorBodies",
+      "Universe::planet",
+      "Universe::elevation",
+      "Universe::floorDepth",
+      "Universe::shoreline",
+      "Universe::terrain",
+      "atmosphere",
+      "oceanZone",
+      "objectName",
+      "description",
+      "Universe::surfaceObjects",
+      "Universe::oceanObjects"
+    ]
+  },
+  {
+    "file": "src/universe.hpp",
+    "lines": 70,
+    "sha256": "4ef0d5bc463e6aa4a3313d065ecc825eb51141644d2b340675a2e4d68089cf03",
+    "includes": [
+      "worldgen.hpp",
+      "minor_bodies.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "clamp",
+      "distance",
+      "Universe"
+    ]
+  },
+  {
+    "file": "src/wildlife.cpp",
+    "lines": 114,
+    "sha256": "7ffc8d429b5517a897bd5889ae10100f037eaf1dc108bdbed80a73bac506d04c",
+    "includes": [
+      "wildlife.hpp",
+      "economy.hpp",
+      "flight/threat.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "random",
+      "add",
+      "unit2",
+      "blend",
+      "smooth",
+      "loop",
+      "cycle",
+      "rest",
+      "chase",
+      "disturbed",
+      "travel",
+      "pose",
+      "reaction",
+      "lifeBehaviourName",
+      "registerLifeHabitats",
+      "visibleLife"
+    ]
+  },
+  {
+    "file": "src/wildlife.hpp",
+    "lines": 18,
+    "sha256": "1a54a5af79ed0be9254907badb1a968e8862ad7388365196d2828b404f6cb4c4",
+    "includes": [
+      "ecosystem.hpp",
+      "biosphere.hpp"
+    ],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/wildlife_renderer.cpp",
+    "lines": 54,
+    "sha256": "df2701849a07bf30469c5d7442d428e6079294033d18341fc7fee24cf7ccaec5",
+    "includes": [
+      "renderer.hpp",
+      "biosphere.hpp"
+    ],
+    "render_calls": 4,
+    "functions": [
+      "tint",
+      "fade",
+      "Renderer::lifeBody",
+      "Renderer::drawWildlife"
+    ]
+  },
+  {
+    "file": "src/window_fit.hpp",
+    "lines": 47,
+    "sha256": "dfdb19d59a84413ed5b438b67148f0d1f07f24f7bbb274b8e9db4460584cde71",
+    "includes": [
+      "screen_layout.hpp",
+      "raylib.h",
+      "raylib/src/external/glfw/include/GLFW/glfw3.h"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "workArea"
+    ]
+  },
+  {
+    "file": "src/world_damage.hpp",
+    "lines": 37,
+    "sha256": "59a0764295939709dcdd11b03642ee51ae39018eed8b7ee0582b09a659029e1e",
+    "includes": [
+      "flight/structure_damage.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "destroyRecoveryContents",
+      "recoveryHazard",
+      "facilityObjectId",
+      "portObjectId",
+      "propObjectId",
+      "modularStructure",
+      "objectIntegrity",
+      "cargoSlots"
+    ]
+  },
+  {
+    "file": "src/world_damage_storage.cpp",
+    "lines": 52,
+    "sha256": "555d2bdd742cf7a29357760aabaff88223b6723d1edc681cff41cf870a8389d6",
+    "includes": [
+      "world_damage_storage.hpp",
+      "universe.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "encodeWorldDamage",
+      "decodeWorldDamage"
+    ]
+  },
+  {
+    "file": "src/world_damage_storage.hpp",
+    "lines": 4,
+    "sha256": "b934b3b47c65c647094d41ba51ba3522b14093f12ac0130ee29cd0329dcc875f",
+    "includes": [
+      "world_damage.hpp",
+      "json.hpp"
+    ],
+    "render_calls": 0,
+    "functions": []
+  },
+  {
+    "file": "src/world_destruction.cpp",
+    "lines": 125,
+    "sha256": "b26555b13b134c52b07a31fab4d3f8cec7d0569e53c0d15883d3e5aac0a25a4e",
+    "includes": [
+      "game.hpp",
+      "flight_scene.hpp",
+      "flight/world_objects.hpp",
+      "wildlife.hpp"
+    ],
+    "render_calls": 0,
+    "functions": [
+      "Game::clearFieldContact",
+      "Game::syncWorldDamage",
+      "Game::prepareWorldObjects",
+      "Game::processWorldHit"
+    ]
+  },
+  {
+    "file": "src/worldgen.hpp",
+    "lines": 34,
+    "sha256": "dfbb2250c99710ba98e4d7fbc76fd4cb5c6c3301a605126cc23f6d736a4ff14a",
+    "includes": [],
+    "render_calls": 0,
+    "functions": [
+      "bound",
+      "chart",
+      "hash",
+      "noise",
+      "scaled",
+      "elevation",
+      "formation"
+    ]
+  },
+  {
+    "file": "src/worldgen_glsl.hpp",
+    "lines": 28,
+    "sha256": "266fbe014fcb9a6b0c30e9f0136b68458cabebc8c526bd1817878350a03ceed6",
+    "includes": [],
+    "render_calls": 0,
+    "functions": [
+      "pnHash",
+      "pnNoise",
+      "pnScale",
+      "pnElevation"
+    ]
+  }
+]

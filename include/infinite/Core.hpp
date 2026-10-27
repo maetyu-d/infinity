@@ -10,6 +10,11 @@
 #include <vector>
 
 namespace infinite {
+inline constexpr double rootCellLogMetres = 26;
+inline constexpr double rootCellWidth = 2;
+// Subtract integer cell indices before converting to floating point.
+glm::dvec3 cellDisplacement(const std::array<int64_t, 3>& object, const std::array<int64_t, 3>& anchor);
+std::optional<std::array<int64_t, 3>> adjacentCell(std::array<int64_t, 3>, glm::i64vec3 delta);
 enum class Kind : uint8_t { Cosmic, Galaxy, System, Planet, Surface, Mountain, Rock, Grain, Lattice };
 std::string_view kindName(Kind);
 struct Segment {
@@ -77,6 +82,7 @@ struct Tile {
 uint64_t encodeTile(Tile);
 Tile decodeTile(uint64_t);
 glm::dvec3 tileDirection(Tile, double u = 0.5, double v = 0.5);
+Tile tileAt(glm::dvec3 direction, unsigned level);
 struct LocalFrame {
     double logRadius = 0;  // log10 metres per local unit
     glm::dvec3 position{}; // parent-local units, never absolute universe metres

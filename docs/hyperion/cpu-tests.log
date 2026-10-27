@@ -1,0 +1,23 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 1: rendering_preserves_universe
+1/9 Test #1: rendering_preserves_universe .....   Passed    0.40 sec
+    Start 2: performance_invariants
+2/9 Test #2: performance_invariants ...........   Passed    0.95 sec
+    Start 3: structural_processes
+3/9 Test #3: structural_processes .............   Passed    1.11 sec
+    Start 4: universe_regressions
+4/9 Test #4: universe_regressions .............   Passed    0.74 sec
+    Start 5: persistence_process_write
+5/9 Test #5: persistence_process_write ........   Passed    0.01 sec
+    Start 6: persistence_process_read
+6/9 Test #6: persistence_process_read .........   Passed    0.01 sec
+    Start 7: cross_scale_round_trip
+7/9 Test #7: cross_scale_round_trip ...........   Passed    4.21 sec
+    Start 8: continuity_restart_write
+8/9 Test #8: continuity_restart_write .........   Passed    0.46 sec
+    Start 9: continuity_restart_read
+9/9 Test #9: continuity_restart_read ..........   Passed    0.45 sec
+
+100% tests passed, 0 tests failed out of 9
+
+Total Test time (real) =   8.36 sec

@@ -1,4 +1,7 @@
+#include "FlightValidation.hpp"
+#include "StreamingValidation.hpp"
 #include "infinite/Continuity.hpp"
+#include "infinite/Flight.hpp"
 #include "infinite/Renderer.hpp"
 #include <SDL3/SDL.h>
 #include <algorithm>
@@ -19,6 +22,11 @@ struct Options {
     int frames = 0, width = 1440, height = 900;
     uint64_t seed = 0x494e46494e495445ULL;
     std::string captures, profile, data;
+    RenderMode renderMode = RenderMode::Original;
+    double visualTime = -1;
+    bool compareModes = false;
+    bool flightTest = false;
+    bool streamingTest = false;
 };
 static Options options(int argc, char** argv) {
     Options o;
@@ -35,9 +43,22 @@ static Options options(int argc, char** argv) {
             o.smoke = o.tour = o.fresh = true;
         else if (arg == "--benchmark-tour")
             o.benchmark = o.smoke = o.tour = o.fresh = true;
-        else if (arg == "--fresh")
+        else if (arg == "--flight-test") {
+            o.flightTest = o.benchmark = o.smoke = o.fresh = true;
+            o.visualTime = 12;
+        } else if (arg == "--streaming-test") {
+            o.streamingTest = o.benchmark = o.smoke = o.fresh = true;
+            o.visualTime = 12;
+        } else if (arg == "--fresh")
             o.fresh = true;
-        else if (arg == "--frames")
+        else if (arg == "--render-mode")
+            o.renderMode = parseRenderMode(value());
+        else if (arg == "--visual-time")
+            o.visualTime = std::stod(value());
+        else if (arg == "--compare-modes") {
+            o.compareModes = o.benchmark = o.smoke = o.tour = o.fresh = true;
+            o.visualTime = 12;
+        } else if (arg == "--frames")
             o.frames = std::stoi(value());
         else if (arg == "--width")
             o.width = std::stoi(value());
@@ -52,14 +73,25 @@ static Options options(int argc, char** argv) {
         else if (arg == "--data")
             o.data = value();
         else if (arg == "--help") {
-            std::cout << "Infinite: WASD fly, right-drag look, scroll scale, click select, F focus, "
+            std::cout << "Infinite: WASD fly, Q/E down/up, C toggle mouse look, right-drag look, "
+                         "-/+ speed, Shift boost, Ctrl fine, scroll scale, click select, F focus, "
                          "Backspace parent, Tab overlay, R reset, M marker, P screenshot, T tour, Esc "
-                         "quit.\nCLI: --fresh --tour --smoke-test --frames N --width N --height N --seed N "
-                         "--benchmark-tour --capture-dir DIR --profile CSV --data DIR\n";
+                         "release mouse / quit.\nCLI: --fresh --tour --smoke-test --frames N --width N "
+                         "--height N --seed N "
+                         "--benchmark-tour --flight-test --streaming-test --capture-dir DIR --profile CSV "
+                         "--data DIR\n";
+            std::cout << "H cycles ORIGINAL / HYPERION / HYBRID. --render-mode original|hyperion|hybrid "
+                         "--compare-modes --visual-time SECONDS\n";
             std::exit(0);
         } else
             throw std::invalid_argument("Unknown option " + arg);
     }
+    if (o.compareModes) {
+        o.renderMode = RenderMode::Original;
+        o.visualTime = 12;
+    }
+    if (((o.flightTest || o.streamingTest) && o.tour) || (o.flightTest && o.streamingTest))
+        throw std::invalid_argument("Choose one automated validation mode");
     if (o.width < 320 || o.height < 240 || o.width > 7680 || o.height > 4320 || o.frames < 0)
         throw std::invalid_argument("Invalid window size or frame count");
     return o;
@@ -87,7 +119,16 @@ int main(int argc, char** argv) {
                   << opt.height << ")\n";
         Universe universe(opt.seed);
         Navigation nav(universe);
+        if (opt.compareModes)
+            nav.parent();
         RegionCache cache(universe);
+        FlightController flight(universe, nav, cache);
+        std::unique_ptr<FlightValidation> flightProof;
+        if (opt.flightTest)
+            flightProof = std::make_unique<FlightValidation>(universe, nav);
+        std::unique_ptr<StreamingValidation> streamingProof;
+        if (opt.streamingTest)
+            streamingProof = std::make_unique<StreamingValidation>(universe, nav, cache);
         auto executable = std::filesystem::weakly_canonical(std::filesystem::absolute(argv[0]));
         auto defaultData = executable.parent_path() / "user-data";
         if (executable.parent_path().filename() == "MacOS" &&
@@ -103,6 +144,8 @@ int main(int argc, char** argv) {
             std::filesystem::create_directories(opt.captures);
         {
             Renderer renderer(window, universe);
+            renderer.setMode(opt.renderMode);
+            renderer.freezeVisualTime(opt.visualTime);
             std::unique_ptr<RoundTripVerifier> proof;
             if (opt.smoke && !opt.benchmark)
                 proof = std::make_unique<RoundTripVerifier>(universe);
@@ -114,17 +157,38 @@ int main(int argc, char** argv) {
                 profile << "frame,kind,view_log_m,wall_ms,cpu_ms,gpu_ms,draws,visible,atoms,cpu_cache_bytes,"
                            "gpu_bytes,pending,lod_transitions,sections,submit_ms,vertices,triangles,"
                            "particles,upload_bytes,transitioning,queued,cancelled,evicted,atom_triangles,"
-                           "upload_deferred\n";
+                           "upload_deferred,render_mode,effect_bytes,terrain_tiles,root_cells\n";
             }
             bool running = true, overlay = true, looking = false;
+            bool mouseFlight = false, rightLook = false;
             int frame = 0, tourStage = 0, stable = 0, captureHold = 0;
             bool captureQueued = false, returning = false, tourPassed = false;
+            unsigned compareMode = 0;
+            uint64_t compareHash = 0;
+            std::string compareCamera;
+            GenerationStats compareGeneration{};
             size_t tourVisited = 0;
             std::vector<std::pair<Address, uint64_t>> visited;
             std::vector<double> frameTimes;
             double fps = 60, noticeTime = 6;
             std::string notice =
-                "F: enter the selected system. Keep pressing F to follow matter to the atomic scale.";
+                "C: mouse flight / WASD + Q/E to move. Approach objects to descend automatically.";
+            auto captureLook = [&] {
+                const bool enabled = mouseFlight || rightLook;
+                if (enabled == looking)
+                    return;
+                if (SDL_SetWindowRelativeMouseMode(window, enabled))
+                    looking = enabled;
+                else {
+                    mouseFlight = rightLook = looking = false;
+                    notice = std::string("Mouse capture unavailable: ") + SDL_GetError();
+                    noticeTime = 6;
+                }
+            };
+            auto releaseLook = [&] {
+                mouseFlight = rightLook = false;
+                captureLook();
+            };
             auto previous = std::chrono::steady_clock::now();
             auto start = previous;
             while (running) {
@@ -135,8 +199,15 @@ int main(int argc, char** argv) {
                 fps = glm::mix(fps, 1 / std::max(wall, .0001), .035);
                 SDL_Event event;
                 while (SDL_PollEvent(&event)) {
+                    // Offline/native fixtures must not consume incidental mouse
+                    // or typing events from the desktop running the tests.
+                    if (opt.smoke && event.type != SDL_EVENT_QUIT &&
+                        event.type != SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED)
+                        continue;
                     if (event.type == SDL_EVENT_QUIT)
                         running = false;
+                    if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST)
+                        releaseLook();
                     if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
                         int w, h;
                         SDL_GetWindowSizeInPixels(window, &w, &h);
@@ -144,13 +215,15 @@ int main(int argc, char** argv) {
                     }
                     if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
                         if (event.button.button == SDL_BUTTON_RIGHT) {
-                            looking = true;
-                            SDL_SetWindowRelativeMouseMode(window, true);
+                            rightLook = true;
+                            captureLook();
                         } else if (event.button.button == SDL_BUTTON_LEFT) {
                             int w, h, pw, ph;
                             SDL_GetWindowSize(window, &w, &h);
                             SDL_GetWindowSizeInPixels(window, &pw, &ph);
-                            if (auto a = renderer.pick(event.button.x * pw / w, event.button.y * ph / h)) {
+                            const double x = looking ? pw * .5 : event.button.x * pw / w;
+                            const double y = looking ? ph * .5 : event.button.y * ph / h;
+                            if (auto a = renderer.pick(x, y)) {
                                 nav.select(*a);
                                 notice = "Selected " + universe.describe(*a).label() + " / F to focus";
                                 noticeTime = 4;
@@ -158,17 +231,42 @@ int main(int argc, char** argv) {
                         }
                     }
                     if (event.type == SDL_EVENT_MOUSE_BUTTON_UP && event.button.button == SDL_BUTTON_RIGHT) {
-                        looking = false;
-                        SDL_SetWindowRelativeMouseMode(window, false);
+                        rightLook = false;
+                        captureLook();
                     }
-                    if (event.type == SDL_EVENT_MOUSE_MOTION && looking)
+                    if (event.type == SDL_EVENT_MOUSE_MOTION && looking &&
+                        (event.motion.xrel != 0 || event.motion.yrel != 0)) {
                         nav.rotate(event.motion.xrel, event.motion.yrel);
-                    if (event.type == SDL_EVENT_MOUSE_WHEEL)
+                        opt.tour = false;
+                    }
+                    if (event.type == SDL_EVENT_MOUSE_WHEEL && event.wheel.y != 0) {
                         nav.zoom(event.wheel.y);
+                        opt.tour = false;
+                    }
                     if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat) {
                         switch (event.key.scancode) {
                         case SDL_SCANCODE_ESCAPE:
-                            running = false;
+                            if (looking) {
+                                releaseLook();
+                                notice = "Mouse released / C to resume flight, Escape to save and quit";
+                                noticeTime = 4;
+                            } else
+                                running = false;
+                            break;
+                        case SDL_SCANCODE_C:
+                            mouseFlight = !mouseFlight;
+                            captureLook();
+                            opt.tour = false;
+                            break;
+                        case SDL_SCANCODE_EQUALS:
+                        case SDL_SCANCODE_KP_PLUS:
+                        case SDL_SCANCODE_RIGHTBRACKET:
+                            nav.adjustSpeed(1);
+                            break;
+                        case SDL_SCANCODE_MINUS:
+                        case SDL_SCANCODE_KP_MINUS:
+                        case SDL_SCANCODE_LEFTBRACKET:
+                            nav.adjustSpeed(-1);
                             break;
                         case SDL_SCANCODE_F:
                             nav.focus();
@@ -180,6 +278,11 @@ int main(int argc, char** argv) {
                             break;
                         case SDL_SCANCODE_TAB:
                             overlay = !overlay;
+                            break;
+                        case SDL_SCANCODE_H:
+                            renderer.setMode(nextRenderMode(renderer.mode()));
+                            notice = std::string(renderModeName(renderer.mode())) + " / H cycles render mode";
+                            noticeTime = 3;
                             break;
                         case SDL_SCANCODE_R:
                             nav.reset();
@@ -200,6 +303,7 @@ int main(int argc, char** argv) {
                             break;
                         }
                         case SDL_SCANCODE_T:
+                            releaseLook();
                             nav.reset();
                             opt.tour = true;
                             tourStage = 0;
@@ -218,13 +322,35 @@ int main(int argc, char** argv) {
                 if (!running)
                     break;
                 const bool* keys = SDL_GetKeyboardState(nullptr);
-                nav.move({static_cast<double>(keys[SDL_SCANCODE_D]) - keys[SDL_SCANCODE_A],
-                          static_cast<double>(keys[SDL_SCANCODE_E]) - keys[SDL_SCANCODE_Q],
-                          static_cast<double>(keys[SDL_SCANCODE_S]) - keys[SDL_SCANCODE_W]},
-                         dt, keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT]);
+                if (!opt.smoke && (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS)) {
+                    const glm::dvec3 axes{static_cast<double>(keys[SDL_SCANCODE_D]) - keys[SDL_SCANCODE_A],
+                                          static_cast<double>(keys[SDL_SCANCODE_E]) - keys[SDL_SCANCODE_Q],
+                                          static_cast<double>(keys[SDL_SCANCODE_S]) - keys[SDL_SCANCODE_W]};
+                    if (glm::length(axes) > 0) {
+                        opt.tour = false;
+                    }
+                    if (!opt.tour)
+                        flight.update(axes, dt, keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT],
+                                      keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL],
+                                      renderer.submittedGeometry(nav.anchor));
+                }
                 nav.update((opt.benchmark ? 1.0 / 60 : dt) * (opt.tour ? 3 : 1));
+                if (flightProof)
+                    flightProof->advance(flight, renderer);
+                if (streamingProof)
+                    streamingProof->advance(flight, renderer);
                 auto stats = renderer.render(nav, cache, overlay, fps, persistence.markerCount(),
-                                             noticeTime > 0 ? notice : "");
+                                             noticeTime > 0 ? notice : "", looking);
+                if (flightProof) {
+                    flightProof->observe(stats, renderer, opt.captures);
+                    if (flightProof->finished())
+                        running = false;
+                }
+                if (streamingProof) {
+                    streamingProof->observe(stats, renderer, opt.captures);
+                    if (streamingProof->finished())
+                        running = false;
+                }
                 noticeTime -= dt;
                 ++frame;
                 if (frame > 10)
@@ -241,7 +367,9 @@ int main(int argc, char** argv) {
                             << stats.vertices << ',' << stats.triangles << ',' << stats.particles << ','
                             << stats.uploadBytes << ',' << nav.transitioning << ',' << gen.queued << ','
                             << gen.cancelled << ',' << gen.evicted << ',' << stats.atomTriangles << ','
-                            << stats.uploadDeferred << '\n';
+                            << stats.uploadDeferred << ',' << renderModeName(renderer.mode()) << ','
+                            << stats.effectBytes << ',' << stats.terrainTiles << ',' << stats.rootCells
+                            << '\n';
                 if (opt.tour) {
                     if (!nav.transitioning && stats.visibleObjects > 0 && gen.pending == 0 &&
                         gen.queued == 0 && stats.lodTransitions == 0 && stats.uploadDeferred == 0)
@@ -251,7 +379,48 @@ int main(int argc, char** argv) {
                     if (captureHold > 0)
                         --captureHold;
                     if (stable >= 35 && captureHold == 0) {
-                        if (!opt.captures.empty() && !captureQueued) {
+                        if (opt.compareModes) {
+                            auto geometry = renderer.submittedGeometry(nav.anchor);
+                            if (!geometry)
+                                throw std::runtime_error("Missing comparison geometry");
+                            auto hash = geometryFingerprint(*geometry);
+                            if (compareMode == 0 && !captureQueued) {
+                                compareHash = hash;
+                                compareCamera = nav.serialize();
+                                compareGeneration = gen;
+                            } else if (hash != compareHash || nav.serialize() != compareCamera ||
+                                       gen.completed != compareGeneration.completed ||
+                                       gen.misses != compareGeneration.misses)
+                                throw std::runtime_error(
+                                    "Rendering mode changed scene, camera or generation state");
+                            if (!captureQueued) {
+                                if (!opt.captures.empty())
+                                    renderer.screenshot(
+                                        (std::filesystem::path(opt.captures) /
+                                         (std::to_string(tourStage) + "-" +
+                                          std::string(kindName(nav.anchor.kind())) + "-" +
+                                          std::string(renderModeName(renderer.mode())) + ".ppm"))
+                                            .string());
+                                captureQueued = true;
+                                captureHold = 4;
+                            } else if (compareMode < 2) {
+                                ++compareMode;
+                                captureQueued = false;
+                                captureHold = 8;
+                                renderer.setMode(static_cast<RenderMode>(compareMode));
+                            } else {
+                                std::cout << "MODE_PROOF " << nav.anchor.str() << " geometry=" << hash
+                                          << " camera=identical generation=unchanged modes=3\n";
+                                compareMode = 0;
+                                captureQueued = false;
+                                stable = 0;
+                                renderer.setMode(RenderMode::Original);
+                                // Continue through the ordinary tour advancement below.
+                            }
+                            if (compareMode != 0 || captureQueued)
+                                continue;
+                        }
+                        if (!opt.compareModes && !opt.captures.empty() && !captureQueued) {
                             renderer.screenshot(
                                 (std::filesystem::path(opt.captures) /
                                  (std::to_string(tourStage) + "-" +
@@ -285,7 +454,7 @@ int main(int argc, char** argv) {
                                                           [&](auto& v) { return v.first == nav.anchor; });
                                 if (found == visited.end() || found->second != node.seed)
                                     throw std::runtime_error("Tour revisit identity mismatch");
-                                if (nav.anchor.kind() == Kind::Galaxy) {
+                                if (nav.anchor.kind() == (opt.compareModes ? Kind::Cosmic : Kind::Galaxy)) {
                                     tourPassed = true;
                                     opt.tour = false;
                                     notice = "Journey complete / the same galaxy, star, planet, rock and "
@@ -326,15 +495,21 @@ int main(int argc, char** argv) {
             std::cout << "peak_rss_bytes=" << usage.ru_maxrss * 1024 << '\n';
 #endif
 #endif
-            if (opt.smoke) {
+            if (opt.streamingTest) {
+                if (!streamingProof->finished())
+                    throw std::runtime_error("Native streaming test incomplete");
+            } else if (opt.flightTest) {
+                if (!flightProof->finished())
+                    throw std::runtime_error("Native automatic flight incomplete");
+            } else if (opt.smoke) {
                 if (proof)
                     std::cout << "PROOF recipe=" << generationRecipeVersion << " objects=" << proof->objects()
                               << " revisits=" << proof->revisits() << " digest=" << proof->digest()
                               << " (all LODs, descriptors, materials and atomic sites)\n";
-                if (!tourPassed || tourVisited != 8)
+                if (!tourPassed || tourVisited != (opt.compareModes ? 9 : 8))
                     throw std::runtime_error("Native GPU tour incomplete");
-                std::cout
-                    << "PASS: native GPU journey visited 8 scales and returned with matching identities.\n";
+                std::cout << "PASS: native GPU journey visited " << tourVisited
+                          << " scales and returned with matching identities.\n";
             }
         }
         SDL_DestroyWindow(window);

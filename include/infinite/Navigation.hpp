@@ -16,13 +16,22 @@ class Navigation {
     }
     void update(double dt);
     void rotate(double dx, double dy);
-    void move(glm::dvec3 axes, double dt, bool fast);
+    void move(glm::dvec3 axes, double dt, bool fast, bool precise = false);
+    void adjustSpeed(double steps);
+    double speedMultiplier() const {
+        return speedMultiplier_;
+    }
     void zoom(double wheel);
     void select(const Address&);
+    void suggestSelection(const Address&);
     void focus();
     void focus(Address);
     void parent();
     void reset();
+    // Reference-frame/unit changes only: never move or turn the physical eye.
+    void changeFrame(const Address&);
+    void setRenderScale(double logMetres);
+    void stopMotion();
     std::string serialize() const;
     bool restore(std::string_view);
 
@@ -37,6 +46,7 @@ class Navigation {
     enum class Motion { Focus, Zoom };
     const Universe& universe_;
     bool explicitSelection_ = false;
+    double speedMultiplier_ = 1;
     glm::dquat targetOrientation_{1, 0, 0, 0};
     glm::dvec3 targetOffset_{};
     Motion motion_ = Motion::Focus;
@@ -48,5 +58,6 @@ class Navigation {
     void remember();
     void rebase(const Address&);
     void selectDefault();
+    void takeControl();
 };
 } // namespace infinite

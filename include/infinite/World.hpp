@@ -22,6 +22,8 @@ class RegionCache {
                                             unsigned viewKey = 0);
     std::shared_ptr<const std::vector<Node>> catalog(const Node&);
     std::shared_ptr<const Geometry> requestSection(const Node&, const Address& anchor, int halfDecade);
+    std::shared_ptr<const Geometry> requestTerrain(const Node& planet, Tile, unsigned stitch);
+    std::shared_ptr<const Geometry> requestCosmicBoundary(const Node& root);
     void finishFrame();
     GenerationStats stats() const;
     void clear();

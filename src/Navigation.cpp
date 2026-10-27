@@ -26,6 +26,7 @@ void Navigation::remember() {
 }
 void Navigation::reset() {
     views_.clear();
+    speedMultiplier_ = 1;
     anchor = Address{}.child(Kind::Galaxy, 0);
     logDistance = targetLogDistance = universe_.describe(anchor).frame.logRadius + std::log10(3.1);
     orientation = targetOrientation_ = glm::angleAxis(-.40, glm::dvec3(1, 0, 0));
@@ -45,11 +46,15 @@ void Navigation::selectDefault() {
     explicitSelection_ = false;
 }
 void Navigation::select(const Address& a) {
-    if (a.cell != anchor.cell || a == anchor)
-        throw std::invalid_argument("Selection must be another object in this cell");
+    if (a == anchor)
+        throw std::invalid_argument("Selection must be another object");
     universe_.describe(a);
     selected = a;
     explicitSelection_ = true;
+}
+void Navigation::suggestSelection(const Address& address) {
+    if (!explicitSelection_ && address != anchor)
+        selected = address;
 }
 void Navigation::rebase(const Address& a) {
     // A pure reference-frame change: physical camera position and orientation
@@ -67,8 +72,6 @@ void Navigation::focus() {
 void Navigation::focus(Address a) {
     if (a == anchor)
         return;
-    if (a.cell != anchor.cell)
-        throw std::invalid_argument("Cross-cell navigation is not yet implemented");
     const auto destination = universe_.describe(a);
     const auto previous = anchor;
     // Remember the actual selected branch, including nonzero child identifiers.
@@ -98,6 +101,32 @@ void Navigation::focus(Address a) {
 void Navigation::parent() {
     if (!anchor.path.empty())
         focus(anchor.parent());
+}
+void Navigation::changeFrame(const Address& address) {
+    if (address == anchor)
+        return;
+    universe_.describe(address);
+    const auto previous = anchor;
+    if (anchor.ancestorOf(address))
+        selected = anchor.child(address.path[anchor.path.size()].kind, address.path[anchor.path.size()].id);
+    remember();
+    rebase(address);
+    if (address.ancestorOf(previous))
+        selected =
+            address.child(previous.path[address.path.size()].kind, previous.path[address.path.size()].id);
+    takeControl();
+}
+void Navigation::setRenderScale(double logMetres) {
+    if (!std::isfinite(logMetres))
+        return;
+    logMetres = std::clamp(logMetres, -10.5, 26.8);
+    const auto eye = cameraPosition() * std::pow(10.0, logDistance - logMetres);
+    logDistance = logMetres;
+    offset = eye - orientation * glm::dvec3(0, 0, 1);
+    takeControl();
+}
+void Navigation::stopMotion() {
+    takeControl();
 }
 void Navigation::zoom(double wheel) {
     if (!std::isfinite(wheel) || wheel == 0)
@@ -164,16 +193,36 @@ void Navigation::update(double dt) {
     }
 }
 void Navigation::rotate(double dx, double dy) {
+    if (!std::isfinite(dx) || !std::isfinite(dy) || (dx == 0 && dy == 0))
+        return;
+    // Look from the eye, rather than orbiting the current object's origin.
+    // Keep the existing pivot/offset representation for zoom and saved views.
+    const auto eye = cameraPosition();
     orientation = glm::normalize(orientation * glm::angleAxis(-dx * .004, glm::dvec3(0, 1, 0)) *
                                  glm::angleAxis(-dy * .004, glm::dvec3(1, 0, 0)));
-    targetOrientation_ = orientation;
+    offset = eye - orientation * glm::dvec3(0, 0, 1);
+    takeControl();
 }
-void Navigation::move(glm::dvec3 axes, double dt, bool fast) {
-    if (glm::length(axes) > 0) {
-        offset += orientation * glm::normalize(axes) * dt * (fast ? 2.5 : .32);
-        transitioning = false;
-        targetLogDistance = logDistance;
-    }
+void Navigation::takeControl() {
+    transitioning = false;
+    targetLogDistance = logDistance;
+    targetOrientation_ = orientation;
+    targetOffset_ = offset;
+}
+void Navigation::move(glm::dvec3 axes, double dt, bool fast, bool precise) {
+    const auto length = glm::length(axes);
+    if (!std::isfinite(length) || length == 0 || !std::isfinite(dt) || dt <= 0)
+        return;
+    // Render units track the current physical scale. Cap long pauses and
+    // normalize diagonals so frame stalls and extra keys cannot cause jumps.
+    const double speed = (fast ? 2.5 : .32) * speedMultiplier_ * (precise ? .125 : 1);
+    offset += orientation * (axes / length) * std::min(dt, .1) * speed;
+    takeControl();
+}
+void Navigation::adjustSpeed(double steps) {
+    if (std::isfinite(steps))
+        speedMultiplier_ =
+            std::clamp(speedMultiplier_ * std::exp2(std::clamp(steps, -12., 12.)), 1. / 64, 256.);
 }
 std::string Navigation::serialize() const {
     std::ostringstream s;
@@ -213,7 +262,7 @@ bool Navigation::restore(std::string_view text) {
                     throw std::invalid_argument("Missing selection");
                 if (selectedAddress != "-") {
                     v.selected = Address::parse(selectedAddress);
-                    if (v.selected->cell != v.address.cell || v.selected == v.address)
+                    if (v.selected == v.address)
                         throw std::invalid_argument("Invalid saved selection");
                     universe_.describe(*v.selected);
                 }
@@ -236,7 +285,7 @@ bool Navigation::restore(std::string_view text) {
                 return false;
             for (size_t i = 0; i < count; ++i) {
                 auto v = read(true);
-                if (v.address.cell != current.address.cell || !views.emplace(v.address, v).second)
+                if (!views.emplace(v.address, v).second)
                     return false;
             }
         }

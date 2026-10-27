@@ -1,0 +1,53 @@
+{
+  "version": "0.8.0",
+  "recipe": 3,
+  "binary_sha256": "d2417ea9fc5f13c20d870a15e648fd31e49350d45a76c3837813ccef8f7c582d",
+  "source_checkpoint": "0d61030851402214cc94c3cda766399e5d8093b0",
+  "unchanged_generation_files": {
+    "src/Universe.cpp": "2ae1538cc94d9291b3ab2fa5e61efbac5329a106301db6e519740a2580c7ccf4",
+    "src/Processes.cpp": "67e313061245673d88153e275c3c837bad4df278beea1ee3874677c850c0dc23",
+    "src/Crystallography.cpp": "1d135fa1218cea466673723063267fcacdb5c6c56d4240ab5ca00eb0eb042dab",
+    "include/infinite/Universe.hpp": "82dfc3d6a82e0c9c2c4fed0d55a801b81ef09108cbd2af5e67640566f181c225"
+  },
+  "original_geometry_generators_unchanged": true,
+  "limits": {
+    "cpu_payload_bytes": 33554432,
+    "gpu_cache_bytes": 33554432,
+    "workers": 3,
+    "geometry_entries": 512,
+    "terrain_leaves": 192,
+    "spatial_extent": "signed 64-bit root cells; complete planetary surfaces"
+  },
+  "native-boundaries": {
+    "median_frame_interval_ms": 16.657,
+    "p95_frame_interval_ms": 17.2932,
+    "frames": 567,
+    "final_cache_bytes": 8562736,
+    "peak_rss_bytes": 140394496
+  },
+  "native-flight": {
+    "median_frame_interval_ms": 5.32808,
+    "p95_frame_interval_ms": 17.1554,
+    "frames": 2166,
+    "final_cache_bytes": 8026528,
+    "peak_rss_bytes": 168869888
+  },
+  "pixel_checks": {
+    "root_rebase_rms_rgb": 0.0015271180544538152,
+    "root_rebase_fraction_over_2": 0.0,
+    "terrain_uncovered_fraction": {
+      "terrain-before.ppm": 0.0,
+      "terrain-HYPERION.ppm": 0.0,
+      "terrain-HYBRID.ppm": 0.0,
+      "terrain-ORIGINAL.ppm": 0.0
+    }
+  },
+  "suite": {
+    "passed": 19,
+    "failed": 0,
+    "seconds": 122.96
+  },
+  "streaming_assertions": 5650760,
+  "packaged_version": "0.8.0",
+  "packaged_binary_sha256": "f3164a23f0a6ff8a47a767002109b9f3b72e3cd7326771014e59f501a6886ca0"
+}

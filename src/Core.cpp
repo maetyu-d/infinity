@@ -8,6 +8,23 @@
 #include <stdexcept>
 
 namespace infinite {
+glm::dvec3 cellDisplacement(const std::array<int64_t, 3>& object, const std::array<int64_t, 3>& anchor) {
+    glm::dvec3 out;
+    for (unsigned i = 0; i < 3; ++i)
+        out[i] = (object[i] >= anchor[i] ? static_cast<double>(uint64_t(object[i]) - uint64_t(anchor[i]))
+                                         : -static_cast<double>(uint64_t(anchor[i]) - uint64_t(object[i]))) *
+                 rootCellWidth;
+    return out;
+}
+std::optional<std::array<int64_t, 3>> adjacentCell(std::array<int64_t, 3> cell, glm::i64vec3 delta) {
+    for (unsigned i = 0; i < 3; ++i) {
+        if ((delta[i] > 0 && cell[i] > INT64_MAX - delta[i]) ||
+            (delta[i] < 0 && cell[i] < INT64_MIN - delta[i]))
+            return {};
+        cell[i] += delta[i];
+    }
+    return cell;
+}
 std::string_view kindName(Kind k) {
     constexpr std::array names{"COSMIC WEB", "GALAXY", "STAR SYSTEM",   "PLANET",         "SURFACE",
                                "MOUNTAIN",   "ROCK",   "MINERAL GRAIN", "CRYSTAL LATTICE"};
@@ -170,12 +187,38 @@ glm::dvec3 tileDirection(Tile t, double u, double v) {
     double n = static_cast<double>(1u << t.level);
     return cubeDirection(t.face, 2 * (t.x + u) / n - 1, 2 * (t.y + v) / n - 1);
 }
+Tile tileAt(glm::dvec3 p, unsigned level) {
+    if (level > 24 || !std::isfinite(glm::length(p)) || glm::length(p) == 0)
+        throw std::invalid_argument("Invalid spherical tile lookup");
+    const auto a = glm::abs(p);
+    int face;
+    double u, v;
+    if (a.x >= a.y && a.x >= a.z) {
+        face = p.x >= 0 ? 0 : 1;
+        u = (p.x >= 0 ? -p.z : p.z) / a.x;
+        v = p.y / a.x;
+    } else if (a.y >= a.z) {
+        face = p.y >= 0 ? 2 : 3;
+        u = p.x / a.y;
+        v = (p.y >= 0 ? -p.z : p.z) / a.y;
+    } else {
+        face = p.z >= 0 ? 4 : 5;
+        u = (p.z >= 0 ? p.x : -p.x) / a.z;
+        v = p.y / a.z;
+    }
+    const auto count = 1u << level;
+    auto index = [&](double q) {
+        return uint32_t(std::clamp(std::floor((q + 1) * .5 * count), 0., double(count - 1)));
+    };
+    return {face, level, index(u), index(v)};
+}
 namespace {
 size_t commonDepth(const std::vector<LocalFrame>& ob, const Address& oa, const std::vector<LocalFrame>& an,
                    const Address& aa, double log) {
-    if (oa.cell != aa.cell || ob.size() != oa.path.size() + 1 || an.size() != aa.path.size() + 1 ||
-        !std::isfinite(log))
+    if (ob.size() != oa.path.size() + 1 || an.size() != aa.path.size() + 1 || !std::isfinite(log))
         throw std::invalid_argument("Incompatible coordinate frames");
+    if (oa.cell != aa.cell)
+        return 0;
     size_t common = 0;
     while (common < std::min(oa.path.size(), aa.path.size()) && oa.path[common] == aa.path[common])
         ++common;
@@ -197,7 +240,10 @@ glm::dvec3 relativePoint(const std::vector<LocalFrame>& ob, const Address& oa, g
     auto first = [&](const auto& frames, glm::dvec3 local) {
         return frames.size() > common + 1 ? frames[common + 1].position : local;
     };
-    glm::dvec3 result = (first(ob, point) - first(an, {})) * std::pow(10.0, ob[common].logRadius - log);
+    auto separation = first(ob, point) - first(an, {});
+    if (oa.cell != aa.cell)
+        separation += cellDisplacement(oa.cell, aa.cell);
+    glm::dvec3 result = separation * std::pow(10.0, ob[common].logRadius - log);
     auto tail = [&](const auto& frames, glm::dvec3 local, double sign) {
         if (frames.size() == common + 1)
             return;
@@ -226,7 +272,7 @@ PointTransform pointTransform(const std::vector<LocalFrame>& ob, const Address& 
     auto rotation = glm::inverse(branchOrientation(an, common));
     out.linear = glm::mat3_cast(glm::normalize(rotation * branchOrientation(ob, common))) *
                  std::pow(10.0, ob.back().logRadius - log);
-    if (common == oa.path.size() && common < aa.path.size()) {
+    if (oa.cell == aa.cell && common == oa.path.size() && common < aa.path.size()) {
         out.pivot = an[common + 1].position;
         glm::dvec3 tail{};
         auto q = an[common + 1].orientation;

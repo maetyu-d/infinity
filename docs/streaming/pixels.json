@@ -1,0 +1,10 @@
+{
+  "root_rebase_rms_rgb": 0.0015271180544538152,
+  "root_rebase_fraction_over_2": 0.0,
+  "terrain_uncovered_fraction": {
+    "terrain-before.ppm": 0.0,
+    "terrain-HYPERION.ppm": 0.0,
+    "terrain-HYBRID.ppm": 0.0,
+    "terrain-ORIGINAL.ppm": 0.0
+  }
+}

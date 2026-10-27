@@ -30,8 +30,8 @@ info = {
     "CFBundleDisplayName": "Infinite",
     "CFBundleExecutable": "Infinite",
     "CFBundlePackageType": "APPL",
-    "CFBundleShortVersionString": "0.4.0",
-    "CFBundleVersion": "4",
+    "CFBundleShortVersionString": "0.8.0",
+    "CFBundleVersion": "8",
     "NSHighResolutionCapable": True,
     "LSMinimumSystemVersion": minimum.group(1) if minimum else "14.0",
 }

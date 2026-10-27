@@ -1,0 +1,8 @@
+{
+  "cpu": "Apple M1",
+  "architecture": "arm64",
+  "macOS": "26.4.1",
+  "backend": "Metal",
+  "width": 1920,
+  "height": 1080
+}

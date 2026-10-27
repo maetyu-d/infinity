@@ -18,6 +18,10 @@
 
 Major upstream licences are copied into `third_party_licenses/`. Additional bgfx/bimg bundled libraries retain their notices in `external/bgfx/3rdparty`, `external/bimg/3rdparty` and `external/bx/3rdparty`; those notices must accompany redistribution where required. The build includes bgfx renderer code, bx, bimg and its ASTC support; unused tools are disabled. This project does not relicense third-party source or precompiled shaders.
 
-The precompiled shaders are unmodified files from the pinned bgfx archive. `vs_debugdraw_lines`/`fs_debugdraw_lines` carry vertex colours; `vs_instancing`/`fs_instancing` use a per-instance matrix and colour. The renderer consumes their existing layouts. Native Metal, GLSL, SPIR-V and Direct3D binaries come from the same pinned revision as the renderer. Shader sources and their upstream build tools are available in the [bgfx repository](https://github.com/bkaradzic/bgfx/tree/fe9bbdec66110f8626b9251a4947fc336ac3f62c).
+The ORIGINAL-mode shader binaries are unmodified files from the pinned bgfx archive. `vs_debugdraw_lines`/`fs_debugdraw_lines` carry vertex colours; `vs_instancing`/`fs_instancing` use a per-instance matrix and colour. The renderer consumes their existing layouts. Native Metal, GLSL, SPIR-V and Direct3D binaries come from the same pinned revision as the renderer. Shader sources and their upstream build tools are available in the [bgfx repository](https://github.com/bkaradzic/bgfx/tree/fe9bbdec66110f8626b9251a4947fc336ac3f62c).
 
 Upstream primary references: [SDL native-window properties](https://wiki.libsdl.org/SDL3/SDL_GetWindowProperties), [bgfx API](https://bkaradzic.github.io/bgfx/bgfx.html), [FastNoise2 compilation and strict-FP](https://github.com/Auburn/FastNoise2/wiki/Compiling-FastNoise2), [SQLite public-domain dedication](https://sqlite.org/copyright.html).
+
+## Hyperion visual source
+
+The presentation shaders in `shaders/hyperion_pigment.sh` and the Hyperion fragment passes port algorithms from the user's own Hyperion game, inspected at `../Hyperion` (checkpoint `f1b3db19cf97674661336dd9bf4112baeb331d16`). They do not use or refer to Disney's renderer. Source provenance and intentional adaptations are documented in `docs/HYPERION_RENDERING.md`. Pinned bgfx shaderc was used as an offline build tool; its BSD-2-Clause licence is already included with bgfx.

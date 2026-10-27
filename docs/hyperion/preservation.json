@@ -1,0 +1,96 @@
+{
+  "checkpoint": "0d61030851402214cc94c3cda766399e5d8093b0",
+  "recipe": 3,
+  "files": [
+    {
+      "path": "src/Core.cpp",
+      "sha256": "a5a874c12481ec814d5265fd8c5932ba1612b1bdff6ddd811525331bfcdc0a62",
+      "unchanged": true
+    },
+    {
+      "path": "src/Universe.cpp",
+      "sha256": "2ae1538cc94d9291b3ab2fa5e61efbac5329a106301db6e519740a2580c7ccf4",
+      "unchanged": true
+    },
+    {
+      "path": "src/Processes.cpp",
+      "sha256": "67e313061245673d88153e275c3c837bad4df278beea1ee3874677c850c0dc23",
+      "unchanged": true
+    },
+    {
+      "path": "src/Crystallography.cpp",
+      "sha256": "1d135fa1218cea466673723063267fcacdb5c6c56d4240ab5ca00eb0eb042dab",
+      "unchanged": true
+    },
+    {
+      "path": "src/Geometry.cpp",
+      "sha256": "ac48c46e9fc5e4e7b2c2077bfc8d0096d72775bc6e6fdb99ed7c654505ad8eeb",
+      "unchanged": true
+    },
+    {
+      "path": "src/World.cpp",
+      "sha256": "65bb17575a6bfe2390863b1a95ccfd1856ceb8ab6bb123c40854438d57397905",
+      "unchanged": true
+    },
+    {
+      "path": "src/Navigation.cpp",
+      "sha256": "6248d68a7e7f704080b152c01b476fd25bad576b61e40bedfb83912a1db7e97f",
+      "unchanged": true
+    },
+    {
+      "path": "src/Continuity.cpp",
+      "sha256": "c09a15bdb8c237eb59dc66f88ad9efef7863e93db3e957b20d120d49e152d4a8",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/Core.hpp",
+      "sha256": "b6484f3695c4de44f2df666031db0bdab5de82a564cc20bf5f7309eb8e0d79bf",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/Universe.hpp",
+      "sha256": "82dfc3d6a82e0c9c2c4fed0d55a801b81ef09108cbd2af5e67640566f181c225",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/Geometry.hpp",
+      "sha256": "b97c47b7f95eb2394952a895810126dbe97d3ca5b437d5bd452ffa43d7ce29ce",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/World.hpp",
+      "sha256": "ecbdb38e035707671a4c66c29bfe652a0c7886bb6be03b8071b88e6a5ae6947e",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/Navigation.hpp",
+      "sha256": "d994cfe139146874dafc96f4741a07e4f8b15750e5136ad092d1a2540e8641d5",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/Continuity.hpp",
+      "sha256": "6be759dcbf5f31817e10cbad3d3d768daf56abdd214ab01a66ed02fc269053a5",
+      "unchanged": true
+    },
+    {
+      "path": "cmake/Dependencies.cmake",
+      "sha256": "75c9f38f268a784b020685a88d3eac32d601162dad713debdfc57a9584774d7d",
+      "unchanged": true
+    },
+    {
+      "path": "cmake/dependencies.lock.json",
+      "sha256": "28116bac5d28ac196a401910bd204a4af4aa3c72f4ee5eba1fa2f73961957383",
+      "unchanged": true
+    },
+    {
+      "path": "cmake/EmbedShaders.cmake",
+      "sha256": "1adf71298ddd6de92eb959a15afb17a65aa3282af70fbbb679a296f27ebfee92",
+      "unchanged": true
+    }
+  ],
+  "executables": {
+    "infinite-original-0.4": "cec5d7cd2c1a8186b2402dfcb2970c5741add5f2d0521a53c24cb0a86bfdc0e3",
+    "infinite": "9658abce55077a60712a84fdd539d4817cc763ddcc4da23914a138b952a7233c"
+  },
+  "tested_and_packaged_text_sha256": "d731b7da5e0e41900c3592831accf70604edfbfeff38c2a9d2be3b40d355f387"
+}

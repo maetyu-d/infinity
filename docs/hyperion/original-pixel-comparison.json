@@ -1,0 +1,58 @@
+[
+  {
+    "kind": "GALAXY",
+    "compared_pixels": 1305600,
+    "changed_channels": 0,
+    "baseline_sha256": "f5bd524f2d817305739080ebc9f9d44819955097788ad9172642f8b2aa0f33bb",
+    "current_sha256": "f5bd524f2d817305739080ebc9f9d44819955097788ad9172642f8b2aa0f33bb"
+  },
+  {
+    "kind": "STAR SYSTEM",
+    "compared_pixels": 1305600,
+    "changed_channels": 0,
+    "baseline_sha256": "e0f6e8fb8776e806ca4488b256160beb39619e6c805a54db6848de9b5ad3a7c4",
+    "current_sha256": "e0f6e8fb8776e806ca4488b256160beb39619e6c805a54db6848de9b5ad3a7c4"
+  },
+  {
+    "kind": "PLANET",
+    "compared_pixels": 1305600,
+    "changed_channels": 0,
+    "baseline_sha256": "c39b71ebbbf6b189f933fde2af108b6e5f3062090b681b8deb3c27a044a1ff90",
+    "current_sha256": "c39b71ebbbf6b189f933fde2af108b6e5f3062090b681b8deb3c27a044a1ff90"
+  },
+  {
+    "kind": "SURFACE",
+    "compared_pixels": 1305600,
+    "changed_channels": 0,
+    "baseline_sha256": "f2803edd62615139530fdd12c38a485c3a723c81913781704e4a9aa8af7efff3",
+    "current_sha256": "f2803edd62615139530fdd12c38a485c3a723c81913781704e4a9aa8af7efff3"
+  },
+  {
+    "kind": "MOUNTAIN",
+    "compared_pixels": 1305600,
+    "changed_channels": 0,
+    "baseline_sha256": "1a7645c14af2a9d3383afce89d2b77fb33905dacd94ed13330671c2d3cb94414",
+    "current_sha256": "1a7645c14af2a9d3383afce89d2b77fb33905dacd94ed13330671c2d3cb94414"
+  },
+  {
+    "kind": "ROCK",
+    "compared_pixels": 1305600,
+    "changed_channels": 0,
+    "baseline_sha256": "52992ed09168bc92a51d79d21fb33ddee2910fb61681f4e9b2f399a4a409ed6e",
+    "current_sha256": "52992ed09168bc92a51d79d21fb33ddee2910fb61681f4e9b2f399a4a409ed6e"
+  },
+  {
+    "kind": "MINERAL GRAIN",
+    "compared_pixels": 1305600,
+    "changed_channels": 0,
+    "baseline_sha256": "11619ec6c3cbaf2488dda86531712e2922718b9962429bf22dffbeebb3d2e180",
+    "current_sha256": "11619ec6c3cbaf2488dda86531712e2922718b9962429bf22dffbeebb3d2e180"
+  },
+  {
+    "kind": "CRYSTAL LATTICE",
+    "compared_pixels": 1305600,
+    "changed_channels": 0,
+    "baseline_sha256": "91e1c969be08911b634c2e9d651d860b21666c27ca3ce350fff2aa7a27cabeaa",
+    "current_sha256": "91e1c969be08911b634c2e9d651d860b21666c27ca3ce350fff2aa7a27cabeaa"
+  }
+]

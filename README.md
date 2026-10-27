@@ -1,17 +1,25 @@
 # INFINITE
 
-A standalone C++20 procedural-universe vertical slice, rendered with SDL3 and bgfx. The camera follows stable addresses through a galaxy, star system, planet, terrain region, mountain-scale patch, SDF rock, mineral grain and material-specific atomic specimen. Backspace reverses the journey.
+A standalone C++20 procedural-universe vertical slice, rendered with SDL3 and bgfx. Fly with WASD and Q/E through a galaxy, star system, planet, terrain region, mountain-scale patch, SDF rock, mineral grain and material-specific atomic specimen. Viewing scale and local reference frame adapt automatically as you approach objects or fly away.
 
-Version 0.4 adds adaptive screen-space sampling, prioritized asynchronous geometry/catalog jobs, cooperative cancellation, compact indexed meshes and instanced particle/atomic rendering. The measured before-and-after results are in [PERFORMANCE.md](docs/PERFORMANCE.md). Procedural recipe 3 and its physical descriptors remain unchanged; [PROCESS_DIVERSITY.md](docs/PROCESS_DIVERSITY.md) documents the underlying generating processes.
+Version 0.8 removes the isolated terrain windows and single-root-cell flight restriction. A complete, stitched planetary surface streams beneath the camera, with continuous mesh morphing as detail changes. Neighbouring cosmic cells preload and hand off without changing the physical camera; blended collars fill their former sampling gaps. The same world fields, seeds and objects remain authoritative. See [STREAMING.md](docs/STREAMING.md) for implementation, image checks and resource bounds.
+
+Version 0.7 adds continuous automatic scale flight. It follows actual star IDs, queries the canonical terrain tile under the camera, prefetches nearby refinements, and preserves the physical camera through every unit/frame change. Approach locator lights to find smaller structures; flying away returns to larger scales. F and Backspace remain available as manual focus shortcuts. See [SEAMLESS_FLIGHT.md](docs/SEAMLESS_FLIGHT.md) for implementation and validation.
+
+Version 0.6 adds stationary free look, a **C** mouse-capture toggle, adjustable flight speed, boost and precision movement. Manual navigation takes over immediately from guided focus or the tour. The camera, scale and breadcrumbs still save between sessions; procedural recipe 3 is unchanged.
+
+Version 0.5 adds source-traced rendering from the user's Hyperion game: press **H** for **ORIGINAL / HYPERION / HYBRID**. The same immutable geometry and camera feed all modes; generators, seeds, spatial hierarchy and controls remain intact. [HYPERION_RENDERING.md](docs/HYPERION_RENDERING.md) documents the actual source techniques, integration boundary, screenshots and validation. Original rendering is the default. Procedural recipe 3 remains unchanged.
+
+The adaptive LOD, asynchronous generation, cancellation, compact indexed meshes and instancing introduced in 0.4 remain available in every mode. Its performance results are in [PERFORMANCE.md](docs/PERFORMANCE.md); [PROCESS_DIVERSITY.md](docs/PROCESS_DIVERSITY.md) documents the underlying generating processes.
 
 ## Build and run
 
-Requires CMake 3.24+, a C++20 compiler, Python 3.9+, and SQLite development headers/library (3.35+). Dependencies are local source builds; first-time bootstrap needs internet access. Reserve approximately 600 MB for sources and a Release build; shader compiler tools and large example assets are deliberately excluded.
+Requires CMake 3.24+, a C++20 compiler, Python 3.9+, and SQLite development headers/library (3.35+). Dependencies are local source builds; first-time bootstrap needs internet access. Reserve approximately 600 MB for sources and a Release build. Precompiled Metal/SPIR-V/GLSL presentation shaders are included; Windows additionally needs the pinned bgfx `shaderc` on PATH to generate DXBC at configure time (or set `INFINITE_SHADERC`). No new runtime library is required.
 
 ```sh
 python3 tools/bootstrap.py
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build --target infinite infinite_tests infinite_continuity_tests infinite_process_tests infinite_performance_tests infinite_benchmark -j 4
+cmake --build build -j 4
 ctest --test-dir build --output-on-failure
 ./build/infinite --fresh
 ```
@@ -32,22 +40,32 @@ Headless core build:
 
 ```sh
 cmake -S . -B build-core -DINFINITE_VIEWER=OFF -DCMAKE_BUILD_TYPE=Release
-cmake --build build-core --target infinite_tests infinite_continuity_tests infinite_process_tests infinite_performance_tests infinite_benchmark -j 4
+cmake --build build-core -j 4
 ctest --test-dir build-core --output-on-failure
 ```
 
 ## Explore
 
-Press **F** repeatedly to follow the selected object down the hierarchy. Click visible objects/locators to choose a different child. Logarithmic focusing crosses the actual physical scale gap; ancestors and children use the same camera-relative transforms throughout. Tiny distant objects have screen-size locator lights so that planets and rocks remain discoverable.
+Press **C** to capture the mouse and fly freely. Move the mouse to turn from your current position; use **WASD** and **Q/E** to move. **Escape** releases the mouse so you can select objects with the pointer. While captured, a crosshair marks the centre used by click selection. Right-drag also provides temporary mouse look.
+
+Aim at a star, planet, rock or mineral and fly closer. The nearest physical structures control movement scale, and the camera automatically enters their local frames. Terrain lookup works beyond the original survey sites. Fly away to move back up the hierarchy. Locator lights and the highlighted nearest object help you steer toward features that are initially too small to resolve.
+
+Use **-/+** (or **[ / ]**) to halve/double speed, **Shift** for a boost and **Ctrl** for fine movement. Speed is relative to the current physical scale, so the same controls work around a galaxy or an atomic specimen. **R** resets the view and speed. Speed adjustment is local to the session.
+
+**F** optionally focuses a selected object; click visible objects/locators to select it. Logarithmic focusing crosses the actual physical scale gap; ancestors and children use the same camera-relative transforms throughout. Flying, looking or scrolling interrupts the guided tour. Moving or looking interrupts active focus, while a completed manual focus/parent view remains stable until flight resumes.
 
 | Control | Action |
 |---|---|
 | WASD | Fly relative to camera orientation |
+| Approach / fly away | Automatically refine / return to larger physical scales |
 | Q / E | Descend / ascend |
-| Right mouse drag | Look in 3D |
+| C | Toggle captured mouse look |
+| Right mouse drag | Temporary mouse look |
 | Mouse wheel | Logarithmic scale navigation (0.23 decades per wheel unit) |
-| Shift | Faster movement at the current physical scale |
-| Click | Select a nearby projected object |
+| - / + or [ / ] | Halve / double flight speed (1/64×–256×) |
+| Shift / Ctrl | Boost / precision movement |
+| Click | Select at the pointer, or the crosshair while looking |
+| H | Cycle original, Hyperion and hybrid rendering |
 | F | Smoothly focus the selected child |
 | Backspace | Focus the parent |
 | Tab | Toggle the minimal overlay |
@@ -55,7 +73,7 @@ Press **F** repeatedly to follow the selected object down the hierarchy. Click v
 | M | Persist a discovery for the current address |
 | P | Save a lossless PPM screenshot |
 | T | Guided descent to the lattice and return |
-| Escape | Save camera state and quit |
+| Escape | Release mouse capture; press again to save and quit |
 
 Camera state and compressed discovery notes are stored in `build/user-data/universe.sqlite` for the command-line executable, or `user-data/universe.sqlite` beside `Infinite.app`. `--data DIR` changes the location. `--fresh` ignores the saved camera. `--seed N` selects a universe (persistence is namespaced by seed). Generated geometry is never saved as authoritative world data.
 
@@ -65,19 +83,21 @@ Backspace restores the previous local camera view and selected branch. New saves
 ./build/infinite --smoke-test --width 1920 --height 1080 \
   --capture-dir build/captures --profile build/frame-profile.csv
 ./build/infinite --frames 300 --fresh
+./build/infinite --flight-test --render-mode hyperion --capture-dir build/flight-captures
+./build/infinite --streaming-test --render-mode hyperion --capture-dir build/streaming-captures
 ./build/infinite_benchmark > build/generation.csv
 ```
 
-The smoke test uses the real native renderer, visits all eight scales, returns through the same addresses, and compares submitted geometry with independently regenerated complete descriptors and every LOD. `--tour` performs the journey without the extra proof workload and leaves the window open. Screenshots are PPM for a dependency-free lossless capture path. Enable `-DINFINITE_GPU_TESTS=ON` to include the native tour and final-pixel atomic visibility checks in CTest; these require an active desktop.
+The smoke test uses the real native renderer, visits all eight scales, returns through the same addresses, and compares submitted geometry with independently regenerated complete descriptors and every LOD. `--tour` performs the journey without the extra proof workload and leaves the window open. `--compare-modes` adds the cosmic web and captures all three rendering modes at each identical camera, asserting unchanged geometry and generation counts. `--flight-test` steers through all nine scales and back using only the automatic flight controller, without focus or wheel commands. Screenshots are PPM for a dependency-free lossless capture path. Enable `-DINFINITE_GPU_TESTS=ON` for native flight/tours, atomic visibility and mode image checks in CTest; these require an active desktop.
 
 ## Architecture and identity
 
 - **Core:** signed 64-bit root-cell coordinates, a vector of typed integer child IDs, explicit parent frames, counter-indexed SplitMix64 hashing, cube-face/tile addressing, screen-space LOD and relative-frame math. No mutable global random stream.
 - **Universe/processes:** lazy immutable descriptors with a bounded, thread-safe 1,024-object memo, inherited chemistry and formation parameters, separate feature seed domains, galaxy populations, stellar relations, Kepler orbits and shared spherical geological fields.
 - **Matter/geometry:** lithology-specific density fields, crystallographic grain facets clipped to host matter, growth/fabric tint, crystallographic unit cells, site-keyed defects, spatially binned bonds and shared atom meshes.
-- **World:** prioritized oneTBB geometry/catalog jobs, progressive coarse fallback, cooperative cancellation, capacity-accounted CPU cache eviction, SQLite discoveries and explicit navigation state. Zstandard compresses modification payloads.
-- **Rendering:** shared billboard instances, cached atomic instance buffers, three sphere resolutions, compact mesh indices, projected-sphere culling, camera-facing terrain, bounded uploads/GPU cache and a minimal overlay.
-- **Application:** SDL3 input, free flight, logarithmic focusing/rebasing and instrumentation.
+- **World:** prioritized oneTBB geometry/catalog/tile jobs, complete coarse terrain coverage, cooperative cancellation, capacity-accounted CPU cache eviction, SQLite discoveries and explicit navigation state. Zstandard compresses modification payloads.
+- **Rendering:** shared billboard instances, cached atomic instance buffers, three sphere resolutions, compact mesh indices, projected-sphere culling, a balanced stitched terrain frontier, camera-relative double-to-float tile extraction, bounded uploads/GPU cache and a minimal overlay. A read-only presentation adapter supplies existing scene descriptors/geometry to optional Hyperion material, emission, bloom and display passes.
+- **Application:** SDL3 input, proximity-controlled free flight, physically continuous scale/frame changes, logarithmic focusing/rebasing and instrumentation. Flight shares asynchronous catalogs and prefetches with the renderer.
 
 An address looks like `0,0,0/1:0/2:0/3:0/...`: the root cell followed by canonical `(kind, child ID)` segments. Child seeds hash the parent seed, kind and ID. A node stores its origin in parent-local units, a quaternion and log10 metres per unit. Relative transforms start **after the common ancestor** and subtract first divergent terms **before scaling**. Addressed double-precision points remain precise through CPU reference-frame conversion; GPU floats are camera-relative only. The frame interfaces accept roughly `10^26` to `10^-10` metres, with finite integer ranges and finite local precision; this is not arbitrary-precision arithmetic.
 
@@ -95,19 +115,19 @@ An address looks like `0,0,0/1:0/2:0/3:0/...`: the root cell followed by canonic
 
 ## Resource limits and verification
 
-Up to three concurrent cache tasks, four oneTBB workers, a 32 MiB CPU payload budget, at most 96 geometry entries, a 32 MiB GPU cache budget and bounded transient buffers. Requests are prioritized and child catalogs are asynchronous. CPU accounting includes allocated vector capacities; new GPU uploads have a per-frame allowance. Obsolete jobs receive cancellation flags; the current LOD remains usable while refinement is generated. Hysteresis avoids threshold chatter and a reversible 0.3-second crossfade handles completed meshes. Briefly retained blend layers and proof workers add to the cache budget; process memory is measured separately. Whole objects outside the projected frustum are culled. Both generation and frame metrics are measured rather than assuming 60 FPS.
+Up to three concurrent cache tasks, four oneTBB workers, a 32 MiB CPU payload budget, at most 512 geometry entries, a 32 MiB GPU cache budget and bounded transient buffers. The terrain frontier uses at most 192 leaves; complete parent coverage remains while worker-generated children/stitches load. Requests are prioritized and child catalogs are asynchronous. CPU accounting includes allocated vector capacities; static GPU uploads have a per-frame allowance and terrain uses the existing bounded transient buffers. Obsolete jobs receive cancellation flags. Existing object LODs crossfade over 0.3 seconds; terrain cuts share a 0.2-second position morph. Briefly retained blend layers, tile fronts/morph sources and proof workers add to the cache budget; process memory is measured separately. Whole objects outside the projected frustum are culled. Both generation and frame metrics are measured rather than assuming 60 FPS.
 
 `infinite_tests` currently exercises 251 checks covering hash vectors, address parsing, signed-coordinate extremes, generation order, independent threaded generation, cube/tile boundaries, LOD field consistency, finite transforms spanning 36 decades, material inheritance, Kepler periodicity, all five mineral lattices, valid finite mesh buffers at every scale, cancellation, cache eviction and camera serialization. CTest also launches separate writer/reader processes to check SQLite persistence across application restarts. See [generation benchmarks](docs/benchmark-v0.3.csv) and [benchmark memory](docs/benchmark-memory-v0.3.txt) for current measured generation costs on this machine. The native tour checks and records the actual backbuffer resolution; on Retina screens it uses a smaller logical window to render the requested pixel count.
 
-`infinite_continuity_tests` verifies full non-default round trips, every LOD, shared terrain samples/materials, SDF convergence, query-stable sites/vacancies/bonds for all five minerals, saved ancestry, exact camera restoration, local sections and parallel regeneration. Restart processes repeat the ascent after SQLite reopen. `infinite_process_tests` checks structural diversity, environmental causality, population statistics, phase-specific stoichiometry and coordination, and inherited constraints. The ten-case desktop suite includes a real 1080p GPU tour and final-pixel atom visibility. Performance invariants and current measurements are in [PERFORMANCE.md](docs/PERFORMANCE.md); recipe-3 model evidence is in [PROCESS_DIVERSITY.md](docs/PROCESS_DIVERSITY.md); [CONTINUITY_AUDIT.md](docs/CONTINUITY_AUDIT.md) and [VALIDATION.md](docs/VALIDATION.md) retain historical evidence for versions 0.2 and 0.1.
+`infinite_continuity_tests` verifies full non-default round trips, every LOD, shared terrain samples/materials, SDF convergence, query-stable sites/vacancies/bonds for all five minerals, saved ancestry, exact camera restoration, local sections and parallel regeneration. Restart processes repeat the ascent after SQLite reopen. `infinite_process_tests` checks structural diversity, environmental causality, population statistics, phase-specific stoichiometry and coordination, and inherited constraints. `infinite_navigation_tests` checks stationary free look, frame rates, speed controls, interrupted transitions and saved flying views at all nine scales and three seeds. `infinite_flight_tests` adds complete automatic inward/outward flights, canonical terrain lookup, lateral tile handoffs, camera continuity and manual-view compatibility. The nineteen-case desktop suite includes streaming topology/morph proofs, native boundary pixels, automatic flight, presentation preservation, a three-mode round trip and 51 mode-image captures. Current rendering measurements are in [HYPERION_RENDERING.md](docs/HYPERION_RENDERING.md); generation/performance invariants remain documented in [PERFORMANCE.md](docs/PERFORMANCE.md). Recipe-3 model evidence is in [PROCESS_DIVERSITY.md](docs/PROCESS_DIVERSITY.md); [CONTINUITY_AUDIT.md](docs/CONTINUITY_AUDIT.md) and [VALIDATION.md](docs/VALIDATION.md) retain historical evidence for versions 0.2 and 0.1.
 
 ## Current limits and next concrete work
 
 This delivers the foundation and an initial end-to-end slice; the advanced six-phase specification is not complete.
 
-1. The renderer exposes a finite sparse sample per addressed region. Root cell addresses can be generated through the API, but interactive cross-cell spatial streaming and recursive octree queries remain to be implemented. There is no global star catalogue or simulation of infinitely many objects.
+1. Root cells now stream around the physical camera, with automatic cross-cell reference changes. Active data remains bounded and is regenerated deterministically when revisited. The model still uses sparse samples within each region; there is no global star catalogue or simulation of infinitely many objects. Coordinates use signed 64-bit cells and finite local floating-point precision.
 2. Focus transitions preserve spatial identity, camera views and selected branches. Oversized terrain is resampled from the same field; microscopic enclosing solids use labelled, spatially anchored material sections. The cutaway is an inspection model. No optical microscope or quantum scale imaging is simulated.
-3. Terrain uses adaptive cube-sphere sampling and screen-size LOD, but full camera-driven per-tile streaming, mesh geomorphing and robust crack stitching remain. Region/mountain patches share the scalar field. The next terrain task is a neighbour-balanced streaming quadtree with stitched boundaries and error bounds.
+3. Terrain now uses a full-sphere, neighbour-balanced streaming quadtree, stitched mixed-LOD edges and shared mesh morphing. Sampling tiles have no visible outer patch boundary. Resolution remains subject to the address format's 24 tile levels, screen-space error target and work budget; this limits detail rather than travel extent. Microscopic solid inspection cavities remain part of the existing visibility model.
 4. No full erosion solver, time-integrated tectonic dynamics, reaction–diffusion, cellular automata, diffusion-limited aggregation, volumetric octree, fluid atmosphere, molecular dynamics or ongoing planet simulation is implemented. The algorithms listed above are the implemented ones.
 5. Discovery markers and saved camera state are the sparse modification layer. Editable terrain/chemistry and persistent simulation changes need a versioned modification schema and replay before they can be exposed.
 6. Deterministic addresses, seeds and generation order are tested within a build. Recipe 3 preserves the hierarchical seed hash and canonical addresses while deliberately replacing physical layouts, environments, materials and atomic recipes. Exact floating-point mesh bits across different compilers, libm implementations and CPU architectures are not certified. FastNoise2 strict-FP is enabled; it affects inclusion colour only. Cross-platform golden fixtures remain future work.

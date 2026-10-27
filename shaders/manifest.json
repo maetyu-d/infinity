@@ -1,0 +1,34 @@
+{
+  "bgfx_revision": "fe9bbdec66110f8626b9251a4947fc336ac3f62c",
+  "shaderc_version": "shaderc, bgfx shader compiler tool, version 1.19.167.",
+  "sources": {
+    "shaders/fs_hyperion.sc": "8eaf97d28a90072cb16ac2d2e7c22dfefc828278c29e24fa9e44e5424e7c2ce0",
+    "shaders/fs_hyperion_blur.sc": "7de2d4cb3eade7cd036ace01de4c06fe9adeb431fdc4d4d8be0c242a590bdeab",
+    "shaders/fs_hyperion_glow.sc": "8ffe4008d942eaf615a08b93861de79c5f13b391e71b0813ae1ebfd71d42b698",
+    "shaders/fs_hyperion_post.sc": "b30083e96d213ed246907c3325fe9b50f3fdcb14c248fc97a68d90de6dbd8623",
+    "shaders/varying.def.sc": "86f787ddeb2734482feaa96f0a9ecc00dc76f1a8c68f986c4088a6d1016ec025",
+    "shaders/vs_hyperion.sc": "d768c1cb329d20951f0999ee333d02681ebf866d5df1a1b8d7e381bf3558dd86",
+    "shaders/vs_hyperion_screen.sc": "9363d99cc5fa11b9e9c5f4cbe9eca6716ad8f15a84a89cd67faeb8a484a29f92",
+    "shaders/hyperion_pigment.sh": "8c6254810403640039abca2019f041d0b91566631efc85530710acd2546c80f0"
+  },
+  "binaries": {
+    "shaders/bin/glsl/fs_hyperion.bin": "b634e7c2ea4e10fb2a0449e7d976a750288ef6504977e6451d18847209f0682d",
+    "shaders/bin/glsl/fs_hyperion_blur.bin": "d28a81a41c1d8814b3476bbb8643cb5753b90744e8cfb00a1895ffd195902ec3",
+    "shaders/bin/glsl/fs_hyperion_glow.bin": "a77567ddf9f54b17f908a02dd239a1ef59e46682584aebd8e497c0aa7acb7020",
+    "shaders/bin/glsl/fs_hyperion_post.bin": "549676eafb4800d1d963ff3e3d24bc93177e9ed9274e1ec7f199ab326374f50c",
+    "shaders/bin/glsl/vs_hyperion.bin": "8b8a02a8ac452ded8145cfabca9ea9ee265bb28b3cde9378ee25901361e5e616",
+    "shaders/bin/glsl/vs_hyperion_screen.bin": "5e1033b635a29a467f1dbb4f4a95573ec3c28282cf0b268baaf0e75eac9ba1c3",
+    "shaders/bin/metal/fs_hyperion.bin": "4a8ce37071437145e2d1c4af7b580152bc7fe1b5a81cc40331ded4068fa8f875",
+    "shaders/bin/metal/fs_hyperion_blur.bin": "761433360f9500397efc0c19ffcc552d033ef22dc8e593959416abd79055c178",
+    "shaders/bin/metal/fs_hyperion_glow.bin": "d13373e5a28a51cbf02e0d49e300b49db8bc8f62e81503f3f410427760972477",
+    "shaders/bin/metal/fs_hyperion_post.bin": "acb4ccfb87d92431b715f5c764b4a6a4d8b656617a61bf6bcb3621c67497a557",
+    "shaders/bin/metal/vs_hyperion.bin": "032adac641230e648ef2d8f543a0081ee35ef3cf8bae1087c4789d88a622ebf9",
+    "shaders/bin/metal/vs_hyperion_screen.bin": "ac276f0253d3794c5a03caa8734027ca7ca2d073654f71377f902940219ac94e",
+    "shaders/bin/spirv/fs_hyperion.bin": "fece2c3b9f571cc37fe2980016483858d62c58ff9c75bbfd8ab43eb194003d6c",
+    "shaders/bin/spirv/fs_hyperion_blur.bin": "e042e4700d2bc8f0f5c34c8b6c7ed8c94a556be0396cf99e94795ec2fd54429a",
+    "shaders/bin/spirv/fs_hyperion_glow.bin": "43f5fd7766fb78e0ec4cbf8da6e4caa1c6efe8965b05af42b26fc57a7b663879",
+    "shaders/bin/spirv/fs_hyperion_post.bin": "09b4c4fc938aa4a85ffb1c98cc9925e5f7906acc46d842f39a930e65eb3533b6",
+    "shaders/bin/spirv/vs_hyperion.bin": "0364c41eea815150a2c3cd1202ec7376f7f1bcfb279b449b375d2bcdd4ea4ab1",
+    "shaders/bin/spirv/vs_hyperion_screen.bin": "41aec7dbeccf709548dd2afbc15a3264ef668662faf9743df0650a08acfbcfb5"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "runs_per_case": 3,
+  "cases": [
+    "baseline",
+    "original",
+    "hyperion",
+    "hybrid"
+  ],
+  "width": 1920,
+  "height": 1080,
+  "visual_time_seconds": 12,
+  "scene_stops": 15,
+  "settled_samples_per_stop": 25,
+  "samples_per_run": 375,
+  "statistics": "Median of three run medians/P95s; peak RSS is median of three process peaks",
+  "generation": "Same eight-scale tour and return; no screenshots or proof workers",
+  "source_checkpoint": "0d61030851402214cc94c3cda766399e5d8093b0",
+  "executable_hashes": {
+    "infinite-original-0.4": "cec5d7cd2c1a8186b2402dfcb2970c5741add5f2d0521a53c24cb0a86bfdc0e3",
+    "infinite": "9658abce55077a60712a84fdd539d4817cc763ddcc4da23914a138b952a7233c"
+  }
+}

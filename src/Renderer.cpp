@@ -1,4 +1,6 @@
 #include "infinite/Renderer.hpp"
+#include "HyperionRenderer.hpp"
+#include "infinite/Streaming.hpp"
 #include <InstanceShaders.hpp>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_metal.h>
@@ -99,17 +101,22 @@ struct Renderer::Impl {
     bgfx::ProgramHandle colorProgram = BGFX_INVALID_HANDLE, instanceProgram = BGFX_INVALID_HANDLE;
     bgfx::SwapChain swapChain;
     std::array<GPUMesh, 3> atomSpheres;
-    GPUMesh billboardMesh;
+    GPUMesh billboardMesh, hyperionBillboardMesh;
+    std::unique_ptr<HyperionRenderer> hyperion;
+    RenderMode mode = RenderMode::Original;
+    double visualTime = 0, fixedVisualTime = -1;
     bgfx::ViewId atomView = 2;
     std::map<const Geometry*, GPUGeometry> gpu;
     std::vector<Pick> picks;
     std::vector<Instance> billboards;
+    std::vector<Instance> cosmicBillboards;
     std::vector<LocalFrame> anchorFrames;
     std::map<Address, std::vector<LocalFrame>> frameFrames;
     std::map<Address, Pose> framePoses;
     int width = 1280, height = 800;
     uint64_t frame = 0;
     size_t gpuBytes = 0;
+    size_t staticUploadBytes = 0;
     glm::dmat4 view{1}, projection{1};
     glm::dquat cameraQ{1, 0, 0, 0}, cameraInverse{1, 0, 0, 0};
     glm::dvec3 eye{};
@@ -126,7 +133,9 @@ struct Renderer::Impl {
     std::chrono::steady_clock::time_point previousTime = std::chrono::steady_clock::now();
     double frameSeconds = 0;
     std::string sectionLabel;
-    explicit Impl(SDL_Window* w, const Universe& u) : universe(u), window(w) {}
+    TerrainStreamer terrain;
+    bool terrainActive = false;
+    explicit Impl(SDL_Window* w, const Universe& u) : universe(u), window(w), terrain(u) {}
     ~Impl() {
         if (initialized) {
             for (auto& [key, g] : gpu) {
@@ -138,6 +147,8 @@ struct Renderer::Impl {
             for (auto& mesh : atomSpheres)
                 destroy(mesh);
             destroy(billboardMesh);
+            destroy(hyperionBillboardMesh);
+            hyperion.reset();
             if (bgfx::isValid(colorProgram))
                 bgfx::destroy(colorProgram);
             if (bgfx::isValid(instanceProgram))
@@ -150,6 +161,7 @@ struct Renderer::Impl {
         if (m.vertices.empty() || m.indexCount() == 0)
             return result;
         stats.uploadBytes += m.bytes();
+        staticUploadBytes += m.bytes();
         result.vertices = bgfx::createVertexBuffer(
             bgfx::copy(m.vertices.data(), static_cast<uint32_t>(m.vertices.size() * sizeof(Vertex))), layout);
         result.indices = bgfx::createIndexBuffer(
@@ -204,14 +216,14 @@ struct Renderer::Impl {
         framePoses.emplace(address, pose);
         return pose;
     }
-    void addBillboard(glm::dvec3 p, double radius, glm::vec3 color) {
+    void addBillboard(glm::dvec3 p, double radius, glm::vec3 color, bool cosmic = false) {
         ++stats.particles;
         auto right = cameraQ * glm::dvec3(radius, 0, 0), up = cameraQ * glm::dvec3(0, radius, 0);
         glm::mat4 transform(1);
         transform[0] = glm::vec4(glm::vec3(right), 0);
         transform[1] = glm::vec4(glm::vec3(up), 0);
         transform[3] = glm::vec4(glm::vec3(p), 1);
-        billboards.push_back({transform, glm::vec4(color, 1)});
+        (cosmic ? cosmicBillboards : billboards).push_back({transform, glm::vec4(color, 1)});
     }
     bool prepareGPU(const std::shared_ptr<const Geometry>& geometry) {
         if (!geometry)
@@ -230,7 +242,7 @@ struct Renderer::Impl {
             return true;
         size_t bytes = geometry->solid.bytes() + geometry->lines.bytes() +
                        geometry->atomInstances.size() * sizeof(Instance);
-        if (stats.uploadBytes && stats.uploadBytes + bytes > 2 * 1024 * 1024) {
+        if (staticUploadBytes && staticUploadBytes + bytes > 2 * 1024 * 1024) {
             ++stats.uploadDeferred;
             return false;
         }
@@ -242,6 +254,7 @@ struct Renderer::Impl {
             item.instances = bgfx::createVertexBuffer(
                 bgfx::copy(geometry->atomInstances.data(), static_cast<uint32_t>(count)), instanceLayout);
             stats.uploadBytes += count;
+            staticUploadBytes += count;
         }
         item.source = geometry;
         item.bytes = bytes;
@@ -269,7 +282,7 @@ struct Renderer::Impl {
         else
             state |= BGFX_STATE_BLEND_ALPHA;
         bgfx::setState(state);
-        bgfx::submit(0, instanceProgram);
+        bgfx::submit(0, mode == RenderMode::Original ? instanceProgram : hyperion->geometryProgram());
     }
     void drawLines(const GPUMesh& m, const glm::mat4& model) {
         if (!bgfx::isValid(m.vertices))
@@ -307,7 +320,34 @@ struct Renderer::Impl {
         bgfx::setState(state);
         bgfx::submit(viewId, colorProgram);
     }
-    void drawGeometry(const std::shared_ptr<const Geometry>& geometry, const Navigation& nav, float opacity) {
+    void bindPresentation(const Geometry& geometry, const Node& node, const Navigation& nav,
+                          const glm::mat4& model, const Pose& pose, double radius, float primitive) {
+        auto presentation = extractPresentation(node, geometry, mode);
+        const auto& sourceFrames = framesFor(geometry.referenceFrame);
+        double sourceFactor = std::pow(10.0, geometry.logUnits - sourceFrames.back().logRadius);
+        // A patch and its enclosing section share the same authored material
+        // frame. Sampling windows must never appear as coloured rectangles.
+        const auto& materialAddress = presentation.materialFrame;
+        const auto& materialFrames = framesFor(materialAddress);
+        auto transform = pointTransform(sourceFrames, geometry.referenceFrame, materialFrames,
+                                        materialAddress, materialFrames.back().logRadius);
+        glm::dmat4 mapping(1);
+        auto linear = transform.linear * sourceFactor;
+        for (unsigned i = 0; i < 3; ++i)
+            mapping[i] = glm::dvec4(linear[i], 0);
+        mapping[3] = glm::dvec4(transform.translation - transform.linear * transform.pivot, 1);
+        auto pattern = glm::mat4(mapping);
+        if (primitive == 1) {
+            auto localEye = glm::inverse(pose.orientation) * (eye - pose.position) / radius;
+            hyperion->bind(presentation, glm::vec3(localEye), {.6, .7, -.4}, pattern, primitive, visualTime);
+        } else {
+            auto light = poseFor(materialAddress, nav).orientation * glm::dvec3(.6, .7, -.4);
+            hyperion->bind(presentation, glm::vec3(eye), glm::vec3(light), pattern * glm::inverse(model),
+                           primitive, visualTime);
+        }
+    }
+    void drawGeometry(const std::shared_ptr<const Geometry>& geometry, const Node& node,
+                      const Navigation& nav, float opacity) {
         if (!geometry || opacity < .001f)
             return;
         auto pose = poseFor(geometry->referenceFrame, nav);
@@ -324,9 +364,12 @@ struct Renderer::Impl {
         auto model = glm::translate(glm::mat4(1), glm::vec3(pose.position)) *
                      glm::mat4_cast(glm::quat(pose.orientation)) *
                      glm::scale(glm::mat4(1), glm::vec3(static_cast<float>(r)));
+        if (mode != RenderMode::Original && bgfx::isValid(item.solid.vertices))
+            bindPresentation(*geometry, node, nav, model, pose, r, 0);
         drawMesh(item.solid, model, opacity);
+        if (mode != RenderMode::Original && bgfx::isValid(item.lines.vertices))
+            bindPresentation(*geometry, node, nav, model, pose, r, 2);
         drawMesh(item.lines, model, opacity, true);
-
         const auto& sourceFrames = framesFor(geometry->referenceFrame);
         double sourceFactor = std::pow(10.0, geometry->logUnits - sourceFrames.back().logRadius);
         auto transform =
@@ -354,12 +397,30 @@ struct Renderer::Impl {
             if (skip)
                 continue;
             auto position = transform(particle.position * sourceFactor);
+            double distanceScale = 1;
+            float attenuation = 1;
+            if (geometry->address.kind() == Kind::Cosmic) {
+                const double distance = glm::length(position - eye);
+                const double rootRadius = std::pow(10., rootCellLogMetres - nav.logDistance);
+                attenuation =
+                    float((1 - smoothstep(1.2, 1.9, distance / rootRadius)) / double(geometry->detail + 1));
+                if (attenuation < .001f)
+                    continue;
+                // Preserve the actual emitter's direction/angular size beyond
+                // the local depth range. This is the streamed scene, not a sky texture.
+                if (distance > 1e-12) {
+                    distanceScale = 500 / distance;
+                    position = eye + (position - eye) * distanceScale;
+                }
+            }
             auto p = cameraSpace(position);
             if (p.z >= 0)
                 continue;
-            double size = std::clamp(static_cast<double>(particle.radius) * r, -p.z * .0005, -p.z * .035);
+            double size = std::clamp(static_cast<double>(particle.radius) * r * distanceScale, -p.z * .0005,
+                                     -p.z * .035);
             if (LOD::visible(p, size, static_cast<double>(width) / height, 1))
-                addBillboard(position, size, particle.color * opacity);
+                addBillboard(position, size, particle.color * (opacity * attenuation),
+                             geometry->address.kind() == Kind::Cosmic);
         }
         if (!geometry->lattice.atoms.empty() && bgfx::isValid(item.instances) && atomView < 64) {
             double diameter =
@@ -387,18 +448,21 @@ struct Renderer::Impl {
             else
                 state |= BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_FACTOR, BGFX_STATE_BLEND_INV_FACTOR);
             bgfx::setState(state, rgba(glm::vec3(opacity), opacity));
-            bgfx::submit(viewId, instanceProgram);
+            if (mode != RenderMode::Original)
+                bindPresentation(*geometry, node, nav, model, pose, r, 1);
+            bgfx::submit(viewId,
+                         mode == RenderMode::Original ? instanceProgram : hyperion->geometryProgram());
             stats.atoms += count;
             stats.atomTriangles += count * rings * sectors * 2;
         }
     }
-    void drawBlend(DetailState& state, const Navigation& nav, float opacity) {
+    void drawBlend(DetailState& state, const Node& node, const Navigation& nav, float opacity) {
         if (state.blend.active())
             ++stats.lodTransitions;
-        drawGeometry(state.blend.previous, nav, opacity * (1 - state.blend.weight()));
-        drawGeometry(state.blend.current, nav, opacity * state.blend.weight());
+        drawGeometry(state.blend.previous, node, nav, opacity * (1 - state.blend.weight()));
+        drawGeometry(state.blend.current, node, nav, opacity * state.blend.weight());
     }
-    void renderNode(const Node& node, const Navigation& nav, RegionCache& cache) {
+    void renderNode(const Node& node, const Navigation& nav, RegionCache& cache, unsigned maximum = 4) {
         auto pose = poseFor(node.address, nav);
         auto cp = cameraSpace(pose.position);
         double r = pose.scale;
@@ -415,12 +479,14 @@ struct Renderer::Impl {
                 addBillboard(pose.position, radius, stellarColor(node.temperatureK) * intensity);
         } else if (node.address == nav.anchor && pixels < 1.5 && cp.z < 0 && kind != Kind::Cosmic)
             addBillboard(pose.position, -cp.z * .0015, material(node.environment.mineral).color);
-        if (r < 1e-8 || r > 1e4 || pixels < .7 ||
-            !LOD::visible(cp, r, static_cast<double>(width) / height, 1))
+        if (kind != Kind::Cosmic && (r < 1e-8 || r > 1e4 || pixels < .7 ||
+                                     !LOD::visible(cp, r, static_cast<double>(width) / height, 1)))
             return;
         float opacity = node.address.ancestorOf(nav.anchor) && node.address != nav.anchor
                             ? static_cast<float>(1 - smoothstep(3, 12, r))
                             : 1.f;
+        if (kind == Kind::Cosmic)
+            opacity = 1;
         if (opacity < .005)
             return;
         if (kind == Kind::Mountain && node.address != nav.anchor && pixels < 160)
@@ -428,19 +494,30 @@ struct Renderer::Impl {
         if (kind == Kind::Surface && node.address != nav.anchor && pixels < 100)
             return;
         state.level = screenDetail(kind, pixels, state.initialized ? state.level : 0);
+        state.level = std::min(state.level, maximum);
         state.initialized = true;
         state.used = frame;
         unsigned viewKey =
             kind == Kind::Planet ? terrainView(glm::inverse(pose.orientation) * (eye - pose.position)) : 0;
-        auto candidate = cache.request(node, state.level, node.address == nav.anchor ? 0 : 4, viewKey);
-        state.blend.update(prepareGPU(candidate) ? candidate : nullptr, frameSeconds);
+        auto candidate = cache.request(node, state.level,
+                                       kind == Kind::Cosmic         ? 8
+                                       : node.address == nav.anchor ? 0
+                                                                    : 4,
+                                       viewKey);
+        const bool streamedTerrain = terrainActive && kind >= Kind::Planet && kind <= Kind::Mountain;
+        // Retain the original node/LOD reference for identity and inspection;
+        // streamed tiles provide the terrain draw without duplicate GPU buffers.
+        state.blend.update(streamedTerrain || prepareGPU(candidate) ? candidate : nullptr, frameSeconds);
         if (state.blend.current) {
             ++stats.visibleObjects;
-            drawBlend(state, nav, opacity);
+            if (!streamedTerrain)
+                drawBlend(state, node, nav, opacity);
         }
     }
     void renderSection(const Node& parent, const Navigation& nav, RegionCache& cache) {
         if (parent.address.kind() < Kind::Planet || parent.address.kind() > Kind::Grain)
+            return;
+        if (terrainActive && parent.address.kind() <= Kind::Mountain)
             return;
         auto pose = poseFor(parent.address, nav);
         float opacity = static_cast<float>(smoothstep(3, 12, pose.scale));
@@ -455,10 +532,81 @@ struct Renderer::Impl {
         auto candidate = cache.requestSection(parent, nav.anchor, bucket);
         state.blend.update(prepareGPU(candidate) ? candidate : nullptr, frameSeconds);
         if (state.blend.current) {
-            drawBlend(state, nav, opacity);
+            drawBlend(state, parent, nav, opacity);
             ++stats.sections;
             sectionLabel = parent.label();
         }
+    }
+    void renderTerrain(const Node& planet, const Navigation& nav) {
+        if (!terrainActive)
+            return;
+        const auto transform = pointTransform(framesFor(planet.address), planet.address, anchorFrames,
+                                              nav.anchor, nav.logDistance);
+        const auto rotationView = glm::mat4_cast(glm::quat(cameraInverse));
+        const glm::mat4 proj(projection);
+        bgfx::setViewTransform(1, glm::value_ptr(rotationView), glm::value_ptr(proj));
+        bgfx::setViewRect(1, 0, 0, uint16_t(width), uint16_t(height));
+        const auto mapping = pointTransform(anchorFrames, nav.anchor, framesFor(planet.address),
+                                            planet.address, planet.frame.logRadius);
+        const double units = std::pow(10., nav.logDistance - anchorFrames.back().logRadius);
+        glm::dmat4 pattern(1);
+        for (unsigned i = 0; i < 3; ++i)
+            pattern[i] = glm::dvec4(mapping.linear[i] * units, 0);
+        pattern[3] = glm::dvec4(mapping(eye * units), 1);
+        const auto program = hyperion->geometryProgram();
+        for (const auto& patch : terrain.patches()) {
+            const auto& g = *patch.geometry;
+            std::array<glm::dvec3, 81> points;
+            glm::dvec3 centre{};
+            for (unsigned i = 0; i < points.size(); ++i) {
+                points[i] = transform.linear * (terrain.position(patch, i) - transform.pivot) +
+                            (transform.translation - eye);
+                centre += points[i] / double(points.size());
+            }
+            double radius = 0;
+            for (auto p : points)
+                radius = std::max(radius, glm::length(p - centre));
+            if (!LOD::visible(cameraInverse * centre, radius, double(width) / height, 1))
+                continue;
+            const uint32_t count = uint32_t(g.solid.indexCount());
+            if (bgfx::getAvailTransientVertexBuffer(81, layout) < 81 ||
+                bgfx::getAvailTransientIndexBuffer(count, false) < count ||
+                bgfx::getAvailInstanceDataBuffer(1, 80) < 1) {
+                ++stats.uploadDeferred;
+                continue;
+            }
+            bgfx::TransientVertexBuffer vertices;
+            bgfx::TransientIndexBuffer indices;
+            bgfx::InstanceDataBuffer instances;
+            bgfx::allocTransientVertexBuffer(&vertices, 81, layout);
+            bgfx::allocTransientIndexBuffer(&indices, count, false);
+            bgfx::allocInstanceDataBuffer(&instances, 1, 80);
+            auto data = reinterpret_cast<Vertex*>(vertices.data);
+            for (unsigned i = 0; i < points.size(); ++i)
+                data[i] = {float(points[i].x), float(points[i].y), float(points[i].z),
+                           g.solid.vertices[i].color};
+            std::memcpy(indices.data, g.solid.indexData(), count * 2);
+            const Instance identity{glm::mat4(1), glm::vec4(1)};
+            std::memcpy(instances.data, &identity, sizeof(identity));
+            auto presentation = extractPresentation(planet, g, mode);
+            const auto light = poseFor(planet.address, nav).orientation * glm::dvec3(.6, .7, -.4);
+            glm::vec4 cavity{};
+            if (nav.anchor.kind() >= Kind::Rock)
+                cavity = glm::vec4(glm::vec3(-eye), float(std::max(1.3, glm::length(eye) * 1.1)));
+            hyperion->bind(presentation, {}, glm::vec3(light), glm::mat4(pattern), -1, visualTime, cavity);
+            bgfx::setVertexBuffer(0, &vertices);
+            bgfx::setIndexBuffer(&indices);
+            bgfx::setInstanceDataBuffer(&instances);
+            bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z |
+                           BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_MSAA);
+            bgfx::submit(1, program);
+            ++stats.terrainTiles;
+            stats.vertices += 81;
+            stats.triangles += count / 3;
+            stats.uploadBytes += 81 * sizeof(Vertex) + count * 2;
+        }
+        if (terrain.morphing())
+            ++stats.lodTransitions;
     }
     void prune() {
         std::erase_if(details, [&](const auto& state) { return frame > state.second.used + 2; });
@@ -540,6 +688,10 @@ Renderer::Renderer(SDL_Window* window, const Universe& universe)
                      {-1, 1, 0, rgba({0, 0, 0})}};
     quad.indices = {0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 1};
     p.billboardMesh = p.upload(quad);
+    for (auto& vertex : quad.vertices)
+        vertex.color = rgba({1, 1, 1});
+    p.hyperionBillboardMesh = p.upload(quad);
+    p.hyperion = std::make_unique<HyperionRenderer>();
     p.instanceLayout.begin();
     for (unsigned i = 0; i < 5; ++i)
         p.instanceLayout.add(static_cast<bgfx::Attrib::Enum>(bgfx::Attrib::TexCoord0 + i), 4,
@@ -552,6 +704,15 @@ Renderer::Renderer(SDL_Window* window, const Universe& universe)
     p.billboards.reserve(40000);
 }
 Renderer::~Renderer() = default;
+void Renderer::setMode(RenderMode mode) {
+    impl_->mode = mode;
+}
+RenderMode Renderer::mode() const {
+    return impl_->mode;
+}
+void Renderer::freezeVisualTime(double seconds) {
+    impl_->fixedVisualTime = seconds;
+}
 std::shared_ptr<const Geometry> Renderer::submittedGeometry(const Address& address) const {
     auto found = impl_->details.find(address);
     return found == impl_->details.end() ? nullptr : found->second.blend.current;
@@ -567,16 +728,19 @@ void Renderer::resize(int w, int h) {
     bgfx::reset(BGFX_RESET_VSYNC, &p.swapChain);
 }
 FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool overlay, double fps,
-                            size_t markers, std::string_view notice) {
+                            size_t markers, std::string_view notice, bool looking) {
     auto start = std::chrono::steady_clock::now();
     auto& p = *impl_;
     ++p.frame;
     p.frameSeconds = std::clamp(std::chrono::duration<double>(start - p.previousTime).count(), 0.0, .1);
     p.previousTime = start;
+    p.visualTime = p.fixedVisualTime >= 0 ? p.fixedVisualTime : p.visualTime + p.frameSeconds;
     p.sectionLabel.clear();
     p.stats = {};
+    p.staticUploadBytes = 0;
     p.picks.clear();
     p.billboards.clear();
+    p.cosmicBillboards.clear();
     p.frameFrames.clear();
     p.framePoses.clear();
     p.atomView = 2;
@@ -595,9 +759,22 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                        ? glm::perspectiveRH_NO(1.0, static_cast<double>(p.width) / p.height, .00005, 10000.0)
                        : glm::perspectiveRH_ZO(1.0, static_cast<double>(p.width) / p.height, .00005, 10000.0);
     glm::mat4 v(p.view), proj(p.projection);
+    p.hyperion->begin(p.mode, p.width, p.height);
     bgfx::setViewTransform(0, glm::value_ptr(v), glm::value_ptr(proj));
     bgfx::setViewRect(0, 0, 0, static_cast<uint16_t>(p.width), static_cast<uint16_t>(p.height));
     bgfx::touch(0);
+    std::optional<Node> terrainPlanet;
+    for (const auto& node : nodes)
+        if (node.address.kind() == Kind::Planet)
+            terrainPlanet = node;
+    if (terrainPlanet) {
+        const auto planetEye = p.universe.pointRelative(
+            nav.anchor, p.eye * std::pow(10., nav.logDistance - nodes.back().frame.logRadius),
+            terrainPlanet->address, terrainPlanet->frame.logRadius);
+        p.terrain.update(*terrainPlanet, planetEye, p.height, p.frameSeconds, cache);
+    } else
+        p.terrain.clear();
+    p.terrainActive = terrainPlanet && p.terrain.ready();
     std::set<Address> rendered;
     // Request the current focus first. Ancestors remain in the same spatial view
     // while the camera crosses the (possibly very large) physical scale gap.
@@ -607,18 +784,40 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         p.renderNode(*it, nav, cache);
         rendered.insert(it->address);
     }
+    std::vector<Node> rootNodes;
+    const Address anchorRoot{nav.anchor.cell, {}};
+    const auto anchorRootEye = p.universe.pointRelative(
+        nav.anchor, p.eye * std::pow(10., nav.logDistance - nodes.back().frame.logRadius), anchorRoot,
+        rootCellLogMetres);
+    const auto [root, rootEye] = canonicalRoot(anchorRoot, anchorRootEye);
+    for (const auto& address : rootNeighborhood(root)) {
+        auto node = p.universe.describe(address);
+        if (!rendered.contains(address)) {
+            p.renderNode(node, nav, cache, 2);
+            rendered.insert(address);
+        }
+        if (auto boundary = cache.requestCosmicBoundary(node))
+            p.drawGeometry(boundary, node, nav, 1);
+        if (auto it = p.details.find(address); it != p.details.end() && it->second.blend.current)
+            ++p.stats.rootCells;
+        const auto centre = cellDisplacement(address.cell, root.cell);
+        if (glm::length(centre - rootEye) < 1.8)
+            rootNodes.push_back(std::move(node));
+    }
+    if (terrainPlanet)
+        p.renderTerrain(*terrainPlanet, nav);
     Mesh locators;
     auto candidates = [&](const Node& parent) {
         auto parentPose = p.poseFor(parent.address, nav);
         auto pc = p.cameraSpace(parentPose.position);
         double parentPixels = LOD::pixels(parentPose.scale, glm::length(pc), p.height, 1);
-        if (parentPixels < 25 || parentPose.scale > 40)
+        const bool catalogVisible = parentPixels >= 25 && parentPose.scale <= 40;
+        const bool selectedChild = nav.selected && nav.selected->parent() == parent.address;
+        if (!catalogVisible && !selectedChild)
             return;
-        auto catalog = cache.catalog(parent);
-        if (!catalog)
-            return;
+        auto catalog = catalogVisible ? cache.catalog(parent) : nullptr;
         const auto parentFrames = p.framesFor(parent.address);
-        for (const auto& n : *catalog) {
+        auto present = [&](const Node& n) {
             const auto& a = n.address;
             auto childFrames = parentFrames;
             childFrames.push_back(n.frame);
@@ -627,12 +826,12 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
             auto cp = p.cameraSpace(pose.position);
             auto screen = p.project(pose.position);
             if (!screen || cp.z >= 0)
-                continue;
+                return;
             bool isSelected = nav.selected && a == *nav.selected;
             if (a == nav.anchor)
-                continue;
+                return;
             p.picks.push_back({a, *screen, -cp.z});
-            if (isSelected || n.address.kind() == Kind::Planet || n.address.kind() == Kind::Rock) {
+            if (isSelected || n.address.kind() == Kind::Planet || n.address.kind() >= Kind::Surface) {
                 double rr = -cp.z * .0025;
                 p.addBillboard(pose.position, rr,
                                n.address.kind() == Kind::System ? stellarColor(n.temperatureK)
@@ -651,28 +850,62 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                 p.renderNode(n, nav, cache);
                 rendered.insert(a);
             }
-        }
+        };
+        if (catalog)
+            for (const auto& n : *catalog)
+                present(n);
+        // Automatic flight may discover any canonical surface tile or any
+        // displayed star ID, beyond the deliberately small locator catalog.
+        if (nav.selected && nav.selected->parent() == parent.address &&
+            (!catalog || std::none_of(catalog->begin(), catalog->end(),
+                                      [&](const auto& n) { return n.address == *nav.selected; })))
+            present(p.universe.describe(*nav.selected));
     };
     if (nodes.size() > 1)
         p.renderSection(nodes[nodes.size() - 2], nav, cache);
     candidates(nodes.back());
     if (nodes.size() > 1)
         candidates(nodes[nodes.size() - 2]);
-    if (!p.billboards.empty()) {
-        uint32_t count = bgfx::getAvailInstanceDataBuffer(static_cast<uint32_t>(p.billboards.size()), 80);
-        p.stats.particles = count;
+    for (const auto& node : rootNodes)
+        if (node.address != root)
+            candidates(node);
+    auto drawBillboards = [&](const std::vector<Instance>& instances, bool cosmic) {
+        uint32_t count = bgfx::getAvailInstanceDataBuffer(static_cast<uint32_t>(instances.size()), 80);
         if (count) {
             bgfx::InstanceDataBuffer buffer;
             bgfx::allocInstanceDataBuffer(&buffer, count, 80);
-            std::memcpy(buffer.data, p.billboards.data(), count * sizeof(Instance));
-            bgfx::setVertexBuffer(0, p.billboardMesh.vertices);
-            bgfx::setIndexBuffer(p.billboardMesh.indices);
+            std::memcpy(buffer.data, instances.data(), count * sizeof(Instance));
+            const auto& mesh = p.mode == RenderMode::Original ? p.billboardMesh : p.hyperionBillboardMesh;
+            bgfx::setVertexBuffer(0, mesh.vertices);
+            bgfx::setIndexBuffer(mesh.indices);
             bgfx::setInstanceDataBuffer(&buffer);
             bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_MSAA | BGFX_STATE_DEPTH_TEST_LEQUAL |
                            BGFX_STATE_BLEND_ADD);
-            bgfx::submit(0, p.instanceProgram);
+            if (p.mode != RenderMode::Original) {
+                // Use the same focus-local reference at every magnification.
+                if (cosmic) {
+                    const auto q = p.universe.relative(nav.anchor, root, nav.logDistance).orientation;
+                    glm::dmat4 pattern = glm::mat4_cast(q);
+                    for (unsigned i = 0; i < 3; ++i)
+                        pattern[i] /= 500.;
+                    pattern[3] = glm::dvec4(-(q * p.eye) / 500., 1);
+                    p.hyperion->bindEmissions(p.universe.describe(Address{}), glm::mat4(pattern),
+                                              p.visualTime);
+                } else {
+                    const auto& node = nodes.back();
+                    auto focusPose = p.poseFor(nav.anchor, nav);
+                    auto focusModel = glm::translate(glm::mat4(1), glm::vec3(focusPose.position)) *
+                                      glm::mat4_cast(glm::quat(focusPose.orientation)) *
+                                      glm::scale(glm::mat4(1), glm::vec3(float(focusPose.scale)));
+                    p.hyperion->bindEmissions(node, glm::inverse(focusModel), p.visualTime);
+                }
+            }
+            bgfx::submit(0, p.mode == RenderMode::Original ? p.instanceProgram : p.hyperion->glowProgram());
         }
-    }
+    };
+    drawBillboards(p.cosmicBillboards, true);
+    drawBillboards(p.billboards, false);
+    p.hyperion->finish();
     auto ortho =
         glm::orthoRH_NO(0.f, static_cast<float>(p.width), static_cast<float>(p.height), 0.f, -1.f, 1.f);
     if (!bgfx::getCaps()->homogeneousDepth)
@@ -682,11 +915,16 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     bgfx::setViewRect(255, 0, 0, static_cast<uint16_t>(p.width), static_cast<uint16_t>(p.height));
     p.transient(locators, 255, true, false);
     bgfx::dbgTextClear();
+    if (looking)
+        bgfx::dbgTextPrintf(p.width / 16, p.height / 32, 0x0f, "+");
     if (overlay) {
         const auto& node = nodes.back();
         auto info = cache.stats();
         int bottom = std::max(10, p.height / 16 - 9);
         bgfx::dbgTextPrintf(3, 2, 0x0f, "I N F I N I T E");
+        if (p.mode != RenderMode::Original)
+            bgfx::dbgTextPrintf(3, 3, 0x0b, "%s / H RENDER MODE",
+                                std::string(renderModeName(p.mode)).c_str());
         bgfx::dbgTextPrintf(3, 4, 0x08, "A DETERMINISTIC UNIVERSE   /   SEED %08llX",
                             static_cast<unsigned long long>(p.universe.seed() & 0xffffffff));
         bgfx::dbgTextPrintf(3, bottom, 0x0f, "%s", node.label().c_str());
@@ -702,13 +940,16 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                                 node.environment.ageGyr, node.environment.chemistry.metal * 100, markers);
         bgfx::dbgTextPrintf(3, bottom + 3, 0x08, "LOC %s", nav.anchor.str().c_str());
         if (nav.selected)
-            bgfx::dbgTextPrintf(3, bottom + 4, 0x07, "F  FOCUS %s    BACKSPACE  PARENT",
+            bgfx::dbgTextPrintf(3, bottom + 4, 0x07, "APPROACH %s TO DESCEND    F FOCUS    BACKSPACE PARENT",
                                 std::string(kindName(nav.selected->kind())).c_str());
         else
             bgfx::dbgTextPrintf(3, bottom + 4, 0x07,
                                 "MATERIAL LATTICE / STATIC EDUCATIONAL MODEL    BACKSPACE  PARENT");
         bgfx::dbgTextPrintf(3, bottom + 5, 0x08,
-                            "WASD FLY   RIGHT-DRAG LOOK   SCROLL SCALE   CLICK SELECT   M MARK   TAB HIDE");
+                            "WASD FLY   Q/E DOWN/UP   C MOUSE LOOK   APPROACH TO AUTO SCALE   SCROLL SCALE");
+        bgfx::dbgTextPrintf(3, bottom + 6, 0x08,
+                            "SPEED x%.3g   -/+ ADJUST   SHIFT BOOST   CTRL FINE   CLICK SELECT   ESC %s",
+                            nav.speedMultiplier(), looking ? "RELEASE MOUSE" : "QUIT");
         bgfx::dbgTextPrintf(3, bottom + 7, 0x08,
                             "%.0f FPS   GEN %.1f ms   %zu JOBS   CPU CACHE %.1f MiB   GPU %.1f MiB", fps,
                             info.lastMs, info.pending, info.bytes / 1048576., p.gpuBytes / 1048576.);
@@ -745,6 +986,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         p.stats.cpuMs;
     const auto* st = bgfx::getStats();
     p.stats.gpuBytes = p.gpuBytes;
+    p.stats.effectBytes = p.hyperion->targetBytes();
     p.stats.drawCalls = st->numDraw;
     p.stats.gpuMs = st->gpuTimerFreq
                         ? 1000. * static_cast<double>(st->gpuTimeEnd - st->gpuTimeBegin) / st->gpuTimerFreq

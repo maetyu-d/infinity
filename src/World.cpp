@@ -1,4 +1,5 @@
 #include "infinite/World.hpp"
+#include "infinite/Streaming.hpp"
 #include <algorithm>
 #include <sqlite3.h>
 #include <stdexcept>
@@ -53,6 +54,26 @@ std::shared_ptr<const Geometry> RegionCache::requestSection(const Node& n, const
         },
         [bucket](const Geometry& g) { return std::abs(g.logUnits - bucket * .5); }, 2);
 }
+std::shared_ptr<const Geometry> RegionCache::requestTerrain(const Node& planet, Tile tile, unsigned stitch) {
+    if (planet.address.kind() != Kind::Planet || stitch > 15)
+        throw std::invalid_argument("Invalid terrain streaming request");
+    return schedule(
+        planet, planet.address.str() + "#T" + std::to_string(encodeTile(tile)) + "@", int(stitch),
+        [this, planet, tile, stitch](const std::atomic<bool>* cancel) {
+            return terrainGeometry(universe_, planet, tile, stitch, cancel);
+        },
+        [stitch](const Geometry& g) { return g.terrainStitch == stitch ? 0. : 1e9; }, 1 + tile.level);
+}
+std::shared_ptr<const Geometry> RegionCache::requestCosmicBoundary(const Node& root) {
+    if (root.address.kind() != Kind::Cosmic)
+        throw std::invalid_argument("Cosmic boundary requires a root cell");
+    return schedule(
+        root, root.address.str() + "#boundary@", 0,
+        [this, root](const std::atomic<bool>* cancel) {
+            return cosmicBoundaryGeometry(universe_, root, cancel);
+        },
+        [](const Geometry&) { return 0.; }, 12);
+}
 std::shared_ptr<const Geometry>
 RegionCache::schedule(const Node& n, const std::string& prefix, int variant,
                       std::function<std::shared_ptr<Geometry>(const std::atomic<bool>*)> generate,
@@ -71,7 +92,7 @@ RegionCache::schedule(const Node& n, const std::string& prefix, int variant,
         }
     } else {
         // Bounded demand queue; focus requests displace lower-priority queued work.
-        if (entries_.size() >= 96) {
+        if (entries_.size() >= 512) {
             auto victim = entries_.end();
             for (auto i = entries_.begin(); i != entries_.end(); ++i)
                 if (!i->second.running &&
@@ -87,7 +108,7 @@ RegionCache::schedule(const Node& n, const std::string& prefix, int variant,
                 ++stats_.evicted;
             }
         }
-        if (entries_.size() < 96) {
+        if (entries_.size() < 512) {
             Entry e;
             e.cancel = std::make_shared<std::atomic<bool>>(false);
             e.used = frame_;

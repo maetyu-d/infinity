@@ -1,5 +1,6 @@
 #pragma once
 #include "Navigation.hpp"
+#include "Presentation.hpp"
 #include "World.hpp"
 #include <memory>
 struct SDL_Window;
@@ -11,6 +12,8 @@ struct FrameStats {
     size_t lodTransitions = 0, sections = 0;
     size_t vertices = 0, triangles = 0, particles = 0, uploadBytes = 0;
     size_t uploadDeferred = 0, atomTriangles = 0;
+    size_t effectBytes = 0;
+    size_t terrainTiles = 0, rootCells = 0;
 };
 class Renderer {
   public:
@@ -20,11 +23,14 @@ class Renderer {
     Renderer& operator=(const Renderer&) = delete;
     void resize(int width, int height);
     FrameStats render(const Navigation&, RegionCache&, bool overlay, double fps, size_t markers,
-                      std::string_view notice);
+                      std::string_view notice, bool looking = false);
     std::optional<Address> pick(double x, double y) const;
     void screenshot(const std::string& path);
     std::string backend() const;
     std::shared_ptr<const Geometry> submittedGeometry(const Address&) const;
+    void setMode(RenderMode);
+    RenderMode mode() const;
+    void freezeVisualTime(double seconds);
 
   private:
     struct Impl;

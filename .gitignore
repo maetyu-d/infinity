@@ -1,7 +1,9 @@
 /build*/
+/build*.log
 /external/
 /user-data/
 /*.app/
 *.sqlite*
 *.ppm
 .DS_Store
+__pycache__/

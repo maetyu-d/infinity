@@ -57,6 +57,10 @@ struct Geometry {
     double inspectionRadius = 0;
     glm::dvec2 coveredHalfExtent{};
     Mesh solid, lines;
+    // Streamed terrain retains planet-local doubles until camera subtraction.
+    std::vector<glm::dvec3> precisePositions;
+    std::optional<Tile> terrainTile;
+    unsigned terrainStitch = 0;
     std::vector<Particle> particles;
     Lattice lattice;
     struct Instance {
@@ -68,7 +72,7 @@ struct Geometry {
     size_t bytes() const {
         return solid.bytes() + lines.bytes() + particles.size() * sizeof(Particle) +
                lattice.atoms.size() * sizeof(Atom) + lattice.bonds.size() * sizeof(Bond) +
-               lattice.vacantSites.size() * sizeof(uint64_t);
+               lattice.vacantSites.size() * sizeof(uint64_t) + precisePositions.size() * sizeof(glm::dvec3);
     }
     size_t residentBytes() const {
         return sizeof(Geometry) + solid.vertices.capacity() * sizeof(Vertex) + solid.indices.capacity() * 4 +
@@ -76,7 +80,7 @@ struct Geometry {
                lines.indices.capacity() * 4 + lines.indices16.capacity() * 2 +
                particles.capacity() * sizeof(Particle) + lattice.atoms.capacity() * sizeof(Atom) +
                lattice.bonds.capacity() * sizeof(Bond) + lattice.vacantSites.capacity() * 8 +
-               atomInstances.capacity() * sizeof(Instance);
+               atomInstances.capacity() * sizeof(Instance) + precisePositions.capacity() * sizeof(glm::dvec3);
     }
 };
 uint32_t rgba(glm::vec3, float alpha = 1);

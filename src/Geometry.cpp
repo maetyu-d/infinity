@@ -561,6 +561,13 @@ std::shared_ptr<Geometry> GeometryGenerator::section(const Node& parent, const A
 uint64_t geometryFingerprint(const Geometry& g) {
     uint64_t hash = mix64(g.seed ^ g.descriptor ^ g.recipe);
     auto add = [&](uint64_t v) { hash = mix64(hash ^ v); };
+    if (g.terrainTile) {
+        add(encodeTile(*g.terrainTile));
+        add(g.terrainStitch);
+        for (auto p : g.precisePositions)
+            for (unsigned axis = 0; axis < 3; ++axis)
+                add(std::bit_cast<uint64_t>(p[axis]));
+    }
     add(std::bit_cast<uint64_t>(g.logUnits));
     add(g.section);
     add(g.viewKey);

@@ -1,0 +1,20 @@
+BACKBUFFER 1920x1080 (requested 1920x1080)
+Infinite / Metal / seed 5282236693612155973
+TOUR 0 GALAXY 0,0,0/1:0 scale=21.177 draws=3 atoms=0 mineral=0
+TOUR 1 STAR SYSTEM 0,0,0/1:0/2:0 scale=12.8714 draws=5 atoms=0 mineral=0
+TOUR 2 PLANET 0,0,0/1:0/2:0/3:0 scale=7.15953 draws=4 atoms=0 mineral=3
+TOUR 3 SURFACE 0,0,0/1:0/2:0/3:0/4:115964125760 scale=5.05232 draws=5 atoms=0 mineral=3
+TOUR 4 MOUNTAIN 0,0,0/1:0/2:0/3:0/4:115964125760/5:0 scale=3.65232 draws=8 atoms=0 mineral=3
+TOUR 5 ROCK 0,0,0/1:0/2:0/3:0/4:115964125760/5:0/6:0 scale=0.37986 draws=40 atoms=0 mineral=3
+TOUR 6 MINERAL GRAIN 0,0,0/1:0/2:0/3:0/4:115964125760/5:0/6:0/7:0 scale=-2.32639 draws=5 atoms=0 mineral=4
+TOUR 7 CRYSTAL LATTICE 0,0,0/1:0/2:0/3:0/4:115964125760/5:0/6:0/7:0/8:0 scale=-8.33938 draws=4 atoms=1395 mineral=4
+TOUR 8 MINERAL GRAIN 0,0,0/1:0/2:0/3:0/4:115964125760/5:0/6:0/7:0 scale=-2.32639 draws=5 atoms=0 mineral=4
+TOUR 9 ROCK 0,0,0/1:0/2:0/3:0/4:115964125760/5:0/6:0 scale=0.37986 draws=40 atoms=0 mineral=3
+TOUR 10 MOUNTAIN 0,0,0/1:0/2:0/3:0/4:115964125760/5:0 scale=3.65232 draws=8 atoms=0 mineral=3
+TOUR 11 SURFACE 0,0,0/1:0/2:0/3:0/4:115964125760 scale=5.05232 draws=5 atoms=0 mineral=3
+TOUR 12 PLANET 0,0,0/1:0/2:0/3:0 scale=7.15953 draws=4 atoms=0 mineral=3
+TOUR 13 STAR SYSTEM 0,0,0/1:0/2:0 scale=12.8714 draws=5 atoms=0 mineral=0
+TOUR 14 GALAXY 0,0,0/1:0 scale=21.177 draws=3 atoms=0 mineral=0
+FRAME median_ms=16.6654 p95_ms=17.3917 frames=1117 cache_bytes=10161880
+peak_rss_bytes=142704640
+PASS: native GPU journey visited 8 scales and returned with matching identities.

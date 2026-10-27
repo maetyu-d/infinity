@@ -1,0 +1,38 @@
+{
+  "version": "0.7.0",
+  "recipe": 3,
+  "source_checkpoint": "0d61030851402214cc94c3cda766399e5d8093b0",
+  "unchanged_generation_and_coordinate_files": {
+    "src/Core.cpp": "a5a874c12481ec814d5265fd8c5932ba1612b1bdff6ddd811525331bfcdc0a62",
+    "src/Universe.cpp": "2ae1538cc94d9291b3ab2fa5e61efbac5329a106301db6e519740a2580c7ccf4",
+    "src/Processes.cpp": "67e313061245673d88153e275c3c837bad4df278beea1ee3874677c850c0dc23",
+    "src/Crystallography.cpp": "1d135fa1218cea466673723063267fcacdb5c6c56d4240ab5ca00eb0eb042dab",
+    "src/Geometry.cpp": "ac48c46e9fc5e4e7b2c2077bfc8d0096d72775bc6e6fdb99ed7c654505ad8eeb",
+    "src/World.cpp": "65bb17575a6bfe2390863b1a95ccfd1856ceb8ab6bb123c40854438d57397905",
+    "include/infinite/Core.hpp": "b6484f3695c4de44f2df666031db0bdab5de82a564cc20bf5f7309eb8e0d79bf",
+    "include/infinite/Universe.hpp": "82dfc3d6a82e0c9c2c4fed0d55a801b81ef09108cbd2af5e67640566f181c225",
+    "include/infinite/Geometry.hpp": "b97c47b7f95eb2394952a895810126dbe97d3ca5b437d5bd452ffa43d7ce29ce",
+    "include/infinite/World.hpp": "ecbdb38e035707671a4c66c29bfe652a0c7886bb6be03b8071b88e6a5ae6947e"
+  },
+  "binary_sha256": "3f1e00225a7a53177e5a988eed8c7a4a803432410b8f6c5f2ab6dd6ddf256cb1",
+  "flight_assertions": 24816,
+  "native": {
+    "backbuffer": "1920x1080",
+    "mode": "HYPERION",
+    "visible_levels": 9,
+    "median_frame_ms": 16.6831,
+    "p95_frame_ms": 17.3932,
+    "frames": 2178,
+    "cpu_cache_bytes": 12917990,
+    "peak_rss_bytes": 163299328,
+    "atom_instances": 4554,
+    "automatic_frame_changes": 23
+  },
+  "packaged_version": "0.7.0",
+  "packaged_binary_sha256": "fe1affd7c3255a3e7210f56b212cd4c7b2f5ae85425e7fdeaaf74e011345e7e1",
+  "suite": {
+    "passed": 16,
+    "failed": 0,
+    "elapsed_seconds": 108.94
+  }
+}
