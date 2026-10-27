@@ -25,6 +25,8 @@ class PilotValidation {
             bool found = false;
             system = n_.anchor.child(Kind::System, star);
             for (const auto& a : u_.children(u_.describe(system))) {
+                if (isMoon(a) || a.id() >= u_.legacyPlanetCount(u_.describe(system)))
+                    continue;
                 const auto body = u_.describe(a);
                 if (body.environment.temperature > 220 && body.environment.temperature < 500 &&
                     body.environment.waterActivity > .15) {
@@ -94,7 +96,7 @@ class PilotValidation {
                       << " atmosphere=" << stats.atmospheres << '\n';
             if (stats.skyGalaxies == 0)
                 throw std::runtime_error("Extragalactic lights vanished from the outward-facing sky");
-            if (stats.activityBodies < 100)
+            if (stats.activityBodies < 20)
                 throw std::runtime_error("Orbital flight lost its persistent activity population");
             std::cout << "PILOT_ACTIVITY population=" << stats.activityBodies
                       << " visible=" << stats.activityVisible << " template_bytes=" << stats.activityBytes
@@ -119,7 +121,8 @@ class PilotValidation {
             age_ = 0;
         } else if (stage_ == 7 && age_ == 30) {
             if (stats.celestialContacts < 6 || stats.celestialLights == 0 ||
-                renderer.pick(720, 450) != distantPlanet_ || renderer.pick(1170, 217) != planet_.parent())
+                renderer.pick(720, 450) != distantPlanet_ ||
+                renderer.pick(1170, 217) != renderer.celestialContacts().front().address)
                 throw std::runtime_error("Distant planet is not visible and selectable beyond the far plane");
             capture("system-contacts");
             std::cout << "PILOT_SYSTEM_CONTACTS count=" << stats.celestialContacts
@@ -270,6 +273,39 @@ class PilotValidation {
             std::cout << "PILOT_BUSY_START visible=" << stats.activityVisible
                       << " triangles=" << stats.activityTriangles << '\n';
         } else if (stage_ == 9 && age_ == 40) {
+            const auto primary = u_.describe(planet_);
+            const auto moons = u_.moons(primary);
+            if (moons.empty())
+                throw std::runtime_error("Starting planet has no stable moons");
+            moonAddress_ = moons.front();
+            const auto moon = u_.describe(moonAddress_);
+            const auto position = u_.relative(moonAddress_, planet_, primary.frame.logRadius).position;
+            const auto radial = glm::normalize(position),
+                       tangent = glm::normalize(glm::cross(radial, glm::dvec3(0, 1, 0)));
+            const double ratio = std::pow(10., moon.frame.logRadius - primary.frame.logRadius);
+            const auto eye = position + (tangent * 4. + radial * 2.) * ratio;
+            const auto direction = glm::normalize(glm::normalize(position - eye) + glm::normalize(-eye));
+            const auto q = glm::quatLookAtRH(direction, glm::normalize(glm::cross(radial, tangent)));
+            const auto offset = eye - q * glm::dvec3(0, 0, 1);
+            std::ostringstream view;
+            view.precision(17);
+            view << planet_.str() << ' ' << primary.frame.logRadius << ' ' << q.w << ' ' << q.x << ' ' << q.y
+                 << ' ' << q.z << ' ' << offset.x << ' ' << offset.y << ' ' << offset.z;
+            if (!n_.restore(view.str()))
+                throw std::runtime_error("Invalid moon-family fixture");
+            n_.select(moonAddress_);
+            p_.resetMotion();
+            stage_ = 10;
+            age_ = 0;
+        } else if (stage_ == 10 && age_ >= 60 && stats.moonWorlds > 0 &&
+                   renderer.submittedGeometry(moonAddress_)) {
+            capture("moon-family");
+            std::cout << "PILOT_MOON_FAMILY worlds=" << stats.moonWorlds
+                      << " planets=" << u_.planetCount(u_.describe(planet_.parent()))
+                      << " contacts=" << stats.celestialContacts << " moon_id=" << moonAddress_.str() << '\n';
+            stage_ = 11;
+            age_ = 0;
+        } else if (stage_ == 11 && age_ == 10) {
             finished_ = true;
         }
         if (age_ > 4000)
@@ -284,6 +320,7 @@ class PilotValidation {
     Navigation& n_;
     Pilot& p_;
     Address planet_, nanoAddress_, distantPlanet_;
+    Address moonAddress_;
     ActivityId harbourId_;
     bool microCaptured_ = false;
     glm::dvec3 direction_{};

@@ -1,12 +1,14 @@
 # INFINITE
 
-A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.12 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.13 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+
+Version 0.13 expands each system to **13–21 primary worlds**, with real moons wherever the host's Hill sphere permits stable satellite orbits. Existing planets keep their exact identities, orbits and material structures. New rocky and dwarf worlds fill suitable inner or orbital gaps and extend the outer family. Moons have their own terrain, geology and atomic depth. **Y** cycles primary worlds; **Shift-Y** cycles the selected or current planet's moons; **J** approaches and **L** lands. The cockpit shows system totals and the nearest eight celestial contacts, including a selected destination. [PLANETARY_POPULATIONS.md](docs/PLANETARY_POPULATIONS.md) records generation, preservation and validation.
 
 Version 0.12 adds persistent orbital activity above the existing world: harbours and service yards, scheduled freighters and ferries, patrol circuits, survey craft and mineral ejecta. Click a traffic contact or press **K**, **I** to hail, and **J** to approach a harbour or match a moving ship's course. **F6** hides/shows activity. The denser stellar sky refines the same addressed population. [ORBITAL_ACTIVITY.md](docs/ORBITAL_ACTIVITY.md) documents the Hyperion source, deterministic schedules, controls and validation.
 
 Version 0.11 makes the surrounding universe visible from the cockpit: all existing system planets and the sun appear on the contact scope and list, distant unresolved planets retain selectable light proxies, and addressed stars, gas and neighbouring galaxies supply the sky. The lights retain their true bearings, distances and destination addresses. [CELESTIAL_CONTEXT.md](docs/CELESTIAL_CONTEXT.md) explains the visibility fixes and comparisons.
 
-The universe remains at its original physical scale. Its generators, hierarchical addresses, seeds, geology, rocks, minerals and atomic structures are unchanged. Camera precision changes never resize the normal ship. See [OPERATING_SCALES.md](docs/OPERATING_SCALES.md) for the three operating regimes, controls and validation.
+The universe remains at its original physical scale. Existing hierarchical addresses, seeds, geology, rocks, minerals and atomic structures are preserved when populations expand. Camera precision changes never resize the normal ship. See [OPERATING_SCALES.md](docs/OPERATING_SCALES.md) for the three operating regimes, controls and validation.
 
 Version 0.8 removes the isolated terrain windows and single-root-cell flight restriction. A complete, stitched planetary surface streams beneath the camera, with continuous mesh morphing as detail changes. Neighbouring cosmic cells preload and hand off without changing the physical camera; blended collars fill their former sampling gaps. The same world fields, seeds and objects remain authoritative. See [STREAMING.md](docs/STREAMING.md) for implementation, image checks and resource bounds.
 
@@ -54,9 +56,9 @@ ctest --test-dir build-core --output-on-failure
 
 New games begin in planetary orbit with a **12 m ship** and cruise disengaged. Existing version-3 saves resume their exact view, motion, size and drive settings. **C** captures the mouse helm; **W/S** changes persistent throttle and **B** brakes.
 
-Use **Y** to cycle the current system's existing planets, then **J** to navigate. **L** chooses the real terrain underfoot for an assisted landing; **Enter** lifts off. Normal handling has a nominal 85 km/s open-space envelope that decreases smoothly toward 350 m/s near terrain, with boost and speed adjustment available.
+Use **Y** to cycle the current system's primary planets, or **Shift-Y** for the selected/current planet's moons, then **J** to navigate. **L** chooses the real terrain underfoot for an assisted landing; **Enter** lifts off. Normal handling has a nominal 85 km/s open-space envelope that decreases smoothly toward 350 m/s near terrain, with boost and speed adjustment available.
 
-The cockpit lists the sun and every planet with range and ahead/aft/occulted status. Its scope shows their bearings, and unresolved planets have labels in the forward view. Click a contact row, planet light, star or distant galaxy to select its actual address, then press **J** to travel; **N** supplies the optional long-range drive for astronomical distances.
+The cockpit shows planet/moon totals and the nearest eight celestial contacts with range and ahead/aft/occulted status; a selected destination stays in the list. Its scope retains every body's actual bearing, and unresolved planets and moons have lights in the forward view. Click a contact row, celestial light, star or distant galaxy to select its actual address, then press **J** to travel; **N** supplies the optional long-range drive for astronomical distances.
 
 **N** explicitly enables long-range cruise. Its initial ceiling is **100 light years per second**, with proximity braking near structures. **-/+** changes the cruise ceiling while it is engaged. Voyages remain continuous and can last as long as desired; elapsed flight time, travelled distance and ETA are displayed and saved. Cruise continues when the open app loses focus.
 
@@ -70,6 +72,7 @@ The cockpit lists the sun and every planet with range and ahead/aft/occulted sta
 | C / right drag | Capture / temporarily use mouse helm |
 | B / X | Brake / toggle flight assistance |
 | Y / J | Select next planet / navigate to selected destination |
+| Shift-Y | Cycle moons of the selected/current planet |
 | K / I | Select next traffic contact / hail its actual route status |
 | F6 | Hide/show orbital activity; its clock continues |
 | L / G / Enter | Assisted landing / gear / lift off when landed |
@@ -117,7 +120,7 @@ An address looks like `0,0,0/1:0/2:0/3:0/...`: the root cell followed by canonic
 
 - Cosmic web: a two-scale cellular collapse skeleton. Equal-distance sheets, triple-junction filaments and four-way cluster knots surround underdense void interiors; fine structure is conditioned on coarse collapse. Galaxy placement samples the same field. This is an adhesion-inspired analytic approximation, not an N-body simulation.
 - Galaxies: exponential surface-density discs, logarithmic density-wave arms, central bars, truncated Hernquist bulges/haloes, quenched elliptical spheroids and shared irregular associations. Population age, gas, environment and merger proxies affect structure. A broken power-law stellar mass function is conditioned on survival age. Detailed addressed systems reuse exactly the sampled star's position, mass, age and colour.
-- Systems: approximate stellar mass/radius/temperature/luminosity relations, optional companion, 5–9 planets, analytical eccentric Kepler orbits and a sampled asteroid belt. The viewer uses a fixed orbital epoch. An irradiation-driven condensation limit bounds inner orbits; irradiation controls planet temperature and volatile retention; chemical differentiation reweights inherited reservoirs.
+- Systems: approximate stellar mass/radius/temperature/luminosity relations, optional companion, 13–21 primary worlds, Hill/Roche-limited moon families, analytical eccentric Kepler orbits and a sampled asteroid belt. The original 5–9 planets remain exact; additional inner/gap/outer worlds append stable IDs. The viewer uses a fixed orbital epoch. An irradiation-driven condensation limit bounds inner orbits; irradiation controls planet temperature and volatile retention; chemical differentiation reweights inherited reservoirs.
 - Planets: mobile-lid, stagnant-lid or icy-shell fields selected from heat retention, size, age, water and composition. Spherical plates carry Euler-pole velocities; relative motion supplies convergence, extension and shear. Uplift, subduction trenches, hotspot shields, impact bowls/rims/ejecta and resurfacing-dependent crater survival share a continuous unit-direction field. Water enables an explicit analytic incision/deposition approximation.
 - Terrain: adaptive cube-sphere samples, sparse survey sites and mountain-scale patches refine the same planet field in transported tangent frames. Rocks are placed on that field. A mountain address denotes a terrain neighbourhood; its centre need not be a peak.
 - Rocks: jointed plutonic blocks, vesicular volcanic material, bedded sediments, folded/foliated metamorphic material, impact breccia aggregates, pitted metallic fragments or glacial ice. Formation pressure, cooling, water, strain, chemistry and impacts select the process. Density, material bands and grain placement use the same descriptor.

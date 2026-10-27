@@ -49,7 +49,9 @@ void FlightController::update(glm::dvec3 axes, double dt, bool fast, bool precis
         galaxySamples_.reset();
     // Early precision frames cover much more than the small physical body.
     // Crossing toward a nearer sibling must still work inside that region.
-    if (lineage.size() > 1 && node.address.kind() != Kind::Surface && glm::length(eye) > radius * 4) {
+    const double siblingThreshold = node.address.kind() == Kind::Planet ? 1.03 : 4.;
+    if (lineage.size() > 1 && node.address.kind() != Kind::Surface &&
+        glm::length(eye) > radius * siblingThreshold) {
         const auto& parent = lineage[lineage.size() - 2];
         const double parentRadius = std::pow(10., parent.frame.logRadius - nav_.logDistance);
         const auto rotation = glm::inverse(node.frame.orientation);
@@ -104,9 +106,12 @@ void FlightController::update(glm::dvec3 axes, double dt, bool fast, bool precis
     if (lineage.size() > 1) {
         const auto& parent = lineage[lineage.size() - 2];
         double parentRadius = std::pow(10., parent.frame.logRadius - nav_.logDistance);
+        const double extent = node.address.kind() == Kind::System
+                                  ? universe_.systemRadiusMetres(node) / std::pow(10., nav_.logDistance)
+                                  : radius;
         double exit = node.address.kind() == Kind::Surface || node.address.kind() == Kind::Mountain
                           ? radius * 3
-                          : std::max(radius * 8, parentRadius * .16);
+                          : std::max(extent * 8, parentRadius * .16);
         if (glm::length(eye) > exit) {
             changeFrame(parent.address);
             node = parent;
@@ -187,7 +192,9 @@ void FlightController::update(glm::dvec3 axes, double dt, bool fast, bool precis
     if (nearest) {
         if (!nav_.selected || *nav_.selected != nearest->address)
             nav_.suggestSelection(nearest->address);
-        const double childRadius = std::pow(10., nearest->frame.logRadius - newLog);
+        const double childRadius = nearest->address.kind() == Kind::System
+                                       ? universe_.systemRadiusMetres(*nearest) / std::pow(10., newLog)
+                                       : std::pow(10., nearest->frame.logRadius - newLog);
         const auto kind = nearest->address.kind();
         const double enter = kind == Kind::Surface || kind == Kind::Mountain
                                  ? childRadius * 2

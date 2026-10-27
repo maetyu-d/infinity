@@ -1,0 +1,64 @@
+{
+  "version": "0.13.0",
+  "world_recipe": 3,
+  "population_recipe": 1,
+  "checkpoint": "b6dd70c",
+  "backend": "Metal",
+  "resolution": [
+    1440,
+    900
+  ],
+  "legacy_fingerprints": 120,
+  "home_system": {
+    "primary_worlds": 13,
+    "moons": 44
+  },
+  "before": {
+    "median_frame_ms": 16.6622,
+    "p95_frame_ms": 19.6246,
+    "frames": 1688,
+    "final_cache_bytes": 10453596,
+    "peak_rss_bytes": 151126016,
+    "stationary_orbit": {
+      "samples": 19,
+      "median_cpu_ms": 4.6985,
+      "median_gpu_ms": 3.90875,
+      "median_wall_ms": 16.7227
+    }
+  },
+  "after": {
+    "median_frame_ms": 16.6647,
+    "p95_frame_ms": 17.1618,
+    "frames": 1768,
+    "final_cache_bytes": 12644936,
+    "peak_rss_bytes": 157089792,
+    "stationary_orbit": {
+      "samples": 19,
+      "median_cpu_ms": 3.14646,
+      "median_gpu_ms": 3.56188,
+      "median_wall_ms": 16.6661
+    }
+  },
+  "notes": "Same fixed-epoch planetary fixture and original/Hyperion/hybrid orbit cameras; first contiguous Hyperion block excludes five transition frames at either end. Same 1440x900 Metal resolution and seed. No build or other tests ran alongside either measured loop. After adds an 80-frame real moon-family scene. VSync limits wall-time comparisons; these are single-run observations.",
+  "release_suite": {
+    "passed": 26,
+    "failed": 0,
+    "seconds": 194.05
+  },
+  "population_test": {
+    "checks": 9123,
+    "systems": 12,
+    "primary_worlds": 197,
+    "moons": 655
+  },
+  "package": {
+    "version": "0.13.0",
+    "signature_verified": true,
+    "compiled_sections_match_tested_build": true,
+    "isolated_Shift_Y_selects_moon": true,
+    "J_engages_moon_approach": true,
+    "B_cancels_approach": true,
+    "ship_schema": 3,
+    "activity_schema": 1
+  }
+}

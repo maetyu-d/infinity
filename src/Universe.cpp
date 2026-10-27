@@ -14,6 +14,7 @@ struct Universe::DescriptorCache {
     std::mutex mutex;
     std::map<Address, Node> objects;
     std::deque<Address> insertionOrder;
+    std::map<Address, std::shared_ptr<const std::vector<Orbit>>> populations;
 };
 Universe::Universe(uint64_t seed) : seed_(seed), descriptors_(std::make_shared<DescriptorCache>()) {}
 const Material& material(Mineral m) {
@@ -54,7 +55,119 @@ glm::vec3 stellarColor(double temperatureK) {
                     static_cast<float>(std::clamp((temperatureK - 3000) / 7000, 0.0, 1.0)));
 }
 std::string Node::label() const {
+    if (address.kind() == Kind::Planet && satelliteOf != UINT64_MAX)
+        return "Moon " + std::to_string(seed % 100000);
+    if (address.kind() == Kind::Planet && expandedPopulation && frame.logRadius < 6.08)
+        return "Dwarf " + std::to_string(seed % 100000);
     return std::string(kindName(address.kind())) + " " + std::to_string(seed % 100000);
+}
+bool isMoon(const Address& a) {
+    return a.kind() == Kind::Planet && (a.id() & moonIdFlag) != 0;
+}
+uint64_t moonId(uint64_t primary, unsigned ordinal) {
+    if (primary >= 65536 || ordinal >= 65536)
+        throw std::invalid_argument("Moon identity out of range");
+    return moonIdFlag | (primary << 16) | ordinal;
+}
+uint64_t moonPrimary(uint64_t id) {
+    if (!(id & moonIdFlag) || (id & ~moonIdFlag) >> 32)
+        throw std::invalid_argument("Invalid moon identity");
+    return (id & ~moonIdFlag) >> 16;
+}
+unsigned Universe::legacyPlanetCount(const Node& system) const {
+    if (system.address.kind() != Kind::System)
+        throw std::invalid_argument("Expected a system");
+    return unsigned(5 + system.seed % 5);
+}
+unsigned Universe::planetCount(const Node& system) const {
+    return legacyPlanetCount(system) + 8 + unsigned(mix64(system.seed ^ 0x504f50554c415445ULL) % 5);
+}
+namespace {
+double bodyMass(const Node& n) {
+    return 4.188790204786391 * material(n.environment.mineral).density * std::pow(10., 3 * n.frame.logRadius);
+}
+double moonInner(const Node& n) {
+    return std::pow(10., n.frame.logRadius) *
+           std::max(3.2, 3.05 * std::cbrt(material(n.environment.mineral).density / 917.));
+}
+} // namespace
+std::shared_ptr<const std::vector<Orbit>> Universe::planetOrbits(const Node& system) const {
+    {
+        std::lock_guard lock(descriptors_->mutex);
+        if (auto it = descriptors_->populations.find(system.address); it != descriptors_->populations.end())
+            return it->second;
+    }
+    auto orbits = std::make_shared<std::vector<Orbit>>();
+    std::vector<Node> old;
+    const unsigned legacy = legacyPlanetCount(system), total = planetCount(system);
+    for (unsigned i = 0; i < legacy; i++) {
+        old.push_back(makeChild(system, {Kind::Planet, i}));
+        orbits->push_back(old.back().orbit);
+    }
+    auto hill = [&](const Node& n) {
+        return n.orbit.semiMajorMetres * std::cbrt(bodyMass(n) / (3 * system.massSolar * 1.98847e30));
+    };
+    double outer =
+        old.back().orbit.semiMajorMetres * (1 + old.back().orbit.eccentricity) + 6 * hill(old.back());
+    unsigned outerSlot = 0;
+    for (unsigned id = legacy; id < total; id++) {
+        const unsigned slot = id - legacy;
+        Random r{childSeed(system.seed, Kind::Planet, id)};
+        double a = 0, e = .004 + r.unit(2) * .012;
+        if (slot < 3) {
+            const double lo = std::max(system.stellarRadiusMetres * (system.companions ? 32 : 8),
+                                       .04 * std::sqrt(system.luminositySolar) * 1.495978707e11);
+            const double hi = old.front().orbit.semiMajorMetres * (1 - old.front().orbit.eccentricity) -
+                              5 * hill(old.front());
+            if (hi > lo * 2)
+                a = lo * std::pow(hi / lo, (slot + 1.) / 4.);
+        } else if (slot - 3 < legacy - 1) {
+            const auto& left = old[slot - 3];
+            const auto& right = old[slot - 2];
+            const double lo = left.orbit.semiMajorMetres * (1 + left.orbit.eccentricity) + 4.5 * hill(left);
+            const double hi =
+                right.orbit.semiMajorMetres * (1 - right.orbit.eccentricity) - 4.5 * hill(right);
+            if (hi > lo * 1.06) {
+                a = std::sqrt(lo * hi);
+                e = std::min(e, (hi - lo) / (hi + lo) * .25);
+            }
+        }
+        if (a == 0) {
+            a = outer * 1.3 * std::pow(1.65, outerSlot++);
+            e = .008 + r.unit(2) * .025;
+        }
+        orbits->push_back({a, e, r.unit(3) * 2 * pi, r.signedUnit(4) * .08, system.massSolar});
+    }
+    std::lock_guard lock(descriptors_->mutex);
+    auto result = descriptors_->populations.emplace(system.address, orbits).first->second;
+    if (descriptors_->populations.size() > 64)
+        descriptors_->populations.erase(descriptors_->populations.begin());
+    return result;
+}
+double Universe::systemRadiusMetres(const Node& system) const {
+    double radius = std::pow(10., system.frame.logRadius);
+    for (const auto& orbit : *planetOrbits(system))
+        radius = std::max(radius, orbit.semiMajorMetres * (1 + orbit.eccentricity) * 1.4);
+    return radius;
+}
+unsigned Universe::moonCount(const Node& planet) const {
+    if (planet.address.kind() != Kind::Planet || isMoon(planet.address))
+        return 0;
+    const auto system = describe(planet.address.parent());
+    const double hill = planet.orbit.semiMajorMetres * (1 - planet.orbit.eccentricity) *
+                        std::cbrt(bodyMass(planet) / (3 * system.massSolar * 1.98847e30));
+    const double ratio = .32 * hill / moonInner(planet);
+    if (ratio < 1)
+        return 0;
+    const unsigned capacity = 1 + unsigned(std::floor(std::log(ratio) / std::log(1.8)));
+    const unsigned desired = 2 + unsigned(mix64(planet.seed ^ 0x4d4f4f4e53595354ULL) % 5);
+    return std::min(desired, capacity);
+}
+std::vector<Address> Universe::moons(const Node& planet) const {
+    std::vector<Address> result;
+    for (unsigned i = 0; i < moonCount(planet); i++)
+        result.push_back(planet.address.parent().child(Kind::Planet, moonId(planet.address.id(), i)));
+    return result;
 }
 double Universe::cosmicDensity(glm::dvec3 p, uint64_t seed) const {
     return cosmicStructure(p, seed).density;
@@ -225,6 +338,8 @@ Node Universe::makeChild(const Node& p, Segment s) const {
     n.hostRockSeed = p.hostRockSeed;
     n.hostRockImpact = p.hostRockImpact;
     n.grainScaleToRock = p.grainScaleToRock;
+    n.expandedPopulation = p.expandedPopulation;
+    n.satelliteOf = p.satelliteOf;
     n.galaxy = p.galaxy;
     n.population = p.population;
     n.geology = p.geology;
@@ -274,7 +389,43 @@ Node Universe::makeChild(const Node& p, Segment s) const {
         break;
     }
     case Kind::Planet: {
-        if (s.id >= 5 + p.seed % 5)
+        if (isMoon(n.address)) {
+            const auto primary = describe(p.address.child(Kind::Planet, moonPrimary(s.id)));
+            const unsigned ordinal = unsigned(s.id & 65535);
+            if (ordinal >= moonCount(primary))
+                throw std::invalid_argument("Moon outside stable satellite catalogue");
+            n.expandedPopulation = true;
+            n.satelliteOf = primary.address.id();
+            env = primary.environment;
+            const double radius = std::pow(10., primary.frame.logRadius);
+            n.orbit = {moonInner(primary) * std::pow(1.8, ordinal), .002 + r.unit(2) * .012,
+                       r.unit(3) * 2 * pi, primary.orbit.inclination + r.signedUnit(4) * .16,
+                       bodyMass(primary) / 1.98847e30};
+            n.frame.position =
+                primary.frame.position + keplerPosition(n.orbit, 0) / std::pow(10., p.frame.logRadius);
+            n.frame.logRadius =
+                std::log10(std::max(20000., radius * (.12 + .045 * r.unit(5)) * std::pow(.68, ordinal)));
+            n.planetLogRadius = n.frame.logRadius;
+            n.planetSeed = n.seed;
+            env.temperature = std::max(2.725, primary.environment.temperature * (.97 + .06 * r.unit(7)));
+            env.pressureGPa = std::min(.08, env.pressureGPa * .15);
+            env.peakTemperature = std::max(env.temperature, 650 + 1000 * r.unit(8));
+            env.coolingRate = std::clamp(.55 + .4 * r.unit(14), .1, 1.);
+            env.strain = std::clamp(env.strain + .25 * r.unit(16), 0., 1.);
+            env.impact = std::clamp(env.impact + .2 * r.unit(17), 0., 1.);
+            env.mineral = selectMineral(n.seed, env);
+            const double massLimitedRadius =
+                radius * std::cbrt(.004 * material(primary.environment.mineral).density /
+                                   material(env.mineral).density);
+            n.frame.logRadius =
+                std::log10(std::max(3000., std::min(std::pow(10., n.frame.logRadius), massLimitedRadius)));
+            n.planetLogRadius = n.frame.logRadius;
+            env.waterActivity *= std::clamp(std::pow(10., n.frame.logRadius - 6.5), .002, .15);
+            n.geology = planetProcess(n.seed, n.frame.logRadius, env);
+            n.massSolar = bodyMass(n) / 1.98847e30;
+            break;
+        }
+        if (s.id >= planetCount(p))
             throw std::invalid_argument("Planet index is outside this system's catalogue");
         double innerAu = std::max(.25, .04 * std::sqrt(p.luminositySolar));
         double au = innerAu * (1 + .4 * r.unit(1)) * std::pow(1.85, static_cast<double>(s.id));
@@ -282,9 +433,18 @@ Node Universe::makeChild(const Node& p, Segment s) const {
                    p.massSolar};
         n.frame.position = keplerPosition(n.orbit, 0) / std::pow(10.0, p.frame.logRadius);
         n.frame.logRadius = 6.45 + .6 * r.unit(5);
+        if (s.id >= legacyPlanetCount(p)) {
+            n.expandedPopulation = true;
+            n.orbit = planetOrbits(p)->at(size_t(s.id));
+            au = n.orbit.semiMajorMetres / 1.495978707e11;
+            n.frame.position = keplerPosition(n.orbit, 0) / std::pow(10., p.frame.logRadius);
+            n.frame.logRadius = 5.4 + 1.05 * r.unit(5);
+        }
         n.planetLogRadius = n.frame.logRadius;
         n.planetSeed = n.seed;
         env.temperature = 278.0 * std::pow(p.luminositySolar, .25) / std::sqrt(au);
+        if (n.expandedPopulation)
+            env.temperature = std::max(2.725, env.temperature);
         env.pressureGPa = .015 + .35 * r.unit(7);
         env.peakTemperature = std::max(env.temperature, 850 + 1700 * std::exp(-env.ageGyr / 12) * r.unit(8));
         // Condensation beyond the irradiation-dependent snow line retains ice;
@@ -301,6 +461,8 @@ Node Universe::makeChild(const Node& p, Segment s) const {
             env.pressureGPa = std::min(env.pressureGPa, .12);
         env.mineral = selectMineral(n.seed, env);
         n.geology = planetProcess(n.seed, n.frame.logRadius, env);
+        if (n.expandedPopulation)
+            n.massSolar = bodyMass(n) / 1.98847e30;
         break;
     }
     case Kind::Surface: {
@@ -418,6 +580,16 @@ Node Universe::makeChild(const Node& p, Segment s) const {
     return n;
 }
 std::vector<Address> Universe::children(const Node& n, size_t limit) const {
+    if (n.address.kind() == Kind::System) {
+        std::vector<Address> result;
+        for (unsigned i = 0; i < planetCount(n) && result.size() < limit; i++)
+            result.push_back(n.address.child(Kind::Planet, i));
+        for (unsigned i = 0; i < planetCount(n) && result.size() < limit; i++)
+            for (const auto& moon : moons(describe(n.address.child(Kind::Planet, i))))
+                if (result.size() < limit)
+                    result.push_back(moon);
+        return result;
+    }
     size_t count = 0;
     auto kind = n.address.kind();
     switch (kind) {
@@ -549,6 +721,10 @@ uint64_t descriptorFingerprint(const Node& n) {
         add(p.id);
     }
     add(n.seed);
+    if (n.expandedPopulation) {
+        add(populationRecipeVersion);
+        add(n.satelliteOf);
+    }
     real(n.frame.logRadius);
     vec(n.frame.position);
     real(n.frame.orientation.w);

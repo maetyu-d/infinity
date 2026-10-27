@@ -109,6 +109,7 @@ struct Renderer::Impl {
     std::optional<FlightInstruments> instruments;
     std::shared_ptr<const Geometry> skyGeometry;
     std::vector<CelestialContact> contacts;
+    std::vector<CelestialContact> skyOccluders;
     const ActivityState* activity = nullptr;
     std::vector<ActivityContact> activityContacts;
     std::vector<std::pair<ActivityId, glm::dvec2>> activityPicks;
@@ -565,7 +566,7 @@ struct Renderer::Impl {
             const double size = 500 * angular;
             if (LOD::visible(local * 500., size, double(width) / height, fieldOfView)) {
                 const double physicalDistance = distance * std::pow(10., galaxy.frame.logRadius);
-                if (celestialOccluded(local, physicalDistance, contacts))
+                if (celestialOccluded(local, physicalDistance, skyOccluders))
                     continue;
                 const auto point = eye + direction * 500.;
                 addBillboard(point, size, star.color * (handoff * (gas ? .5f : 1.f)), true);
@@ -601,7 +602,7 @@ struct Renderer::Impl {
             const auto direction = delta / distance;
             const auto local = cameraInverse * direction;
             if (local.z >= 0 ||
-                celestialOccluded(local, distance * std::pow(10., root.frame.logRadius), contacts))
+                celestialOccluded(local, distance * std::pow(10., root.frame.logRadius), skyOccluders))
                 continue;
             const double angular =
                 std::clamp(std::pow(10., galaxy.frame.logRadius - root.frame.logRadius) / distance,
@@ -641,11 +642,20 @@ struct Renderer::Impl {
             if (!planets)
                 continue;
             for (const auto& planet : *planets) {
+                if (isMoon(planet.address))
+                    continue;
                 const auto pose = poseFor(planet.address, nav);
                 const auto planetEye = universe.pointRelative(
                     nav.anchor, eye * std::pow(10., nav.logDistance - anchorFrames.back().logRadius),
                     planet.address, 0);
-                for (const auto& body : sampleActivity(planet, activity->seconds)) {
+                const bool pinned = activity->selected && activity->selected->home == planet.address;
+                const double localRange = glm::length(planetEye);
+                const bool local = localRange < std::max(2e7, std::pow(10., planet.frame.logRadius) * 6);
+                auto bodies = local || pinned
+                                  ? sampleActivity(planet, activity->seconds)
+                                  : std::vector<ActivityBody>{sampleActivity(planet, 0, activity->seconds),
+                                                              sampleActivity(planet, 1, activity->seconds)};
+                for (const auto& body : bodies) {
                     ++stats.activityBodies;
                     const auto deltaSI = pose.orientation * (body.position - planetEye);
                     const double distance = glm::length(deltaSI);
@@ -653,7 +663,7 @@ struct Renderer::Impl {
                         continue;
                     const auto direction = cameraInverse * (deltaSI / distance);
                     const bool selected = activity->selected && *activity->selected == body.id;
-                    const bool occulted = celestialOccluded(direction, distance, contacts);
+                    const bool occulted = celestialOccluded(direction, distance, skyOccluders);
                     if (body.kind != ActivityKind::Debris) {
                         const auto velocity = cameraInverse * (pose.orientation * body.velocity);
                         activityContacts.push_back({body, direction, distance,
@@ -776,8 +786,11 @@ struct Renderer::Impl {
         auto pose = poseFor(node.address, nav);
         auto cp = cameraSpace(pose.position);
         double r = pose.scale;
-        double pixels = LOD::pixels(r, glm::length(cp), height, 1.0);
         auto kind = node.address.kind();
+        const double bounds = kind == Kind::System && r > 1e-6 && r < 1e4
+                                  ? universe.systemRadiusMetres(node) / std::pow(10., nav.logDistance)
+                                  : r;
+        double pixels = LOD::pixels(bounds, glm::length(cp), height, 1.0);
         auto& state = details[node.address];
         bool stellarProxy =
             kind == Kind::System && (node.address.ancestorOf(nav.anchor) || state.blend.current);
@@ -789,8 +802,9 @@ struct Renderer::Impl {
                 addBillboard(pose.position, radius, stellarColor(node.temperatureK) * intensity);
         } else if (node.address == nav.anchor && pixels < 1.5 && cp.z < 0 && kind != Kind::Cosmic)
             addBillboard(pose.position, -cp.z * .0015, material(node.environment.mineral).color);
-        if (kind != Kind::Cosmic && (r < 1e-8 || r > 1e4 || pixels < .7 ||
-                                     !LOD::visible(cp, r, static_cast<double>(width) / height, fieldOfView)))
+        if (kind != Kind::Cosmic &&
+            (r < 1e-8 || r > 1e4 || pixels < .7 ||
+             !LOD::visible(cp, bounds, static_cast<double>(width) / height, fieldOfView)))
             return;
         float opacity = node.address.ancestorOf(nav.anchor) && node.address != nav.anchor
                             ? static_cast<float>(1 - smoothstep(3, 12, r))
@@ -814,12 +828,15 @@ struct Renderer::Impl {
                                        : node.address == nav.anchor ? 0
                                                                     : 4,
                                        viewKey);
-        const bool streamedTerrain = terrainActive && kind >= Kind::Planet && kind <= Kind::Mountain;
+        const bool streamedTerrain = terrainActive && kind >= Kind::Planet && kind <= Kind::Mountain &&
+                                     node.address.ancestorOf(nav.anchor);
         // Retain the original node/LOD reference for identity and inspection;
         // streamed tiles provide the terrain draw without duplicate GPU buffers.
         state.blend.update(streamedTerrain || prepareGPU(candidate) ? candidate : nullptr, frameSeconds);
         if (state.blend.current) {
             ++stats.visibleObjects;
+            if (isMoon(node.address))
+                ++stats.moonWorlds;
             if (!streamedTerrain)
                 drawBlend(state, node, nav, opacity);
         }
@@ -1110,6 +1127,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     p.framePoses.clear();
     p.atomView = p.instruments ? 3 : 2;
     p.contacts.clear();
+    p.skyOccluders.clear();
     auto nodes = p.universe.lineage(nav.anchor);
     p.anchorFrames.clear();
     for (const auto& node : nodes) {
@@ -1140,12 +1158,24 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         bgfx::setViewTransform(2, glm::value_ptr(v), glm::value_ptr(proj));
         bgfx::setViewRect(2, 0, 0, uint16_t(p.width), uint16_t(p.height));
         bgfx::setViewMode(2, bgfx::ViewMode::Default);
-        for (const auto& system : nodes)
-            if (system.address.kind() == Kind::System)
-                if (auto planets = cache.catalog(system))
-                    p.contacts = extractCelestialContacts(p.universe, nav, system, *planets);
-        p.stats.celestialContacts = p.contacts.size();
     }
+    for (const auto& system : nodes)
+        if (system.address.kind() == Kind::System)
+            if (auto planets = cache.catalog(system))
+                p.contacts = extractCelestialContacts(p.universe, nav, system, *planets);
+    std::sort(p.contacts.begin(), p.contacts.end(),
+              [](const auto& a, const auto& b) { return a.distanceMetres < b.distanceMetres; });
+    if (p.contacts.size() > 8) {
+        auto selected =
+            std::find_if(p.contacts.begin() + 8, p.contacts.end(), [](const auto& c) { return c.selected; });
+        if (selected != p.contacts.end())
+            std::iter_swap(p.contacts.begin() + 7, selected);
+    }
+    const double pixelAngle = 2 * std::tan(fov * .5) / p.height;
+    for (const auto& contact : p.contacts)
+        if (contact.angularRadius > pixelAngle * .125)
+            p.skyOccluders.push_back(contact);
+    p.stats.celestialContacts = p.contacts.size();
     bgfx::touch(0);
     std::optional<Node> terrainPlanet;
     for (const auto& node : nodes)
@@ -1175,6 +1205,11 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         const auto direction = contact.localDirection;
         if (direction.z >= 0 || contact.occluded)
             continue;
+        if (contact.address.kind() == Kind::Planet && contact.angularRadius >= .008 &&
+            !rendered.contains(contact.address)) {
+            p.renderNode(p.universe.describe(contact.address), nav, cache);
+            rendered.insert(contact.address);
+        }
         const auto point = p.eye + nav.orientation * direction * 500.;
         if (auto screen = p.project(point)) {
             p.picks.push_back({contact.address, *screen, contact.distanceMetres});
@@ -1512,7 +1547,7 @@ std::optional<Address> Renderer::pick(double x, double y) const {
         const double px = x * scale, py = y * scale, w = p.width * scale;
         if (px >= w - 310 && px <= w - 40 && py >= 205) {
             const auto row = size_t((py - 205) / 34);
-            if (row < p.contacts.size())
+            if (row < std::min(size_t(8), p.contacts.size()))
                 return p.contacts[row].address;
         }
     }

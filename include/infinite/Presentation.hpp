@@ -31,10 +31,11 @@ struct CelestialContact {
     glm::vec3 color{1};
     std::string label;
     bool occluded = false, selected = false;
+    bool moon = false;
 };
 std::vector<CelestialContact> extractCelestialContacts(const Universe&, const Navigation&, const Node& system,
                                                        std::span<const Node> planets);
 bool celestialOccluded(glm::dvec3 localDirection, double distanceMetres, std::span<const CelestialContact>,
-                       const Address* except = nullptr);
+                       const Address* except = nullptr, double targetAngularRadius = 0);
 double celestialCellWeight(glm::dvec3 cellCentre, glm::dvec3 eye);
 } // namespace infinite

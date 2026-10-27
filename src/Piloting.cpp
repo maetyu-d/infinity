@@ -182,6 +182,8 @@ void Pilot::startInSystem() {
         bool found = false;
         system = galaxy.child(Kind::System, i);
         for (const auto& a : universe_.children(universe_.describe(system))) {
+            if (isMoon(a) || a.id() >= universe_.legacyPlanetCount(universe_.describe(system)))
+                continue;
             const auto p = universe_.describe(a);
             if (p.environment.temperature > 220 && p.environment.temperature < 500 &&
                 p.environment.waterActivity > .15) {
@@ -204,6 +206,7 @@ void Pilot::startInSystem() {
     landingPlanet_.reset();
     resetMotion();
     selectNextPlanet();
+    nav_.selected.reset();
     phase_ = "PLANETARY FLIGHT / Y NEXT PLANET / J NAVIGATE";
     instrument();
 }
@@ -218,17 +221,63 @@ void Pilot::selectNextPlanet() {
         return;
     }
     auto planets = universe_.children(universe_.describe(system));
+    std::erase_if(planets, [](const auto& a) { return isMoon(a); });
     if (planets.empty())
         return;
     uint64_t current = UINT64_MAX;
     if (nav_.selected && system.ancestorOf(*nav_.selected) && nav_.selected->path.size() > system.path.size())
         current = nav_.selected->path[system.path.size()].id;
-    const auto next = current == UINT64_MAX ? 0 : (current + 1) % planets.size();
+    if (current != UINT64_MAX && (current & moonIdFlag))
+        current = moonPrimary(current);
+    auto next = current == UINT64_MAX ? 0 : (current + 1) % planets.size();
+    if (planets[next] == nav_.anchor)
+        next = (next + 1) % planets.size();
     nav_.select(planets[next]);
     destination_.reset();
     landingPlanet_.reset();
     autopilot_ = landing_ = false;
     phase_ = "DESTINATION SELECTED / J NAVIGATE";
+    instrument();
+}
+void Pilot::selectNextMoon() {
+    clearWaypoint();
+    destination_.reset();
+    landingPlanet_.reset();
+    autopilot_ = landing_ = false;
+    auto body = nav_.anchor;
+    while (body.kind() > Kind::Planet)
+        body = body.parent();
+    if (nav_.selected && nav_.selected->kind() == Kind::Planet)
+        body = *nav_.selected;
+    if (body.kind() != Kind::Planet) {
+        phase_ = "SELECT OR APPROACH A PLANET FIRST";
+        instrument();
+        return;
+    }
+    if (isMoon(body))
+        body = body.parent().child(Kind::Planet, moonPrimary(body.id()));
+    const auto moons = universe_.moons(universe_.describe(body));
+    if (moons.empty()) {
+        phase_ = "NO STABLE MOONS / SELECT ANOTHER PLANET";
+        instrument();
+        return;
+    }
+    auto it = nav_.selected ? std::find(moons.begin(), moons.end(), *nav_.selected) : moons.end();
+    size_t next = it == moons.end() ? 0 : (size_t(it - moons.begin()) + 1) % moons.size();
+    if (moons[next] == nav_.anchor) {
+        if (moons.size() == 1) {
+            phase_ = "NO OTHER MOONS / Y SELECTS PLANETS";
+            instrument();
+            return;
+        }
+        next = (next + 1) % moons.size();
+    }
+    nav_.select(moons[next]);
+    waypoint_.reset();
+    destination_.reset();
+    landingPlanet_.reset();
+    autopilot_ = landing_ = false;
+    phase_ = "MOON SELECTED / J APPROACH / L LAND";
     instrument();
 }
 double Pilot::speedLimit() const {

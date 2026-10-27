@@ -399,13 +399,17 @@ std::shared_ptr<Geometry> GeometryGenerator::generate(const Node& n, unsigned lo
             appendSphere(g->solid, {radius * 9, 0, 0}, radius * .6, starColor * .8f, 10, 16, true);
         for (auto a : universe_.children(n)) {
             auto p = universe_.describe(a);
+            glm::dvec3 centre{};
+            if (isMoon(a))
+                centre = universe_.describe(n.address.child(Kind::Planet, p.satelliteOf)).frame.position;
             for (int i = 0; i < 160; ++i) {
                 auto orbit = p.orbit;
                 orbit.phase = static_cast<double>(i) * 2 * pi / 160;
                 auto b = orbit;
                 b.phase = static_cast<double>(i + 1) * 2 * pi / 160;
-                addLine(g->lines, keplerPosition(orbit, 0) / std::pow(10.0, n.frame.logRadius),
-                        keplerPosition(b, 0) / std::pow(10.0, n.frame.logRadius), {.11f, .19f, .24f});
+                addLine(g->lines, centre + keplerPosition(orbit, 0) / std::pow(10.0, n.frame.logRadius),
+                        centre + keplerPosition(b, 0) / std::pow(10.0, n.frame.logRadius),
+                        {.11f, .19f, .24f});
             }
         }
         for (int i = 0; i < 2800; ++i) {

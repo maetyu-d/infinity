@@ -311,9 +311,18 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     }
     if (!contacts.empty() && (!t.shrinking || t.hullMetres >= .001)) {
         const double x = w - 310;
-        text(h.lettering, "SYSTEM CONTACTS / Y SELECT", x, 189, 10, ice);
+        const auto moons =
+            std::count_if(contacts.begin(), contacts.end(), [](const auto& c) { return c.moon; });
+        const auto planets = std::count_if(contacts.begin(), contacts.end(), [](const auto& c) {
+            return c.address.kind() == Kind::Planet && !c.moon;
+        });
+        text(h.lettering, "Y PLANETS / SHIFT-Y MOONS", x, 171, 8, muted);
+        text(h.lettering, "SYSTEM " + std::to_string(planets) + "P / " + std::to_string(moons) + "M", x, 189,
+             10, ice);
         size_t index = 0;
         for (const auto& contact : contacts) {
+            if (index >= 8)
+                break;
             const auto color = contact.selected ? amber : (contact.occluded ? muted * .8f : pearl);
             const double y = 211 + index * 34;
             text(h.lettering, (contact.selected ? "+ " : "  ") + contact.label, x, y, 10, color, 25);
@@ -371,8 +380,9 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     if (t.navigating)
         text(h.lettering, "ETA " + duration(t.etaSeconds), 28, t.shrinking ? 167 : 128, 9, ice);
     text(h.lettering, "W/S THROTTLE  A/D STRAFE  Q/E LIFT  U/O ROLL  B BRAKE  X ASSIST", 30, 721, 9, muted);
-    text(h.lettering, "Y PLANETS  J NAVIGATE  L LAND  ENTER LAUNCH  N LONG CRUISE  Z SHRINK  V EXPLORER", 30,
-         740, 9, muted);
+    text(h.lettering,
+         "Y PLANETS  SHIFT-Y MOONS  J NAVIGATE  L LAND  ENTER LAUNCH  N LONG CRUISE  Z SHRINK  V EXPLORER",
+         30, 740, 9, muted);
     if (!notice.empty())
         text(h.lettering, notice, 30, 690, 10, ice, size_t(std::max(30., (w - 60) / 8.6)));
     return h;

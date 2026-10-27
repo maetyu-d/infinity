@@ -82,7 +82,7 @@ static Options options(int argc, char** argv) {
         else if (arg == "--help") {
             std::cout << "Infinite pilot: W/S throttle, A/D strafe, Q/E lift, U/O roll, B brake, X assist, "
                          "J navigate, L land, Enter launch, G gear, N long cruise, Z shrink, comma/period "
-                         "size, Y planets, V explorer. "
+                         "size, Y planets, Shift-Y moons, V explorer. "
                          "C mouse helm, arrows pitch/yaw, right-drag look, "
                          "-/+ speed, Shift boost, Ctrl fine, scroll scale, click select, F focus, "
                          "Backspace parent, Tab overlay, R reset, M marker, P screenshot, T tour, Esc "
@@ -434,7 +434,10 @@ int main(int argc, char** argv) {
                         case SDL_SCANCODE_Y:
                             if (pilotEnabled) {
                                 activity.selected.reset();
-                                pilot.selectNextPlanet();
+                                if (event.key.mod & SDL_KMOD_SHIFT)
+                                    pilot.selectNextMoon();
+                                else
+                                    pilot.selectNextPlanet();
                             }
                             break;
                         case SDL_SCANCODE_K:

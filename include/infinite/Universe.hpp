@@ -6,6 +6,11 @@
 
 namespace infinite {
 inline constexpr uint32_t generationRecipeVersion = 3;
+inline constexpr uint32_t populationRecipeVersion = 1;
+inline constexpr uint64_t moonIdFlag = uint64_t(1) << 63;
+bool isMoon(const Address&);
+uint64_t moonId(uint64_t primary, unsigned ordinal);
+uint64_t moonPrimary(uint64_t id);
 enum class Mineral : uint8_t { Quartz, Iron, Olivine, Ice, Graphite };
 struct Material {
     Mineral mineral;
@@ -113,6 +118,8 @@ struct Node {
     double massSolar = 1, temperatureK = 5772, luminositySolar = 1, stellarRadiusMetres = 6.957e8;
     Orbit orbit;
     unsigned companions = 0;
+    bool expandedPopulation = false;
+    uint64_t satelliteOf = UINT64_MAX;
     glm::dvec3 geographicDirection{0, 1, 0};
     glm::dquat terrainOrientation{1, 0, 0, 0};
     double planetLogRadius = 6.8;
@@ -141,7 +148,12 @@ class Universe {
     Node describe(const Address&) const;
     std::vector<Node> lineage(const Address&) const;
     std::vector<LocalFrame> frames(const Address&) const;
-    std::vector<Address> children(const Node&, size_t limit = 128) const;
+    std::vector<Address> children(const Node&, size_t limit = 512) const;
+    unsigned legacyPlanetCount(const Node& system) const;
+    unsigned planetCount(const Node& system) const;
+    unsigned moonCount(const Node& planet) const;
+    std::vector<Address> moons(const Node& planet) const;
+    double systemRadiusMetres(const Node& system) const;
     StarSample starSample(const Node& galaxy, uint64_t id) const;
     glm::dvec3 gasSample(const Node& galaxy, uint64_t id) const;
     double cosmicDensity(glm::dvec3 p, uint64_t seed) const;
@@ -162,6 +174,7 @@ class Universe {
 
   private:
     Node makeChild(const Node&, Segment) const;
+    std::shared_ptr<const std::vector<Orbit>> planetOrbits(const Node&) const;
     struct DescriptorCache;
     uint64_t seed_;
     std::shared_ptr<DescriptorCache> descriptors_;

@@ -19,6 +19,7 @@ struct FrameStats {
     size_t atmospheres = 0;
     size_t skyStars = 0;
     size_t celestialContacts = 0, celestialLights = 0, skyGas = 0, skyGalaxies = 0;
+    size_t moonWorlds = 0;
     size_t activityBodies = 0, activityVisible = 0, activityTriangles = 0, activityBytes = 0;
 };
 class Renderer {

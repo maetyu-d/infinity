@@ -76,8 +76,9 @@ static void galaxyTests(const Universe& u) {
                     check(planet.environment.temperature <= 1391 &&
                               planet.environment.peakTemperature >= planet.environment.temperature,
                           "luminous-star orbit violates solid condensation/thermal constraints");
-                    check(glm::length(planet.frame.position) < 1,
-                          "condensation-driven orbit left its system reference radius");
+                    check(glm::length(planet.frame.position) * std::pow(10., host.frame.logRadius) <
+                              u.systemRadiusMetres(host),
+                          "condensation-driven orbit left its physical system envelope");
                 }
             }
             vertical += s.position.y * s.position.y;

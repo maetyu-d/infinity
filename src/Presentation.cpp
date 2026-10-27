@@ -83,11 +83,12 @@ glm::vec3 hyperionDisplay(glm::vec3 c) {
         glm::vec3(1.f / 2.2f));
 }
 bool celestialOccluded(glm::dvec3 direction, double distance, std::span<const CelestialContact> contacts,
-                       const Address* except) {
+                       const Address* except, double targetAngularRadius) {
     for (const auto& body : contacts) {
         if ((except && body.address == *except) || body.distanceMetres >= distance || body.angularRadius <= 0)
             continue;
-        if (glm::dot(direction, body.localDirection) > std::cos(body.angularRadius))
+        const double mask = body.angularRadius - targetAngularRadius;
+        if (mask > 0 && glm::dot(direction, body.localDirection) > std::cos(mask))
             return true;
     }
     return false;
@@ -120,7 +121,7 @@ std::vector<CelestialContact> extractCelestialContacts(const Universe& universe,
         contacts.push_back({node.address, inverse * glm::normalize(delta), distance, angular,
                             star ? stellarColor(node.temperatureK) : material(node.environment.mineral).color,
                             star ? "STAR " + std::to_string(node.seed % 100000) : node.label(), false,
-                            nav.selected && *nav.selected == node.address});
+                            nav.selected && *nav.selected == node.address, isMoon(node.address)});
     };
     add(system);
     for (const auto& planet : planets) {
@@ -129,8 +130,8 @@ std::vector<CelestialContact> extractCelestialContacts(const Universe& universe,
         add(planet);
     }
     for (auto& contact : contacts)
-        contact.occluded =
-            celestialOccluded(contact.localDirection, contact.distanceMetres, contacts, &contact.address);
+        contact.occluded = celestialOccluded(contact.localDirection, contact.distanceMetres, contacts,
+                                             &contact.address, contact.angularRadius);
     return contacts;
 }
 } // namespace infinite
