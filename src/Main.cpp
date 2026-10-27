@@ -1,6 +1,7 @@
 #include "FlightValidation.hpp"
 #include "PilotValidation.hpp"
 #include "StreamingValidation.hpp"
+#include "TerrainValidation.hpp"
 #include "infinite/Continuity.hpp"
 #include "infinite/Flight.hpp"
 #include "infinite/Piloting.hpp"
@@ -29,7 +30,7 @@ struct Options {
     bool compareModes = false;
     bool flightTest = false;
     bool streamingTest = false;
-    bool pilotTest = false, explicitMode = false;
+    bool pilotTest = false, terrainTest = false, explicitMode = false;
 };
 static Options options(int argc, char** argv) {
     Options o;
@@ -54,6 +55,9 @@ static Options options(int argc, char** argv) {
             o.visualTime = 12;
         } else if (arg == "--pilot-test") {
             o.pilotTest = o.benchmark = o.smoke = o.fresh = true;
+            o.visualTime = 12;
+        } else if (arg == "--terrain-test") {
+            o.terrainTest = o.benchmark = o.smoke = o.fresh = true;
             o.visualTime = 12;
         } else if (arg == "--fresh")
             o.fresh = true;
@@ -89,7 +93,8 @@ static Options options(int argc, char** argv) {
                    "Backspace parent, F1 controls, Tab overlay, R reset, M marker, P screenshot, T tour, Esc "
                    "release mouse / quit.\nCLI: --fresh --tour --smoke-test --frames N --width N "
                    "--height N --seed N "
-                   "--benchmark-tour --flight-test --streaming-test --pilot-test --capture-dir DIR "
+                   "--benchmark-tour --flight-test --streaming-test --pilot-test --terrain-test "
+                   "--capture-dir DIR "
                    "--profile CSV "
                    "--data DIR\n";
             std::cout << "H cycles ORIGINAL / HYPERION / HYBRID. --render-mode original|hyperion|hybrid "
@@ -100,11 +105,13 @@ static Options options(int argc, char** argv) {
         } else
             throw std::invalid_argument("Unknown option " + arg);
     }
-    if (o.compareModes) {
+    if (o.compareModes || o.terrainTest) {
         o.renderMode = RenderMode::Original;
         o.visualTime = 12;
     }
-    if (((o.flightTest || o.streamingTest) && o.tour) || (o.flightTest && o.streamingTest))
+    const unsigned validationModes =
+        unsigned(o.flightTest) + unsigned(o.streamingTest) + unsigned(o.pilotTest) + unsigned(o.terrainTest);
+    if (validationModes > 1 || (validationModes && o.tour))
         throw std::invalid_argument("Choose one automated validation mode");
     if (o.width < 320 || o.height < 240 || o.width > 7680 || o.height > 4320 || o.frames < 0)
         throw std::invalid_argument("Invalid window size or frame count");
@@ -138,7 +145,7 @@ int main(int argc, char** argv) {
         RegionCache cache(universe);
         FlightController flight(universe, nav, cache);
         Pilot pilot(universe, nav, flight);
-        bool pilotEnabled = (!opt.smoke && !opt.tour) || opt.pilotTest;
+        bool pilotEnabled = (!opt.smoke && !opt.tour) || opt.pilotTest || opt.terrainTest;
         std::unique_ptr<FlightValidation> flightProof;
         if (opt.flightTest)
             flightProof = std::make_unique<FlightValidation>(universe, nav);
@@ -175,6 +182,9 @@ int main(int argc, char** argv) {
                 }
             }
             renderer.setMode(opt.renderMode);
+            std::unique_ptr<TerrainValidation> terrainProof;
+            if (opt.terrainTest)
+                terrainProof = std::make_unique<TerrainValidation>(universe, nav, pilot);
             std::unique_ptr<PilotValidation> pilotProof;
             if (opt.pilotTest)
                 pilotProof = std::make_unique<PilotValidation>(universe, nav, pilot);
@@ -608,6 +618,11 @@ int main(int argc, char** argv) {
                     if (streamingProof->finished())
                         running = false;
                 }
+                if (terrainProof) {
+                    terrainProof->observe(stats, cache, renderer, opt.captures);
+                    if (terrainProof->finished())
+                        running = false;
+                }
                 noticeTime -= dt;
                 ++frame;
                 if (frame > 10)
@@ -776,7 +791,10 @@ int main(int argc, char** argv) {
             std::cout << "peak_rss_bytes=" << usage.ru_maxrss * 1024 << '\n';
 #endif
 #endif
-            if (opt.pilotTest) {
+            if (opt.terrainTest) {
+                if (!terrainProof->finished())
+                    throw std::runtime_error("Native terrain validation incomplete");
+            } else if (opt.pilotTest) {
                 if (!pilotProof->finished())
                     throw std::runtime_error("Native piloting test incomplete");
             } else if (opt.streamingTest) {

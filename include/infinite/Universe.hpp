@@ -47,7 +47,15 @@ struct GalaxyProcess {
     double pitch = .3, axisRatio = .7, merger = 0;
     unsigned arms = 2;
 };
-enum class GeologyType : uint8_t { MobileLid, StagnantLid, IceShell };
+enum class GeologyType : uint8_t { MobileLid, StagnantLid, IceShell, GasEnvelope };
+inline constexpr uint32_t terrainRecipeVersion = 1;
+enum class TerrainType : uint8_t { None, Highlands, Volcanic, Dissected, IceRidges };
+struct TerrainProcess {
+    TerrainType type = TerrainType::None;
+    uint64_t seed = 0;
+    double wavelengthMetres = 0, reliefMetres = 0, weathering = 0;
+    glm::dquat fabric{1, 0, 0, 0};
+};
 struct Plate {
     glm::dvec3 centre, angularVelocity;
     double continental;
@@ -63,10 +71,12 @@ struct PlanetProcess {
     std::array<Plate, 12> plates;
     std::array<ImpactBasin, 24> impacts;
     std::array<glm::dvec3, 5> hotspots;
+    TerrainProcess terrain;
 };
 struct GeologySample {
     double heightMetres = 0, convergence = 0, divergence = 0, shear = 0;
     double volcanism = 0, sediment = 0, erosion = 0, cratering = 0, continental = 0;
+    double localReliefMetres = 0;
 };
 enum class RockType : uint8_t { Plutonic, Volcanic, Sedimentary, Metamorphic, Breccia, Metallic, Glacial };
 struct RockProcess {
@@ -81,8 +91,12 @@ struct CrystalProcess {
 };
 WebSample cosmicStructure(glm::dvec3, uint64_t seed);
 GalaxyProcess galaxyProcess(uint64_t, const WebSample&, double ageGyr);
-std::shared_ptr<const PlanetProcess> planetProcess(uint64_t, double logRadius, const Environment&);
+std::shared_ptr<const PlanetProcess> planetProcess(uint64_t, double logRadius, const Environment&,
+                                                   bool localTerrain = false);
 GeologySample geologySample(const PlanetProcess&, glm::dvec3 direction);
+TerrainProcess terrainProcess(const PlanetProcess&, const Environment&);
+double localTerrainHeight(const PlanetProcess&, glm::dvec3 direction, const GeologySample&);
+std::string_view terrainName(TerrainType);
 RockProcess rockProcess(uint64_t, const Environment&, const GeologySample&);
 CrystalProcess crystalProcess(uint64_t, const Environment&);
 Mineral selectMineral(uint64_t, const Environment&);
@@ -140,6 +154,7 @@ struct StarSample {
     double ageGyr = 4, metallicity = .02;
     Population population = Population::Disc;
 };
+bool hasSolidSurface(const Node&);
 glm::vec3 stellarColor(double temperatureK);
 uint64_t descriptorFingerprint(const Node&);
 class Universe {

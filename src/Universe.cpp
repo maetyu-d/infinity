@@ -55,6 +55,9 @@ glm::vec3 stellarColor(double temperatureK) {
                     static_cast<float>(std::clamp((temperatureK - 3000) / 7000, 0.0, 1.0)));
 }
 std::string Node::label() const {
+    if (address.kind() == Kind::Planet && hasSolidSurface(*this) &&
+        geology->terrain.type != TerrainType::None)
+        return std::string(terrainName(geology->terrain.type)) + " " + std::to_string(seed % 100000);
     if (address.kind() == Kind::Planet && satelliteOf != UINT64_MAX)
         return "Moon " + std::to_string(seed % 100000);
     if (address.kind() == Kind::Planet && expandedPopulation && frame.logRadius < 6.08)
@@ -460,12 +463,14 @@ Node Universe::makeChild(const Node& p, Segment s) const {
         if (env.chemistry.ice > .25 && env.temperature < 250)
             env.pressureGPa = std::min(env.pressureGPa, .12);
         env.mineral = selectMineral(n.seed, env);
-        n.geology = planetProcess(n.seed, n.frame.logRadius, env);
+        n.geology = planetProcess(n.seed, n.frame.logRadius, env, n.expandedPopulation);
         if (n.expandedPopulation)
             n.massSolar = bodyMass(n) / 1.98847e30;
         break;
     }
     case Kind::Surface: {
+        if (!hasSolidSurface(p))
+            throw std::invalid_argument("A gaseous planet has no solid surface address");
         Tile t = decodeTile(s.id);
         n.geographicDirection = tileDirection(t);
         n.frame.logRadius = p.frame.logRadius + std::log10(2.0 / (1u << t.level));
@@ -592,6 +597,8 @@ std::vector<Address> Universe::children(const Node& n, size_t limit) const {
     }
     size_t count = 0;
     auto kind = n.address.kind();
+    if (kind == Kind::Planet && !hasSolidSurface(n))
+        return {};
     switch (kind) {
     case Kind::Cosmic:
         count = 128;
@@ -634,8 +641,8 @@ std::vector<Address> Universe::children(const Node& n, size_t limit) const {
     return out;
 }
 double Universe::terrainHeight(const Node& p, glm::dvec3 d) const {
-    if (!p.geology)
-        throw std::invalid_argument("Terrain has no planetary process descriptor");
+    if (!hasSolidSurface(p))
+        throw std::invalid_argument("Terrain requires a solid planetary surface");
     return geologySample(*p.geology, d).heightMetres;
 }
 glm::dvec3 Universe::terrainDirection(const Node& p, double x, double z) const {
@@ -647,7 +654,10 @@ glm::dvec3 Universe::terrainDirection(const Node& p, double x, double z) const {
 glm::dvec3 Universe::terrainNormal(const Node& n, glm::dvec3 d) const {
     double log = n.address.kind() == Kind::Planet ? n.frame.logRadius : n.planetLogRadius;
     auto q = tangentFrame(d);
-    constexpr double step = 1e-5;
+    const double step =
+        hasSolidSurface(n) && n.geology->terrain.type != TerrainType::None
+            ? std::clamp(n.geology->terrain.wavelengthMetres / std::pow(10., log) / 512., 1e-9, 1e-5)
+            : 1e-5;
     auto point = [&](glm::dvec3 v) {
         v = glm::normalize(v);
         return v * (1 + terrainHeight(n, v) / std::pow(10.0, log));
@@ -656,10 +666,14 @@ glm::dvec3 Universe::terrainNormal(const Node& n, glm::dvec3 d) const {
     return glm::normalize(glm::cross(point(d + north) - point(d - north), point(d + east) - point(d - east)));
 }
 glm::vec3 Universe::terrainAlbedo(const Node& n, glm::dvec3 d) const {
+    if (!hasSolidSurface(n))
+        throw std::invalid_argument("Terrain albedo requires a solid surface");
     const auto field = geologySample(*n.geology, d);
     return terrainAlbedo(n, d, field);
 }
 glm::vec3 Universe::terrainAlbedo(const Node& n, glm::dvec3, const GeologySample& field) const {
+    if (!hasSolidSurface(n))
+        throw std::invalid_argument("Terrain albedo requires a solid surface");
     double log = n.address.kind() == Kind::Planet ? n.frame.logRadius : n.planetLogRadius;
     double h = field.heightMetres / std::pow(10.0, log);
     glm::vec3 color;
@@ -796,6 +810,18 @@ uint64_t descriptorFingerprint(const Node& n) {
         }
         for (auto hotspot : p.hotspots)
             vec(hotspot);
+        if (p.terrain.type != TerrainType::None) {
+            add(terrainRecipeVersion);
+            add(static_cast<uint64_t>(p.terrain.type));
+            add(p.terrain.seed);
+            real(p.terrain.wavelengthMetres);
+            real(p.terrain.reliefMetres);
+            real(p.terrain.weathering);
+            real(p.terrain.fabric.w);
+            real(p.terrain.fabric.x);
+            real(p.terrain.fabric.y);
+            real(p.terrain.fabric.z);
+        }
     }
     add(static_cast<uint64_t>(n.rock.type));
     vec(n.rock.axes);

@@ -52,7 +52,8 @@ enum class Feature : uint64_t {
     RockFabric = 0x666162726963,
     CrystalGrowth = 0x6372797374616c,
     ThermalMotion = 0x746865726d616c,
-    Substitution = 0x7375627374
+    Substitution = 0x7375627374,
+    LocalRelief = 0x72656c696566
 };
 uint64_t featureSeed(uint64_t objectSeed, Feature, uint64_t featureId);
 uint64_t seedOf(const Address&, uint64_t universeSeed = 0x494e46494e495445ULL);

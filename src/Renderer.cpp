@@ -949,7 +949,6 @@ struct Renderer::Impl {
         for (unsigned i = 0; i < 3; ++i)
             pattern[i] = glm::dvec4(mapping.linear[i] * units, 0);
         pattern[3] = glm::dvec4(mapping(eye * units), 1);
-        const auto program = hyperion->geometryProgram();
         for (const auto& patch : terrain.patches()) {
             const auto& g = *patch.geometry;
             std::array<glm::dvec3, 81> points;
@@ -964,14 +963,16 @@ struct Renderer::Impl {
                 radius = std::max(radius, glm::length(p - centre));
             if (!LOD::visible(cameraInverse * centre, radius, double(width) / height, fieldOfView))
                 continue;
+            const bool smoothTerrain = mode != RenderMode::Original && g.terrainNormals.size() == 81;
             const uint32_t count = uint32_t(g.solid.indexCount());
-            if (bgfx::getAvailTransientVertexBuffer(81, layout) < 81 ||
+            if ((smoothTerrain && bgfx::getAvailTransientVertexBuffer(81, normalLayout) < 81) ||
+                bgfx::getAvailTransientVertexBuffer(81, layout) < 81 ||
                 bgfx::getAvailTransientIndexBuffer(count, false) < count ||
                 bgfx::getAvailInstanceDataBuffer(1, 80) < 1) {
                 ++stats.uploadDeferred;
                 continue;
             }
-            bgfx::TransientVertexBuffer vertices;
+            bgfx::TransientVertexBuffer vertices, normals;
             bgfx::TransientIndexBuffer indices;
             bgfx::InstanceDataBuffer instances;
             bgfx::allocTransientVertexBuffer(&vertices, 81, layout);
@@ -981,6 +982,13 @@ struct Renderer::Impl {
             for (unsigned i = 0; i < points.size(); ++i)
                 data[i] = {float(points[i].x), float(points[i].y), float(points[i].z),
                            g.solid.vertices[i].color};
+            if (smoothTerrain) {
+                bgfx::allocTransientVertexBuffer(&normals, 81, normalLayout);
+                auto output = reinterpret_cast<ShadingNormal*>(normals.data);
+                for (unsigned i = 0; i < 81; ++i)
+                    output[i] = packNormal(glm::vec3(
+                        glm::normalize(glm::dmat3(transform.linear) * glm::dvec3(g.terrainNormals[i]))));
+            }
             std::memcpy(indices.data, g.solid.indexData(), count * 2);
             const Instance identity{glm::mat4(1), glm::vec4(1)};
             std::memcpy(instances.data, &identity, sizeof(identity));
@@ -999,18 +1007,21 @@ struct Renderer::Impl {
                     glm::vec4(glm::vec3(glm::mod(glm::dvec3(pattern[3]) * frequency, glm::dvec3(64))), 1);
                 relief = float(.36 / std::pow(10., nav.logDistance));
             }
-            hyperion->bind(presentation, {}, glm::vec3(light), glm::mat4(pattern), -1, visualTime, cavity,
-                           micro, relief);
+            hyperion->bind(presentation, {}, glm::vec3(light), glm::mat4(pattern),
+                           smoothTerrain ? -2.f : -1.f, visualTime, cavity, micro, relief);
             bgfx::setVertexBuffer(0, &vertices);
+            if (smoothTerrain)
+                bgfx::setVertexBuffer(1, &normals);
             bgfx::setIndexBuffer(&indices);
             bgfx::setInstanceDataBuffer(&instances);
             bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z |
                            BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_MSAA);
-            bgfx::submit(1, program);
+            bgfx::submit(1, hyperion->geometryProgram(smoothTerrain));
             ++stats.terrainTiles;
             stats.vertices += 81;
             stats.triangles += count / 3;
-            stats.uploadBytes += 81 * sizeof(Vertex) + count * 2;
+            stats.uploadBytes +=
+                81 * sizeof(Vertex) + count * 2 + (smoothTerrain ? 81 * sizeof(ShadingNormal) : 0);
         }
         if (terrain.morphing())
             ++stats.lodTransitions;
@@ -1277,7 +1288,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     bgfx::touch(0);
     std::optional<Node> terrainPlanet;
     for (const auto& node : nodes)
-        if (node.address.kind() == Kind::Planet)
+        if (node.address.kind() == Kind::Planet && hasSolidSurface(node))
             terrainPlanet = node;
     if (terrainPlanet) {
         const auto planetEye = p.universe.pointRelative(

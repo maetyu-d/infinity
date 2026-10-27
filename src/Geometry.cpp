@@ -419,6 +419,8 @@ std::shared_ptr<Geometry> GeometryGenerator::generate(const Node& n, unsigned lo
                  {.3f, .25f, .19f},
                  .00014f});
         }
+    } else if (kind == Kind::Planet && !hasSolidSurface(n)) {
+        appendSphere(g->solid, {}, 1, {.24f, .36f, .48f}, 24, 40);
     } else if (kind == Kind::Planet) {
         glm::dvec3 direction = viewKey ? tileDirection({static_cast<int>(viewKey - 1), 0, 0, 0})
                                        : glm::normalize(glm::dvec3(.3, .2, 1));
@@ -507,6 +509,8 @@ std::shared_ptr<Geometry> GeometryGenerator::section(const Node& parent, const A
         planet = universe_.describe(address);
         planetFrames = universe_.frames(address);
     }
+    if (planet && !hasSolidSurface(*planet))
+        return {};
     PointTransform planetTransform;
     if (planet)
         planetTransform =

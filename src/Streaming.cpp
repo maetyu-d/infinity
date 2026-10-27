@@ -172,10 +172,46 @@ Tile terrainNeighbor(Tile t, unsigned edge) {
 std::vector<Tile> terrainFrontier(glm::dvec3 eye, double altitude, double pixels, size_t budget) {
     budget = std::clamp(budget, size_t(6), size_t(384));
     const auto direction = glm::length(eye) > 0 ? glm::normalize(eye) : glm::dvec3(0, 1, 0);
+    std::array<glm::dvec2, 6> projected;
+    std::array<bool, 6> facing;
+    for (unsigned face = 0; face < 6; ++face) {
+        const unsigned axis = face / 2;
+        const double signedComponent = direction[axis] * (face % 2 ? -1. : 1.);
+        facing[face] = signedComponent > 1e-15;
+        if (!facing[face])
+            continue;
+        switch (face) {
+        case 0:
+            projected[face] = {-direction.z / signedComponent, direction.y / signedComponent};
+            break;
+        case 1:
+            projected[face] = {direction.z / signedComponent, direction.y / signedComponent};
+            break;
+        case 2:
+            projected[face] = {direction.x / signedComponent, -direction.z / signedComponent};
+            break;
+        case 3:
+            projected[face] = {direction.x / signedComponent, direction.z / signedComponent};
+            break;
+        case 4:
+            projected[face] = {direction.x / signedComponent, direction.y / signedComponent};
+            break;
+        default:
+            projected[face] = {-direction.x / signedComponent, direction.y / signedComponent};
+            break;
+        }
+    }
     auto error = [&](Tile tile) {
-        double width = std::ldexp(2.5, -int(tile.level));
-        double lateral = std::max(0., glm::length(tileDirection(tile) - direction) - width);
-        double distance = std::max(1e-15, std::hypot(std::abs(altitude), lateral));
+        const double width = std::ldexp(2.5, -int(tile.level));
+        double lateral = 1.;
+        if (facing[tile.face]) {
+            const double span = std::ldexp(2., -int(tile.level));
+            const glm::dvec2 lo(-1. + tile.x * span, -1. + tile.y * span);
+            const auto uv = glm::clamp(projected[tile.face], lo, lo + span);
+            const auto nearest = cubeDirection(tile.face, uv.x, uv.y);
+            lateral = glm::length(nearest - direction);
+        }
+        const double distance = std::max(1e-15, std::hypot(std::abs(altitude), lateral));
         return width * pixels / (terrainCells * distance * 2 * std::tan(.5));
     };
     std::map<uint64_t, Tile> leaves;
@@ -192,8 +228,22 @@ std::vector<Tile> terrainFrontier(glm::dvec3 eye, double altitude, double pixels
                 }
         if (best == leaves.end())
             break;
-        const auto tile = best->second;
-        leaves.erase(best);
+        auto tile = best->second;
+        // Refine coarse neighbours before their finer dependant. Maintaining
+        // 2:1 balance while spending the budget avoids discarding the nearest
+        // high-detail tiles in a final merge pass.
+        for (unsigned depth = 0; depth < 24; ++depth) {
+            std::optional<Tile> coarse;
+            for (unsigned edge = 0; edge < 4; ++edge)
+                if (auto n = covering(leaves, terrainNeighbor(tile, edge)); n && n->level < tile.level) {
+                    coarse = n;
+                    break;
+                }
+            if (!coarse)
+                break;
+            tile = *coarse;
+        }
+        leaves.erase(id(tile));
         for (auto child : children(tile))
             leaves.emplace(id(child), child);
     }
@@ -272,6 +322,8 @@ glm::dvec3 terrainVertexDirection(uint64_t key) {
 }
 std::shared_ptr<Geometry> terrainGeometry(const Universe& u, const Node& planet, Tile tile, unsigned stitch,
                                           const std::atomic<bool>* cancel) {
+    if (!hasSolidSurface(planet))
+        return {};
     auto begin = std::chrono::steady_clock::now();
     auto g = std::make_shared<Geometry>();
     g->address = g->referenceFrame = planet.address;
@@ -292,6 +344,8 @@ std::shared_ptr<Geometry> terrainGeometry(const Universe& u, const Node& planet,
                 u.terrainAlbedo(planet, d) *
                 float(.19 + .81 * std::max(0., glm::dot(normal, glm::normalize(glm::dvec3(-.5, .8, 1)))));
             g->precisePositions.push_back(p);
+            if (planet.geology->terrain.type != TerrainType::None)
+                g->terrainNormals.emplace_back(normal);
             g->solid.vertices.push_back({float(p.x), float(p.y), float(p.z), rgba(color)});
         }
     }
@@ -365,6 +419,10 @@ glm::dvec3 TerrainStreamer::position(const TerrainPatch& patch, unsigned vertex)
 }
 void TerrainStreamer::update(const Node& planet, glm::dvec3 eye, double height, double dt,
                              RegionCache& cache) {
+    if (!hasSolidSurface(planet)) {
+        clear();
+        return;
+    }
     if (!planet_ || *planet_ != planet.address) {
         clear();
         planet_ = planet.address;

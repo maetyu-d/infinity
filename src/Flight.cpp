@@ -151,7 +151,8 @@ void FlightController::update(glm::dvec3 axes, double dt, bool fast, bool precis
         if (closest != UINT64_MAX)
             nearest = universe_.describe(node.address.child(Kind::System, closest));
     }
-    if (node.address.kind() == Kind::Planet && glm::length(eye) < radius * 1.6 && glm::length(eye) > 0)
+    if (node.address.kind() == Kind::Planet && hasSolidSurface(node) && glm::length(eye) < radius * 1.6 &&
+        glm::length(eye) > 0)
         consider(universe_.describe(surfaceAt(node.address, eye)));
     // Re-centre a terrain sampling frame laterally without re-rolling geology.
     if (node.address.kind() == Kind::Surface && glm::length(glm::dvec2(eye.x, eye.z)) > radius * .9) {
@@ -171,7 +172,7 @@ void FlightController::update(glm::dvec3 axes, double dt, bool fast, bool precis
     }
     target_ = nearest ? std::optional<Address>(nearest->address) : std::nullopt;
     double clearance = nearest ? nearestDistance : std::max(glm::length(eye), radius * .2);
-    if (node.address.kind() == Kind::Planet && glm::length(eye) > 0) {
+    if (node.address.kind() == Kind::Planet && hasSolidSurface(node) && glm::length(eye) > 0) {
         const auto direction = glm::normalize(eye);
         const double surface =
             radius * (1 + universe_.terrainHeight(node, direction) / std::pow(10., node.frame.logRadius));

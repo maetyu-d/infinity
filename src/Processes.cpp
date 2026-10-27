@@ -78,7 +78,8 @@ GalaxyProcess galaxyProcess(uint64_t seed, const WebSample& web, double age) {
     m.gasFraction *= std::clamp(1.3 - age / 25, .6, 1.3);
     return m;
 }
-std::shared_ptr<const PlanetProcess> planetProcess(uint64_t seed, double logRadius, const Environment& e) {
+std::shared_ptr<const PlanetProcess> planetProcess(uint64_t seed, double logRadius, const Environment& e,
+                                                   bool localTerrain) {
     auto p = std::make_shared<PlanetProcess>();
     p->seed = seed;
     p->logRadius = logRadius;
@@ -112,9 +113,13 @@ std::shared_ptr<const PlanetProcess> planetProcess(uint64_t seed, double logRadi
     }
     for (size_t i = 0; i < p->hotspots.size(); ++i)
         p->hotspots[i] = sphere(r, 1000 + i * 2);
+    if (localTerrain)
+        p->terrain = terrainProcess(*p, e);
     return p;
 }
 GeologySample geologySample(const PlanetProcess& p, glm::dvec3 d) {
+    if (p.type == GeologyType::GasEnvelope)
+        return {};
     d = glm::normalize(d);
     GeologySample s;
     std::array<double, 12> weights;
@@ -180,7 +185,8 @@ GeologySample geologySample(const PlanetProcess& p, glm::dvec3 d) {
         // Extensional belts in a buoyant icy shell and subdued impact relief.
         height = height * .35 + .0015 * s.divergence - .001 * s.shear + fine * .00015;
     }
-    s.heightMetres = std::pow(10.0, p.logRadius) * height;
+    s.localReliefMetres = localTerrainHeight(p, d, s);
+    s.heightMetres = std::pow(10.0, p.logRadius) * height + s.localReliefMetres;
     return s;
 }
 RockProcess rockProcess(uint64_t seed, const Environment& e, const GeologySample& site) {
@@ -405,7 +411,7 @@ std::string_view processName(GalaxyType t) {
 }
 std::string_view processName(GeologyType t) {
     constexpr std::array names{"MOBILE LID / PLATE MOTION", "STAGNANT LID / HOTSPOTS",
-                               "ICE SHELL / EXTENSION"};
+                               "ICE SHELL / EXTENSION", "GAS ENVELOPE / NO SOLID SURFACE"};
     return names.at(static_cast<size_t>(t));
 }
 std::string_view processName(RockType t) {

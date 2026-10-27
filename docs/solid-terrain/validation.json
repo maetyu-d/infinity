@@ -1,0 +1,98 @@
+{
+  "version": "0.18.0",
+  "checkpoint": "baa0425",
+  "base_recipe": 3,
+  "population_recipe": 1,
+  "local_terrain_recipe": 1,
+  "backend": "Metal",
+  "resolution": [
+    1440,
+    900
+  ],
+  "legacy_snapshot_records": 120,
+  "legacy_snapshot_exact": true,
+  "before": {
+    "frames": 1791,
+    "median_frame_ms": 16.6622,
+    "p95_frame_ms": 17.9836,
+    "peak_rss_bytes": 160940032,
+    "peak_cpu_cache_bytes": 13863972,
+    "effect_target_bytes": 17856000,
+    "stationary_orbit": {
+      "samples": 19,
+      "cpu_ms": 2.88817,
+      "gpu_ms": 7.59329
+    }
+  },
+  "after": {
+    "frames": 1817,
+    "median_frame_ms": 16.6629,
+    "p95_frame_ms": 17.1019,
+    "peak_rss_bytes": 159318016,
+    "peak_cpu_cache_bytes": 11311788,
+    "effect_target_bytes": 17856000,
+    "stationary_orbit": {
+      "samples": 19,
+      "cpu_ms": 2.97208,
+      "gpu_ms": 8.62579
+    }
+  },
+  "new_terrain_fixture": {
+    "frames": 1582,
+    "median_frame_ms": 16.6642,
+    "p95_frame_ms": 18.2045,
+    "peak_rss_bytes": 143015936,
+    "peak_cpu_cache_bytes": 10629168,
+    "effect_target_bytes": 17856000
+  },
+  "terrain_worlds": [
+    {
+      "address": "0,0,0/1:0/2:1/3:10",
+      "label": "Highlands 63563",
+      "seed": 2479389991650763563,
+      "local_range_m": 624.803
+    },
+    {
+      "address": "0,0,0/1:0/2:1/3:9",
+      "label": "Volcanic 63049",
+      "seed": 16528333290446363049,
+      "local_range_m": 744.417
+    },
+    {
+      "address": "0,0,0/1:0/2:0/3:7",
+      "label": "Canyons 49248",
+      "seed": 15815011247700949248,
+      "local_range_m": 971.94
+    },
+    {
+      "address": "0,0,0/1:0/2:0/3:9",
+      "label": "Ice ridges 78904",
+      "seed": 10092611231916978904,
+      "local_range_m": 335.743
+    }
+  ],
+  "notes": "The before/after flight fixture follows the same actions/seed at 1440x900 with fixed visual time, but its readiness waits can change total frame count. Orbit samples use the first uninterrupted Hyperion block, trimmed by five frames at each end. New terrain is measured separately on four actual catalogue worlds in three modes. Single-run VSync-limited observations; patch, upload, worker and cache budgets are unchanged.",
+  "package": {
+    "version": "0.18.0",
+    "build": "18",
+    "all_code_and_data_sections_match": true,
+    "section_count": 28,
+    "signature_verified": true,
+    "normal_saved_flight_resumed": true,
+    "live_hyperion_mode_verified": true,
+    "terrain_labels_visible_in_live_flight": true
+  },
+  "release_suite": {
+    "passed": 32,
+    "failed": 0,
+    "seconds": 228.39
+  },
+  "native_terrain_proof": {
+    "worlds": 4,
+    "modes": 3,
+    "images": 12,
+    "geometry_identical": true,
+    "camera_identical": true,
+    "terrain_range_measured": true
+  }
+}

@@ -25,8 +25,11 @@ void main(){
  if(primitive>1.5){gl_FragColor=vec4(base*(1.+strength*.28),v_color0.a);return;}
  vec3 V=normalize(u_hyperion[2].xyz-v_position),L=normalize(u_hyperion[3].xyz);
  vec3 N=normalize(cross(dFdx(v_position),dFdy(v_position)));
- if(primitive>.1 && primitive<1.5)N=normalize(v_sphere);
- if(dot(N,V)<0.)N=-N;
+ if((primitive>.1 && primitive<1.5) || primitive< -1.5)N=normalize(v_sphere);
+ // A field normal can lean behind the view while its coarse LOD triangle
+ // remains visible. Reversing it would invert sun lighting into black seams.
+ if(primitive< -1.5){float nv=dot(N,V);if(nv<.025)N=normalize(N+V*(.025-nv));}
+ else if(dot(N,V)<0.)N=-N;
  bool planet=u_materialDomain.x>.5 && u_materialDomain.x<1.5;
  bool atom=primitive>.5 || (u_materialDomain.x>1.5 && u_materialDomain.x<2.5);
  bool craft=u_materialDomain.x>2.5;
@@ -38,7 +41,7 @@ void main(){
   radial=normalize(radial/max(max(abs(radial.x),max(abs(radial.y),abs(radial.z))),1e-30));
   if(dot(radial,V)<0.)radial=-radial;
   float slope=1.-clamp(dot(radial,N),0.,1.);
-  if(primitive<.1)N=normalize(mix(radial,N,.08+.92*smoothstep(.004,.045,slope)));
+  if(primitive<.1 && primitive> -1.5)N=normalize(mix(radial,N,.08+.92*smoothstep(.004,.045,slope)));
  }
  float elevation=planet?.5+(length(p)-1.)*32.:dot(p,vec3(.31,.73,.19));
  float detail=sin(n.x*13.+sin(n.z*6.))*.13;

@@ -410,6 +410,8 @@ std::optional<Pilot::Ground> Pilot::ground() const {
     if (!address)
         return {};
     const auto p = universe_.describe(*address);
+    if (!hasSolidSurface(p))
+        return {};
     const auto pose = universe_.relative(*address, nav_.anchor, nav_.logDistance);
     const double factor = std::pow(10., nav_.logDistance - p.frame.logRadius);
     const auto local = glm::inverse(pose.orientation) * (nav_.cameraPosition() - pose.position) * factor;
@@ -446,6 +448,8 @@ void Pilot::navigate(const Address& a) {
                 ? universe_.describe(a).geographicDirection
                 : unit(glm::inverse(pose.orientation) * (nav_.cameraPosition() - pose.position));
     } else
+        landingPlanet_.reset();
+    if (landingPlanet_ && !hasSolidSurface(universe_.describe(*landingPlanet_)))
         landingPlanet_.reset();
     phase_ = "DEPARTURE / ALIGNING";
     instrument();
