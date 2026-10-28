@@ -1,0 +1,79 @@
+{
+  "release": "0.21.0",
+  "baseline_commit": "335d1ed",
+  "recipes": {
+    "universe": 3,
+    "population": 1,
+    "terrain": 1,
+    "climate": 1,
+    "society": 1,
+    "city": 1
+  },
+  "tests": {
+    "release_passed": 37,
+    "failed": 0,
+    "release_elapsed_s": 276.09,
+    "final_cloud_passed": 2,
+    "final_cloud_elapsed_s": 39.34,
+    "surface_sites_preserved": 62,
+    "legacy_universe_records": 120,
+    "city_native_views": 7,
+    "city_native_images": 21,
+    "all_scale_mode_proofs": 17,
+    "explorable_scales": 9,
+    "shadow_frame_rebase_zoom_cases": 800
+  },
+  "performance": {
+    "before": {
+      "whole_tour": {
+        "median_ms": 16.6663,
+        "p95_ms": 17.376,
+        "frames": 2220,
+        "core_cache_bytes": 9679712,
+        "peak_rss_bytes": 151404544
+      },
+      "city_approach": {
+        "sample_frames": 8,
+        "first_frame": 704,
+        "last_frame": 711,
+        "cpu_median_ms": 6.535315,
+        "gpu_median_ms": 10.93095
+      },
+      "max_effect_bytes": 17856000,
+      "surface_bytes": 2214704,
+      "surface_gpu_bytes": 541900
+    },
+    "after": {
+      "whole_tour": {
+        "median_ms": 16.6644,
+        "p95_ms": 17.1898,
+        "frames": 2086,
+        "core_cache_bytes": 9699152,
+        "peak_rss_bytes": 150175744
+      },
+      "city_approach": {
+        "sample_frames": 8,
+        "first_frame": 645,
+        "last_frame": 652,
+        "cpu_median_ms": 6.45044,
+        "gpu_median_ms": 7.2997700000000005
+      },
+      "max_effect_bytes": 26244608,
+      "surface_bytes": 2214704,
+      "surface_gpu_bytes": 562636,
+      "shadow_bytes": 8388608,
+      "shadow_updates": 4,
+      "shadow_active_frames": 150
+    }
+  },
+  "original_world_crops_pixel_identical": 7,
+  "measurement_notes": "Single 1440x900 Metal VSync validation runs on the same host. Same seven fixture views, camera, geometry and frozen time; frame counts differ with asynchronous readiness. Whole-tour percentiles include loading/captures. City HYPERION sample removes first two/last five frames from its 15-frame interval (8 samples), avoiding screenshot readback and first shadow upload. Timings and RSS are descriptive; no causal speed or memory reduction is claimed. The fixed additional shadow texture is exactly 8 MiB.",
+  "normal_app_launch": {
+    "verified_by": "native app screenshot",
+    "navigation": "MANUAL / FLIGHT RESTORED",
+    "destination": "MINERAL GRAIN 53258",
+    "ship": "12.0 mm, shrink field active",
+    "render_mode": "HYPERION",
+    "repositioned_by_agent": false
+  }
+}

@@ -1,6 +1,7 @@
 #include "infinite/SurfaceShading.hpp"
 #include <algorithm>
 #include <cmath>
+#include <glm/gtc/matrix_transform.hpp>
 #include <unordered_map>
 
 namespace infinite {
@@ -108,5 +109,32 @@ unsigned atomPresentationLevel(double pixels, bool original) {
     if (!original && pixels > 48)
         return 3;
     return pixels > 18 ? 2 : pixels > 6 ? 1 : 0;
+}
+SunShadowFrame sunShadowFrame(glm::dvec3 anchor, glm::dvec3 light, glm::dquat rotation, glm::dvec3 eye,
+                              double units, double span, bool homogeneous, bool bottom) {
+    SunShadowFrame result;
+    light = glm::normalize(light);
+    const auto right = glm::normalize(
+        glm::cross(-light, std::abs(light.y) < .9 ? glm::dvec3(0, 1, 0) : glm::dvec3(1, 0, 0)));
+    const auto up = glm::normalize(glm::cross(right, -light));
+    const double texel = span / sunShadowResolution;
+    anchor += right * (std::round(glm::dot(anchor, right) / texel) * texel - glm::dot(anchor, right));
+    anchor += up * (std::round(glm::dot(anchor, up) / texel) * texel - glm::dot(anchor, up));
+    result.anchorPlanet = anchor;
+    result.lightPlanet = light;
+    result.spanMetres = span;
+    const auto centre = rotation * (anchor - eye) / units;
+    const double size = span / units;
+    result.view = glm::lookAtRH(centre + rotation * light * (size * 1.5), centre, rotation * up);
+    result.projection =
+        homogeneous ? glm::orthoRH_NO(-size * .5, size * .5, -size * .5, size * .5, size * .001, size * 3.)
+                    : glm::orthoRH_ZO(-size * .5, size * .5, -size * .5, size * .5, size * .001, size * 3.);
+    glm::dmat4 bias(1);
+    bias[0][0] = .5;
+    bias[1][1] = bottom ? .5 : -.5;
+    bias[2][2] = homogeneous ? .5 : 1.;
+    bias[3] = {.5, .5, homogeneous ? .5 : 0., 1};
+    result.textureFromWorld = bias * result.projection * result.view;
+    return result;
 }
 } // namespace infinite

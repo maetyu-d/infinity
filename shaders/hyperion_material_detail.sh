@@ -1,5 +1,4 @@
 SAMPLER2D(s_materialDetail,3);
-uniform vec4 u_surface;
 // Hyperion closeMaterial's three planar samples, with complete mipmaps.
 // The 16 m planet tile divides the modulo-64 origin period exactly, so
 // floating-origin changes cannot shift its phase. Rocks inherit their own

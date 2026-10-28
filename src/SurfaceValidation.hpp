@@ -146,7 +146,9 @@ class SurfaceValidation {
                   << " residents=" << stats.surfaceResidents << " triangles=" << stats.surfaceTriangles
                   << " cloud_cells=" << stats.weatherCells << " cpu_bytes=" << stats.surfaceBytes
                   << " gpu_bytes=" << stats.surfaceGpuBytes << " precipitation=" << stats.weatherParticles
-                  << " frame=" << frames_ << '\n';
+                  << " frame=" << frames_ << " shadow_bytes=" << stats.shadowBytes
+                  << " shadow_active=" << stats.shadowActive << " shadow_updates=" << stats.shadowUpdates
+                  << '\n';
         if (stage_ == 1 && mode_ == 0)
             for (const auto& city : renderedWorld->settlements)
                 std::cout << "CITY_LAYOUT " << city.name << " pattern=" << cityPatternName(city.pattern)

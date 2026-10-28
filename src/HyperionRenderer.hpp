@@ -1,5 +1,6 @@
 #pragma once
 #include "infinite/Presentation.hpp"
+#include "infinite/SurfaceShading.hpp"
 #include <array>
 #include <bgfx/bgfx.h>
 #include <memory>
@@ -20,6 +21,24 @@ class HyperionRenderer {
               const glm::mat4& pattern, float primitive, double visualTime, glm::vec4 cavity = {},
               const glm::mat4& micro = glm::mat4(0), float relief = 0);
     void bindEmissions(const Node&, const glm::mat4& pattern, double visualTime);
+    bool prepareSun(const SunShadowFrame&, uint64_t stableKey, glm::dquat cameraRotation, float aspect,
+                    float tanHalfFov);
+    bgfx::ProgramHandle sunProgram();
+    bgfx::ProgramHandle cloudProgram();
+    bool sunActive() const {
+        return sunActive_;
+    }
+    size_t sunBytes() const {
+        return sunBytes_;
+    }
+    bool sunUpdated() const {
+        return sunUpdated_;
+    }
+    void completeSun(bool complete) {
+        sunValid_ = complete;
+        if (!complete)
+            sunActive_ = false;
+    }
     bgfx::ProgramHandle geometryProgram(bool smooth = false);
     bgfx::ProgramHandle glowProgram() const {
         return glow_;
@@ -31,7 +50,7 @@ class HyperionRenderer {
         return detailBytes_;
     }
     size_t targetBytes() const {
-        return bytes_;
+        return bytes_ + sunBytes_;
     }
 
   private:
@@ -69,5 +88,18 @@ class HyperionRenderer {
     bgfx::UniformHandle domain_ = BGFX_INVALID_HANDLE, skyParams_ = BGFX_INVALID_HANDLE,
                         skyRotation_ = BGFX_INVALID_HANDLE;
     bgfx::ProgramHandle sky_ = BGFX_INVALID_HANDLE;
+    bgfx::FrameBufferHandle sunTarget_ = BGFX_INVALID_HANDLE;
+    bgfx::ProgramHandle sunProgram_ = BGFX_INVALID_HANDLE;
+    bgfx::ProgramHandle cloudProgram_ = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle sunSampler_ = BGFX_INVALID_HANDLE, sunMatrix_ = BGFX_INVALID_HANDLE,
+                        sunParams_ = BGFX_INVALID_HANDLE, cameraScreen_ = BGFX_INVALID_HANDLE;
+    glm::mat4 sunFromCamera_{1};
+    glm::vec4 screenParams_{};
+    glm::dvec3 sunAnchor_{}, sunLight_{};
+    double sunSpan_ = 0;
+    float sunDepthScale_ = 0;
+    uint64_t sunKey_ = 0;
+    size_t sunBytes_ = 0;
+    bool sunActive_ = false, sunValid_ = false, sunUpdated_ = false;
 };
 } // namespace infinite

@@ -1276,7 +1276,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         std::any_of(nodes.begin(), nodes.end(), [](const Node& n) {
             return n.address.kind() == Kind::Planet && planetClimate(n).pressureBar > .015;
         });
-    p.hyperion->begin(p.mode, p.width, p.height, opticalDepth, bool(p.instruments));
+    p.hyperion->begin(p.mode, p.width, p.height, bool(p.instruments), bool(p.instruments));
     p.staticUploadBytes += p.hyperion->materialUploadBytes();
     p.stats.uploadBytes += p.hyperion->materialUploadBytes();
     bgfx::setViewMode(0,
@@ -1675,6 +1675,9 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     const auto* st = bgfx::getStats();
     p.stats.gpuBytes = p.gpuBytes + p.craftBytes + p.surfaceMeshBytes;
     p.stats.effectBytes = p.hyperion->targetBytes();
+    p.stats.shadowBytes = p.hyperion->sunBytes();
+    p.stats.shadowUpdates = p.hyperion->sunUpdated();
+    p.stats.shadowActive = p.hyperion->sunActive();
     p.stats.materialBytes = p.hyperion->materialBytes();
     p.stats.drawCalls = st->numDraw;
     p.stats.gpuMs = st->gpuTimerFreq

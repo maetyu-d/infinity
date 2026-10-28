@@ -4,6 +4,7 @@ uniform vec4 u_hyperion[4];
 uniform vec4 u_cavity;
 uniform vec4 u_materialDomain;
 uniform mat4 u_pattern;
+uniform vec4 u_surface;
 #if INFINITE_FLIGHT_RELIEF
 uniform mat4 u_micro;
 uniform vec4 u_microParams;
@@ -17,6 +18,7 @@ vec3 brdf(vec3 albedo,vec3 N,vec3 V,vec3 L,float rough,float metallic) {
  vec3 F0=mix(vec3(.035),albedo,metallic),F=F0+(1.-F0)*pow(1.-vh,5.);
  return ((1.-F)*(1.-metallic)*albedo/3.14159+F*D*G/max(4.*nv*max(nl,.001),.001))*nl*3.8;
 }
+#include "hyperion_architecture.sh"
 void main(){
  float strength=u_hyperion[0].x,seconds=u_hyperion[0].y,phase=u_hyperion[0].z,primitive=u_hyperion[0].w;
  if(primitive<-.5 && u_cavity.w>0. && length(v_position-u_cavity.xyz)<u_cavity.w)discard;
@@ -30,6 +32,9 @@ void main(){
  // remains visible. Reversing it would invert sun lighting into black seams.
  if(primitive< -1.5){float nv=dot(N,V);if(nv<.025)N=normalize(N+V*(.025-nv));}
  else if(dot(N,V)<0.)N=-N;
+ if(u_materialDomain.x>3.5 && u_materialDomain.x<4.5){
+  gl_FragColor=vec4(mix(base,architecture(base,N,V,L,v_pattern,v_sphere.y,phase,seconds),strength*.98),v_color0.a);return;
+ }
  bool planet=u_materialDomain.x>.5 && u_materialDomain.x<1.5;
  bool atom=primitive>.5 || (u_materialDomain.x>1.5 && u_materialDomain.x<2.5);
  bool craft=u_materialDomain.x>2.5;
@@ -49,9 +54,11 @@ void main(){
  vec3 tapestry=vec3(0.),flow=vec3(0.);
  if(!atom && !craft){tapestry=ecstatic(n,phase+.15,seconds);flow=silk(n,phase,seconds);}
  vec3 spectral=base*.30+mineral*.52+tapestry*.52;
+ if(planet)spectral=base*.48+mineral*.22+tapestry*.14;
  vec3 albedo=mix(base,spectral,u_hyperion[1].z);
  if(atom || craft)albedo=base;
- else albedo*=.62; // Baked Infinite colours already include illumination.
+ else albedo*=planet?.76:.62; // Baked Infinite colours already include illumination.
+ if(planet)albedo=mix(vec3(dot(albedo,vec3(.299,.587,.114)))*vec3(.86,.94,1.),albedo,.48);
  float rough=u_hyperion[1].x,microVein=0.,cavity=1.;
  vec3 microGlow=vec3(0.);
 #if INFINITE_FLIGHT_RELIEF

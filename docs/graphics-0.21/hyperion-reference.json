@@ -1,0 +1,6 @@
+{
+  "../Hyperion/src/flight/lighting.hpp": "cc1e948cd48fe36c9896aea816f4c8f0da6dc1170575301b6f126ff7350a647a",
+  "../Hyperion/src/flight/architecture.hpp": "5a6c88e9f80b741cb86ad3dad6f666eb15833c7f5c2fead22658c39b6b91fd84",
+  "../Hyperion/src/flight/shaders.hpp": "d7e4e6ee7999cb6cbce2e54a32e46469be4c0ca6206ca310fda8fee34ca100a7",
+  "../Hyperion/src/flight/renderer.cpp": "878a3d321e7a0fed93fed3b8ab8e9a9cd6ed1dd587c27809ff04d77de8baad61"
+}

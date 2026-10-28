@@ -15,6 +15,9 @@ bgfx::ShaderHandle shader(const char* name) {
 #define LOAD_BACKEND(BACKEND)                                                                                \
     LOAD_SHADER(vs_hyperion, BACKEND);                                                                       \
     LOAD_SHADER(vs_hyperion_smooth, BACKEND);                                                                \
+    LOAD_SHADER(vs_hyperion_shadow, BACKEND);                                                                \
+    LOAD_SHADER(fs_hyperion_shadow, BACKEND);                                                                \
+    LOAD_SHADER(fs_hyperion_cloud, BACKEND);                                                                 \
     LOAD_SHADER(fs_hyperion, BACKEND);                                                                       \
     LOAD_SHADER(fs_hyperion_flight, BACKEND);                                                                \
     LOAD_SHADER(fs_hyperion_flight_post, BACKEND);                                                           \
@@ -112,6 +115,10 @@ void HyperionRenderer::init() {
     skyParams_ = bgfx::createUniform("u_sky", bgfx::UniformType::Vec4, 2);
     skyRotation_ = bgfx::createUniform("u_skyRotation", bgfx::UniformType::Mat4);
     postParams_ = bgfx::createUniform("u_post", bgfx::UniformType::Vec4, 2);
+    sunSampler_ = bgfx::createUniform("s_sunShadow", bgfx::UniformType::Sampler);
+    sunMatrix_ = bgfx::createUniform("u_sunFromCamera", bgfx::UniformType::Mat4);
+    sunParams_ = bgfx::createUniform("u_sunShadowParams", bgfx::UniformType::Vec4);
+    cameraScreen_ = bgfx::createUniform("u_cameraScreen", bgfx::UniformType::Vec4);
     screenLayout_.begin()
         .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
         .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
@@ -136,13 +143,17 @@ HyperionRenderer::~HyperionRenderer() {
     if (bgfx::isValid(detail_))
         bgfx::destroy(detail_);
     clearTargets();
+    if (bgfx::isValid(sunTarget_))
+        bgfx::destroy(sunTarget_);
     for (auto p : {geometry_, glow_, blur_, post_, flightGeometry_, flightPost_, sky_, smoothGeometry_[0],
-                   smoothGeometry_[1]})
+                   smoothGeometry_[1], sunProgram_, cloudProgram_})
         if (bgfx::isValid(p))
             bgfx::destroy(p);
-    for (auto u : {detailSampler_, surface_, sceneSampler_, bloomSampler_, style_, pattern_, postParams_,
-                   cavity_, depthSampler_, atmosphere_, atmosphereRotation_, micro_, microParams_, domain_,
-                   skyParams_, skyRotation_})
+    for (auto u : {detailSampler_, surface_,    sceneSampler_,       bloomSampler_,
+                   style_,         pattern_,    postParams_,         cavity_,
+                   depthSampler_,  atmosphere_, atmosphereRotation_, micro_,
+                   microParams_,   domain_,     skyParams_,          skyRotation_,
+                   sunSampler_,    sunMatrix_,  sunParams_,          cameraScreen_})
         if (bgfx::isValid(u))
             bgfx::destroy(u);
 }
@@ -164,6 +175,10 @@ void HyperionRenderer::begin(RenderMode mode, int width, int height, bool optica
     detailUploadBytes_ = 0;
     flight_ = flight;
     atmosphereData_ = {};
+    sunActive_ = false;
+    sunUpdated_ = false;
+    screenParams_ = {float(width) / height * .7002075f, .7002075f,
+                     bgfx::getCaps()->originBottomLeft ? 1.f : -1.f, 0};
     const auto previousMode = mode_;
     mode_ = mode;
     if (mode == RenderMode::Original) {
@@ -203,6 +218,53 @@ void HyperionRenderer::begin(RenderMode mode, int width, int height, bool optica
     // Hyperion skyFragment's linear ink (.004,.007,.016), rounded to the
     // clear API's RGBA8 input; the HDR display transform is applied later.
     bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x010204ff, 1.f, 0);
+}
+bgfx::ProgramHandle HyperionRenderer::sunProgram() {
+    if (!bgfx::isValid(sunProgram_))
+        sunProgram_ = program("vs_hyperion_shadow", "fs_hyperion_shadow");
+    return sunProgram_;
+}
+bgfx::ProgramHandle HyperionRenderer::cloudProgram() {
+    if (!bgfx::isValid(cloudProgram_))
+        cloudProgram_ = program("vs_hyperion", "fs_hyperion_cloud");
+    return cloudProgram_;
+}
+bool HyperionRenderer::prepareSun(const SunShadowFrame& frame, uint64_t key, glm::dquat camera, float aspect,
+                                  float tanHalfFov) {
+    if (mode_ == RenderMode::Original || !readableDepth_)
+        return false;
+    if (!bgfx::isValid(sunTarget_)) {
+        if (!bgfx::isTextureValid(0, false, 1, bgfx::TextureFormat::D16, BGFX_TEXTURE_RT))
+            return false;
+        auto texture = bgfx::createTexture2D(sunShadowResolution, sunShadowResolution, false, 1,
+                                             bgfx::TextureFormat::D16, BGFX_TEXTURE_RT | sampling);
+        sunTarget_ = bgfx::createFrameBuffer(1, &texture, true);
+        if (!bgfx::isValid(sunTarget_))
+            throw std::runtime_error("Sun shadow target allocation failed");
+        sunBytes_ = size_t(sunShadowResolution) * sunShadowResolution * 2;
+    }
+    sunActive_ = true;
+    sunFromCamera_ = glm::mat4(frame.textureFromWorld * glm::mat4_cast(camera));
+    sunDepthScale_ = float(std::abs(frame.projection[2][2]) * (bgfx::getCaps()->homogeneousDepth ? .5 : 1.));
+    screenParams_ = {aspect * tanHalfFov, tanHalfFov, bgfx::getCaps()->originBottomLeft ? 1.f : -1.f, 0};
+    const bool redraw = !sunValid_ || sunKey_ != key || sunSpan_ != frame.spanMetres ||
+                        glm::length(frame.anchorPlanet - sunAnchor_) > .001 ||
+                        glm::length(frame.lightPlanet - sunLight_) > 1e-7;
+    if (!redraw)
+        return false;
+    sunUpdated_ = true;
+    sunKey_ = key;
+    sunAnchor_ = frame.anchorPlanet;
+    sunLight_ = frame.lightPlanet;
+    sunSpan_ = frame.spanMetres;
+    sunValid_ = true;
+    const glm::mat4 view(frame.view), projection(frame.projection);
+    bgfx::setViewFrameBuffer(70, sunTarget_);
+    bgfx::setViewRect(70, 0, 0, sunShadowResolution, sunShadowResolution);
+    bgfx::setViewTransform(70, glm::value_ptr(view), glm::value_ptr(projection));
+    bgfx::setViewClear(70, BGFX_CLEAR_DEPTH, 0, 1.f, 0);
+    bgfx::touch(70);
+    return true;
 }
 void HyperionRenderer::atmosphere(glm::vec3 eye, glm::vec3 light, const glm::mat4& rotation, float radius,
                                   float height, float strength, float aspect, float phase) {
@@ -254,6 +316,8 @@ void HyperionRenderer::bindEmissions(const Node& node, const glm::mat4& pattern,
     data[0] = {mode_ == RenderMode::Hybrid ? .24f : 1.f, float(seconds), phase, 3};
     bgfx::setUniform(style_, data.data(), 4);
     bgfx::setUniform(pattern_, glm::value_ptr(pattern));
+    const glm::vec4 domain{};
+    bgfx::setUniform(domain_, glm::value_ptr(domain));
 }
 void HyperionRenderer::screen(bgfx::ViewId id, bgfx::ProgramHandle p) {
     struct Vertex {
@@ -292,7 +356,7 @@ void HyperionRenderer::finish() {
     bgfx::setUniform(postParams_, params.data(), 2);
     bgfx::setTexture(0, sceneSampler_, bgfx::getTexture(scene_), sampling);
     bgfx::setTexture(1, bloomSampler_, bgfx::getTexture(bloom_[1]), sampling);
-    const bool optical = readableDepth_ && atmosphereData_[0].w > 0;
+    const bool optical = readableDepth_;
     if (optical) {
         if (!bgfx::isValid(flightPost_))
             flightPost_ = program("vs_hyperion_screen", "fs_hyperion_flight_post");
@@ -300,6 +364,12 @@ void HyperionRenderer::finish() {
                          sampling | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT);
         bgfx::setUniform(atmosphere_, atmosphereData_.data(), 4);
         bgfx::setUniform(atmosphereRotation_, glm::value_ptr(atmosphereMatrix_));
+        bgfx::setUniform(sunMatrix_, glm::value_ptr(sunFromCamera_));
+        const glm::vec4 shadow{sunActive_ ? 1.f : 0.f, 1.f / sunShadowResolution, sunDepthScale_, 0};
+        bgfx::setUniform(sunParams_, glm::value_ptr(shadow));
+        bgfx::setUniform(cameraScreen_, glm::value_ptr(screenParams_));
+        bgfx::setTexture(4, sunSampler_, sunActive_ ? bgfx::getTexture(sunTarget_) : detail_,
+                         sampling | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT);
     }
     screen(83, optical ? flightPost_ : post_);
 }

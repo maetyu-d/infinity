@@ -1,0 +1,7 @@
+{
+  "version": "0.21.0",
+  "build": "21",
+  "code_data_sections_identical": 31,
+  "signature": "codesign --verify --deep --strict passed",
+  "binary_sha256": "75183c9ccaa444933feb0e1c41f3863a80ed1a56a88a211ae1ded4039da63fab"
+}

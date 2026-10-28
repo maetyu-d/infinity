@@ -1,0 +1,38 @@
+{
+  "crop": [
+    310,
+    240,
+    1125,
+    720
+  ],
+  "results": {
+    "1-city-approach-ORIGINAL.png": {
+      "pixel_identical": true,
+      "different_channels": 0
+    },
+    "2-inhabitants-ORIGINAL.png": {
+      "pixel_identical": true,
+      "different_channels": 0
+    },
+    "3-sealed-colony-ORIGINAL.png": {
+      "pixel_identical": true,
+      "different_channels": 0
+    },
+    "5-organic-overview-ORIGINAL.png": {
+      "pixel_identical": true,
+      "different_channels": 0
+    },
+    "4-precipitation-ORIGINAL.png": {
+      "pixel_identical": true,
+      "different_channels": 0
+    },
+    "6-planned-overview-ORIGINAL.png": {
+      "pixel_identical": true,
+      "different_channels": 0
+    },
+    "0-weather-orbit-ORIGINAL.png": {
+      "pixel_identical": true,
+      "different_channels": 0
+    }
+  }
+}

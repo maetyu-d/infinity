@@ -1,6 +1,8 @@
 # INFINITE
 
-A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.20 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.21 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+
+Version 0.21 adds **cached sunlight shadows, reflective architectural glass, prismatic ceramic materials and clearer atmospheric lighting**. Existing buildings and street furniture cast shadows onto the actual terrain; metre-based material detail stays attached through flight, zoom and precision-frame changes. Original mode and all procedural structures remain intact. [Graphics notes and comparisons](docs/GRAPHICS_0_21.md).
 
 Version 0.20 develops surface settlements into **connected, mixed-use cities**. Planned, radial, organic and contour-led street networks determine parcels and building frontage. Housing courts, stepped towers, civic halls, row houses, industrial sheds and protected habitat clusters follow district function and access. Organic towns grow irregular blocks and T-junctions; pavements fit the actual terrain, and residents follow home-associated street routes. Existing settlement names, seeds, landing locations and the underlying universe remain intact. [CITY_GENERATION.md](docs/CITY_GENERATION.md) records the research, algorithms and validation.
 

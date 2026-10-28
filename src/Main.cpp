@@ -283,7 +283,8 @@ int main(int argc, char** argv) {
                        "upload_deferred,render_mode,effect_bytes,terrain_tiles,root_cells,activity_"
                        "bodies,activity_visible,activity_triangles,activity_bytes,material_bytes,"
                        "surface_sites,surface_buildings,surface_residents,surface_triangles,surface_bytes,"
-                       "surface_gpu_bytes,surface_pending,weather_cells,weather_particles\n";
+                       "surface_gpu_bytes,surface_pending,weather_cells,weather_particles,shadow_bytes,"
+                       "shadow_active,shadow_updates\n";
             }
             bool running = true, overlay = true, looking = false;
             bool mouseFlight = false, rightLook = false;
@@ -710,7 +711,8 @@ int main(int argc, char** argv) {
                             << stats.surfaceBuildings << ',' << stats.surfaceResidents << ','
                             << stats.surfaceTriangles << ',' << stats.surfaceBytes << ','
                             << stats.surfaceGpuBytes << ',' << stats.surfacePending << ','
-                            << stats.weatherCells << ',' << stats.weatherParticles << '\n';
+                            << stats.weatherCells << ',' << stats.weatherParticles << ',' << stats.shadowBytes
+                            << ',' << stats.shadowActive << ',' << stats.shadowUpdates << '\n';
                 if (opt.tour) {
                     if (!nav.transitioning && stats.visibleObjects > 0 && gen.pending == 0 &&
                         gen.queued == 0 && stats.surfacePending == 0 && stats.lodTransitions == 0 &&

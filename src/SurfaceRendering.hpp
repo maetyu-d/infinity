@@ -57,14 +57,47 @@ void renderWeather(const Node& planet, glm::dvec3 localEye, const Navigation& na
                     mode == RenderMode::Original
                         ? glm::vec3(.75, .81, .88)
                         : glm::mix(glm::vec3(.32, .52, .78), glm::vec3(.83, .67, .88), float(sample.storm));
-                clouds.vertices.push_back(
-                    {float(delta.x), float(delta.y), float(delta.z), rgba(tint * sun, alpha)});
+                clouds.vertices.push_back({float(delta.x), float(delta.y), float(delta.z),
+                                           rgba(tint * (mode == RenderMode::Original ? sun : 1.f), alpha)});
             }
             clouds.indices.insert(clouds.indices.end(),
                                   {first, first + 1, first + 2, first, first + 2, first + 3});
             ++stats.weatherCells;
         }
-    transient(clouds, 63, false, false, true, false, true);
+    if (mode == RenderMode::Original)
+        transient(clouds, 63, false, false, true, false, true);
+    else if (!clouds.vertices.empty()) {
+        const auto nv = uint32_t(clouds.vertices.size()), ni = uint32_t(clouds.indexCount());
+        if (bgfx::getAvailTransientVertexBuffer(nv, layout) >= nv &&
+            bgfx::getAvailTransientIndexBuffer(ni, true) >= ni && bgfx::getAvailInstanceDataBuffer(1, 80)) {
+            bgfx::TransientVertexBuffer vertices;
+            bgfx::TransientIndexBuffer indices;
+            bgfx::InstanceDataBuffer buffer;
+            bgfx::allocTransientVertexBuffer(&vertices, nv, layout);
+            bgfx::allocTransientIndexBuffer(&indices, ni, true);
+            bgfx::allocInstanceDataBuffer(&buffer, 1, 80);
+            std::memcpy(vertices.data, clouds.vertices.data(), nv * sizeof(Vertex));
+            std::memcpy(indices.data, clouds.indexData(), ni * 4);
+            const Instance identity{glm::mat4(1), glm::vec4(1)};
+            std::memcpy(buffer.data, &identity, sizeof(identity));
+            glm::dmat4 pattern(glm::mat3_cast(glm::inverse(pose.orientation)) * (units / shellRadius));
+            pattern[3] = glm::dvec4(localEye / shellRadius, 1);
+            Geometry source;
+            const ScenePresentation presentation{source,
+                                                 planet.address,
+                                                 {},
+                                                 hyperionPhase(climate.seed),
+                                                 mode == RenderMode::Hybrid ? .36f : 1.f};
+            hyperion->bind(presentation, {}, glm::vec3(lightAt(planet.address, nav)), glm::mat4(pattern), 0,
+                           seconds);
+            bgfx::setVertexBuffer(0, &vertices);
+            bgfx::setIndexBuffer(&indices);
+            bgfx::setInstanceDataBuffer(&buffer);
+            bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_DEPTH_TEST_LEQUAL | BGFX_STATE_BLEND_ALPHA |
+                           BGFX_STATE_MSAA);
+            bgfx::submit(63, hyperion->cloudProgram());
+        }
+    }
     if (!instruments || instruments->shrinking || altitude > climate.cloudHeightMetres || units < .1 ||
         weather.precipitation < .06)
         return;
@@ -168,6 +201,7 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
     if (!activity || !activity->enabled || nav.anchor.kind() >= Kind::Rock)
         return;
     std::array<std::array<std::vector<Instance>, 3>, size_t(SurfaceMesh::Count)> batches;
+    std::array<std::vector<Instance>, size_t(SurfaceMesh::Count)> sunCasters;
     const double units = std::pow(10., nav.logDistance);
     const glm::mat4 rotationView = glm::mat4_cast(glm::quat(cameraInverse)), proj(projection);
     bgfx::setViewTransform(61, glm::value_ptr(rotationView), glm::value_ptr(proj));
@@ -194,6 +228,32 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
             if (!world)
                 continue;
             const auto pose = poseFor(planet.address, nav);
+            bool updateSun = false;
+            const SurfaceSettlement* shadowCity = nullptr;
+            double nearestCity = 1e30;
+            if (mode != RenderMode::Original && instruments && !instruments->shrinking &&
+                instruments->altitude < 5000 && units > .01 && !hyperion->sunActive()) {
+                for (const auto& city : world->settlements) {
+                    const double range = glm::length(city.landingPoint - planetEye);
+                    if (range < nearestCity && range < city.radius + 3500 &&
+                        glm::dot(city.direction, planetEye - city.landingPoint) > -10) {
+                        shadowCity = &city;
+                        nearestCity = range;
+                    }
+                }
+                if (shadowCity) {
+                    const auto light = glm::inverse(pose.orientation) * lightAt(planet.address, nav);
+                    if (glm::dot(shadowCity->direction, light) > .035) {
+                        const auto shadow = sunShadowFrame(
+                            shadowCity->landingPoint, light, pose.orientation, planetEye, units,
+                            std::clamp(shadowCity->radius * 2.2, 512., 4096.),
+                            bgfx::getCaps()->homogeneousDepth, bgfx::getCaps()->originBottomLeft);
+                        updateSun = hyperion->prepareSun(shadow, world->descriptor ^ shadowCity->layoutSeed,
+                                                         nav.orientation, float(width) / height,
+                                                         float(std::tan(fieldOfView * .5)));
+                    }
+                }
+            }
             Mesh paving;
             auto instance = [&](SurfaceMesh kind, glm::dvec3 point, glm::dquat q, glm::dvec3 size,
                                 glm::vec3 tint, bool essential = false) {
@@ -206,12 +266,25 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
                              extent = std::max({size.x, size.y, size.z}) * (person ? 1.8 : 1.);
                 const double pixels =
                     extent / std::max(.01, distance) * height / (2 * std::tan(fieldOfView * .5));
-                if (pixels < (essential ? .35 : .9) || distance / units > 8000 ||
-                    !LOD::visible(direction / units, extent / units, double(width) / height, fieldOfView))
+                const bool visible =
+                    pixels >= (essential ? .35 : .9) && distance / units <= 8000 &&
+                    LOD::visible(direction / units, extent / units, double(width) / height, fieldOfView);
+                const bool caster = updateSun && !person && kind != SurfaceMesh::Pad &&
+                                    kind != SurfaceMesh::Road && kind != SurfaceMesh::Plaza &&
+                                    kind != SurfaceMesh::Footway &&
+                                    glm::length(point - shadowCity->landingPoint) < shadowCity->radius * 1.5;
+                if (!visible && !caster)
+                    return;
+                const auto model = glm::translate(glm::dmat4(1), delta / units) *
+                                   glm::mat4_cast(pose.orientation * q) *
+                                   glm::scale(glm::dmat4(1), size / units);
+                // Shadow visibility is independent of the camera frustum:
+                // off-screen buildings can still shade the visible street.
+                if (caster)
+                    sunCasters[size_t(kind)].push_back({glm::mat4(model), glm::vec4(tint, 1)});
+                if (!visible)
                     return;
                 const unsigned detail = pixels > 60 ? 2 : pixels > 10 ? 1 : 0;
-                auto model = glm::translate(glm::dmat4(1), delta / units) *
-                             glm::mat4_cast(pose.orientation * q) * glm::scale(glm::dmat4(1), size / units);
                 batches[size_t(kind)][detail].push_back({glm::mat4(model), glm::vec4(tint, 1)});
                 ++instances;
             };
@@ -341,11 +414,16 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
                                        BGFX_STATE_DEPTH_TEST_LEQUAL | BGFX_STATE_MSAA);
                         if (mode != RenderMode::Original) {
                             Geometry source;
-                            const ScenePresentation presentation{source,
-                                                                 planet.address,
-                                                                 {.42, .6, .025, .01},
-                                                                 float(role) / float(SurfaceMesh::Count),
-                                                                 mode == RenderMode::Hybrid ? .36f : 1.f};
+                            const ScenePresentation presentation{
+                                source,
+                                planet.address,
+                                {.42, .6, .025, .01},
+                                hyperionPhase(planet.seed) + float(role) * .13f,
+                                mode == RenderMode::Hybrid ? .36f : 1.f,
+                                {4, float(role), float(units), 0},
+                                {float(glm::dot(glm::normalize(planetEye), glm::inverse(pose.orientation) *
+                                                                               lightAt(planet.address, nav))),
+                                 float(world->climate.pressureBar), 0, 0}};
                             hyperion->bind(presentation, {}, glm::vec3(lightAt(planet.address, nav)),
                                            glm::mat4(1), 0, activity->seconds);
                         }
@@ -355,6 +433,34 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
                     }
                     objects.clear();
                 }
+            bool completeSun = true;
+            if (updateSun)
+                for (size_t role = 0; role < sunCasters.size(); role++) {
+                    auto& objects = sunCasters[role];
+                    if (objects.empty())
+                        continue;
+                    auto& mesh = surfaceMeshes[role][1];
+                    if (!bgfx::isValid(mesh.vertices)) {
+                        const auto source = surfaceMesh(SurfaceMesh(role), 1);
+                        mesh = upload(source);
+                        surfaceMeshBytes += source.bytes();
+                    }
+                    const auto count = bgfx::getAvailInstanceDataBuffer(uint32_t(objects.size()), 80);
+                    completeSun &= count == objects.size();
+                    if (count) {
+                        bgfx::InstanceDataBuffer buffer;
+                        bgfx::allocInstanceDataBuffer(&buffer, count, 80);
+                        std::memcpy(buffer.data, objects.data(), count * sizeof(Instance));
+                        bgfx::setVertexBuffer(0, mesh.vertices);
+                        bgfx::setIndexBuffer(mesh.indices);
+                        bgfx::setInstanceDataBuffer(&buffer);
+                        bgfx::setState(BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS);
+                        bgfx::submit(70, hyperion->sunProgram());
+                    }
+                    objects.clear();
+                }
+            if (updateSun)
+                hyperion->completeSun(completeSun);
         }
     }
 }

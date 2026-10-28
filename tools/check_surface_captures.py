@@ -3,6 +3,7 @@
 import pathlib
 import re
 import sys
+import csv
 
 root=pathlib.Path(sys.argv[1])
 log=(root/'native.log').read_text()
@@ -31,4 +32,14 @@ assert re.search(r'SURFACE_RENDER precipitation .* precipitation=[1-9]\d*',log),
 layouts=re.findall(r'CITY_LAYOUT (.+?) pattern=(\S+) buildings=(\d+) streets=(\d+) parcels=(\d+) population=(\d+) recipe=(\d+)',log)
 assert len(layouts)>=3 and {'PLANNED','RADIAL','ORGANIC'}<={x[1] for x in layouts}
 assert all(int(x[2])>=4 and int(x[3])>0 and int(x[6])==1 for x in layouts)
-print('PASS: seven real city/weather views, 21 native captures, connected city morphologies, residents, bounded caches and three-mode geometry/camera/city-data proofs')
+shadows=re.findall(r'SURFACE_RENDER (\S+) mode=(\S+).*shadow_bytes=(\d+) shadow_active=(\d+) shadow_updates=(\d+)',log)
+assert len(shadows)==21
+assert all(int(row[2]) in {0,8*1024*1024} for row in shadows), 'Shadow map storage is unbounded'
+assert all(int(row[3])==0 for row in shadows if row[1]=='ORIGINAL'), 'Original mode acquired new shading'
+assert all(int(row[3])==1 for row in shadows if row[0]=='city-approach' and row[1]!='ORIGINAL'), 'City sunlight shadows were not rendered'
+profile=list(csv.DictReader((root/'frames.csv').open()))
+updates=sum(int(row['shadow_updates']) for row in profile)
+active=sum(int(row['shadow_active']) for row in profile)
+assert 1<=updates<=12 and active>updates*3, 'Stationary city shadows were not cached'
+assert all(int(row['effect_bytes'])-int(row['shadow_bytes']) in {0,17856000} for row in profile), 'Unexpected extra full-resolution effects'
+print('PASS: seven real city/weather views, 21 native captures, connected city morphologies, residents, bounded caches, cached sun shadows and three-mode geometry/camera/city-data proofs')

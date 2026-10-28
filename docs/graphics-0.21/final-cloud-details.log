@@ -1,0 +1,34 @@
+Start testing: Oct 28 14:58 GMT
+----------------------------------------------------------
+25/37 Testing: native_weather_and_surface_life
+25/37 Test: native_weather_and_surface_life
+Command: "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake" "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite" "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/surface-native" "-P" "/Users/user/Documents/SC tutorial/Infinite/cmake/RunSurfaceLife.cmake"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_weather_and_surface_life" start time: Oct 28 14:58 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =  37.84 sec
+----------------------------------------------------------
+Test Passed.
+"native_weather_and_surface_life" end time: Oct 28 14:58 GMT
+"native_weather_and_surface_life" time elapsed: 00:00:37
+----------------------------------------------------------
+
+26/37 Testing: native_weather_and_surface_images
+26/37 Test: native_weather_and_surface_images
+Command: "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9" "/Users/user/Documents/SC tutorial/Infinite/tools/check_surface_captures.py" "/Users/user/Documents/SC tutorial/Infinite/build/surface-native"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_weather_and_surface_images" start time: Oct 28 14:58 GMT
+Output:
+----------------------------------------------------------
+PASS: seven real city/weather views, 21 native captures, connected city morphologies, residents, bounded caches, cached sun shadows and three-mode geometry/camera/city-data proofs
+<end of output>
+Test time =   1.50 sec
+----------------------------------------------------------
+Test Passed.
+"native_weather_and_surface_images" end time: Oct 28 14:58 GMT
+"native_weather_and_surface_images" time elapsed: 00:00:01
+----------------------------------------------------------
+
+End testing: Oct 28 14:58 GMT

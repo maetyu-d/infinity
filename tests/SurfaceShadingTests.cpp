@@ -63,8 +63,32 @@ int main() {
         check(atomPresentationLevel(100, true) == 2 && atomPresentationLevel(100, false) == 3 &&
                   atomPresentationLevel(12, false) == 1,
               "Atom screen-space detail changed Original mode");
+        for (bool homogeneous : {false, true})
+            for (bool bottom : {false, true})
+                for (int i = 0; i < 40; i++) {
+                    const auto anchor = glm::normalize(glm::dvec3(std::sin(i + .3), .7, std::cos(i))) * 6e6;
+                    const auto light = glm::normalize(glm::dvec3(std::cos(i), .5, std::sin(i + .2)));
+                    const auto eye = anchor + glm::dvec3(160, 220, 310);
+                    const auto a =
+                        sunShadowFrame(anchor, light, {1, 0, 0, 0}, eye, 1, 2048, homogeneous, bottom);
+                    const auto p = anchor + glm::dvec3(34, 23, -17);
+                    const auto expected = a.textureFromWorld * glm::dvec4(p - eye, 1);
+                    check(std::abs((a.textureFromWorld * glm::dvec4(a.anchorPlanet - eye, 1)).x - .5) < 1e-9,
+                          "Sun shadow light frame lost its centre");
+                    const auto rotation = glm::angleAxis(.73, glm::normalize(glm::dvec3(.3, .4, .8)));
+                    for (double units : {1e-9, .01, 1., 1e3, 1e9}) {
+                        const auto rebasedEye = eye + glm::dvec3(71, -43, 15);
+                        const auto b = sunShadowFrame(anchor, light, rotation, rebasedEye, units, 2048,
+                                                      homogeneous, bottom);
+                        const auto actual =
+                            b.textureFromWorld * glm::dvec4(rotation * (p - rebasedEye) / units, 1);
+                        check(glm::length(actual - expected) < 1e-9 &&
+                                  glm::length(a.anchorPlanet - b.anchorPlanet) < 1e-9,
+                              "Camera rebase or magnification moved the sun shadow field");
+                    }
+                }
         std::cout << "Surface shading: packing, seam welding, crease preservation, scale invariance, "
-                     "immutable topology and cancellation passed\n";
+                     "immutable topology, cancellation and sun shadow frame invariance passed\n";
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
         return 1;
