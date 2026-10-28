@@ -144,9 +144,9 @@ bool CockpitRect::overlaps(const CockpitRect& r) const {
 }
 CockpitLayout::CockpitLayout(double aspect)
     : width(900 * aspect), traffic{24, 176, 274, 263}, celestial{width - 310, 176, 286, 331},
-      navigation{24, 758, std::clamp((width - 48) * .31, 240., 430.), 124}, flight{}, scope{},
-      systems{width - 24 - std::clamp((width - 48) * .22, 185., 290.), 758,
-              std::clamp((width - 48) * .22, 185., 290.), 124},
+      life{width - 310, 550, 286, 48}, navigation{24, 758, std::clamp((width - 48) * .31, 240., 430.), 124},
+      flight{}, scope{}, systems{width - 24 - std::clamp((width - 48) * .22, 185., 290.), 758,
+                                 std::clamp((width - 48) * .22, 185., 290.), 124},
       windscreen{traffic.x + traffic.w + 18, 166, celestial.x - traffic.x - traffic.w - 36, 472} {
     const double mid = systems.x - navigation.x - navigation.w - 36;
     flight = {navigation.x + navigation.w + 12, 758, mid * .48, 124};
@@ -175,6 +175,29 @@ std::vector<size_t> cockpitActivityRows(std::span<const ActivityContact> contact
             break;
         }
     return rows;
+}
+std::vector<size_t> cockpitCelestialRows(std::span<const CelestialContact> contacts) {
+    std::vector<size_t> rows;
+    for (unsigned priority = 0; priority < 3; priority++)
+        for (size_t i = 0; i < contacts.size() && rows.size() < 8; i++) {
+            const auto& c = contacts[i];
+            const unsigned rank = c.selected ? 0 : hasSurfaceLife(c) ? 1 : 2;
+            if (rank == priority)
+                rows.push_back(i);
+        }
+    return rows;
+}
+std::optional<Address> nextLivingWorld(std::span<const CelestialContact> contacts,
+                                       const std::optional<Address>& current) {
+    std::vector<Address> worlds;
+    for (const auto& c : contacts)
+        if (hasSurfaceLife(c))
+            worlds.push_back(c.address);
+    if (worlds.empty())
+        return {};
+    std::sort(worlds.begin(), worlds.end());
+    const auto next = current ? std::upper_bound(worlds.begin(), worlds.end(), *current) : worlds.begin();
+    return next == worlds.end() ? worlds.front() : *next;
 }
 CockpitTargetMarker cockpitTargetMarker(glm::dvec3 d, double aspect) {
     CockpitLayout l(aspect);
@@ -287,6 +310,21 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     const double ratio = std::max(1e-12, t.hullMetres / 12);
     const bool surface = t.altitude >= 0 && (t.gear || t.altitude < 5000 * ratio);
     const bool catalogues = !t.shrinking || t.hullMetres >= .001;
+    const auto living = std::count_if(contacts.begin(), contacts.end(), hasSurfaceLife);
+    const auto scanning = std::count_if(contacts.begin(), contacts.end(), [](const auto& c) {
+        return c.address.kind() == Kind::Planet &&
+               (c.life == LifeDetection::Scanning || c.life == LifeDetection::Unknown);
+    });
+    const auto population = [](uint64_t people) {
+        char value[40];
+        if (people >= 1000000)
+            std::snprintf(value, sizeof(value), "%.1fM", double(people) / 1000000);
+        else if (people >= 1000)
+            std::snprintf(value, sizeof(value), "%.1fK", double(people) / 1000);
+        else
+            std::snprintf(value, sizeof(value), "%llu", (unsigned long long)people);
+        return std::string(value);
+    };
     auto label = [&](std::string_view s, double x, double y, double width, glm::vec3 color = muted) {
         fitted(h.lettering, s, x, y, width, 10.5, color);
     };
@@ -427,7 +465,11 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     if (catalogues && !surface) {
         for (const auto& contact : contacts)
             if (!contact.selected)
-                scopePoint(contact.localDirection, contact.occluded ? muted * .6f : ice, false, true);
+                scopePoint(contact.localDirection,
+                           hasSurfaceLife(contact) ? mint
+                           : contact.occluded      ? muted * .6f
+                                                   : ice,
+                           false, true);
         for (size_t i = 0; i < activity.size(); ++i)
             if (i < 32 || activity[i].selected)
                 scopePoint(activity[i].localDirection, activity[i].selected ? amber : trafficInk,
@@ -466,7 +508,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
              std::max(178., center - 180), 889, std::max(180., w - 490), 9, muted);
     label("H RENDER / TAB HUD", w - 200, 889, 178, muted);
     if (help) {
-        const CockpitRect guide{center - std::min(700., w - 80) * .5, 205, std::min(700., w - 80), 394};
+        const CockpitRect guide{center - std::min(700., w - 80) * .5, 205, std::min(700., w - 80), 418};
         card(h, guide, mint);
         fitted(h.lettering, "FLIGHT CONTROLS", guide.x + 22, guide.y + 22, guide.w - 44, 17.5, pearl);
         const std::pair<const char*, const char*> controls[]{{"W / S", "THROTTLE"},
@@ -475,6 +517,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                                                              {"U / O", "ROLL"},
                                                              {"B / X", "BRAKE / ASSIST"},
                                                              {"Y / SHIFT-Y", "PLANETS / MOONS"},
+                                                             {"CTRL-Y", "LIFE-DETECTED WORLDS"},
                                                              {"K / I / J", "TRAFFIC / HAIL / APPROACH"},
                                                              {"SHIFT-K", "SURFACE PORTS"},
                                                              {"L / G / ENTER", "LAND / GEAR / LAUNCH"},
@@ -521,20 +564,52 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
         });
         label("SYSTEM " + std::to_string(planets) + "P / " + std::to_string(moons) + "M", w - 296, 188, 258,
               ice);
-        for (size_t i = 0; i < std::min(size_t(8), contacts.size()); ++i) {
-            const auto& c = contacts[i];
+        const auto rows = cockpitCelestialRows(contacts);
+        for (size_t i = 0; i < rows.size(); ++i) {
+            const auto& c = contacts[rows[i]];
             const double x = w - 296, y = 211 + i * 34;
+            const bool inhabited = hasSurfaceLife(c);
             if (c.selected)
                 rect(h.panels, w - 306, y - 5, 278, 33, amber * .16f, .8f);
-            const auto color = c.selected ? amber : c.occluded ? muted : pearl;
-            fitted(h.lettering, (c.selected ? "+ " : "  ") + c.label, x, y, 258, 10.5, color);
-            quantity(flightQuantity(c.distanceMetres) + " / " +
-                         (c.occluded               ? "OCCULTED"
-                          : c.localDirection.z < 0 ? "AHEAD"
-                                                   : "AFT"),
-                     x + 17, y + 16, 243, 9, c.selected ? amber : muted);
+            else if (inhabited)
+                rect(h.panels, w - 306, y - 5, 278, 33, mint * .10f, .9f);
+            const auto color = c.selected ? amber : inhabited ? mint : c.occluded ? muted : pearl;
+            fitted(h.lettering, (c.selected ? "+ " : "  ") + c.label, x, y, inhabited ? 207 : 258, 10.5,
+                   color);
+            if (inhabited) {
+                rect(h.panels, x + 214, y - 1, 44, 13, mint * .20f);
+                fitted(h.lettering, "LIFE", x + 219, y + 1, 37, 9, mint);
+            }
+            const auto direction = c.occluded ? "HIDDEN" : c.localDirection.z < 0 ? "AHEAD" : "AFT";
+            const auto status =
+                inhabited ? population(c.population) + " PEOPLE" + (c.occluded ? " / HIDDEN" : "")
+                : c.life == LifeDetection::Scanning                                 ? "SCANNING"
+                : c.life == LifeDetection::None && c.address.kind() == Kind::Planet ? "NO SURFACE LIFE"
+                                                                                    : direction;
+            quantity(flightQuantity(c.distanceMetres) + " / " + status, x + 17, y + 16, 243, 9,
+                     inhabited    ? mint
+                     : c.selected ? amber
+                                  : muted);
         }
-        label("Y PLANETS / SHIFT-Y MOONS", w - 296, 490, 258, muted);
+        label("CTRL-Y LIFE / Y WORLDS", w - 296, 490, 258, living ? mint : muted);
+        card(h, l.life, living ? mint : scanning ? ice : muted);
+        const bool paused = t.shrinking && scanning;
+        label(living     ? "LIFE DETECTED / " + std::to_string(living) + " WORLDS"
+              : paused   ? "LIFE SURVEY PAUSED / SHRUNK"
+              : scanning ? "SCANNING FOR SURFACE LIFE"
+                         : "NO SURFACE LIFE DETECTED",
+              l.life.x + 14, l.life.y + 10, l.life.w - 28,
+              living     ? mint
+              : scanning ? ice
+                         : muted);
+        fitted(h.lettering,
+               living     ? (paused     ? "CLICK / CTRL-Y / SURVEY PAUSED"
+                             : scanning ? "CLICK / CTRL-Y SELECT / SCANNING"
+                                        : "CLICK / CTRL-Y SELECT / J APPROACH")
+               : paused   ? "RESTORE SHIP SIZE TO CONTINUE"
+               : scanning ? std::to_string(scanning) + " WORLDS REMAINING"
+                          : "Y WORLDS / SHIFT-Y MOONS",
+               l.life.x + 14, l.life.y + 30, l.life.w - 28, 9, living ? mint : muted);
     }
 
     // Readable world labels reserve rectangles, avoid all fixed panels and the
@@ -577,7 +652,13 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                 line(h.strokes, p.x + side * 17, p.y + 12, p.x + side * 10, p.y + 12, amber);
             }
         }
-        worldLabel(p, marker.aft ? "TARGET AFT" : "TARGET", flightQuantity(t.range), amber);
+        const auto lifeTarget = std::find_if(contacts.begin(), contacts.end(),
+                                             [](const auto& c) { return c.selected && hasSurfaceLife(c); });
+        worldLabel(p,
+                   lifeTarget != contacts.end() ? (marker.aft ? "LIFE DETECTED / AFT" : "LIFE DETECTED")
+                   : marker.aft                 ? "TARGET AFT"
+                                                : "TARGET",
+                   flightQuantity(t.range), lifeTarget != contacts.end() ? mint : amber);
     }
     for (int side : {-1, 1}) {
         line(h.strokes, center + side * 9, 450, center + side * 23, 450, ice);
@@ -610,11 +691,14 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                 ++secondary;
             }
         };
+        for (const auto& c : contacts)
+            if (!c.selected && !c.occluded && hasSurfaceLife(c))
+                marker(c.localDirection, "LIFE / " + c.label, c.distanceMetres, mint);
         for (const auto& c : activity)
             if (!c.selected && !c.occluded && c.body.kind == ActivityKind::Harbour && c.distance < 2e7)
                 marker(c.localDirection, c.body.name, c.distance, trafficInk);
         for (const auto& c : contacts)
-            if (!c.selected && !c.occluded && c.angularRadius < .008)
+            if (!c.selected && !c.occluded && !hasSurfaceLife(c) && c.angularRadius < .008)
                 marker(c.localDirection, c.label, c.distanceMetres, ice);
     }
     if (surface) {

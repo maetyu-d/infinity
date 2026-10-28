@@ -46,6 +46,28 @@ int main() {
             c.moon = true;
         }
         FlightInstruments t;
+        worlds[54].life = worlds[61].life = LifeDetection::Detected;
+        worlds[54].population = 34000;
+        worlds[61].population = 5100;
+        worlds[61].occluded = true;
+        worlds[63].life = LifeDetection::Scanning;
+        worlds[68].selected = true;
+        worlds[69].life = LifeDetection::Detected; // No population: never a positive signal.
+        const auto livingRows = cockpitCelestialRows(worlds);
+        check(livingRows.size() == 8 && livingRows[0] == 68 && livingRows[1] == 54 && livingRows[2] == 61,
+              "Life-bearing distant worlds or the selected world disappeared behind nearby moons");
+        check(std::set<size_t>(livingRows.begin(), livingRows.end()).size() == 8,
+              "Prioritized celestial rows contain duplicates");
+        check(nextLivingWorld(worlds, {}) == worlds[54].address &&
+                  nextLivingWorld(worlds, worlds[54].address) == worlds[61].address &&
+                  nextLivingWorld(worlds, worlds[61].address) == worlds[54].address,
+              "Life targeting does not wrap through confirmed worlds");
+        check(!hasSurfaceLife(worlds[63]) && !hasSurfaceLife(worlds[69]) &&
+                  cockpitCelestialRows({}).empty() && !nextLivingWorld({}, {}),
+              "Pending, empty or zero-population observations produced a life target");
+        for (size_t i = 0; i < worlds.size(); i++)
+            check(worlds[i].address == system.child(Kind::Planet, i),
+                  "HUD prioritization mutated authoritative contact order or identity");
         t.speed = 85000;
         t.localVelocity = {0, 0, -85000};
         t.targetVisible = true;
@@ -54,7 +76,7 @@ int main() {
         t.destination = "Moon 13145 / J NAVIGATE";
         for (double aspect : {1., 4. / 3, 16. / 9, 2.4}) {
             const CockpitLayout l(aspect);
-            for (auto r : {l.traffic, l.celestial, l.navigation, l.flight, l.scope, l.systems}) {
+            for (auto r : {l.traffic, l.celestial, l.life, l.navigation, l.flight, l.scope, l.systems}) {
                 check(r.x >= 0 && r.y >= 0 && r.x + r.w <= l.width && r.y + r.h <= 900,
                       "Instrument panel escaped the viewport");
                 check(r.w > 100 && r.h > 0, "Instrument collapsed in a narrow window");

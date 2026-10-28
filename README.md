@@ -1,6 +1,8 @@
 # INFINITE
 
-A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.21 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.22 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+
+Version 0.22 makes inhabited worlds easier to find: **green LIFE badges and population counts**, priority system-list rows, a clickable **LIFE DETECTED** panel, green scope/world markers, and **Ctrl-Y** to cycle confirmed inhabited planets and moons. **J** approaches the selected world. Background surveys use the existing surface generator; pending worlds show SCANNING, and settlements in sealed colonies count as life. [Life-detection HUD](docs/LIFE_HUD.md).
 
 Version 0.21 adds **cached sunlight shadows, reflective architectural glass, prismatic ceramic materials and clearer atmospheric lighting**. Existing buildings and street furniture cast shadows onto the actual terrain; metre-based material detail stays attached through flight, zoom and precision-frame changes. Original mode and all procedural structures remain intact. [Graphics notes and comparisons](docs/GRAPHICS_0_21.md).
 
@@ -72,7 +74,7 @@ ctest --test-dir build-core --output-on-failure
 
 New games begin in planetary orbit with a **12 m ship** and cruise disengaged. Existing version-3 saves resume their exact view, motion, size and drive settings. **C** captures the mouse helm; **W/S** changes persistent throttle and **B** brakes.
 
-Use **Y** to cycle the current system's primary planets, or **Shift-Y** for the selected/current planet's moons, then **J** to navigate. **L** chooses the real terrain underfoot for an assisted landing; **Enter** lifts off. Normal handling has a nominal 85 km/s open-space envelope that decreases smoothly toward 350 m/s near terrain, with boost and speed adjustment available.
+Use **Y** to cycle the current system's primary planets, or **Shift-Y** for the selected/current planet's moons. **Ctrl-Y** or the **LIFE DETECTED** panel cycles confirmed inhabited worlds; **J** navigates to the selection. **L** chooses the real terrain underfoot for an assisted landing; **Enter** lifts off. Normal handling has a nominal 85 km/s open-space envelope that decreases smoothly toward 350 m/s near terrain, with boost and speed adjustment available.
 
 The cockpit shows planet/moon totals and the nearest eight celestial contacts with range and ahead/aft/occulted status; a selected destination stays in the list. Its scope retains every body's actual bearing, and unresolved planets and moons have lights in the forward view. Click a contact row, celestial light, star or distant galaxy to select its actual address, then press **J** to travel; **N** supplies the optional long-range drive for astronomical distances.
 
@@ -89,6 +91,7 @@ The cockpit shows planet/moon totals and the nearest eight celestial contacts wi
 | B / X | Brake / toggle flight assistance |
 | Y / J | Select next planet / navigate to selected destination |
 | Shift-Y | Cycle moons of the selected/current planet |
+| Ctrl-Y / click LIFE DETECTED | Cycle confirmed inhabited planets and moons |
 | K / I | Select next port/traffic contact / hail its actual status |
 | Shift-K | Cycle nearby surface settlements; J approaches, L lands |
 | F6 | Hide/show orbital and surface activity; its clock continues |

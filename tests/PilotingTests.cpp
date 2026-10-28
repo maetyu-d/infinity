@@ -72,6 +72,14 @@ int main() {
         check(pilot.restore(state) && pilot.serialize() == state, "ship persistence lost state");
         check(!pilot.restore("INFINITE_SHIP 1 nonsense"), "corrupt ship data accepted");
         check(pilot.serialize() == state, "failed restore mutated live ship");
+        const auto selectionEye = nav.cameraPosition();
+        const auto selectionAnchor = nav.anchor;
+        pilot.navigate(route[3]);
+        pilot.selectPlanet(route[3]);
+        check(nav.selected == route[3] && nav.anchor == selectionAnchor &&
+                  nav.cameraPosition() == selectionEye && !pilot.instruments().navigating,
+              "Selecting a life-detected planet moved the ship or left the old autopilot running");
+        near(pilot.ship().velocity, velocity, 2e-12, "Life target selection changed ship momentum");
         // Cruise disengaged: test local dynamics independently of scene scale.
         nav.reset();
         pilot.resetMotion();

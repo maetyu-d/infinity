@@ -1,0 +1,15 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start  1: surface_site_preservation
+1/5 Test  #1: surface_site_preservation ............   Passed    1.47 sec
+    Start  3: planetary_weather_and_surface_life
+2/5 Test  #3: planetary_weather_and_surface_life ...   Passed    2.77 sec
+    Start  5: cockpit_layout_and_targeting
+3/5 Test  #5: cockpit_layout_and_targeting .........   Passed    0.03 sec
+    Start 10: ship_dynamics_and_landing
+4/5 Test #10: ship_dynamics_and_landing ............   Passed    0.36 sec
+    Start 16: rendering_preserves_universe
+5/5 Test #16: rendering_preserves_universe .........   Passed    0.48 sec
+
+100% tests passed, 0 tests failed out of 5
+
+Total Test time (real) =   5.12 sec

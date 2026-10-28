@@ -211,6 +211,18 @@ void Pilot::startInSystem() {
     phase_ = "PLANETARY FLIGHT / Y NEXT PLANET / J NAVIGATE";
     instrument();
 }
+void Pilot::selectPlanet(const Address& planet) {
+    if (planet.kind() != Kind::Planet)
+        throw std::invalid_argument("Select an existing planet or moon");
+    universe_.describe(planet);
+    nav_.select(planet);
+    waypoint_.reset();
+    destination_.reset();
+    landingPlanet_.reset();
+    autopilot_ = landing_ = false;
+    phase_ = "DESTINATION SELECTED / J NAVIGATE";
+    instrument();
+}
 void Pilot::selectNextPlanet() {
     waypoint_.reset();
     auto system = nav_.anchor;

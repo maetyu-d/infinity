@@ -37,6 +37,8 @@ assert len(shadows)==21
 assert all(int(row[2]) in {0,8*1024*1024} for row in shadows), 'Shadow map storage is unbounded'
 assert all(int(row[3])==0 for row in shadows if row[1]=='ORIGINAL'), 'Original mode acquired new shading'
 assert all(int(row[3])==1 for row in shadows if row[0]=='city-approach' and row[1]!='ORIGINAL'), 'City sunlight shadows were not rendered'
+life=re.findall(r'life_worlds=(\d+) life_scanning=(\d+)',log)
+assert len(life)==21 and all(int(row[0])>0 for row in life), 'The HUD failed to detect real inhabited surfaces'
 profile=list(csv.DictReader((root/'frames.csv').open()))
 updates=sum(int(row['shadow_updates']) for row in profile)
 active=sum(int(row['shadow_active']) for row in profile)

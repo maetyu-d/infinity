@@ -1,4 +1,5 @@
 #pragma once
+#include "infinite/Cockpit.hpp"
 #include "infinite/Piloting.hpp"
 #include "infinite/Renderer.hpp"
 #include <algorithm>
@@ -123,9 +124,10 @@ class PilotValidation {
             stage_ = 7;
             age_ = 0;
         } else if (stage_ == 7 && age_ == 30) {
+            const auto worldRows = cockpitCelestialRows(renderer.celestialContacts());
             if (stats.celestialContacts < 6 || stats.celestialLights == 0 ||
                 renderer.pick(720, 450) != distantPlanet_ ||
-                renderer.pick(1170, 217) != renderer.celestialContacts().front().address)
+                renderer.pick(1170, 217) != renderer.celestialContacts()[worldRows.front()].address)
                 throw std::runtime_error("Distant planet is not visible and selectable beyond the far plane");
             capture("system-contacts");
             std::cout << "PILOT_SYSTEM_CONTACTS count=" << stats.celestialContacts

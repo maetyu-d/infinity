@@ -1,0 +1,42 @@
+{
+  "version": "0.22.0",
+  "baseline_commit": "4d3f128",
+  "tests": {
+    "release_passed": 37,
+    "release_failed": 0,
+    "release_elapsed_s": 308.92,
+    "final_native_passed": 4,
+    "final_native_elapsed_s": 108.52,
+    "city_views": 7,
+    "city_mode_captures": 21,
+    "life_panel_and_row_pick_proofs": 21,
+    "surface_site_anchors": 62,
+    "legacy_universe_records": 120,
+    "scale_mode_geometry_proofs": 17,
+    "scales": 9
+  },
+  "telemetry": {
+    "maximum_confirmed_worlds": 23,
+    "positive_confirmations_in_all_21_views": true,
+    "summary_entry_limit": 256,
+    "worker_limit": 2,
+    "full_surface_cache_budget_bytes": 4194304,
+    "survey_admission_frames": 8,
+    "detection_basis": "Actual generated surface inhabitants, including sealed colonies; no climate-based life guess."
+  },
+  "native_city_performance": {
+    "median_ms": 16.6617,
+    "p95_ms": 20.6379,
+    "frames": 3486,
+    "peak_rss_bytes": 133349376,
+    "note": "Single Metal VSync run at 1440x900. Includes initial system-wide survey work, loading and screenshot readback. Not an isolated steady-flight benchmark."
+  },
+  "normal_app_launch": {
+    "verified_by": "native application screenshot",
+    "state": "MANUAL / FLIGHT RESTORED",
+    "ship_metres": 12,
+    "life_worlds_visible": 23,
+    "render_mode": "HYPERION",
+    "repositioned": false
+  }
+}

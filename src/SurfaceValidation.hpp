@@ -1,4 +1,5 @@
 #pragma once
+#include "infinite/Cockpit.hpp"
 #include "infinite/Renderer.hpp"
 #include <algorithm>
 #include <filesystem>
@@ -103,6 +104,7 @@ class SurfaceValidation {
         const auto generation = cache.stats();
         bool ready = stats.surfacePending == 0 && generation.pending == 0 && generation.queued == 0 &&
                      stats.lodTransitions == 0 && stats.uploadDeferred == 0;
+        ready &= stats.lifeWorlds > 0;
         if (stage_ == 0)
             ready &= stats.weatherCells > 0 && stats.surfaceSites > 0;
         else if (stage_ == 4)
@@ -114,6 +116,12 @@ class SurfaceValidation {
         stable_ = ready ? stable_ + 1 : 0;
         if (stable_ < 8)
             return;
+        const auto contacts = renderer.celestialContacts();
+        const auto rows = cockpitCelestialRows(contacts);
+        if (renderer.pick(1170, 565) != nextLivingWorld(contacts, nav_.selected) ||
+            renderer.pickActivity(1170, 565) || rows.empty() ||
+            renderer.pick(1170, 217) != contacts[rows.front()].address)
+            throw std::runtime_error("Life HUD panel or prioritized world rows selected the wrong address");
         const auto world = stage_ == 3 ? colony_ : city_;
         if (descriptorFingerprint(universe_.describe(world->planet)) != world->descriptor)
             throw std::runtime_error("Surface rendering altered a planetary descriptor");
@@ -148,7 +156,7 @@ class SurfaceValidation {
                   << " gpu_bytes=" << stats.surfaceGpuBytes << " precipitation=" << stats.weatherParticles
                   << " frame=" << frames_ << " shadow_bytes=" << stats.shadowBytes
                   << " shadow_active=" << stats.shadowActive << " shadow_updates=" << stats.shadowUpdates
-                  << '\n';
+                  << " life_worlds=" << stats.lifeWorlds << " life_scanning=" << stats.lifeScanning << '\n';
         if (stage_ == 1 && mode_ == 0)
             for (const auto& city : renderedWorld->settlements)
                 std::cout << "CITY_LAYOUT " << city.name << " pattern=" << cityPatternName(city.pattern)

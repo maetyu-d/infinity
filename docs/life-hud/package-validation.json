@@ -1,0 +1,7 @@
+{
+  "version": "0.22.0",
+  "build": "22",
+  "identical_code_data_sections": 31,
+  "signature_verified": true,
+  "tested_binary_sha256": "8c2384fcc1f1dc10c4e590d84771833961a73fd4d81fb21b9a396e02d7af56e6"
+}

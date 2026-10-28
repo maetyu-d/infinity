@@ -35,6 +35,7 @@ SpectralSky extractSpectralSky(const Universe&, const Navigation&);
 
 // Unresolved celestial lights and cockpit contacts retain the real addresses,
 // bearings and distances. Their screen footprint never changes world geometry.
+enum class LifeDetection : uint8_t { Unknown, Scanning, None, Detected };
 struct CelestialContact {
     Address address;
     glm::dvec3 localDirection{};
@@ -43,7 +44,13 @@ struct CelestialContact {
     std::string label;
     bool occluded = false, selected = false;
     bool moon = false;
+    LifeDetection life = LifeDetection::Unknown;
+    uint64_t population = 0;
+    uint32_t surfacePorts = 0, openPorts = 0;
 };
+inline bool hasSurfaceLife(const CelestialContact& c) {
+    return c.address.kind() == Kind::Planet && c.life == LifeDetection::Detected && c.population > 0;
+}
 std::vector<CelestialContact> extractCelestialContacts(const Universe&, const Navigation&, const Node& system,
                                                        std::span<const Node> planets);
 bool celestialOccluded(glm::dvec3 localDirection, double distanceMetres, std::span<const CelestialContact>,

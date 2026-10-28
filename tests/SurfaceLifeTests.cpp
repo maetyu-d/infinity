@@ -235,6 +235,34 @@ int main() {
         stale.wait();
         check(stale.stats().cancelled > 0 || stale.stats().completed > 0,
               "Surface task did not complete or cancel");
+        check(inhabitedFixture.has_value(), "Missing inhabited survey fixture");
+        const auto surveyedWorld = generateSurfaceLife(u, *inhabitedFixture);
+        const auto expectedSurvey = summarizeSurfaceLife(*surveyedWorld);
+        const auto originalDigest = digest(*surveyedWorld);
+        uint64_t actualPopulation = 0;
+        for (const auto& city : surveyedWorld->settlements)
+            actualPopulation += city.population;
+        check(expectedSurvey.population == actualPopulation && expectedSurvey.population > 0 &&
+                  expectedSurvey.ports == surveyedWorld->settlements.size() &&
+                  digest(*surveyedWorld) == originalDigest,
+              "Life telemetry guessed population or modified the generated world");
+        SurfaceLifeCache survey(u);
+        survey.beginFrame();
+        survey.survey(*inhabitedFixture);
+        check(survey.stats().pending <= 2, "Remote life survey exceeded worker limits");
+        survey.wait();
+        const auto observation = survey.summary(inhabitedFixture->address);
+        check(observation && observation->population == expectedSurvey.population &&
+                  observation->ports == expectedSurvey.ports &&
+                  observation->openPorts == expectedSurvey.openPorts &&
+                  !survey.find(inhabitedFixture->address) && survey.stats().bytes == 0,
+              "Remote survey retained full city geometry or changed actual life counts");
+        survey.request(*inhabitedFixture);
+        survey.wait();
+        check(survey.find(inhabitedFixture->address) &&
+                  digest(*survey.find(inhabitedFixture->address)) == originalDigest &&
+                  survey.summary(inhabitedFixture->address)->population == actualPopulation,
+              "Approaching a surveyed planet changed its deterministic surface");
         std::atomic<bool> cancelled{true};
         check(inhabitedFixture.has_value(), "Missing inhabited cancellation fixture");
         const auto stopped = generateSurfaceLife(u, *inhabitedFixture, &cancelled);

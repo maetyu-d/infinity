@@ -165,6 +165,11 @@ struct SurfaceCacheStats {
     double lastMs = 0;
     std::string error;
 };
+struct SurfaceLifeSummary {
+    uint64_t population = 0;
+    uint32_t ports = 0, openPorts = 0;
+};
+SurfaceLifeSummary summarizeSurfaceLife(const SurfaceWorld&);
 // Read-only additive descriptors, generated off the render thread. Two jobs and a hard LRU budget.
 class SurfaceLifeCache {
   public:
@@ -173,6 +178,10 @@ class SurfaceLifeCache {
     void beginFrame();
     std::shared_ptr<const SurfaceWorld> request(const Node&);
     std::shared_ptr<const SurfaceWorld> find(const Address&) const;
+    // Low-priority HUD survey uses the same two workers and authoritative
+    // generator, retaining only a bounded compact result for distant worlds.
+    void survey(const Node&);
+    std::optional<SurfaceLifeSummary> summary(const Address&) const;
     void finishFrame();
     void wait();
     SurfaceCacheStats stats() const;
@@ -182,12 +191,19 @@ class SurfaceLifeCache {
         std::shared_ptr<const SurfaceWorld> world;
         std::shared_ptr<std::atomic<bool>> cancel;
         uint64_t used = 0;
+        bool surveyOnly = false;
     };
     const Universe& universe_;
     size_t budget_;
     uint64_t frame_ = 0;
     mutable std::mutex mutex_;
     std::map<Address, Entry> entries_;
+    struct SurveyEntry {
+        SurfaceLifeSummary result;
+        uint64_t used = 0;
+    };
+    std::map<Address, SurveyEntry> summaries_; // At most 256 compact observations.
+    std::shared_ptr<const SurfaceWorld> request(const Node&, bool surveyOnly);
     SurfaceCacheStats stats_;
     oneapi::tbb::task_group tasks_;
 };

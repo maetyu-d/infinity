@@ -10,7 +10,7 @@ struct CockpitRect {
 };
 struct CockpitLayout {
     double width;
-    CockpitRect traffic, celestial, navigation, flight, scope, systems, windscreen;
+    CockpitRect traffic, celestial, life, navigation, flight, scope, systems, windscreen;
     explicit CockpitLayout(double aspect);
     std::optional<size_t> trafficRow(glm::dvec2, size_t count) const;
     std::optional<size_t> celestialRow(glm::dvec2, size_t count) const;
@@ -18,6 +18,8 @@ struct CockpitLayout {
 // A short display list keeps a distant selected actor visible without reordering
 // the authoritative contact list used by K cycling and stable identity lookup.
 std::vector<size_t> cockpitActivityRows(std::span<const ActivityContact>);
+std::vector<size_t> cockpitCelestialRows(std::span<const CelestialContact>);
+std::optional<Address> nextLivingWorld(std::span<const CelestialContact>, const std::optional<Address>&);
 struct CockpitTargetMarker {
     glm::dvec2 point{}, direction{};
     bool offscreen = false, aft = false;

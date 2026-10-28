@@ -3,6 +3,7 @@
 #include "StreamingValidation.hpp"
 #include "SurfaceValidation.hpp"
 #include "TerrainValidation.hpp"
+#include "infinite/Cockpit.hpp"
 #include "infinite/Continuity.hpp"
 #include "infinite/Flight.hpp"
 #include "infinite/Piloting.hpp"
@@ -358,7 +359,10 @@ int main(int argc, char** argv) {
                             } else if (auto a = renderer.pick(x, y)) {
                                 activity.selected.reset();
                                 pilot.clearWaypoint();
-                                nav.select(*a);
+                                if (pilotEnabled && a->kind() == Kind::Planet)
+                                    pilot.selectPlanet(*a);
+                                else
+                                    nav.select(*a);
                                 notice = "Selected " + universe.describe(*a).label() +
                                          " / J navigate / F explorer focus";
                                 noticeTime = 4;
@@ -480,11 +484,32 @@ int main(int argc, char** argv) {
                             break;
                         case SDL_SCANCODE_Y:
                             if (pilotEnabled) {
-                                activity.selected.reset();
-                                if (event.key.mod & SDL_KMOD_SHIFT)
-                                    pilot.selectNextMoon();
-                                else
-                                    pilot.selectNextPlanet();
+                                if (event.key.mod & SDL_KMOD_CTRL) {
+                                    if (auto world =
+                                            nextLivingWorld(renderer.celestialContacts(), nav.selected)) {
+                                        activity.selected.reset();
+                                        pilot.selectPlanet(*world);
+                                        notice = "LIFE DETECTED / " + universe.describe(*world).label() +
+                                                 " / J APPROACH";
+                                    } else {
+                                        const auto contacts = renderer.celestialContacts();
+                                        const bool scanning =
+                                            std::any_of(contacts.begin(), contacts.end(), [](const auto& c) {
+                                                return c.life == LifeDetection::Scanning ||
+                                                       (c.address.kind() == Kind::Planet &&
+                                                        c.life == LifeDetection::Unknown);
+                                            });
+                                        notice = scanning ? "SURFACE LIFE SCAN IN PROGRESS"
+                                                          : "NO SURFACE LIFE DETECTED IN THIS SYSTEM";
+                                    }
+                                    noticeTime = 6;
+                                } else {
+                                    activity.selected.reset();
+                                    if (event.key.mod & SDL_KMOD_SHIFT)
+                                        pilot.selectNextMoon();
+                                    else
+                                        pilot.selectNextPlanet();
+                                }
                             }
                             break;
                         case SDL_SCANCODE_K:

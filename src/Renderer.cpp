@@ -121,6 +121,7 @@ struct Renderer::Impl {
     std::vector<CockpitRect> cockpitHitRegions;
     std::shared_ptr<const Geometry> skyGeometry;
     std::vector<CelestialContact> contacts;
+    std::optional<Address> lifeSelection;
     std::vector<CelestialContact> skyOccluders;
     const ActivityState* activity = nullptr;
     std::vector<ActivityContact> activityContacts;
@@ -1253,6 +1254,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     p.cockpitHitRegions.clear();
     p.atomView = p.instruments ? 3 : 2;
     p.contacts.clear();
+    p.lifeSelection = nav.selected;
     p.skyOccluders.clear();
     auto nodes = p.universe.lineage(nav.anchor);
     p.anchorFrames.clear();
@@ -1291,23 +1293,44 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         bgfx::setViewRect(2, 0, 0, uint16_t(p.width), uint16_t(p.height));
         bgfx::setViewMode(2, bgfx::ViewMode::Default);
     }
+    std::optional<Node> lifeSurvey;
+    double surveyPriority = 1e300;
     for (const auto& system : nodes)
         if (system.address.kind() == Kind::System)
-            if (auto planets = cache.catalog(system))
+            if (auto planets = cache.catalog(system)) {
                 p.contacts = extractCelestialContacts(p.universe, nav, system, *planets);
+                for (const auto& planet : *planets) {
+                    auto contact = std::find_if(p.contacts.begin(), p.contacts.end(),
+                                                [&](const auto& c) { return c.address == planet.address; });
+                    if (contact == p.contacts.end())
+                        continue;
+                    if (!hasSolidSurface(planet)) {
+                        contact->life = LifeDetection::None;
+                    } else if (auto summary = p.surfaceLife.summary(planet.address)) {
+                        contact->population = summary->population;
+                        contact->surfacePorts = summary->ports;
+                        contact->openPorts = summary->openPorts;
+                        contact->life = summary->population ? LifeDetection::Detected : LifeDetection::None;
+                    } else if (p.instruments && !p.instruments->shrinking) {
+                        contact->life = LifeDetection::Scanning;
+                        const double priority = contact->selected ? 0 : contact->distanceMetres;
+                        if (priority < surveyPriority) {
+                            lifeSurvey = planet;
+                            surveyPriority = priority;
+                        }
+                    }
+                }
+            }
     std::sort(p.contacts.begin(), p.contacts.end(),
               [](const auto& a, const auto& b) { return a.distanceMetres < b.distanceMetres; });
-    if (p.contacts.size() > 8) {
-        auto selected =
-            std::find_if(p.contacts.begin() + 8, p.contacts.end(), [](const auto& c) { return c.selected; });
-        if (selected != p.contacts.end())
-            std::iter_swap(p.contacts.begin() + 7, selected);
-    }
     const double pixelAngle = 2 * std::tan(fov * .5) / p.height;
     for (const auto& contact : p.contacts)
         if (contact.angularRadius > pixelAngle * .125)
             p.skyOccluders.push_back(contact);
     p.stats.celestialContacts = p.contacts.size();
+    p.stats.lifeWorlds = std::count_if(p.contacts.begin(), p.contacts.end(), hasSurfaceLife);
+    p.stats.lifeScanning = std::count_if(p.contacts.begin(), p.contacts.end(),
+                                         [](const auto& c) { return c.life == LifeDetection::Scanning; });
     bgfx::touch(0);
     std::optional<Node> terrainPlanet;
     for (const auto& node : nodes)
@@ -1452,6 +1475,11 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         if (node.address != root)
             candidates(node);
     p.renderActivity(nodes, nav, cache);
+    // Nearby visible worlds claim the two existing workers first. Surveying
+    // the remaining system never evicts a close city's geometry to keep a
+    // distant world's full layout resident.
+    if (lifeSurvey && p.frame % 8 == 0)
+        p.surfaceLife.survey(*lifeSurvey);
     p.surfaceLife.finishFrame();
     const auto surfaceStats = p.surfaceLife.stats();
     if (!surfaceStats.error.empty())
@@ -1691,9 +1719,13 @@ std::optional<Address> Renderer::pick(double x, double y) const {
         return {};
     if (p.cockpitVisible && (!p.instruments->shrinking || p.instruments->hullMetres >= .001)) {
         const double scale = 900. / p.height;
+        const CockpitLayout layout(double(p.width) / p.height);
+        if (!p.contacts.empty() && layout.life.contains({x * scale, y * scale})) {
+            return nextLivingWorld(p.contacts, p.lifeSelection);
+        }
         if (auto row = CockpitLayout(double(p.width) / p.height)
                            .celestialRow({x * scale, y * scale}, p.contacts.size()))
-            return p.contacts[*row].address;
+            return p.contacts[cockpitCelestialRows(p.contacts)[*row]].address;
     }
     if (p.cockpitVisible &&
         std::any_of(p.cockpitHitRegions.begin(), p.cockpitHitRegions.end(),

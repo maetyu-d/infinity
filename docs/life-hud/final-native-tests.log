@@ -1,0 +1,13 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 25: native_weather_and_surface_life
+1/4 Test #25: native_weather_and_surface_life .....   Passed   64.16 sec
+    Start 26: native_weather_and_surface_images
+2/4 Test #26: native_weather_and_surface_images ...   Passed    1.54 sec
+    Start 29: native_piloting_loop
+3/4 Test #29: native_piloting_loop ................   Passed   37.91 sec
+    Start 30: native_cockpit_images
+4/4 Test #30: native_cockpit_images ...............   Passed    4.90 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) = 108.52 sec

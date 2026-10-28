@@ -1,0 +1,79 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+      Start  1: surface_site_preservation
+ 1/37 Test  #1: surface_site_preservation ............   Passed    1.34 sec
+      Start  2: procedural_city_structure
+ 2/37 Test  #2: procedural_city_structure ............   Passed    0.93 sec
+      Start  3: planetary_weather_and_surface_life
+ 3/37 Test  #3: planetary_weather_and_surface_life ...   Passed    4.23 sec
+      Start  4: solid_planet_local_terrain
+ 4/37 Test  #4: solid_planet_local_terrain ...........   Passed    0.66 sec
+      Start  5: cockpit_layout_and_targeting
+ 5/37 Test  #5: cockpit_layout_and_targeting .........   Passed    0.42 sec
+      Start  6: planetary_population_and_moons
+ 6/37 Test  #6: planetary_population_and_moons .......   Passed    0.59 sec
+      Start  7: legacy_population_preservation
+ 7/37 Test  #7: legacy_population_preservation .......   Passed    0.53 sec
+      Start  8: persistent_orbital_activity
+ 8/37 Test  #8: persistent_orbital_activity ..........   Passed    2.12 sec
+      Start  9: operating_regimes_and_shrinking
+ 9/37 Test  #9: operating_regimes_and_shrinking ......   Passed    1.39 sec
+      Start 10: ship_dynamics_and_landing
+10/37 Test #10: ship_dynamics_and_landing ............   Passed    1.08 sec
+      Start 11: unbounded_spatial_streaming
+11/37 Test #11: unbounded_spatial_streaming ..........   Passed    1.71 sec
+      Start 12: seamless_scale_flight
+12/37 Test #12: seamless_scale_flight ................   Passed    1.97 sec
+      Start 13: free_flight_navigation
+13/37 Test #13: free_flight_navigation ...............   Passed    0.32 sec
+      Start 14: filtered_material_texture
+14/37 Test #14: filtered_material_texture ............   Passed    0.43 sec
+      Start 15: surface_shading_preserves_mesh
+15/37 Test #15: surface_shading_preserves_mesh .......   Passed    0.33 sec
+      Start 16: rendering_preserves_universe
+16/37 Test #16: rendering_preserves_universe .........   Passed    0.82 sec
+      Start 17: performance_invariants
+17/37 Test #17: performance_invariants ...............   Passed    0.53 sec
+      Start 18: structural_processes
+18/37 Test #18: structural_processes .................   Passed    0.72 sec
+      Start 19: universe_regressions
+19/37 Test #19: universe_regressions .................   Passed    0.57 sec
+      Start 20: persistence_process_write
+20/37 Test #20: persistence_process_write ............   Passed    0.01 sec
+      Start 21: persistence_process_read
+21/37 Test #21: persistence_process_read .............   Passed    0.01 sec
+      Start 22: cross_scale_round_trip
+22/37 Test #22: cross_scale_round_trip ...............   Passed    3.95 sec
+      Start 23: continuity_restart_write
+23/37 Test #23: continuity_restart_write .............   Passed    0.48 sec
+      Start 24: continuity_restart_read
+24/37 Test #24: continuity_restart_read ..............   Passed    0.46 sec
+      Start 25: native_weather_and_surface_life
+25/37 Test #25: native_weather_and_surface_life ......   Passed   44.90 sec
+      Start 26: native_weather_and_surface_images
+26/37 Test #26: native_weather_and_surface_images ....   Passed    1.58 sec
+      Start 27: native_solid_terrain
+27/37 Test #27: native_solid_terrain .................   Passed   29.17 sec
+      Start 28: native_solid_terrain_images
+28/37 Test #28: native_solid_terrain_images ..........   Passed    0.58 sec
+      Start 29: native_piloting_loop
+29/37 Test #29: native_piloting_loop .................   Passed   41.48 sec
+      Start 30: native_cockpit_images
+30/37 Test #30: native_cockpit_images ................   Passed    3.45 sec
+      Start 31: native_boundary_streaming
+31/37 Test #31: native_boundary_streaming ............   Passed   14.05 sec
+      Start 32: native_boundary_pixels
+32/37 Test #32: native_boundary_pixels ...............   Passed    5.79 sec
+      Start 33: native_seamless_scale_flight
+33/37 Test #33: native_seamless_scale_flight .........   Passed   48.11 sec
+      Start 34: native_cross_scale_round_trip
+34/37 Test #34: native_cross_scale_round_trip ........   Passed   33.42 sec
+      Start 35: native_atomic_visibility
+35/37 Test #35: native_atomic_visibility .............   Passed    1.67 sec
+      Start 36: native_render_mode_round_trip
+36/37 Test #36: native_render_mode_round_trip ........   Passed   48.21 sec
+      Start 37: native_render_mode_images
+37/37 Test #37: native_render_mode_images ............   Passed   10.87 sec
+
+100% tests passed, 0 tests failed out of 37
+
+Total Test time (real) = 308.92 sec
