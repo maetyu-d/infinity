@@ -1,0 +1,110 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+      Start  1: surface_site_preservation
+ 1/45 Test  #1: surface_site_preservation ................   Passed    1.68 sec
+      Start  2: procedural_city_structure
+ 2/45 Test  #2: procedural_city_structure ................   Passed    0.98 sec
+      Start  3: planetary_weather_and_surface_life
+ 3/45 Test  #3: planetary_weather_and_surface_life .......   Passed    4.43 sec
+      Start  4: solid_planet_local_terrain
+ 4/45 Test  #4: solid_planet_local_terrain ...............   Passed    1.08 sec
+      Start  5: cockpit_layout_and_targeting
+ 5/45 Test  #5: cockpit_layout_and_targeting .............   Passed    0.69 sec
+      Start  6: planetary_population_and_moons
+ 6/45 Test  #6: planetary_population_and_moons ...........   Passed    1.08 sec
+      Start  7: legacy_population_preservation
+ 7/45 Test  #7: legacy_population_preservation ...........   Passed    0.85 sec
+      Start  8: persistent_orbital_activity
+ 8/45 Test  #8: persistent_orbital_activity ..............   Passed    4.14 sec
+      Start  9: operating_regimes_and_shrinking
+ 9/45 Test  #9: operating_regimes_and_shrinking ..........   Passed    2.31 sec
+      Start 10: ship_dynamics_and_landing
+10/45 Test #10: ship_dynamics_and_landing ................   Passed    1.28 sec
+      Start 11: unbounded_spatial_streaming
+11/45 Test #11: unbounded_spatial_streaming ..............   Passed    3.45 sec
+      Start 12: seamless_scale_flight
+12/45 Test #12: seamless_scale_flight ....................   Passed    5.84 sec
+      Start 13: free_flight_navigation
+13/45 Test #13: free_flight_navigation ...................   Passed    0.59 sec
+      Start 14: filtered_material_texture
+14/45 Test #14: filtered_material_texture ................   Passed    0.91 sec
+      Start 15: surface_shading_preserves_mesh
+15/45 Test #15: surface_shading_preserves_mesh ...........   Passed    0.62 sec
+      Start 16: rendering_preserves_universe
+16/45 Test #16: rendering_preserves_universe .............   Passed    1.06 sec
+      Start 17: performance_invariants
+17/45 Test #17: performance_invariants ...................   Passed    1.15 sec
+      Start 18: structural_processes
+18/45 Test #18: structural_processes .....................   Passed    1.51 sec
+      Start 19: universe_regressions
+19/45 Test #19: universe_regressions .....................   Passed    1.10 sec
+      Start 20: persistence_process_write
+20/45 Test #20: persistence_process_write ................   Passed    0.02 sec
+      Start 21: persistence_process_read
+21/45 Test #21: persistence_process_read .................   Passed    0.02 sec
+      Start 22: cross_scale_round_trip
+22/45 Test #22: cross_scale_round_trip ...................   Passed    6.57 sec
+      Start 23: continuity_restart_write
+23/45 Test #23: continuity_restart_write .................   Passed    0.55 sec
+      Start 24: continuity_restart_read
+24/45 Test #24: continuity_restart_read ..................   Passed    0.46 sec
+      Start 25: native_weather_and_surface_life
+25/45 Test #25: native_weather_and_surface_life ..........   Passed   59.75 sec
+      Start 26: native_weather_and_surface_images
+26/45 Test #26: native_weather_and_surface_images ........   Passed    2.12 sec
+      Start 27: native_solid_terrain
+27/45 Test #27: native_solid_terrain .....................   Passed   34.42 sec
+      Start 28: native_solid_terrain_images
+28/45 Test #28: native_solid_terrain_images ..............   Passed    0.84 sec
+      Start 29: native_surface_quality
+29/45 Test #29: native_surface_quality ...................   Passed   21.77 sec
+      Start 30: native_surface_quality_images
+30/45 Test #30: native_surface_quality_images ............   Passed    0.86 sec
+      Start 31: native_surface_frame_and_retina
+31/45 Test #31: native_surface_frame_and_retina ..........   Passed   36.12 sec
+      Start 32: native_surface_frame_and_retina_images
+32/45 Test #32: native_surface_frame_and_retina_images ...   Passed    3.12 sec
+      Start 33: native_grazing_sun_receivers
+33/45 Test #33: native_grazing_sun_receivers .............   Passed   27.52 sec
+      Start 34: native_grazing_sun_images
+34/45 Test #34: native_grazing_sun_images ................   Passed    1.56 sec
+      Start 35: native_terrain_cast_shadows
+35/45 Test #35: native_terrain_cast_shadows ..............   Passed   25.31 sec
+      Start 36: native_terrain_cast_shadow_images
+36/45 Test #36: native_terrain_cast_shadow_images ........   Passed    0.98 sec
+      Start 37: native_piloting_loop
+37/45 Test #37: native_piloting_loop .....................   Passed   43.96 sec
+      Start 38: native_cockpit_images
+38/45 Test #38: native_cockpit_images ....................   Passed    3.50 sec
+      Start 39: native_boundary_streaming
+39/45 Test #39: native_boundary_streaming ................   Passed   14.25 sec
+      Start 40: native_boundary_pixels
+40/45 Test #40: native_boundary_pixels ...................   Passed    6.00 sec
+      Start 41: native_seamless_scale_flight
+41/45 Test #41: native_seamless_scale_flight .............   Passed   53.29 sec
+      Start 42: native_cross_scale_round_trip
+42/45 Test #42: native_cross_scale_round_trip ............   Passed   33.13 sec
+      Start 43: native_atomic_visibility
+43/45 Test #43: native_atomic_visibility .................   Passed    1.58 sec
+      Start 44: native_render_mode_round_trip
+44/45 Test #44: native_render_mode_round_trip ............   Passed   59.75 sec
+      Start 45: native_render_mode_images
+45/45 Test #45: native_render_mode_images ................***Failed    0.09 sec
+Traceback (most recent call last):
+  File "/Users/user/Documents/SC tutorial/Infinite/tools/check_mode_captures.py", line 32, in <module>
+    costs = {int(r["effect_bytes"]) for r in csv.DictReader(profile.open())}
+  File "/Users/user/Documents/SC tutorial/Infinite/tools/check_mode_captures.py", line 32, in <setcomp>
+    costs = {int(r["effect_bytes"]) for r in csv.DictReader(profile.open())}
+TypeError: int() argument must be a string, a bytes-like object or a number, not 'NoneType'
+
+
+98% tests passed, 1 tests failed out of 45
+
+Total Test time (real) = 472.36 sec
+
+The following tests FAILED:
+CMake Error: Cannot open file for write: /Users/user/Documents/SC tutorial/Infinite/build/Testing/Temporary/LastTestsFailed.log.tmpb9839
+CMake Error: : System Error: No space left on device
+Problem opening file: /Users/user/Documents/SC tutorial/Infinite/build/Testing/Temporary/LastTestsFailed.log
+Cannot create log file: LastTestsFailed.log
+	 45 - native_render_mode_images (Failed)
+Errors while running CTest

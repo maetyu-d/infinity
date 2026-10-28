@@ -1,5 +1,6 @@
 #include "infinite/Presentation.hpp"
 #include "infinite/Navigation.hpp"
+#include "infinite/SurfaceLife.hpp"
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -78,7 +79,11 @@ ScenePresentation extractPresentation(const Node& node, const Geometry& geometry
             {domain, float(node.environment.strain), float(node.geology ? node.geology->activity : .5),
              float(node.environment.chemistry.ice)},
             {float(node.environment.mineral), float(node.environment.waterActivity),
-             float(node.environment.temperature), 0}};
+             float(node.environment.temperature), geometry.section ? 1.f : 0.f},
+            {kind == Kind::Planet ? float(planetClimate(node).pressureBar) : 0.f,
+             float(node.geology ? node.geology->terrain.type : TerrainType::None),
+             node.geology && node.geology->type == GeologyType::GasEnvelope ? 1.f : 0.f,
+             float(node.geology ? node.geology->type : GeologyType::MobileLid)}};
 }
 float hyperionPhase(uint64_t key) {
     const float phase = float(key % 10000) * .0371f;
@@ -89,8 +94,8 @@ glm::vec3 hyperionPigment(float phase) {
 }
 glm::vec3 hyperionDisplay(glm::vec3 c) {
     const float luminance = glm::dot(c, glm::vec3(.299f, .587f, .114f));
-    c = glm::max(glm::mix(glm::vec3(luminance), c, 1.19f), glm::vec3(0));
-    c = glm::max(c * 1.30f, glm::vec3(0));
+    c = glm::max(glm::mix(glm::vec3(luminance), c, 1.28f), glm::vec3(0));
+    c = glm::max(c * 1.36f, glm::vec3(0));
     float peak = std::max({c.r, c.g, c.b});
     float mapped = (peak * (2.51f * peak + .03f)) / (peak * (2.43f * peak + .59f) + .14f);
     auto film = (c * (2.51f * c + .03f)) / (c * (2.43f * c + .59f) + .14f);

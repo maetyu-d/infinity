@@ -1685,7 +1685,25 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         bgfx::setIndexBuffer(p.cabin.indices);
         bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS |
                        BGFX_STATE_MSAA);
-        bgfx::submit(84, p.colorProgram);
+        if (p.mode != RenderMode::Original && bgfx::getAvailInstanceDataBuffer(1, 80)) {
+            bgfx::InstanceDataBuffer instance;
+            bgfx::allocInstanceDataBuffer(&instance, 1, 80);
+            const Instance identity{glm::mat4(1), glm::vec4(1)};
+            std::memcpy(instance.data, &identity, sizeof(identity));
+            Geometry source;
+            const ScenePresentation presentation{source,
+                                                 nav.anchor,
+                                                 {.38f, .55f, .20f, 0},
+                                                 hyperionPhase(p.universe.seed()),
+                                                 p.mode == RenderMode::Hybrid ? .35f : 1.f,
+                                                 {5, 0, 0, 0}};
+            const auto sun = p.cameraInverse * p.lightAt(nav.anchor, nav);
+            p.hyperion->bind(presentation, {}, glm::vec3(sun), glm::mat4(1), 0, p.visualTime);
+            bgfx::setInstanceDataBuffer(&instance);
+            bgfx::submit(84, p.hyperion->geometryProgram());
+            p.stats.uploadBytes += 80;
+        } else
+            bgfx::submit(84, p.colorProgram);
     } else
         bgfx::setViewClear(84, BGFX_CLEAR_NONE);
 

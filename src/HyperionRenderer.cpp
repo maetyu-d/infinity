@@ -90,6 +90,7 @@ void HyperionRenderer::init() {
                                    bgfx::copy(noise.data(), uint32_t(noise.size())));
     noiseBytes_ = noise.size();
     detailUploadBytes_ += noiseBytes_;
+    environment_ = bgfx::createUniform("u_environment", bgfx::UniformType::Vec4);
     surface_ = bgfx::createUniform("u_surface", bgfx::UniformType::Vec4);
     const uint8_t average[] = {128, 0, 128, 128};
     detail_ = bgfx::createTexture2D(1, 1, false, 1, bgfx::TextureFormat::RGBA8, 0,
@@ -157,11 +158,28 @@ HyperionRenderer::~HyperionRenderer() {
                    smoothGeometry_[1], sunProgram_, cloudProgram_})
         if (bgfx::isValid(p))
             bgfx::destroy(p);
-    for (auto u :
-         {noiseSampler_, detailSampler_, surface_,  sceneSampler_, bloomSampler_, style_,
-          pattern_,      postParams_,    cavity_,   depthSampler_, atmosphere_,   atmosphereRotation_,
-          micro_,        microParams_,   meso_,     domain_,       skyParams_,    skyRotation_,
-          sunSampler_,   sunMatrix_,     sunParams_})
+    for (auto u : {environment_,
+                   noiseSampler_,
+                   detailSampler_,
+                   surface_,
+                   sceneSampler_,
+                   bloomSampler_,
+                   style_,
+                   pattern_,
+                   postParams_,
+                   cavity_,
+                   depthSampler_,
+                   atmosphere_,
+                   atmosphereRotation_,
+                   micro_,
+                   microParams_,
+                   meso_,
+                   domain_,
+                   skyParams_,
+                   skyRotation_,
+                   sunSampler_,
+                   sunMatrix_,
+                   sunParams_})
         if (bgfx::isValid(u))
             bgfx::destroy(u);
 }
@@ -288,6 +306,7 @@ void HyperionRenderer::bind(const ScenePresentation& p, const glm::vec3& eye, co
     bgfx::setUniform(pattern_, glm::value_ptr(pattern));
     bgfx::setUniform(domain_, glm::value_ptr(p.domain));
     bgfx::setUniform(surface_, glm::value_ptr(p.surface));
+    bgfx::setUniform(environment_, glm::value_ptr(p.environment));
     bgfx::setUniform(cavity_, glm::value_ptr(cavity));
     bgfx::setUniform(sunMatrix_, glm::value_ptr(sunFromWorld_));
     const glm::vec4 shadow{sunActive_ ? 1.f : 0.f, 1.f / sunShadowResolution, 0, 0};
@@ -355,7 +374,7 @@ void HyperionRenderer::finish() {
         bgfx::setViewClear(id, BGFX_CLEAR_COLOR, 0x000000ff);
         std::array<glm::vec4, 2> params{};
         params[0] =
-            i == 0 ? glm::vec4(2.f / width_, 0, 1, 0) : glm::vec4(0, 2.f / std::max(1, height_ / 3), 0, 0);
+            i == 0 ? glm::vec4(4.f / width_, 0, 1, 0) : glm::vec4(0, 4.f / std::max(1, height_ / 3), 0, 0);
         bgfx::setUniform(postParams_, params.data(), 2);
         bgfx::setTexture(0, sceneSampler_, bgfx::getTexture(i == 0 ? scene_ : bloom_[0]), sampling);
         screen(id, blur_);

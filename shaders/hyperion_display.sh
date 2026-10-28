@@ -1,3 +1,4 @@
+#include "hyperion_tone.sh"
 // Shared post treatment: HDR-safe edge filtering and hue-preserving display.
 // No temporal history, so a rebase or extreme zoom cannot ghost old geometry.
 float luma(vec3 c){return dot(c,vec3(.299,.587,.114));}
@@ -21,12 +22,7 @@ vec3 resolveScene(vec2 uv){
 }
 vec3 displayTransform(vec3 c,vec2 uv){
  vec2 v=(uv-.5)*2.;c*=1.-.10*dot(v,v);
- float brightness=luma(c);c=max(vec3(0.),mix(vec3(brightness),c,1.19));
- c=max(c*1.30,vec3(0.));
- float peak=max(c.r,max(c.g,c.b)),mappedPeak=(peak*(2.51*peak+.03))/(peak*(2.43*peak+.59)+.14);
- vec3 film=(c*(2.51*c+.03))/(c*(2.43*c+.59)+.14);
- c=clamp(mix(film,c/max(peak,.0001)*mappedPeak,.86),vec3(0.),vec3(1.));
- c=pow(c,vec3(1./2.2));
+ c=toneColour(c);
  // Stable sub-code-value dither prevents visible bands in dark nebulae and
  // atmosphere gradients. Pixel coordinates avoid frame-to-frame sparkle.
  float dither=fract(52.9829189*fract(dot(floor(uv/u_post[0].xy),vec2(.06711056,.00583715))))-.5;

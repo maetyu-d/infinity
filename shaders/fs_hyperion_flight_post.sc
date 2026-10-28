@@ -40,7 +40,11 @@ vec3 atmosphere(vec2 uv, out vec3 transmission) {
     }
     vec3 scattering=sum*(beta*rayleigh+vec3(.0016,.0016,.0016)*mie)*7.;
     vec3 sampleDirection=normalize(o+d*(start+end)*.5);
-    scattering*=mix(vec3(1.),.8+pigment(dot(sampleDirection,vec3(.3,.8,.4))*.7+u_atmosphere[2].w+mu*.12)*.4,.10);
+    // Hyperion maximum-look aerial palette, localized to optical scattering.
+    float horizon=exp(-abs(dot(d,normalize(o)))*7.);
+    float dusk=1.-smoothstep(.03,.32,abs(dot(normalize(o),L)));
+    vec3 prism=pigment(dot(sampleDirection,vec3(.3,.8,.4))*.45+u_atmosphere[2].w+mu*.08);
+    scattering*=mix(vec3(1.),.48+prism*1.35,.18+horizon*.22+dusk*.13);
     transmission=exp(-beta*optical);
     return scattering;
 }
@@ -48,7 +52,7 @@ vec3 atmosphere(vec2 uv, out vec3 transmission) {
 void main() {
     vec2 uv=v_texcoord0;
     vec3 original=texture2D(s_scene,uv).rgb,c=resolveScene(uv);
-    c+=texture2D(s_bloom,uv).rgb*.45;
+    c+=texture2D(s_bloom,uv).rgb*.50;
     if(u_atmosphere[0].w>0.){vec3 transmission;vec3 air=atmosphere(uv,transmission);c=c*transmission+air;}
     c=displayTransform(c,uv);
     gl_FragColor=vec4(mix(original,c,u_post[0].z),1.);

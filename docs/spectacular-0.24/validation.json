@@ -1,0 +1,20 @@
+{
+  "checks_verified": 45,
+  "initial_run_passes": 44,
+  "initial_image_failure": "Disk exhaustion truncated the mode profile; CTest could not finish writing its own log.",
+  "retry": "Both native mode-tour and image checks pass with lossless gzip capture archival.",
+  "cpu_presentation_checks": 3682,
+  "original_world_crops_pixel_identical": 23,
+  "atomic_background_contrast_fraction": {
+    "before": 0.3987428977272727,
+    "after": 0.0
+  },
+  "native_backend": "Metal",
+  "compiled_backends": [
+    "Metal",
+    "SPIR-V",
+    "GLSL"
+  ],
+  "packaged_version": "0.24.0",
+  "packaged_build": 24
+}

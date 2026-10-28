@@ -18,7 +18,7 @@ vec3 architecture(vec3 base,vec3 N,vec3 V,vec3 L,vec3 p,float localY,float phase
  float joint=(1.-smoothstep(.006,.018,min(edge.x,edge.y)))*fine;
  vec3 pigmentPaint=pigment(phase+p.y*.009+p.x*.005+sin(p.z*.021)*.16);
  vec3 albedo=pow(max(base,vec3(.001)),vec3(1.15))*.80;
- albedo*=mix(vec3(1.),.65+pigmentPaint*.8,.24);
+ albedo*=mix(vec3(1.),.65+pigmentPaint*.9,.40);
  albedo*=.92+panel*.08*fine;
  albedo*=1.-joint*.25;
  float rough=mix(.78,.17,glass),metal=mix(.04,.28,glass);
@@ -31,13 +31,13 @@ vec3 architecture(vec3 base,vec3 N,vec3 V,vec3 L,vec3 p,float localY,float phase
  vec3 c=brdf(albedo,N,V,L,rough,metal)*sunVisibility;
  c+=albedo*mix(vec3(.07,.09,.14),vec3(.28,.34,.43),day)*footing;
  vec3 r=reflect(-V,N),sky=mix(vec3(.008,.016,.030),vec3(.10,.17,.24),day);
- c+=sky*glass*(.10+fresnel*.85);
+ c+=sky*glass*(.10+fresnel*1.15);
  float room=step(.37,panel),blind=smoothstep(.18,.28,cell.y)*(1.-smoothstep(.80,.86,cell.y));
  vec3 roomColour=mix(vec3(.12,.65,.72),vec3(1.,.49,.16),step(.53,panel));
- c+=roomColour*glass*room*blind*(.025+(1.-day)*.30)*fine;
+ c+=roomColour*glass*room*blind*(.035+(1.-day)*.85)*fine;
  c+=pigment(r.y*.22+r.z*.19+p.y*.018+phase)*(glass*(fresnel*.13+.008)+fresnel*.035);
  float trace=thread(p.y*.31+sin(p.x*.19+p.z*.17)*2.,.035);
- c+=pigmentPaint*trace*.024*fine*(.35+.65*day);
- c+=mix(vec3(.08,.65,.48),pigment(phase+p.y*.021+seconds*.001),.62)*inlay*.75;
+ c+=pigmentPaint*trace*.075*fine*(.35+.65*day);
+ c+=mix(vec3(.08,.65,.48),pigment(phase+p.y*.021+seconds*.001),.62)*inlay*1.45;
  return c;
 }

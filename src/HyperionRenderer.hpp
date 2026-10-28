@@ -64,6 +64,7 @@ class HyperionRenderer {
     bgfx::UniformHandle noiseSampler_ = BGFX_INVALID_HANDLE;
     size_t noiseBytes_ = 0;
     bgfx::TextureHandle detail_ = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle environment_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle detailSampler_ = BGFX_INVALID_HANDLE, surface_ = BGFX_INVALID_HANDLE;
     size_t detailBytes_ = 0, detailUploadBytes_ = 0;
     void screen(bgfx::ViewId, bgfx::ProgramHandle);

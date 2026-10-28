@@ -24,8 +24,15 @@ void main(){
  // abundance and ink gaps. Generated star and gas positions remain live.
  vec3 tapestry=ecstatic(d,phase,t);
  float folds=smoothstep(.08,.52,max(tapestry.r,max(tapestry.g,tapestry.b)));
- c=c*.58+tapestry*(.11+cloud*.85)*folds+silk(d.zxy,phase+.31,t)*.026;
- c+=pigment(d.y*.8+d.x*.3+phase)*thread((d.y+sin(d.x*4.+d.z)*.19)*48.,.025)*.026;
+ // Hyperion's nested emission volumes and illuminated dust edges. Reuse
+ // the existing density samples rather than adding another noise octave.
+ float emission=smoothstep(.34,.76,wisps)*band;
+ float rim=smoothstep(.38,.57,nearDust)*(1.-smoothstep(.57,.72,nearDust))*emission;
+ vec3 gasColour=mix(vec3(.025,.13,.22),pigment(phase+wisps*.48+d.z*.12)*.38,.70);
+ c+=gasColour*emission*(.18+wisps*.72)*(1.-cavity*.55);
+ c+=pigment(phase+wisps*.36+.12)*rim*.24;
+ c=c*.58+tapestry*(.34+cloud*1.65)*folds+silk(d.zxy,phase+.31,t)*.14;
+ c+=pigment(d.y*.8+d.x*.3+phase)*thread((d.y+sin(d.x*4.+d.z)*.19)*48.,.025)*.065;
  c*=exp(-cavity*.8);
  float density=.20+.80*clamp(u_sky[0].z,0.,1.);
  c=mix(vec3(.004,.007,.016),c,u_sky[0].x*density);

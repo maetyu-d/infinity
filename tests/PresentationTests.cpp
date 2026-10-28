@@ -1,5 +1,6 @@
 #include "infinite/Navigation.hpp"
 #include "infinite/Presentation.hpp"
+#include "infinite/SurfaceLife.hpp"
 #include "infinite/World.hpp"
 #include <iostream>
 #include <map>
@@ -138,6 +139,16 @@ int main() {
                      {RenderMode::Original, RenderMode::Hyperion, RenderMode::Hybrid, RenderMode::Original}) {
                     const auto scene = extractPresentation(node, *geometry, mode);
                     check(&scene.geometry == geometry.get(), "Adapter retains identical geometry");
+                    check(scene.environment.x == (node.address.kind() == Kind::Planet
+                                                      ? float(planetClimate(node).pressureBar)
+                                                      : 0.f),
+                          "Optical pressure must follow the retained climate");
+                    check(scene.environment.z ==
+                              (node.geology && node.geology->type == GeologyType::GasEnvelope ? 1.f : 0.f),
+                          "Gas-band presentation escaped the actual envelope classification");
+                    check(scene.environment.y ==
+                              float(node.geology ? node.geology->terrain.type : TerrainType::None),
+                          "Surface presentation lost its inherited terrain regime");
                     check(geometryFingerprint(scene.geometry) == hash, "Modes never mutate geometry");
                     check(descriptorFingerprint(node) == descriptor, "Materials never mutate simulation");
                     check(nav.serialize() == camera, "Modes never mutate camera");
@@ -145,6 +156,8 @@ int main() {
                               scene.surface.y == float(node.environment.waterActivity) &&
                               scene.surface.z == float(node.environment.temperature),
                           "Close material lost inherited environmental constraints");
+                    check(scene.surface.w == (geometry->section ? 1.f : 0.f),
+                          "Inspection material flag changed its geometry source");
                     check(scene.strength >= 0 && scene.strength <= 1, "Presentation weights bounded");
                     check(scene.phase >= 0 && scene.phase < 1, "Inherited phase bounded");
                     auto [phase, inserted] = materialPhases.emplace(scene.materialFrame, scene.phase);
@@ -166,6 +179,17 @@ int main() {
                     address = children.front();
             }
             check(visited.back().first.kind() == Kind::Lattice, "Every scale reaches atoms");
+            const auto enclosure = u.describe(address.parent());
+            auto section =
+                generator.section(enclosure, address, sectionBucket(enclosure.frame.logRadius - 6));
+            const auto sectionHash = geometryFingerprint(*section);
+            for (auto mode : {RenderMode::Original, RenderMode::Hyperion, RenderMode::Hybrid}) {
+                const auto scene = extractPresentation(enclosure, *section, mode);
+                check(scene.surface.w == 1.f && &scene.geometry == section.get(),
+                      "Inspected enclosure lost its retained section geometry");
+                check(geometryFingerprint(scene.geometry) == sectionHash,
+                      "Cutaway illumination changed the enclosing mineral");
+            }
             Universe returned(seed);
             GeometryGenerator fresh(returned);
             for (auto it = visited.rbegin(); it != visited.rend(); ++it) {
