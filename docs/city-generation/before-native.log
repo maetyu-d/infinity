@@ -1,0 +1,26 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+SURFACE_CITY 0,0,0/1:0/2:137/3:0 colony=0,0,0/1:0/2:0/3:7
+SURFACE_FIXTURE 0 0,0,0/1:0/2:137/3:0 CITY 97221 population=37983
+Infinite / Metal / seed 5282236693612155973
+SURFACE_RENDER weather-orbit mode=ORIGINAL sites=8 buildings=0 residents=0 triangles=0 cloud_cells=92 cpu_bytes=884008 gpu_bytes=0 precipitation=0
+SURFACE_RENDER weather-orbit mode=HYPERION sites=8 buildings=0 residents=0 triangles=0 cloud_cells=92 cpu_bytes=884008 gpu_bytes=0 precipitation=0
+SURFACE_RENDER weather-orbit mode=HYBRID sites=8 buildings=0 residents=0 triangles=0 cloud_cells=92 cpu_bytes=884008 gpu_bytes=0 precipitation=0
+SURFACE_FIXTURE 1 0,0,0/1:0/2:137/3:0 CITY 97221 population=37983
+SURFACE_RENDER city-approach mode=ORIGINAL sites=8 buildings=158 residents=72 triangles=68604 cloud_cells=127 cpu_bytes=884008 gpu_bytes=126276 precipitation=0
+SURFACE_RENDER city-approach mode=HYPERION sites=8 buildings=158 residents=72 triangles=68604 cloud_cells=127 cpu_bytes=884008 gpu_bytes=126276 precipitation=0
+SURFACE_RENDER city-approach mode=HYBRID sites=8 buildings=158 residents=72 triangles=68604 cloud_cells=127 cpu_bytes=884008 gpu_bytes=126276 precipitation=0
+SURFACE_FIXTURE 2 0,0,0/1:0/2:137/3:0 CITY 97221 population=37983
+SURFACE_RENDER inhabitants mode=ORIGINAL sites=8 buildings=61 residents=51 triangles=41664 cloud_cells=123 cpu_bytes=884008 gpu_bytes=145732 precipitation=0
+SURFACE_RENDER inhabitants mode=HYPERION sites=8 buildings=61 residents=51 triangles=41664 cloud_cells=123 cpu_bytes=884008 gpu_bytes=145732 precipitation=0
+SURFACE_RENDER inhabitants mode=HYBRID sites=8 buildings=61 residents=51 triangles=41664 cloud_cells=123 cpu_bytes=884008 gpu_bytes=145732 precipitation=0
+SURFACE_FIXTURE 3 0,0,0/1:0/2:0/3:7 MINING 38290 population=836
+SURFACE_RENDER sealed-colony mode=ORIGINAL sites=2 buildings=13 residents=70 triangles=15384 cloud_cells=110 cpu_bytes=21188 gpu_bytes=206560 precipitation=0
+SURFACE_RENDER sealed-colony mode=HYPERION sites=2 buildings=13 residents=70 triangles=15384 cloud_cells=110 cpu_bytes=21188 gpu_bytes=206560 precipitation=0
+SURFACE_RENDER sealed-colony mode=HYBRID sites=2 buildings=13 residents=70 triangles=15384 cloud_cells=110 cpu_bytes=21188 gpu_bytes=206560 precipitation=0
+SURFACE_FIXTURE 4 0,0,0/1:0/2:137/3:0 CITY 97221 population=37983
+SURFACE_RENDER precipitation mode=ORIGINAL sites=8 buildings=0 residents=0 triangles=0 cloud_cells=100 cpu_bytes=884008 gpu_bytes=206560 precipitation=50
+SURFACE_RENDER precipitation mode=HYPERION sites=8 buildings=0 residents=0 triangles=0 cloud_cells=100 cpu_bytes=884008 gpu_bytes=206560 precipitation=50
+SURFACE_RENDER precipitation mode=HYBRID sites=8 buildings=0 residents=0 triangles=0 cloud_cells=100 cpu_bytes=884008 gpu_bytes=206560 precipitation=50
+PASS: native weather, city, residents and sealed colony / five views in three modes with identical planet geometry and camera
+FRAME median_ms=16.664 p95_ms=17.8044 frames=1534 cache_bytes=9833312
+peak_rss_bytes=141262848

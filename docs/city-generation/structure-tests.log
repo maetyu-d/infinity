@@ -1,0 +1,5 @@
+PLANNED buildings=240 streets=224 parcels=240 population=45387 routes=3177
+RADIAL buildings=166 streets=116 parcels=166 population=26801 routes=3399
+ORGANIC buildings=240 streets=205 parcels=240 population=37096 routes=3129
+CONTOUR buildings=240 streets=224 parcels=240 population=34049 routes=3082
+PASS: 24041 urban topology, frontage, hierarchy, mixed uses, deterministic morphology, ground routes, clearance and preservation checks; architectural families=6

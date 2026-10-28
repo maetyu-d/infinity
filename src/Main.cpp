@@ -713,7 +713,8 @@ int main(int argc, char** argv) {
                             << stats.weatherCells << ',' << stats.weatherParticles << '\n';
                 if (opt.tour) {
                     if (!nav.transitioning && stats.visibleObjects > 0 && gen.pending == 0 &&
-                        gen.queued == 0 && stats.lodTransitions == 0 && stats.uploadDeferred == 0)
+                        gen.queued == 0 && stats.surfacePending == 0 && stats.lodTransitions == 0 &&
+                        stats.uploadDeferred == 0)
                         ++stable;
                     else
                         stable = 0;

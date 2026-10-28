@@ -1,0 +1,91 @@
+Start testing: Oct 28 14:03 GMT
+----------------------------------------------------------
+1/37 Testing: surface_site_preservation
+1/37 Test: surface_site_preservation
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_surface_site_snapshot" "--check" "/Users/user/Documents/SC tutorial/Infinite/tests/data/surface-sites-0.19.txt"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"surface_site_preservation" start time: Oct 28 14:03 GMT
+Output:
+----------------------------------------------------------
+PASS: 62 stable surface site anchors, seeds, names and orientations
+<end of output>
+Test time =   1.57 sec
+----------------------------------------------------------
+Test Passed.
+"surface_site_preservation" end time: Oct 28 14:03 GMT
+"surface_site_preservation" time elapsed: 00:00:01
+----------------------------------------------------------
+
+2/37 Testing: procedural_city_structure
+2/37 Test: procedural_city_structure
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_city_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"procedural_city_structure" start time: Oct 28 14:03 GMT
+Output:
+----------------------------------------------------------
+PLANNED buildings=240 streets=224 parcels=240 population=45387 routes=3177
+RADIAL buildings=166 streets=116 parcels=166 population=26801 routes=3399
+ORGANIC buildings=240 streets=205 parcels=240 population=37096 routes=3129
+CONTOUR buildings=240 streets=224 parcels=240 population=34049 routes=3082
+PASS: 24041 urban topology, frontage, hierarchy, mixed uses, deterministic morphology, ground routes, clearance and preservation checks; architectural families=6
+<end of output>
+Test time =   0.90 sec
+----------------------------------------------------------
+Test Passed.
+"procedural_city_structure" end time: Oct 28 14:03 GMT
+"procedural_city_structure" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/37 Testing: planetary_weather_and_surface_life
+3/37 Test: planetary_weather_and_surface_life
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_surface_life_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"planetary_weather_and_surface_life" start time: Oct 28 14:03 GMT
+Output:
+----------------------------------------------------------
+SOCIETY regime=0 temperate=1 sites=10 bytes=2048424
+SOCIETY regime=1 temperate=0 sites=5 bytes=378070
+SOCIETY regime=2 temperate=0 sites=1 bytes=31998
+SOCIETY regime=3 temperate=0 sites=1 bytes=39822
+ACTUAL_SURFACE 0,0,0/1:0/2:0/3:7 MINING 38290 population=775
+PASS: 59831 climate, solid-only habitation, deterministic residents, foundations, collision, async budgets, saved destination, landing and atomic-preservation checks / templates=727784 bytes
+<end of output>
+Test time =   3.22 sec
+----------------------------------------------------------
+Test Passed.
+"planetary_weather_and_surface_life" end time: Oct 28 14:03 GMT
+"planetary_weather_and_surface_life" time elapsed: 00:00:03
+----------------------------------------------------------
+
+25/37 Testing: native_weather_and_surface_life
+25/37 Test: native_weather_and_surface_life
+Command: "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake" "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite" "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/surface-native" "-P" "/Users/user/Documents/SC tutorial/Infinite/cmake/RunSurfaceLife.cmake"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_weather_and_surface_life" start time: Oct 28 14:03 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =  54.56 sec
+----------------------------------------------------------
+Test Passed.
+"native_weather_and_surface_life" end time: Oct 28 14:04 GMT
+"native_weather_and_surface_life" time elapsed: 00:00:54
+----------------------------------------------------------
+
+26/37 Testing: native_weather_and_surface_images
+26/37 Test: native_weather_and_surface_images
+Command: "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9" "/Users/user/Documents/SC tutorial/Infinite/tools/check_surface_captures.py" "/Users/user/Documents/SC tutorial/Infinite/build/surface-native"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_weather_and_surface_images" start time: Oct 28 14:04 GMT
+Output:
+----------------------------------------------------------
+PASS: seven real city/weather views, 21 native captures, connected city morphologies, residents, bounded caches and three-mode geometry/camera/city-data proofs
+<end of output>
+Test time =   1.93 sec
+----------------------------------------------------------
+Test Passed.
+"native_weather_and_surface_images" end time: Oct 28 14:04 GMT
+"native_weather_and_surface_images" time elapsed: 00:00:01
+----------------------------------------------------------
+
+End testing: Oct 28 14:04 GMT

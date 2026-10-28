@@ -1,0 +1,42 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+SURFACE_CITY 0,0,0/1:0/2:137/3:0 colony=0,0,0/1:0/2:0/3:8
+SURFACE_FIXTURE 0 0,0,0/1:0/2:137/3:0 CITY 97221 population=26801
+Infinite / Metal / seed 5282236693612155973
+SURFACE_RENDER weather-orbit mode=ORIGINAL sites=8 buildings=0 residents=0 triangles=0 cloud_cells=92 cpu_bytes=1622024 gpu_bytes=0 precipitation=0 frame=375
+SURFACE_RENDER weather-orbit mode=HYPERION sites=8 buildings=0 residents=0 triangles=0 cloud_cells=92 cpu_bytes=1622024 gpu_bytes=0 precipitation=0 frame=390
+SURFACE_RENDER weather-orbit mode=HYBRID sites=8 buildings=0 residents=0 triangles=0 cloud_cells=92 cpu_bytes=1622024 gpu_bytes=0 precipitation=0 frame=405
+SURFACE_FIXTURE 1 0,0,0/1:0/2:137/3:0 CITY 97221 population=26801
+SURFACE_RENDER city-approach mode=ORIGINAL sites=8 buildings=166 residents=74 triangles=135925 cloud_cells=127 cpu_bytes=1622024 gpu_bytes=410478 precipitation=0 frame=791
+CITY_LAYOUT CITY 97221 pattern=RADIAL buildings=166 streets=116 parcels=166 population=26801 recipe=1
+CITY_LAYOUT CITY 79698 pattern=PLANNED buildings=240 streets=224 parcels=240 population=54375 recipe=1
+CITY_LAYOUT CITY 15771 pattern=RADIAL buildings=158 streets=116 parcels=158 population=28686 recipe=1
+CITY_LAYOUT CITY 84597 pattern=ORGANIC buildings=240 streets=238 parcels=240 population=40935 recipe=1
+CITY_LAYOUT CITY 72673 pattern=ORGANIC buildings=240 streets=238 parcels=240 population=39791 recipe=1
+CITY_LAYOUT CITY 41531 pattern=ORGANIC buildings=240 streets=218 parcels=240 population=40388 recipe=1
+CITY_LAYOUT CITY 13494 pattern=RADIAL buildings=153 streets=116 parcels=153 population=27657 recipe=1
+CITY_LAYOUT CITY 51843 pattern=PLANNED buildings=240 streets=224 parcels=240 population=47269 recipe=1
+SURFACE_RENDER city-approach mode=HYPERION sites=8 buildings=166 residents=74 triangles=135925 cloud_cells=127 cpu_bytes=1622024 gpu_bytes=410478 precipitation=0 frame=806
+SURFACE_RENDER city-approach mode=HYBRID sites=8 buildings=166 residents=74 triangles=135925 cloud_cells=127 cpu_bytes=1622024 gpu_bytes=410478 precipitation=0 frame=821
+SURFACE_FIXTURE 2 0,0,0/1:0/2:137/3:0 CITY 97221 population=26801
+SURFACE_RENDER inhabitants mode=ORIGINAL sites=8 buildings=39 residents=21 triangles=70033 cloud_cells=134 cpu_bytes=1622024 gpu_bytes=427504 precipitation=0 frame=836
+SURFACE_RENDER inhabitants mode=HYPERION sites=8 buildings=39 residents=21 triangles=70033 cloud_cells=134 cpu_bytes=1622024 gpu_bytes=427504 precipitation=0 frame=851
+SURFACE_RENDER inhabitants mode=HYBRID sites=8 buildings=39 residents=21 triangles=70033 cloud_cells=134 cpu_bytes=1622024 gpu_bytes=427504 precipitation=0 frame=866
+SURFACE_FIXTURE 3 0,0,0/1:0/2:0/3:8 COLONY 80584 population=4833
+SURFACE_RENDER sealed-colony mode=ORIGINAL sites=6 buildings=241 residents=55 triangles=77004 cloud_cells=0 cpu_bytes=592680 gpu_bytes=541900 precipitation=0 frame=1422
+SURFACE_RENDER sealed-colony mode=HYPERION sites=6 buildings=241 residents=55 triangles=77004 cloud_cells=0 cpu_bytes=592680 gpu_bytes=541900 precipitation=0 frame=1437
+SURFACE_RENDER sealed-colony mode=HYBRID sites=6 buildings=241 residents=55 triangles=77004 cloud_cells=0 cpu_bytes=592680 gpu_bytes=541900 precipitation=0 frame=1452
+SURFACE_FIXTURE 4 0,0,0/1:0/2:137/3:0 CITY 97221 population=26801
+SURFACE_RENDER precipitation mode=ORIGINAL sites=8 buildings=0 residents=0 triangles=0 cloud_cells=100 cpu_bytes=1622024 gpu_bytes=541900 precipitation=50 frame=1877
+SURFACE_RENDER precipitation mode=HYPERION sites=8 buildings=0 residents=0 triangles=0 cloud_cells=100 cpu_bytes=1622024 gpu_bytes=541900 precipitation=50 frame=1892
+SURFACE_RENDER precipitation mode=HYBRID sites=8 buildings=0 residents=0 triangles=0 cloud_cells=100 cpu_bytes=1622024 gpu_bytes=541900 precipitation=50 frame=1907
+SURFACE_FIXTURE 5 0,0,0/1:0/2:137/3:0 CITY 41531 population=40388
+SURFACE_RENDER organic-overview mode=ORIGINAL sites=8 buildings=221 residents=60 triangles=169126 cloud_cells=320 cpu_bytes=1622024 gpu_bytes=541900 precipitation=0 frame=2456
+SURFACE_RENDER organic-overview mode=HYPERION sites=8 buildings=221 residents=60 triangles=169126 cloud_cells=320 cpu_bytes=1622024 gpu_bytes=541900 precipitation=0 frame=2471
+SURFACE_RENDER organic-overview mode=HYBRID sites=8 buildings=221 residents=60 triangles=169126 cloud_cells=320 cpu_bytes=1622024 gpu_bytes=541900 precipitation=0 frame=2486
+SURFACE_FIXTURE 6 0,0,0/1:0/2:137/3:0 CITY 79698 population=54375
+SURFACE_RENDER planned-overview mode=ORIGINAL sites=8 buildings=225 residents=72 triangles=184334 cloud_cells=334 cpu_bytes=1622024 gpu_bytes=541900 precipitation=82 frame=2907
+SURFACE_RENDER planned-overview mode=HYPERION sites=8 buildings=225 residents=72 triangles=184334 cloud_cells=334 cpu_bytes=1622024 gpu_bytes=541900 precipitation=82 frame=2922
+SURFACE_RENDER planned-overview mode=HYBRID sites=8 buildings=225 residents=72 triangles=184334 cloud_cells=334 cpu_bytes=1622024 gpu_bytes=541900 precipitation=82 frame=2937
+PASS: native weather, city, residents and sealed colony / seven views in three modes with identical planet geometry and camera
+FRAME median_ms=16.647 p95_ms=21.5198 frames=2944 cache_bytes=9679712
+peak_rss_bytes=137527296

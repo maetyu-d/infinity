@@ -1,0 +1,15 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start  1: surface_site_preservation
+1/5 Test  #1: surface_site_preservation ............   Passed    1.57 sec
+    Start  2: procedural_city_structure
+2/5 Test  #2: procedural_city_structure ............   Passed    0.90 sec
+    Start  3: planetary_weather_and_surface_life
+3/5 Test  #3: planetary_weather_and_surface_life ...   Passed    3.22 sec
+    Start 25: native_weather_and_surface_life
+4/5 Test #25: native_weather_and_surface_life ......   Passed   54.56 sec
+    Start 26: native_weather_and_surface_images
+5/5 Test #26: native_weather_and_surface_images ....   Passed    1.93 sec
+
+100% tests passed, 0 tests failed out of 5
+
+Total Test time (real) =  62.20 sec

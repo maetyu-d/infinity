@@ -1,0 +1,6 @@
+SOCIETY regime=0 temperate=1 sites=10 bytes=2048424
+SOCIETY regime=1 temperate=0 sites=5 bytes=378070
+SOCIETY regime=2 temperate=0 sites=1 bytes=31998
+SOCIETY regime=3 temperate=0 sites=1 bytes=39822
+ACTUAL_SURFACE 0,0,0/1:0/2:0/3:7 MINING 38290 population=775
+PASS: 59831 climate, solid-only habitation, deterministic residents, foundations, collision, async budgets, saved destination, landing and atomic-preservation checks / templates=727784 bytes

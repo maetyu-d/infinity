@@ -40,7 +40,10 @@ size_t SurfaceWorld::residentBytes() const {
                    settlements.capacity() * sizeof(SurfaceSettlement);
     for (const auto& s : settlements)
         bytes += s.name.capacity() + s.buildings.capacity() * sizeof(SurfaceBuilding) +
-                 s.roads.capacity() * sizeof(SurfaceRoad);
+                 s.roads.capacity() * sizeof(SurfaceRoad) + s.junctions.capacity() * sizeof(CityJunction) +
+                 s.streets.capacity() * sizeof(CityStreet) + s.districts.capacity() * sizeof(CityDistrict) +
+                 s.parcels.capacity() * sizeof(CityParcel) + s.props.capacity() * sizeof(CityProp) +
+                 s.pedestrianPoints.capacity() * sizeof(glm::vec3);
     return bytes;
 }
 std::shared_ptr<SurfaceWorld> generateSurfaceLife(const Universe& u, const Node& p,
@@ -220,6 +223,13 @@ std::shared_ptr<SurfaceWorld> generateSurfaceLife(const Universe& u, const Node&
         s.roads.shrink_to_fit();
         world->settlements.push_back(std::move(s));
     }
+    // Retain the original site-selection recipe first: later city refinement
+    // cannot shift another settlement's anchor or change an existing port ID.
+    for (auto& settlement : world->settlements) {
+        if (cancelled(cancel))
+            return {};
+        refineCity(u, p, settlement, cancel);
+    }
     world->settlements.shrink_to_fit();
     return world;
 }
@@ -230,9 +240,11 @@ SurfaceResident sampleResident(const SurfaceWorld& world, const SurfaceSettlemen
     SurfaceResident person;
     person.id = mix64(s.seed ^ mix64(uint64_t(id) + 0x70656f706c65ULL));
     auto resident = id;
+    const SurfaceBuilding* home = nullptr;
     for (const auto& building : s.buildings) {
         if (resident < building.inhabitants) {
             person.homeBuilding = building.id;
+            home = &building;
             break;
         }
         resident -= building.inhabitants;
@@ -245,6 +257,29 @@ SurfaceResident sampleResident(const SurfaceWorld& world, const SurfaceSettlemen
     // still has a stable identity and home; culling does not remove population.
     const double routine = std::fmod(seconds / 900 + r.unit(0), 1.);
     person.outside = routine < .72 && weather.storm < .58;
+    if (home && home->pathCount >= 2) {
+        const auto begin = home->pathBegin, end = begin + home->pathCount;
+        double total = 0;
+        for (size_t i = begin + 1; i < end; i++)
+            total += glm::length(glm::dvec3(s.pedestrianPoints[i] - s.pedestrianPoints[i - 1]));
+        double travel = std::fmod(seconds * (.75 + r.unit(1) * .55) + r.unit(2) * total * 2, total * 2);
+        const bool returning = travel > total;
+        if (returning)
+            travel = 2 * total - travel;
+        for (size_t i = begin + 1; i < end; i++) {
+            const auto a = glm::dvec3(s.pedestrianPoints[i - 1]), b = glm::dvec3(s.pedestrianPoints[i]);
+            const double length = glm::length(b - a);
+            if (travel <= length || i + 1 == end) {
+                person.position =
+                    s.landingPoint +
+                    s.orientation * glm::mix(a, b, std::clamp(travel / std::max(1e-12, length), 0., 1.));
+                const auto forward = s.orientation * glm::normalize((b - a) * (returning ? -1. : 1.));
+                person.orientation = glm::quatLookAtRH(forward, glm::normalize(person.position));
+                return person;
+            }
+            travel -= length;
+        }
+    }
     const double travel = std::fmod(seconds * (.75 + r.unit(1) * .55) / 36 + r.unit(2) * 8, 8.);
     const auto segment = size_t(travel);
     const auto a = s.walkway[segment], b = s.walkway[(segment + 1) % s.walkway.size()];
@@ -266,6 +301,8 @@ ActivityBody surfaceContact(const SurfaceWorld& world, const SurfaceSettlement& 
     const auto weather = sampleWeather(world.climate, s.direction, 0, seconds);
     body.status = std::to_string(s.population) + " RESIDENTS / " + (s.sealed ? "SEALED / " : "OPEN / ") +
                   std::string(weatherName(weather.type)) + " / J APPROACH / L LAND";
+    if (s.layoutRecipe)
+        body.status += " / " + std::string(cityPatternName(s.pattern));
     return body;
 }
 std::optional<double> surfaceCollision(const SurfaceWorld& world, glm::dvec3 from, glm::dvec3 to,

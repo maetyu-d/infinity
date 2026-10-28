@@ -1,0 +1,98 @@
+{
+  "release": "0.20.0",
+  "baseline_commit": "bdbfa42",
+  "recipes": {
+    "universe": 3,
+    "population": 1,
+    "terrain": 1,
+    "climate": 1,
+    "society": 1,
+    "city_layout": 1
+  },
+  "tests": {
+    "passed": 37,
+    "failed": 0,
+    "elapsed_s": 300.85,
+    "surface_sites_preserved": 62,
+    "legacy_universe_records": 120,
+    "native_city_views": 7,
+    "render_modes": 3,
+    "native_city_captures": 21,
+    "city_structure_checks": 24041,
+    "surface_weather_checks": 59831,
+    "final_fingerprint_verification": {
+      "passed": 5,
+      "failed": 0,
+      "elapsed_s": 62.2,
+      "note": "After expanding the read-only fingerprint to include districts, parcels and every scene field; city generation/rendering unchanged from measured release run."
+    }
+  },
+  "performance": {
+    "before": {
+      "city_approach": {
+        "frames": 15,
+        "median_ms": 16.6677,
+        "p95_ms": 70.2622,
+        "min_frame": 666,
+        "max_frame": 680
+      },
+      "whole_tour": {
+        "median_ms": 16.664,
+        "p95_ms": 17.8044,
+        "frames": 1534,
+        "core_cache_bytes": 9833312,
+        "peak_rss_bytes": 141262848
+      },
+      "city_detail": {
+        "buildings": 158,
+        "residents": 72,
+        "triangles": 68604,
+        "world_surface_bytes": 884008,
+        "uploaded_surface_templates_bytes": 126276
+      }
+    },
+    "after": {
+      "city_approach": {
+        "frames": 15,
+        "median_ms": 16.5874,
+        "p95_ms": 58.6564,
+        "min_frame": 702,
+        "max_frame": 716
+      },
+      "whole_tour": {
+        "median_ms": 16.6663,
+        "p95_ms": 17.376,
+        "frames": 2220,
+        "core_cache_bytes": 9679712,
+        "peak_rss_bytes": 151404544
+      },
+      "city_detail": {
+        "buildings": 166,
+        "residents": 74,
+        "triangles": 135925,
+        "world_surface_bytes": 1622024,
+        "uploaded_surface_templates_bytes": 410478
+      }
+    }
+  },
+  "preserved_source_sha256": {
+    "src/Core.cpp": "8b6e0854d8e8dfdfde2cc78494a31907cedab63d1512020d66c94f6d1d690cb9",
+    "src/Universe.cpp": "6af136de8e5ebc6612bb461097fa23e02d2114728bdda5aca12cd6935bf3af4e",
+    "src/Processes.cpp": "9ea91c2ee445e94aa5e63a194d80ee970ff3ad4707646cb182b3d3e224851476",
+    "src/Terrain.cpp": "a9fbba49d7deef7e1c5eead2cc8c8ab20f20a8756775bd5aab3c8abe2bb438c3",
+    "src/Crystallography.cpp": "1d135fa1218cea466673723063267fcacdb5c6c56d4240ab5ca00eb0eb042dab",
+    "src/Geometry.cpp": "9bec2c4d3858545ba4f2864ec427a8098f9ba1988d7985ec5f29ef2aacb722af",
+    "src/Navigation.cpp": "c3ad57a8d158e5f70b251697953f8515ba59be5f0a3ef2ba2bed15b823bfa713",
+    "src/Streaming.cpp": "97788cd7f30d28d31af492d40fae19463f3fc0eb4e4a886bee18db6b2500dd2a",
+    "src/Weather.cpp": "ffba25a7ff64dce19cb5252922e1b88e4f9b08d7d9eee66d1112ccd7311ac68c"
+  },
+  "measurement_notes": "Single VSync-limited 1440x900 Metal runs. Same city approach address and camera; city geometry intentionally richer. Before full tour has five views, after seven and therefore peak RSS/tour percentiles are different workloads. City-approach HYPERION samples selected by scale/sites/buildings; after also bounded to frames 696..716. No claim of causal speed improvement. Both short city-approach intervals include screenshot readback and mode synchronization; their p95 is also their maximum and does not represent steady flight.",
+  "normal_app_launch": {
+    "verified_by": "native UI screenshot",
+    "navigation": "MANUAL / FLIGHT RESTORED",
+    "destination": "MINERAL GRAIN 53258",
+    "ship": "12.0 mm, shrink field active",
+    "render_mode": "HYPERION",
+    "save_repositioned": false
+  }
+}

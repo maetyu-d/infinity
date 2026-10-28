@@ -20,11 +20,21 @@ class SurfaceValidation {
                     climate.temperatureK < 85 || climate.temperatureK > 650 || climate.gravity > 32)
                     continue;
                 const auto world = generateSurfaceLife(universe_, p);
+                if (climate.temperate) {
+                    const auto has = [&](CityPattern pattern) {
+                        return std::any_of(
+                            world->settlements.begin(), world->settlements.end(),
+                            [&](const auto& city) { return city.layoutRecipe && city.pattern == pattern; });
+                    };
+                    if (!has(CityPattern::Planned) || !has(CityPattern::Organic) || !has(CityPattern::Radial))
+                        continue;
+                }
                 const auto light =
                     glm::normalize(universe_.relative(system.address, p.address, p.frame.logRadius).position);
                 for (const auto& s : world->settlements)
                     if (glm::dot(s.direction, light) > .2 &&
-                        sampleWeather(climate, s.direction, 0, 12).storm < .55) {
+                        sampleWeather(climate, s.direction, 0, 12).storm < .55 &&
+                        (climate.temperate || s.kind == SettlementKind::Colony)) {
                         if (climate.temperate) {
                             city_ = world;
                             citySlot_ = s.slot;
@@ -41,6 +51,18 @@ class SurfaceValidation {
         const auto cityPlanet = universe_.describe(city_->planet);
         const auto sun = glm::normalize(
             universe_.relative(city_->planet.parent(), city_->planet, cityPlanet.frame.logRadius).position);
+        for (auto pattern : {CityPattern::Organic, CityPattern::Planned}) {
+            const SurfaceSettlement* selected = nullptr;
+            double light = -2;
+            for (const auto& city : city_->settlements)
+                if (city.pattern == pattern && glm::dot(city.direction, sun) > light) {
+                    selected = &city;
+                    light = glm::dot(city.direction, sun);
+                }
+            if (!selected)
+                throw std::runtime_error("Missing actual city morphology");
+            additionalSlots_.push_back(selected->slot);
+        }
         for (unsigned i = 0; i < 4096 && !precipitation_; i++) {
             const double y = 1 - 2 * (i + .5) / 4096., a = i * 2.399963229728653;
             const auto d =
@@ -55,10 +77,11 @@ class SurfaceValidation {
         place();
     }
     bool finished() const {
-        return stage_ >= 5;
+        return stage_ >= 7;
     }
     void observe(const FrameStats& stats, RegionCache& cache, Renderer& renderer,
                  const std::string& directory) {
+        ++frames_;
         if (capturing_) {
             if (hold_-- > 0)
                 return;
@@ -72,7 +95,7 @@ class SurfaceValidation {
                     renderer.setMode(RenderMode::Original);
                     place();
                 } else
-                    std::cout << "PASS: native weather, city, residents and sealed colony / five views in "
+                    std::cout << "PASS: native weather, city, residents and sealed colony / seven views in "
                                  "three modes with identical planet geometry and camera\n";
             }
             return;
@@ -99,13 +122,20 @@ class SurfaceValidation {
             stage_ == 0 ? (geometry ? geometryFingerprint(*geometry) : 0) : renderer.terrainGeometryDigest();
         if (!hash)
             return;
+        const auto renderedWorld = renderer.surfaceWorld(world->planet);
+        if (!renderedWorld)
+            return;
+        uint64_t cityHash = 0;
+        for (const auto& city : renderedWorld->settlements)
+            cityHash = mix64(cityHash ^ cityFingerprint(city));
         if (mode_ == 0) {
             camera_ = nav_.serialize();
             geometry_ = hash;
-        } else if (camera_ != nav_.serialize() || geometry_ != hash)
+            cityGeometry_ = cityHash;
+        } else if (camera_ != nav_.serialize() || geometry_ != hash || cityGeometry_ != cityHash)
             throw std::runtime_error("Weather/society mode switch changed geometry or camera");
-        static const char* names[] = {"weather-orbit", "city-approach", "inhabitants", "sealed-colony",
-                                      "precipitation"};
+        static const char* names[] = {"weather-orbit", "city-approach",    "inhabitants",     "sealed-colony",
+                                      "precipitation", "organic-overview", "planned-overview"};
         if (!directory.empty())
             renderer.screenshot(
                 (std::filesystem::path(directory) / (std::to_string(stage_) + "-" + names[stage_] + "-" +
@@ -116,7 +146,13 @@ class SurfaceValidation {
                   << " residents=" << stats.surfaceResidents << " triangles=" << stats.surfaceTriangles
                   << " cloud_cells=" << stats.weatherCells << " cpu_bytes=" << stats.surfaceBytes
                   << " gpu_bytes=" << stats.surfaceGpuBytes << " precipitation=" << stats.weatherParticles
-                  << '\n';
+                  << " frame=" << frames_ << '\n';
+        if (stage_ == 1 && mode_ == 0)
+            for (const auto& city : renderedWorld->settlements)
+                std::cout << "CITY_LAYOUT " << city.name << " pattern=" << cityPatternName(city.pattern)
+                          << " buildings=" << city.buildings.size() << " streets=" << city.streets.size()
+                          << " parcels=" << city.parcels.size() << " population=" << city.population
+                          << " recipe=" << city.layoutRecipe << '\n';
         stable_ = 0;
         hold_ = 6;
         capturing_ = true;
@@ -134,10 +170,13 @@ class SurfaceValidation {
     bool capturing_ = false;
     std::string camera_;
     uint64_t geometry_ = 0;
+    uint64_t cityGeometry_ = 0;
+    size_t frames_ = 0;
+    std::vector<uint32_t> additionalSlots_;
     std::optional<glm::dvec3> precipitation_;
     void place() {
         const auto world = stage_ == 3 ? colony_ : city_;
-        const auto slot = stage_ == 3 ? colonySlot_ : citySlot_;
+        const auto slot = stage_ == 3 ? colonySlot_ : stage_ >= 5 ? additionalSlots_[stage_ - 5] : citySlot_;
         const auto& s = *std::find_if(world->settlements.begin(), world->settlements.end(),
                                       [&](const auto& s) { return s.slot == slot; });
         const auto p = universe_.describe(world->planet);
@@ -145,7 +184,11 @@ class SurfaceValidation {
         const auto east = s.orientation * glm::dvec3(1, 0, 0), north = s.orientation * glm::dvec3(0, 0, -1);
         glm::dvec3 eye, target;
         double log = 3;
-        if (stage_ == 4) {
+        if (stage_ >= 5) {
+            eye = s.landingPoint + north * (s.radius * .35) + up * (s.radius * .85);
+            target = s.landingPoint + up * 10.;
+            log = 3;
+        } else if (stage_ == 4) {
             up = *precipitation_;
             eye = up * (world->radiusMetres + universe_.terrainHeight(p, up) + 15);
             target = eye + tangentFrame(up) * glm::dvec3(100, -8, 0);
@@ -165,7 +208,12 @@ class SurfaceValidation {
                     break;
             }
             target = person.position + up * 1.0;
-            eye = person.position + east * 13. + up * 3.0;
+            const auto forward = person.orientation * glm::dvec3(0, 0, -1);
+            eye = person.position - forward * 13. + up * 3.;
+            if (surfaceCollision(*world, eye, target, .1))
+                eye = person.position + forward * 13. + up * 3.;
+            if (surfaceCollision(*world, eye, target, .1))
+                eye = person.position + up * 8. + east * 3.;
             log = 2;
             const auto d = glm::normalize(eye);
             const double ground = world->radiusMetres + universe_.terrainHeight(p, d);

@@ -1,0 +1,25 @@
+[0/2] Re-checking globbed directories...
+[1/25] Building CXX object CMakeFiles/infinite_core.dir/src/City.cpp.o
+[2/25] Linking CXX static library libinfinite_core.a
+[3/25] Linking CXX executable infinite_benchmark
+[4/25] Linking CXX executable infinite_process_tests
+[5/25] Linking CXX executable infinite_tests
+[6/25] Linking CXX executable infinite_continuity_tests
+[7/25] Linking CXX executable infinite_surface_site_snapshot
+[8/25] Linking CXX executable infinite_city_tests
+[9/25] Linking CXX executable infinite_performance_tests
+[10/25] Linking CXX executable infinite_surface_life_tests
+[11/25] Linking CXX executable infinite_cockpit_tests
+[12/25] Linking CXX executable infinite_terrain_tests
+[13/25] Linking CXX executable infinite_population_snapshot
+[14/25] Linking CXX executable infinite_population_tests
+[15/25] Linking CXX executable infinite_activity_tests
+[16/25] Linking CXX executable infinite_operating_tests
+[17/25] Linking CXX executable infinite_piloting_tests
+[18/25] Linking CXX executable infinite_streaming_tests
+[19/25] Linking CXX executable infinite_navigation_tests
+[20/25] Linking CXX executable infinite_flight_tests
+[21/25] Linking CXX executable infinite_shading_tests
+[22/25] Linking CXX executable infinite_presentation_tests
+[23/25] Linking CXX executable infinite_material_tests
+[24/25] Linking CXX executable infinite

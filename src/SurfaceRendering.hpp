@@ -120,6 +120,43 @@ void renderWeather(const Node& planet, glm::dvec3 localEye, const Navigation& na
     transient(precipitation, 63, true, false, true, false, true);
     transient(flakes, 63, false, false, true, false, true);
 }
+void drawCityPaving(const Mesh& mesh, const Node& planet, const Navigation& nav) {
+    if (mesh.vertices.empty())
+        return;
+    if (mode == RenderMode::Original) {
+        transient(mesh, 61, false, false, true, true);
+    } else {
+        const auto nv = uint32_t(mesh.vertices.size()), ni = uint32_t(mesh.indexCount());
+        if (bgfx::getAvailTransientVertexBuffer(nv, layout) < nv ||
+            bgfx::getAvailTransientIndexBuffer(ni, true) < ni || !bgfx::getAvailInstanceDataBuffer(1, 80))
+            return;
+        bgfx::TransientVertexBuffer vertices;
+        bgfx::TransientIndexBuffer indices;
+        bgfx::allocTransientVertexBuffer(&vertices, nv, layout);
+        bgfx::allocTransientIndexBuffer(&indices, ni, true);
+        std::memcpy(vertices.data, mesh.vertices.data(), nv * sizeof(Vertex));
+        std::memcpy(indices.data, mesh.indexData(), ni * 4);
+        bgfx::InstanceDataBuffer buffer;
+        bgfx::allocInstanceDataBuffer(&buffer, 1, 80);
+        const Instance identity{glm::mat4(1), glm::vec4(1)};
+        std::memcpy(buffer.data, &identity, sizeof(identity));
+        bgfx::setVertexBuffer(0, &vertices);
+        bgfx::setIndexBuffer(&indices);
+        bgfx::setInstanceDataBuffer(&buffer);
+        bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LEQUAL |
+                       BGFX_STATE_MSAA);
+        Geometry source;
+        const ScenePresentation presentation{source,
+                                             planet.address,
+                                             {.42, .6, .025, .01},
+                                             float(SurfaceMesh::Road) / float(SurfaceMesh::Count),
+                                             mode == RenderMode::Hybrid ? .36f : 1.f};
+        hyperion->bind(presentation, {}, glm::vec3(lightAt(planet.address, nav)), glm::mat4(1), 0,
+                       activity->seconds);
+        bgfx::submit(61, hyperion->geometryProgram());
+    }
+    stats.surfaceTriangles += mesh.indexCount() / 3;
+}
 void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& nav, RegionCache& cache) {
     for (const auto& node : nodes)
         if (node.address.kind() == Kind::Planet && hasSolidSurface(node)) {
@@ -157,6 +194,7 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
             if (!world)
                 continue;
             const auto pose = poseFor(planet.address, nav);
+            Mesh paving;
             auto instance = [&](SurfaceMesh kind, glm::dvec3 point, glm::dquat q, glm::dvec3 size,
                                 glm::vec3 tint, bool essential = false) {
                 if (instances >= 6000)
@@ -226,10 +264,39 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
                 }
                 for (const auto& road : settlement.roads) {
                     const auto center = (road.a + road.b) * .5, forward = glm::normalize(road.b - road.a);
+                    if (settlement.layoutRecipe) {
+                        const auto delta = pose.orientation * (center - planetEye) / units;
+                        const double span = glm::length(road.b - road.a) + road.width;
+                        if (glm::length(delta) > 8000 || !LOD::visible(cameraInverse * delta, span / units,
+                                                                       double(width) / height, fieldOfView))
+                            continue;
+                        const auto quad = [&](std::array<unsigned, 4> corners, glm::vec3 color) {
+                            const auto first = uint32_t(paving.vertices.size());
+                            for (auto corner : corners) {
+                                const auto p = pose.orientation *
+                                               ((center - planetEye) + glm::dvec3(road.surface[corner])) /
+                                               units;
+                                paving.vertices.push_back({float(p.x), float(p.y), float(p.z), rgba(color)});
+                            }
+                            paving.indices.insert(paving.indices.end(),
+                                                  {first, first + 1, first + 2, first, first + 2, first + 3});
+                        };
+                        quad({1, 2, 6, 5}, road.kind == StreetClass::Footway ? glm::vec3(.42, .49, .55)
+                                                                             : glm::vec3(.16, .22, .25));
+                        if (road.kind != StreetClass::Footway &&
+                            2. / (glm::length(delta) * units) * height / (2 * std::tan(fieldOfView * .5)) >
+                                .4) {
+                            quad({0, 1, 5, 4}, {.42, .49, .55});
+                            quad({2, 3, 7, 6}, {.42, .49, .55});
+                        }
+                        continue;
+                    }
                     const auto q = glm::quatLookAtRH(forward, glm::normalize(center));
-                    instance(SurfaceMesh::Road, center, q, {road.width, 1, glm::length(road.b - road.a)},
-                             glm::vec3(.8), true);
+                    instance(road.kind == StreetClass::Footway ? SurfaceMesh::Footway : SurfaceMesh::Road,
+                             center, q, {road.width, 1, glm::length(road.b - road.a)}, glm::vec3(.8), true);
                 }
+                for (const auto& prop : settlement.props)
+                    instance(prop.kind, prop.position, prop.orientation, prop.dimensions, prop.tint);
                 if (distance < 1400) {
                     const unsigned people = std::min(96u, settlement.population);
                     for (unsigned sample = 0; sample < people; sample++) {
@@ -250,6 +317,7 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
                     }
                 }
             }
+            drawCityPaving(paving, planet, nav);
             for (size_t role = 0; role < batches.size(); role++)
                 for (unsigned detail = 0; detail < 3; detail++) {
                     auto& objects = batches[role][detail];

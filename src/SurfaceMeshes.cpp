@@ -4,6 +4,7 @@
 #include <numbers>
 
 namespace infinite {
+Mesh cityMesh(SurfaceMesh, unsigned);
 namespace {
 void triangle(Mesh& mesh, glm::dvec3 a, glm::dvec3 b, glm::dvec3 c, glm::vec3 color) {
     const auto n = glm::normalize(glm::cross(b - a, c - a));
@@ -27,6 +28,8 @@ void box(Mesh& m, glm::dvec3 c, glm::dvec3 size, glm::vec3 color) {
 }
 } // namespace
 Mesh surfaceMesh(SurfaceMesh kind, unsigned detail) {
+    if (kind > SurfaceMesh::Suit)
+        return cityMesh(kind, detail);
     detail = std::min(detail, 2u);
     Mesh m;
     const glm::vec3 hull{.85, .88, .9}, glass{.2, .72, .82}, trim{.42, .5, .6}, lamp{.65, 1.1, .82};

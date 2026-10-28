@@ -6,6 +6,7 @@
 
 namespace infinite {
 inline constexpr uint32_t climateRecipeVersion = 1, societyRecipeVersion = 1;
+inline constexpr uint32_t cityRecipeVersion = 1;
 inline constexpr uint32_t surfaceActivitySlot = 2000;
 enum class WeatherType : uint8_t { Vacuum, Clear, Cloud, Rain, Snow, Dust };
 struct PlanetClimate {
@@ -38,8 +39,23 @@ enum class SurfaceMesh : uint8_t {
     Road,
     Resident,
     Suit,
+    Courtyard,
+    SteppedTower,
+    RowHousing,
+    Hall,
+    Warehouse,
+    HabitatCluster,
+    Tree,
+    Light,
+    Bench,
+    Plaza,
+    Footway,
+    Solar,
     Count
 };
+enum class CityPattern : uint8_t { Planned, Radial, Organic, Contour };
+enum class BuildingUse : uint8_t { Housing, Commerce, Civic, Industry, Agriculture, Utilities, Park };
+enum class StreetClass : uint8_t { Avenue, Local, Footway };
 struct SurfaceBuilding {
     uint64_t id = 0;
     SurfaceMesh kind = SurfaceMesh::Block;
@@ -48,10 +64,49 @@ struct SurfaceBuilding {
     glm::vec3 tint{1};
     double foundationMetres = 1;
     unsigned inhabitants = 0;
+    BuildingUse use = BuildingUse::Housing;
+    uint64_t parcel = 0;
+    uint16_t district = 0, frontage = UINT16_MAX;
+    uint32_t pathBegin = 0;
+    uint16_t pathCount = 0;
+    unsigned jobs = 0;
 };
 struct SurfaceRoad {
     glm::dvec3 a{}, b{};
     double width = 7;
+    StreetClass kind = StreetClass::Local;
+    uint16_t street = UINT16_MAX;
+    // Eight terrain-sampled strip vertices, relative to (a+b)/2 in planet axes.
+    std::array<glm::vec3, 8> surface{};
+};
+struct CityJunction {
+    uint64_t id = 0;
+    glm::dvec2 local{};
+    glm::dvec3 position{};
+};
+struct CityStreet {
+    uint64_t id = 0;
+    uint16_t a = 0, b = 0;
+    StreetClass kind = StreetClass::Local;
+    double width = 7;
+    uint32_t roadBegin = 0, roadCount = 0;
+};
+struct CityDistrict {
+    uint64_t id = 0;
+    BuildingUse use = BuildingUse::Housing;
+    glm::dvec2 centre{};
+    double radius = 1, ageYears = 0;
+};
+struct CityParcel {
+    uint64_t id = 0;
+    std::array<glm::dvec2, 4> corners{};
+    uint16_t frontage = UINT16_MAX, district = 0;
+};
+struct CityProp {
+    SurfaceMesh kind = SurfaceMesh::Bench;
+    glm::dvec3 position{}, dimensions{1};
+    glm::dquat orientation{1, 0, 0, 0};
+    glm::vec3 tint{1};
 };
 struct SurfaceSettlement {
     uint32_t slot = 0;
@@ -67,6 +122,16 @@ struct SurfaceSettlement {
     std::vector<SurfaceRoad> roads;
     // Public concourse, sampled from the real height field, reserved clear of buildings.
     std::array<glm::dvec3, 8> walkway{};
+    uint32_t layoutRecipe = 0;
+    uint64_t layoutSeed = 0;
+    CityPattern pattern = CityPattern::Planned;
+    double foundingYears = 0;
+    std::vector<CityJunction> junctions;
+    std::vector<CityStreet> streets;
+    std::vector<CityDistrict> districts;
+    std::vector<CityParcel> parcels;
+    std::vector<CityProp> props;
+    std::vector<glm::vec3> pedestrianPoints; // Metres relative to landingPoint, in town axes.
 };
 struct SurfaceWorld {
     Address planet;
@@ -87,6 +152,10 @@ std::shared_ptr<SurfaceWorld> generateSurfaceLife(const Universe&, const Node&,
 SurfaceResident sampleResident(const SurfaceWorld&, const SurfaceSettlement&, unsigned id, double seconds);
 ActivityBody surfaceContact(const SurfaceWorld&, const SurfaceSettlement&, double seconds);
 Mesh surfaceMesh(SurfaceMesh, unsigned detail);
+bool refineCity(const Universe&, const Node&, SurfaceSettlement&, const std::atomic<bool>* cancel = nullptr,
+                std::optional<CityPattern> pattern = std::nullopt);
+std::string_view cityPatternName(CityPattern);
+uint64_t cityFingerprint(const SurfaceSettlement&);
 // Swept sphere against conservative oriented building bounds. Returns earliest contact fraction.
 std::optional<double> surfaceCollision(const SurfaceWorld&, glm::dvec3 fromMetres, glm::dvec3 toMetres,
                                        double shipRadius);
