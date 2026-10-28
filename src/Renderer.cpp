@@ -127,6 +127,10 @@ struct Renderer::Impl {
     std::vector<std::pair<ActivityId, glm::dvec2>> activityPicks;
     std::array<std::array<GPUMesh, 3>, 6> craftMeshes;
     size_t craftBytes = 0;
+    SurfaceLifeCache surfaceLife;
+    std::array<std::array<GPUMesh, 3>, size_t(SurfaceMesh::Count)> surfaceMeshes;
+    size_t surfaceMeshBytes = 0;
+    std::string weatherReport;
     std::unique_ptr<HyperionRenderer> hyperion;
     RenderMode mode = RenderMode::Original;
     double visualTime = 0, fixedVisualTime = -1;
@@ -160,7 +164,7 @@ struct Renderer::Impl {
     std::string sectionLabel;
     TerrainStreamer terrain;
     bool terrainActive = false;
-    explicit Impl(SDL_Window* w, const Universe& u) : universe(u), window(w), terrain(u) {}
+    explicit Impl(SDL_Window* w, const Universe& u) : universe(u), window(w), surfaceLife(u), terrain(u) {}
     bgfx::ViewId worldView() const {
         return instruments ? 2 : 0; // Flight sky precedes terrain (1) and opaque local geometry (2).
     }
@@ -184,6 +188,9 @@ struct Renderer::Impl {
             destroy(cabin);
             destroy(hyperionBillboardMesh);
             for (auto& role : craftMeshes)
+                for (auto& mesh : role)
+                    destroy(mesh);
+            for (auto& role : surfaceMeshes)
                 for (auto& mesh : role)
                     destroy(mesh);
             hyperion.reset();
@@ -379,7 +386,7 @@ struct Renderer::Impl {
         bgfx::submit(worldView(), colorProgram);
     }
     void transient(const Mesh& mesh, bgfx::ViewId viewId, bool lines, bool additive, bool depth = true,
-                   bool writeDepth = false) {
+                   bool writeDepth = false, bool alpha = false) {
         if (mesh.vertices.empty())
             return;
         uint32_t nv = static_cast<uint32_t>(mesh.vertices.size()),
@@ -404,7 +411,7 @@ struct Renderer::Impl {
             state |= BGFX_STATE_WRITE_Z;
         if (additive)
             state |= BGFX_STATE_BLEND_ADD;
-        else if (!depth)
+        else if (!depth || alpha)
             state |= BGFX_STATE_BLEND_ALPHA;
         bgfx::setState(state);
         bgfx::submit(viewId, colorProgram);
@@ -689,10 +696,12 @@ struct Renderer::Impl {
             }
         }
     }
+#include "SurfaceRendering.hpp"
     void renderActivity(const std::vector<Node>& nodes, const Navigation& nav, RegionCache& cache) {
         activityContacts.clear();
         activityPicks.clear();
         stats.activityBytes = craftBytes;
+        renderSurfaceEnvironment(nodes, nav, cache);
         if (!activity || !activity->enabled || nav.anchor.kind() >= Kind::Rock)
             return;
         std::array<std::array<std::vector<Instance>, 3>, 6> batches;
@@ -842,6 +851,10 @@ struct Renderer::Impl {
         std::sort(activityContacts.begin(), activityContacts.end(),
                   [](const auto& a, const auto& b) { return a.distance < b.distance; });
         if (activityContacts.size() > 80) {
+            auto port = std::find_if(activityContacts.begin() + 80, activityContacts.end(),
+                                     [](const auto& c) { return c.body.kind == ActivityKind::SurfacePort; });
+            if (port != activityContacts.end())
+                activityContacts[78] = *port;
             auto pinned = std::find_if(activityContacts.begin() + 80, activityContacts.end(),
                                        [](const auto& c) { return c.selected; });
             if (pinned != activityContacts.end())
@@ -1162,6 +1175,15 @@ std::span<const CelestialContact> Renderer::celestialContacts() const {
 std::span<const ActivityContact> Renderer::activityContacts() const {
     return impl_->activityContacts;
 }
+std::shared_ptr<const SurfaceWorld> Renderer::surfaceWorld(const Address& planet) const {
+    return impl_->surfaceLife.find(planet);
+}
+uint64_t Renderer::terrainGeometryDigest() const {
+    uint64_t digest = 0;
+    for (const auto& patch : impl_->terrain.patches())
+        digest = mix64(digest ^ encodeTile(patch.tile) ^ patch.stitch ^ geometryFingerprint(*patch.geometry));
+    return digest;
+}
 void Renderer::setActivity(const ActivityState* state) {
     impl_->activity = state;
 }
@@ -1219,6 +1241,8 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     p.visualTime = p.fixedVisualTime >= 0 ? p.fixedVisualTime : p.visualTime + p.frameSeconds;
     p.sectionLabel.clear();
     p.stats = {};
+    p.surfaceLife.beginFrame();
+    p.weatherReport.clear();
     p.staticUploadBytes = 0;
     p.picks.clear();
     p.billboards.clear();
@@ -1247,12 +1271,11 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                        ? glm::perspectiveRH_NO(fov, static_cast<double>(p.width) / p.height, .00005, 10000.0)
                        : glm::perspectiveRH_ZO(fov, static_cast<double>(p.width) / p.height, .00005, 10000.0);
     glm::mat4 v(p.view), proj(p.projection);
-    const bool opticalDepth = p.instruments && p.instruments->altitude >= 0 &&
-                              std::any_of(nodes.begin(), nodes.end(), [](const Node& n) {
-                                  return n.address.kind() == Kind::Planet &&
-                                         n.environment.temperature > 140 && n.environment.temperature < 950 &&
-                                         n.environment.waterActivity > .01;
-                              });
+    const bool opticalDepth =
+        p.instruments && p.instruments->altitude >= 0 &&
+        std::any_of(nodes.begin(), nodes.end(), [](const Node& n) {
+            return n.address.kind() == Kind::Planet && planetClimate(n).pressureBar > .015;
+        });
     p.hyperion->begin(p.mode, p.width, p.height, opticalDepth, bool(p.instruments));
     p.staticUploadBytes += p.hyperion->materialUploadBytes();
     p.stats.uploadBytes += p.hyperion->materialUploadBytes();
@@ -1429,6 +1452,13 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         if (node.address != root)
             candidates(node);
     p.renderActivity(nodes, nav, cache);
+    p.surfaceLife.finishFrame();
+    const auto surfaceStats = p.surfaceLife.stats();
+    if (!surfaceStats.error.empty())
+        throw std::runtime_error("Surface generation: " + surfaceStats.error);
+    p.stats.surfaceBytes = surfaceStats.bytes;
+    p.stats.surfacePending = surfaceStats.pending;
+    p.stats.surfaceGpuBytes = p.surfaceMeshBytes;
     auto drawBillboards = [&](const std::vector<Instance>& instances, bool cosmic) {
         uint32_t count = bgfx::getAvailInstanceDataBuffer(static_cast<uint32_t>(instances.size()), 80);
         if (count) {
@@ -1506,18 +1536,15 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                 const auto pose = p.poseFor(planet.address, nav);
                 const double radius = std::pow(10., planet.frame.logRadius - nav.logDistance);
                 const auto localEye = glm::inverse(pose.orientation) * (p.eye - pose.position) / radius;
-                // Optical presentation follows inherited warmth and available water.
-                // Cold dry bodies retain their airless appearance; no cloud, terrain
-                // or atmospheric simulation is generated by the renderer.
-                const double warm = smoothstep(140., 240., planet.environment.temperature) *
-                                    (1 - smoothstep(650., 950., planet.environment.temperature));
-                const float strength = float(warm * planet.environment.waterActivity);
+                // The optical pass consumes the same retained atmosphere as weather.
+                const auto climate = planetClimate(planet);
+                const float strength = float(std::clamp(climate.pressureBar * .65, 0., 1.));
                 if (glm::length(localEye) < 8 && glm::length(localEye) > .99 && strength > .01f) {
                     auto rotation =
                         glm::mat4_cast(glm::quat(glm::inverse(pose.orientation) * nav.orientation));
                     auto light = glm::inverse(pose.orientation) * p.lightAt(planet.address, nav);
-                    const float height =
-                        float(std::clamp(8500. / std::pow(10., planet.frame.logRadius), 1e-5, .02));
+                    const float height = float(std::clamp(
+                        climate.scaleHeightMetres / std::pow(10., planet.frame.logRadius), 1e-5, .02));
                     p.hyperion->atmosphere(
                         glm::vec3(localEye), glm::vec3(light), rotation, float(radius), height, strength,
                         float(p.width) / p.height,
@@ -1551,7 +1578,9 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
 
     if (p.instruments && overlay) {
         const double aspect = double(p.width) / p.height;
-        const auto hud = cockpitOverlay(*p.instruments, aspect, renderModeName(p.mode), notice, p.contacts,
+        auto cockpit = *p.instruments;
+        cockpit.weather = p.weatherReport;
+        const auto hud = cockpitOverlay(cockpit, aspect, renderModeName(p.mode), notice, p.contacts,
                                         p.activityContacts, p.cockpitHelp);
         p.cockpitHitRegions = hud.hitRegions;
         const auto projection = bgfx::getCaps()->homogeneousDepth
@@ -1644,7 +1673,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count() -
         p.stats.cpuMs;
     const auto* st = bgfx::getStats();
-    p.stats.gpuBytes = p.gpuBytes + p.craftBytes;
+    p.stats.gpuBytes = p.gpuBytes + p.craftBytes + p.surfaceMeshBytes;
     p.stats.effectBytes = p.hyperion->targetBytes();
     p.stats.materialBytes = p.hyperion->materialBytes();
     p.stats.drawCalls = st->numDraw;

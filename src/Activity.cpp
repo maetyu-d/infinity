@@ -1,4 +1,5 @@
 #include "infinite/Activity.hpp"
+#include "infinite/SurfaceLife.hpp"
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
@@ -173,6 +174,8 @@ std::vector<ActivityBody> sampleActivity(const Node& planet, double seconds) {
     return bodies;
 }
 std::string hailActivity(const ActivityBody& b) {
+    if (b.kind == ActivityKind::SurfacePort)
+        return b.name + " / " + b.status;
     return b.name + " / " + b.status +
            (b.kind == ActivityKind::Harbour ? " / J APPROACH HOLDING POINT" : " / J MATCH COURSE");
 }
@@ -200,7 +203,15 @@ bool ActivityState::restore(std::string_view text, const Universe& u) {
             return false;
         if (id != "-") {
             candidate.selected = ActivityId::parse(id);
-            sampleActivity(u.describe(candidate.selected->home), candidate.selected->slot, candidate.seconds);
+            if (candidate.selected->slot >= surfaceActivitySlot) {
+                const auto world = generateSurfaceLife(u, u.describe(candidate.selected->home));
+                const auto slot = candidate.selected->slot - surfaceActivitySlot;
+                if (!world || std::none_of(world->settlements.begin(), world->settlements.end(),
+                                           [&](const auto& s) { return s.slot == slot; }))
+                    return false;
+            } else
+                sampleActivity(u.describe(candidate.selected->home), candidate.selected->slot,
+                               candidate.seconds);
         }
         in >> std::ws;
         if (!in.eof())

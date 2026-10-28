@@ -1,0 +1,629 @@
+Start testing: Oct 28 12:13 GMT
+----------------------------------------------------------
+1/35 Testing: planetary_weather_and_surface_life
+1/35 Test: planetary_weather_and_surface_life
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_surface_life_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"planetary_weather_and_surface_life" start time: Oct 28 12:13 GMT
+Output:
+----------------------------------------------------------
+SOCIETY regime=0 temperate=1 sites=10 bytes=1105876
+SOCIETY regime=1 temperate=0 sites=5 bytes=143094
+SOCIETY regime=2 temperate=0 sites=1 bytes=10462
+SOCIETY regime=3 temperate=0 sites=1 bytes=10846
+ACTUAL_SURFACE 0,0,0/1:0/2:0/3:7 MINING 38290 population=836
+PASS: 43357 climate, solid-only habitation, deterministic residents, foundations, collision, async budgets, saved destination, landing and atomic-preservation checks / templates=251072 bytes
+<end of output>
+Test time =   2.42 sec
+----------------------------------------------------------
+Test Passed.
+"planetary_weather_and_surface_life" end time: Oct 28 12:13 GMT
+"planetary_weather_and_surface_life" time elapsed: 00:00:02
+----------------------------------------------------------
+
+2/35 Testing: solid_planet_local_terrain
+2/35 Test: solid_planet_local_terrain
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_terrain_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"solid_planet_local_terrain" start time: Oct 28 12:13 GMT
+Output:
+----------------------------------------------------------
+Highlands relief=419.781 local_range=624.711
+Volcanic relief=348.049 local_range=572.854
+Canyons relief=688.463 local_range=854.705
+Ice ridges relief=381.565 local_range=484.331
+Near-camera terrain level=11 leaves=192
+Terrain world 0,0,0/1:0/2:9/3:5 / Volcanic 78271 rough=8 smooth=0; deterministic mesh/physics, legacy worlds, gas exclusion, atoms and landing passed
+<end of output>
+Test time =   0.66 sec
+----------------------------------------------------------
+Test Passed.
+"solid_planet_local_terrain" end time: Oct 28 12:13 GMT
+"solid_planet_local_terrain" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/35 Testing: cockpit_layout_and_targeting
+3/35 Test: cockpit_layout_and_targeting
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_cockpit_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"cockpit_layout_and_targeting" start time: Oct 28 12:13 GMT
+Output:
+----------------------------------------------------------
+PASS: 655770 cockpit layout, target projection, decluttering, stable selection and SI unit checks
+<end of output>
+Test time =   0.42 sec
+----------------------------------------------------------
+Test Passed.
+"cockpit_layout_and_targeting" end time: Oct 28 12:13 GMT
+"cockpit_layout_and_targeting" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/35 Testing: planetary_population_and_moons
+4/35 Test: planetary_population_and_moons
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_population_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"planetary_population_and_moons" start time: Oct 28 12:13 GMT
+Output:
+----------------------------------------------------------
+PASS: 9123 population, Hill/Roche, identity, deterministic replay, moon flight, landing and atomic checks / 12 systems / 197 planets / 655 moons
+<end of output>
+Test time =   0.61 sec
+----------------------------------------------------------
+Test Passed.
+"planetary_population_and_moons" end time: Oct 28 12:13 GMT
+"planetary_population_and_moons" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/35 Testing: legacy_population_preservation
+5/35 Test: legacy_population_preservation
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_population_snapshot" "--check" "/Users/user/Documents/SC tutorial/Infinite/tests/data/legacy-0.12.txt"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"legacy_population_preservation" start time: Oct 28 12:13 GMT
+Output:
+----------------------------------------------------------
+PASS: 120 pre-expansion descriptors and geometry fingerprints remain exact
+<end of output>
+Test time =   0.55 sec
+----------------------------------------------------------
+Test Passed.
+"legacy_population_preservation" end time: Oct 28 12:13 GMT
+"legacy_population_preservation" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/35 Testing: persistent_orbital_activity
+6/35 Test: persistent_orbital_activity
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_activity_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"persistent_orbital_activity" start time: Oct 28 12:13 GMT
+Output:
+----------------------------------------------------------
+HARBOUR_APPROACH error=2.41792 speed=2.11954e-11 phase=HOLDING / MATCHING TARGET VELOCITY anchor=0,0,0/1:0/2:9/3:0
+MOVING_RENDEZVOUS error=5.08492 relative_speed=1.16151
+PASS: 22079 stable activity IDs, environment density, continuous routes, persistence, mesh budgets and rendezvous checks / templates=170468 bytes
+<end of output>
+Test time =   2.13 sec
+----------------------------------------------------------
+Test Passed.
+"persistent_orbital_activity" end time: Oct 28 12:13 GMT
+"persistent_orbital_activity" time elapsed: 00:00:02
+----------------------------------------------------------
+
+7/35 Testing: operating_regimes_and_shrinking
+7/35 Test: operating_regimes_and_shrinking
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_operating_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"operating_regimes_and_shrinking" start time: Oct 28 12:13 GMT
+Output:
+----------------------------------------------------------
+PASS: 37 planetary defaults, independent cruise, continuous voyages, real shrinking, safe growth, nano contacts and persistence checks
+<end of output>
+Test time =   1.32 sec
+----------------------------------------------------------
+Test Passed.
+"operating_regimes_and_shrinking" end time: Oct 28 12:13 GMT
+"operating_regimes_and_shrinking" time elapsed: 00:00:01
+----------------------------------------------------------
+
+8/35 Testing: ship_dynamics_and_landing
+8/35 Test: ship_dynamics_and_landing
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_piloting_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"ship_dynamics_and_landing" start time: Oct 28 12:13 GMT
+Output:
+----------------------------------------------------------
+PASS: 6011 ship, SI momentum, galaxy/atomic round trip, braking, landing, launch and persistence checks
+<end of output>
+Test time =   0.79 sec
+----------------------------------------------------------
+Test Passed.
+"ship_dynamics_and_landing" end time: Oct 28 12:13 GMT
+"ship_dynamics_and_landing" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/35 Testing: unbounded_spatial_streaming
+9/35 Test: unbounded_spatial_streaming
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_streaming_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"unbounded_spatial_streaming" start time: Oct 28 12:13 GMT
+Output:
+----------------------------------------------------------
+PASS: 5698358 streaming checks; cross-cell coordinates/persistence, continuous cosmic collars, full balanced terrain coverage, stitched seams and geomorphs.
+<end of output>
+Test time =   1.57 sec
+----------------------------------------------------------
+Test Passed.
+"unbounded_spatial_streaming" end time: Oct 28 12:13 GMT
+"unbounded_spatial_streaming" time elapsed: 00:00:01
+----------------------------------------------------------
+
+10/35 Testing: seamless_scale_flight
+10/35 Test: seamless_scale_flight
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_flight_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"seamless_scale_flight" start time: Oct 28 12:13 GMT
+Output:
+----------------------------------------------------------
+ENTER GALAXY -9223372036854775808,7,9223372036854775807/1:66 log=24.876
+ENTER STAR SYSTEM -9223372036854775808,7,9223372036854775807/1:66/2:241 log=19.2077
+ENTER PLANET -9223372036854775808,7,9223372036854775807/1:66/2:241/3:9223372036855169025 log=11.2721
+ENTER SURFACE -9223372036854775808,7,9223372036854775807/1:66/2:241/3:9223372036855169025/4:146028917312 log=3.7746
+ENTER MOUNTAIN -9223372036854775808,7,9223372036854775807/1:66/2:241/3:9223372036855169025/4:146028917312/5:8 log=2.37518
+ENTER ROCK -9223372036854775808,7,9223372036854775807/1:66/2:241/3:9223372036855169025/4:146028917312/5:8/6:9 log=0.922301
+ENTER MINERAL GRAIN -9223372036854775808,7,9223372036854775807/1:66/2:241/3:9223372036855169025/4:146028917312/5:8/6:9/7:28 log=-0.89018
+ENTER CRYSTAL LATTICE -9223372036854775808,7,9223372036854775807/1:66/2:241/3:9223372036855169025/4:146028917312/5:8/6:9/7:28/8:0 log=-4.25336
+EXIT CRYSTAL LATTICE
+EXIT MINERAL GRAIN
+EXIT ROCK
+EXIT MOUNTAIN
+EXIT SURFACE
+EXIT PLANET
+EXIT STAR SYSTEM
+EXIT GALAXY
+ENTER GALAXY -9223372036854775808,7,9223372036854775807/1:79 log=24.9003
+ENTER STAR SYSTEM -9223372036854775808,7,9223372036854775807/1:79/2:484 log=19.3832
+ENTER PLANET -9223372036854775808,7,9223372036854775807/1:79/2:484/3:9223372036855889921 log=11.7877
+ENTER SURFACE -9223372036854775808,7,9223372036854775807/1:79/2:484/3:9223372036855889921/4:704374654273 log=3.27106
+ENTER MOUNTAIN -9223372036854775808,7,9223372036854775807/1:79/2:484/3:9223372036855889921/4:704374654273/5:4 log=1.86953
+ENTER ROCK -9223372036854775808,7,9223372036854775807/1:79/2:484/3:9223372036855889921/4:704374654273/5:4/6:13 log=0.719021
+ENTER MINERAL GRAIN -9223372036854775808,7,9223372036854775807/1:79/2:484/3:9223372036855889921/4:704374654273/5:4/6:13/7:10 log=-0.942676
+ENTER CRYSTAL LATTICE -9223372036854775808,7,9223372036854775807/1:79/2:484/3:9223372036855889921/4:704374654273/5:4/6:13/7:10/8:0 log=-4.07913
+EXIT CRYSTAL LATTICE
+EXIT MINERAL GRAIN
+EXIT ROCK
+EXIT MOUNTAIN
+EXIT SURFACE
+EXIT PLANET
+EXIT STAR SYSTEM
+EXIT GALAXY
+ENTER GALAXY -9223372036854775808,7,9223372036854775807/1:10 log=24.8879
+ENTER STAR SYSTEM -9223372036854775808,7,9223372036854775807/1:10/2:4760 log=19.2574
+ENTER PLANET -9223372036854775808,7,9223372036854775807/1:10/2:4760/3:9223372036855562242 log=10.7172
+ENTER SURFACE -9223372036854775808,7,9223372036854775807/1:10/2:4760/3:9223372036855562242/4:1000727406403 log=2.50436
+ENTER MOUNTAIN -9223372036854775808,7,9223372036854775807/1:10/2:4760/3:9223372036855562242/4:1000727406403/5:9 log=1.08121
+ENTER ROCK -9223372036854775808,7,9223372036854775807/1:10/2:4760/3:9223372036855562242/4:1000727406403/5:9/6:3 log=0.327893
+ENTER MINERAL GRAIN -9223372036854775808,7,9223372036854775807/1:10/2:4760/3:9223372036855562242/4:1000727406403/5:9/6:3/7:21 log=-1.29583
+ENTER CRYSTAL LATTICE -9223372036854775808,7,9223372036854775807/1:10/2:4760/3:9223372036855562242/4:1000727406403/5:9/6:3/7:21/8:0 log=-4.58344
+EXIT CRYSTAL LATTICE
+EXIT MINERAL GRAIN
+EXIT ROCK
+EXIT MOUNTAIN
+EXIT SURFACE
+EXIT PLANET
+EXIT STAR SYSTEM
+EXIT GALAXY
+PASS: 24773 seamless-flight checks; full cosmic-to-atomic and outward flights, no focus/zoom commands, three seeds, finite frames and deterministic geometry.
+<end of output>
+Test time =   1.98 sec
+----------------------------------------------------------
+Test Passed.
+"seamless_scale_flight" end time: Oct 28 12:13 GMT
+"seamless_scale_flight" time elapsed: 00:00:01
+----------------------------------------------------------
+
+11/35 Testing: free_flight_navigation
+11/35 Test: free_flight_navigation
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_navigation_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"free_flight_navigation" start time: Oct 28 12:13 GMT
+Output:
+----------------------------------------------------------
+PASS: 3965 flight checks across all nine scales and three seeds; stationary free look, camera-relative movement, frame rates, speed controls, manual takeover and saves.
+<end of output>
+Test time =   0.58 sec
+----------------------------------------------------------
+Test Passed.
+"free_flight_navigation" end time: Oct 28 12:13 GMT
+"free_flight_navigation" time elapsed: 00:00:00
+----------------------------------------------------------
+
+12/35 Testing: filtered_material_texture
+12/35 Test: filtered_material_texture
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_material_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"filtered_material_texture" start time: Oct 28 12:13 GMT
+Output:
+----------------------------------------------------------
+Packed material: fixed GPU budget, deterministic bake, periodic origins, fracture relief and mip energy passed
+<end of output>
+Test time =   0.44 sec
+----------------------------------------------------------
+Test Passed.
+"filtered_material_texture" end time: Oct 28 12:13 GMT
+"filtered_material_texture" time elapsed: 00:00:00
+----------------------------------------------------------
+
+13/35 Testing: surface_shading_preserves_mesh
+13/35 Test: surface_shading_preserves_mesh
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_shading_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"surface_shading_preserves_mesh" start time: Oct 28 12:13 GMT
+Output:
+----------------------------------------------------------
+Surface shading: packing, seam welding, crease preservation, scale invariance, immutable topology and cancellation passed
+<end of output>
+Test time =   0.31 sec
+----------------------------------------------------------
+Test Passed.
+"surface_shading_preserves_mesh" end time: Oct 28 12:13 GMT
+"surface_shading_preserves_mesh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+14/35 Testing: rendering_preserves_universe
+14/35 Test: rendering_preserves_universe
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_presentation_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"rendering_preserves_universe" start time: Oct 28 12:13 GMT
+Output:
+----------------------------------------------------------
+3232 presentation preservation checks passed
+<end of output>
+Test time =   0.84 sec
+----------------------------------------------------------
+Test Passed.
+"rendering_preserves_universe" end time: Oct 28 12:13 GMT
+"rendering_preserves_universe" time elapsed: 00:00:00
+----------------------------------------------------------
+
+15/35 Testing: performance_invariants
+15/35 Test: performance_invariants
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_performance_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"performance_invariants" start time: Oct 28 12:13 GMT
+Output:
+----------------------------------------------------------
+PASS: 64460 performance invariants; prepared fields/transforms, adaptive LOD, indexed topology, instance identity, cancellation, admission and eviction.
+<end of output>
+Test time =   0.55 sec
+----------------------------------------------------------
+Test Passed.
+"performance_invariants" end time: Oct 28 12:13 GMT
+"performance_invariants" time elapsed: 00:00:00
+----------------------------------------------------------
+
+16/35 Testing: structural_processes
+16/35 Test: structural_processes
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_process_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"structural_processes" start time: Oct 28 12:13 GMT
+Output:
+----------------------------------------------------------
+SPIRAL DISC thickness=0.0597837 young=875
+BARRED SPIRAL thickness=0.0348088 young=510
+ELLIPTICAL SPHEROID thickness=0.330961 young=39
+IRREGULAR ASSOCIATIONS thickness=0.0394489 young=3610
+PASS: 66204 process checks; web, populations, tectonics, lithologies, habits, stoichiometry, coordination, phase, defects, inheritance, parallel regeneration.
+<end of output>
+Test time =   0.82 sec
+----------------------------------------------------------
+Test Passed.
+"structural_processes" end time: Oct 28 12:13 GMT
+"structural_processes" time elapsed: 00:00:00
+----------------------------------------------------------
+
+17/35 Testing: universe_regressions
+17/35 Test: universe_regressions
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"universe_regressions" start time: Oct 28 12:13 GMT
+Output:
+----------------------------------------------------------
+PASS: 251 checks; determinism, order, boundaries, coordinates, identity, LOD, cache, persistence, cancellation.
+<end of output>
+Test time =   0.64 sec
+----------------------------------------------------------
+Test Passed.
+"universe_regressions" end time: Oct 28 12:13 GMT
+"universe_regressions" time elapsed: 00:00:00
+----------------------------------------------------------
+
+18/35 Testing: persistence_process_write
+18/35 Test: persistence_process_write
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_tests" "--write" "/Users/user/Documents/SC tutorial/Infinite/build/restart-test.sqlite"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"persistence_process_write" start time: Oct 28 12:13 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"persistence_process_write" end time: Oct 28 12:13 GMT
+"persistence_process_write" time elapsed: 00:00:00
+----------------------------------------------------------
+
+19/35 Testing: persistence_process_read
+19/35 Test: persistence_process_read
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_tests" "--read" "/Users/user/Documents/SC tutorial/Infinite/build/restart-test.sqlite"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"persistence_process_read" start time: Oct 28 12:13 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"persistence_process_read" end time: Oct 28 12:13 GMT
+"persistence_process_read" time elapsed: 00:00:00
+----------------------------------------------------------
+
+20/35 Testing: cross_scale_round_trip
+20/35 Test: cross_scale_round_trip
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_continuity_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"cross_scale_round_trip" start time: Oct 28 12:13 GMT
+Output:
+----------------------------------------------------------
+PASS: 57228 continuity checks; full non-default galaxy-to-lattice round trips, all LODs, caches, local sections, persisted breadcrumbs, transported frames and atomic site stability.
+<end of output>
+Test time =   3.94 sec
+----------------------------------------------------------
+Test Passed.
+"cross_scale_round_trip" end time: Oct 28 12:13 GMT
+"cross_scale_round_trip" time elapsed: 00:00:03
+----------------------------------------------------------
+
+21/35 Testing: continuity_restart_write
+21/35 Test: continuity_restart_write
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_continuity_tests" "--write" "/Users/user/Documents/SC tutorial/Infinite/build/continuity-restart.sqlite"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"continuity_restart_write" start time: Oct 28 12:13 GMT
+Output:
+----------------------------------------------------------
+PASS: persisted full hierarchy --write
+<end of output>
+Test time =   0.46 sec
+----------------------------------------------------------
+Test Passed.
+"continuity_restart_write" end time: Oct 28 12:13 GMT
+"continuity_restart_write" time elapsed: 00:00:00
+----------------------------------------------------------
+
+22/35 Testing: continuity_restart_read
+22/35 Test: continuity_restart_read
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_continuity_tests" "--read" "/Users/user/Documents/SC tutorial/Infinite/build/continuity-restart.sqlite"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"continuity_restart_read" start time: Oct 28 12:13 GMT
+Output:
+----------------------------------------------------------
+PASS: persisted full hierarchy --read
+<end of output>
+Test time =   0.47 sec
+----------------------------------------------------------
+Test Passed.
+"continuity_restart_read" end time: Oct 28 12:13 GMT
+"continuity_restart_read" time elapsed: 00:00:00
+----------------------------------------------------------
+
+23/35 Testing: native_weather_and_surface_life
+23/35 Test: native_weather_and_surface_life
+Command: "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake" "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite" "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/surface-native" "-P" "/Users/user/Documents/SC tutorial/Infinite/cmake/RunSurfaceLife.cmake"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_weather_and_surface_life" start time: Oct 28 12:13 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =  27.02 sec
+----------------------------------------------------------
+Test Passed.
+"native_weather_and_surface_life" end time: Oct 28 12:14 GMT
+"native_weather_and_surface_life" time elapsed: 00:00:27
+----------------------------------------------------------
+
+24/35 Testing: native_weather_and_surface_images
+24/35 Test: native_weather_and_surface_images
+Command: "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9" "/Users/user/Documents/SC tutorial/Infinite/tools/check_surface_captures.py" "/Users/user/Documents/SC tutorial/Infinite/build/surface-native"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_weather_and_surface_images" start time: Oct 28 12:14 GMT
+Output:
+----------------------------------------------------------
+PASS: five real surface/weather views, 15 native captures, moving residents, precipitation, bounded caches and three-mode geometry/camera proofs
+<end of output>
+Test time =   0.86 sec
+----------------------------------------------------------
+Test Passed.
+"native_weather_and_surface_images" end time: Oct 28 12:14 GMT
+"native_weather_and_surface_images" time elapsed: 00:00:00
+----------------------------------------------------------
+
+25/35 Testing: native_solid_terrain
+25/35 Test: native_solid_terrain
+Command: "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake" "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite" "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/terrain-native" "-P" "/Users/user/Documents/SC tutorial/Infinite/cmake/RunTerrain.cmake"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_solid_terrain" start time: Oct 28 12:14 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =  26.61 sec
+----------------------------------------------------------
+Test Passed.
+"native_solid_terrain" end time: Oct 28 12:14 GMT
+"native_solid_terrain" time elapsed: 00:00:26
+----------------------------------------------------------
+
+26/35 Testing: native_solid_terrain_images
+26/35 Test: native_solid_terrain_images
+Command: "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9" "/Users/user/Documents/SC tutorial/Infinite/tools/check_terrain_captures.py" "/Users/user/Documents/SC tutorial/Infinite/build/terrain-native"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_solid_terrain_images" start time: Oct 28 12:14 GMT
+Output:
+----------------------------------------------------------
+PASS: 4 generated terrain worlds, 12 native images, solid-only patches and identical cameras/geometry in all modes
+<end of output>
+Test time =   0.56 sec
+----------------------------------------------------------
+Test Passed.
+"native_solid_terrain_images" end time: Oct 28 12:14 GMT
+"native_solid_terrain_images" time elapsed: 00:00:00
+----------------------------------------------------------
+
+27/35 Testing: native_piloting_loop
+27/35 Test: native_piloting_loop
+Command: "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake" "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite" "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/pilot-native" "-P" "/Users/user/Documents/SC tutorial/Infinite/cmake/RunPilot.cmake"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_piloting_loop" start time: Oct 28 12:14 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =  33.02 sec
+----------------------------------------------------------
+Test Passed.
+"native_piloting_loop" end time: Oct 28 12:15 GMT
+"native_piloting_loop" time elapsed: 00:00:33
+----------------------------------------------------------
+
+28/35 Testing: native_cockpit_images
+28/35 Test: native_cockpit_images
+Command: "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9" "/Users/user/Documents/SC tutorial/Infinite/tools/check_cockpit_captures.py" "/Users/user/Documents/SC tutorial/Infinite/build/pilot-native/captures"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_cockpit_images" start time: Oct 28 12:15 GMT
+Output:
+----------------------------------------------------------
+PASS: all fourteen cockpit, controls guide, real moon family, orbital activity, celestial contacts, addressed stellar background, landing/departure and micro/nano ship captures contain scene geometry and flight instruments
+PASS: asynchronous material texture uploaded; complete mip chain uses 1,398,100 bytes
+<end of output>
+Test time =   3.31 sec
+----------------------------------------------------------
+Test Passed.
+"native_cockpit_images" end time: Oct 28 12:15 GMT
+"native_cockpit_images" time elapsed: 00:00:03
+----------------------------------------------------------
+
+29/35 Testing: native_boundary_streaming
+29/35 Test: native_boundary_streaming
+Command: "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake" "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite" "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/streaming-native" "-P" "/Users/user/Documents/SC tutorial/Infinite/cmake/RunStreaming.cmake"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_boundary_streaming" start time: Oct 28 12:15 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =  11.74 sec
+----------------------------------------------------------
+Test Passed.
+"native_boundary_streaming" end time: Oct 28 12:15 GMT
+"native_boundary_streaming" time elapsed: 00:00:11
+----------------------------------------------------------
+
+30/35 Testing: native_boundary_pixels
+30/35 Test: native_boundary_pixels
+Command: "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9" "/Users/user/Documents/SC tutorial/Infinite/tools/check_streaming_captures.py" "/Users/user/Documents/SC tutorial/Infinite/build/streaming-native/captures"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_boundary_pixels" start time: Oct 28 12:15 GMT
+Output:
+----------------------------------------------------------
+{
+  "root_rebase_rms_rgb": 0.0013467915315738628,
+  "root_rebase_fraction_over_2": 0.0,
+  "terrain_uncovered_fraction": {
+    "terrain-before.ppm": 0.0,
+    "terrain-HYPERION.ppm": 0.0,
+    "terrain-HYBRID.ppm": 0.0,
+    "terrain-ORIGINAL.ppm": 0.0
+  }
+}
+<end of output>
+Test time =   5.50 sec
+----------------------------------------------------------
+Test Passed.
+"native_boundary_pixels" end time: Oct 28 12:15 GMT
+"native_boundary_pixels" time elapsed: 00:00:05
+----------------------------------------------------------
+
+31/35 Testing: native_seamless_scale_flight
+31/35 Test: native_seamless_scale_flight
+Command: "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake" "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite" "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/seamless-flight" "-P" "/Users/user/Documents/SC tutorial/Infinite/cmake/RunFlightTour.cmake"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_seamless_scale_flight" start time: Oct 28 12:15 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =  37.67 sec
+----------------------------------------------------------
+Test Passed.
+"native_seamless_scale_flight" end time: Oct 28 12:16 GMT
+"native_seamless_scale_flight" time elapsed: 00:00:37
+----------------------------------------------------------
+
+32/35 Testing: native_cross_scale_round_trip
+32/35 Test: native_cross_scale_round_trip
+Command: "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake" "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite" "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/native-continuity" "-P" "/Users/user/Documents/SC tutorial/Infinite/cmake/RunNativeTour.cmake"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_cross_scale_round_trip" start time: Oct 28 12:16 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =  32.12 sec
+----------------------------------------------------------
+Test Passed.
+"native_cross_scale_round_trip" end time: Oct 28 12:16 GMT
+"native_cross_scale_round_trip" time elapsed: 00:00:32
+----------------------------------------------------------
+
+33/35 Testing: native_atomic_visibility
+33/35 Test: native_atomic_visibility
+Command: "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9" "/Users/user/Documents/SC tutorial/Infinite/tools/check_continuity_captures.py" "/Users/user/Documents/SC tutorial/Infinite/build/native-continuity/captures" "/Users/user/Documents/SC tutorial/Infinite/build/native-continuity/native.log"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_atomic_visibility" start time: Oct 28 12:16 GMT
+Output:
+----------------------------------------------------------
+Atomic pixels: oxygen=0, iron=0, carbon=137471, cyan=157070
+PASS: 15 native captures, 1920x1080, matching return addresses and visible atoms
+<end of output>
+Test time =   1.84 sec
+----------------------------------------------------------
+Test Passed.
+"native_atomic_visibility" end time: Oct 28 12:16 GMT
+"native_atomic_visibility" time elapsed: 00:00:01
+----------------------------------------------------------
+
+34/35 Testing: native_render_mode_round_trip
+34/35 Test: native_render_mode_round_trip
+Command: "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake" "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite" "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/hyperion-comparison" "-P" "/Users/user/Documents/SC tutorial/Infinite/cmake/RunModeTour.cmake"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_render_mode_round_trip" start time: Oct 28 12:16 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =  47.76 sec
+----------------------------------------------------------
+Test Passed.
+"native_render_mode_round_trip" end time: Oct 28 12:17 GMT
+"native_render_mode_round_trip" time elapsed: 00:00:47
+----------------------------------------------------------
+
+35/35 Testing: native_render_mode_images
+35/35 Test: native_render_mode_images
+Command: "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9" "/Users/user/Documents/SC tutorial/Infinite/tools/check_mode_captures.py" "/Users/user/Documents/SC tutorial/Infinite/build/hyperion-comparison/captures" "/Users/user/Documents/SC tutorial/Infinite/build/hyperion-comparison/native.log"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_render_mode_images" start time: Oct 28 12:17 GMT
+Output:
+----------------------------------------------------------
+PASS: 51 native 1080p captures, 9 scales, 17 scene/camera/generation proofs; return identities match
+<end of output>
+Test time =  10.63 sec
+----------------------------------------------------------
+Test Passed.
+"native_render_mode_images" end time: Oct 28 12:17 GMT
+"native_render_mode_images" time elapsed: 00:00:10
+----------------------------------------------------------
+
+End testing: Oct 28 12:17 GMT

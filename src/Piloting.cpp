@@ -1,4 +1,5 @@
 #include "infinite/Piloting.hpp"
+#include "infinite/SurfaceLife.hpp"
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
@@ -466,6 +467,13 @@ void Pilot::trackWaypoint(const FlightWaypoint& waypoint) {
 void Pilot::navigateWaypoint(const FlightWaypoint& waypoint) {
     navigate(waypoint.reference);
     landingPlanet_.reset();
+    if (waypoint.surfacePort) {
+        const auto p = universe_.describe(waypoint.reference);
+        if (p.address.kind() != Kind::Planet || !hasSolidSurface(p))
+            throw std::invalid_argument("Surface waypoint requires a solid planet");
+        landingPlanet_ = p.address;
+        landingDirection_ = unit(waypoint.metres);
+    }
     trackWaypoint(waypoint);
     phase_ = "RENDEZVOUS / MATCHING COURSE";
     instrument();
@@ -490,6 +498,33 @@ bool Pilot::land() {
     ship_.assist = true;
     autopilot_ = landing_ = true;
     phase_ = "LANDING / GEAR DOWN";
+    return true;
+}
+bool Pilot::landAt(const Address& planet, glm::dvec3 direction) {
+    if (planet.kind() != Kind::Planet || !std::isfinite(glm::length(direction)) ||
+        glm::length(direction) < 1e-20)
+        return false;
+    const auto p = universe_.describe(planet);
+    if (!hasSolidSurface(p) || !continuumContact())
+        return false;
+    direction = glm::normalize(direction);
+    const double radius = std::pow(10., p.frame.logRadius);
+    const auto normal = universe_.terrainNormal(p, direction);
+    const auto point =
+        universe_.pointRelative(planet, direction * (1 + universe_.terrainHeight(p, direction) / radius),
+                                nav_.anchor, nav_.logDistance);
+    const auto delta = (nav_.cameraPosition() - point) * std::pow(10., nav_.logDistance);
+    const auto up = universe_.relative(planet, nav_.anchor, 0).orientation * direction;
+    if (glm::dot(normal, direction) < .994 || glm::length(delta - up * glm::dot(delta, up)) > 500 ||
+        glm::dot(delta, up) < 0 || glm::dot(delta, up) > 1500)
+        return false;
+    waypoint_.reset();
+    landingPlanet_ = planet;
+    landingDirection_ = direction;
+    destination_ = FlightController::surfaceAt(planet, direction);
+    ship_.gear = ship_.assist = true;
+    autopilot_ = landing_ = true;
+    phase_ = "SURFACE PORT / CONTROLLED LANDING";
     return true;
 }
 void Pilot::launch() {
@@ -703,6 +738,25 @@ void Pilot::step(const HelmInput& input, double dt) {
     // Retain sub-ULP travel instead of discarding small metre displacements
     // while the camera happens to use galactic-sized units.
     ship_.positionResidual = displacement - (nav_.cameraPosition() - oldEye) * units;
+    if (surfaceWorld_ && nav_.anchor.kind() < Kind::Rock) {
+        const auto planet = universe_.describe(surfaceWorld_->planet);
+        const double factor =
+            std::pow(10., nav_.logDistance - universe_.describe(nav_.anchor).frame.logRadius);
+        const auto toSI = [&](glm::dvec3 point) {
+            return universe_.pointRelative(nav_.anchor, point * factor, planet.address, 0);
+        };
+        const auto from = toSI(oldEye), to = toSI(nav_.cameraPosition());
+        if (const auto hit = surfaceCollision(*surfaceWorld_, from, to, collisionRadius())) {
+            const double length = glm::length(to - from);
+            const double safe = std::max(0., *hit - .02 / std::max(.02, length));
+            nav_.offset =
+                oldEye + (nav_.cameraPosition() - oldEye) * safe - nav_.orientation * glm::dvec3(0, 0, 1);
+            ship_.velocity = ship_.thrusters = ship_.positionResidual = {};
+            ship_.throttle = 0;
+            autopilot_ = landing_ = false;
+            phase_ = "STRUCTURE CONTACT / BRAKED";
+        }
+    }
     ship_.flightSeconds += dt;
     ship_.travelMetres += glm::length((oldVelocity + ship_.velocity) * (.5 * dt));
     if (continuumContact()) {

@@ -1,0 +1,35 @@
+{
+  "before_pilot": {
+    "frames": 1817,
+    "median_frame_ms": 16.6629,
+    "p95_frame_ms": 17.1019,
+    "peak_rss_bytes": 159318016,
+    "stationary_orbit": {
+      "samples": 19,
+      "cpu_ms": 2.97208,
+      "gpu_ms": 8.62579
+    }
+  },
+  "after_pilot": {
+    "frames": 1817,
+    "median_frame_ms": 16.6608,
+    "p95_frame_ms": 17.4672,
+    "peak_rss_bytes": 151961600,
+    "stationary_orbit": {
+      "samples": 19,
+      "cpu_ms": 3.27488,
+      "gpu_ms": 7.80367
+    }
+  },
+  "new_surface_fixture": {
+    "frames": 1507,
+    "median_frame_ms": 16.6657,
+    "p95_frame_ms": 17.085,
+    "peak_rss_bytes": 140951552,
+    "peak_surface_cache_bytes": 905196,
+    "peak_surface_gpu_bytes": 206560,
+    "peak_surface_triangles": 68604,
+    "peak_resident_samples_drawn": 72,
+    "peak_weather_marks": 50
+  }
+}

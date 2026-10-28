@@ -11,7 +11,7 @@ struct ActivityId {
     std::string str() const;
     static ActivityId parse(std::string_view);
 };
-enum class ActivityKind : uint8_t { Harbour, Freighter, Ferry, Patrol, Survey, Debris };
+enum class ActivityKind : uint8_t { Harbour, Freighter, Ferry, Patrol, Survey, Debris, SurfacePort };
 struct ActivityBody {
     ActivityId id;
     ActivityKind kind = ActivityKind::Harbour;

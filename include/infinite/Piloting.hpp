@@ -3,6 +3,7 @@
 #include <cmath>
 
 namespace infinite {
+struct SurfaceWorld;
 struct HelmInput {
     double throttle = 0, strafe = 0, lift = 0, pitch = 0, yaw = 0, roll = 0;
     bool boost = false, precision = false, brake = false;
@@ -12,6 +13,7 @@ struct FlightWaypoint {
     glm::dvec3 metres{}, velocity{};
     double standOff = 100;
     std::string label;
+    bool surfacePort = false;
 };
 // Velocity is SI in frame axes. Angular rate and thrusters are in ship axes.
 // Neither is multiplied by the renderer's current magnification.
@@ -35,6 +37,7 @@ struct FlightInstruments {
     double hullMetres = 12, targetHullMetres = 12, flightSeconds = 0, travelMetres = 0, etaSeconds = -1;
     bool targetVisible = false, safe = false;
     std::string phase = "MANUAL", drive = "CRUISE", destination = "SELECT A DESTINATION / J NAVIGATE";
+    std::string weather;
 };
 class Pilot {
   public:
@@ -73,6 +76,10 @@ class Pilot {
     void navigateWaypoint(const FlightWaypoint&);
     void clearWaypoint();
     bool land();
+    bool landAt(const Address& planet, glm::dvec3 direction);
+    void setSurfaceWorld(std::shared_ptr<const SurfaceWorld> world) {
+        surfaceWorld_ = std::move(world);
+    }
     void launch();
     void resetMotion();
     void setVelocity(glm::dvec3 velocity);
@@ -110,5 +117,6 @@ class Pilot {
     bool continuumContact() const;
     void matterContact(const std::shared_ptr<const Geometry>&, glm::dvec3 previousEye);
     std::shared_ptr<const Geometry> collisionGeometry_;
+    std::shared_ptr<const SurfaceWorld> surfaceWorld_;
 };
 } // namespace infinite

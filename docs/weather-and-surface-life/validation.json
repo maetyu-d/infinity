@@ -1,0 +1,104 @@
+{
+  "version": "0.19.0",
+  "baseline": "d5cb05b460f0ae7e8dfff5d82a86a5796549d323",
+  "checkpoint_branch": "checkpoint/infinite-0.18-before-weather-settlements",
+  "recipes": {
+    "universe": 3,
+    "population": 1,
+    "terrain": 1,
+    "climate": 1,
+    "society": 1
+  },
+  "backend": "Metal",
+  "resolution": [
+    1440,
+    900
+  ],
+  "legacy_snapshot_records": 120,
+  "legacy_snapshot_exact": true,
+  "release_suite": {
+    "passed": 35,
+    "failed": 0,
+    "seconds": 260.21
+  },
+  "final_focused_checks": {
+    "passed": 3,
+    "failed": 0,
+    "seconds": 30.3,
+    "reason": "Final soft snow/dust rasterization and direct cancellation assertion; all feature/terrain/atomic code unchanged from the full suite."
+  },
+  "native_surface_proof": {
+    "actual_city": "0,0,0/1:0/2:137/3:0",
+    "city_name": "CITY 97221",
+    "city_population": 37983,
+    "actual_colony": "0,0,0/1:0/2:0/3:8",
+    "colony_name": "COLONY 80584",
+    "colony_population": 2345,
+    "views": 5,
+    "modes": 3,
+    "images": 15,
+    "streamed_terrain_geometry_identical": true,
+    "camera_identical": true
+  },
+  "limits": {
+    "surface_cache_bytes": 4194304,
+    "generation_jobs": 2,
+    "instances_per_frame": 6000,
+    "resident_samples_per_site": 96,
+    "weather_cells": 512,
+    "precipitation_marks": 96,
+    "all_surface_templates_bytes": 251072
+  },
+  "measurements": {
+    "before_pilot": {
+      "frames": 1817,
+      "median_frame_ms": 16.6629,
+      "p95_frame_ms": 17.1019,
+      "peak_rss_bytes": 159318016,
+      "stationary_orbit": {
+        "samples": 19,
+        "cpu_ms": 2.97208,
+        "gpu_ms": 8.62579
+      }
+    },
+    "after_pilot": {
+      "frames": 1817,
+      "median_frame_ms": 16.6608,
+      "p95_frame_ms": 17.4672,
+      "peak_rss_bytes": 151961600,
+      "stationary_orbit": {
+        "samples": 19,
+        "cpu_ms": 3.27488,
+        "gpu_ms": 7.80367
+      }
+    },
+    "new_surface_fixture": {
+      "frames": 1507,
+      "median_frame_ms": 16.6657,
+      "p95_frame_ms": 17.085,
+      "peak_rss_bytes": 140951552,
+      "peak_surface_cache_bytes": 905196,
+      "peak_surface_gpu_bytes": 206560,
+      "peak_surface_triangles": 68604,
+      "peak_resident_samples_drawn": 72,
+      "peak_weather_marks": 50
+    }
+  },
+  "package": {
+    "version": "0.19.0",
+    "build": "19",
+    "all_code_and_data_sections_match": true,
+    "section_count": 31,
+    "signature_verified": true,
+    "normal_saved_flight_resumed": true,
+    "live_hyperion_mode_verified": true,
+    "weather_instruments_visible": true
+  },
+  "notes": "Single-run VSync-limited observations, not a controlled multi-run benchmark. Pilot before/after use identical 1817-frame actions at fixed visual time; the orbit block has 19 samples each. New surface activity is measured separately. Full-suite artifacts precede a bounded snow/dust footprint refinement; final focused core/native/image checks cover that exact packaged code.",
+  "final_core_check": {
+    "passed": 1,
+    "failed": 0,
+    "seconds": 5.1,
+    "reason": "Cancellation assertion uses a fixture already proved to contain settlements; packaged game code unchanged."
+  }
+}

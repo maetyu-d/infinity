@@ -1,0 +1,55 @@
+Start testing: Oct 28 12:19 GMT
+----------------------------------------------------------
+1/35 Testing: planetary_weather_and_surface_life
+1/35 Test: planetary_weather_and_surface_life
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_surface_life_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"planetary_weather_and_surface_life" start time: Oct 28 12:19 GMT
+Output:
+----------------------------------------------------------
+SOCIETY regime=0 temperate=1 sites=10 bytes=1105876
+SOCIETY regime=1 temperate=0 sites=5 bytes=143094
+SOCIETY regime=2 temperate=0 sites=1 bytes=10462
+SOCIETY regime=3 temperate=0 sites=1 bytes=10846
+ACTUAL_SURFACE 0,0,0/1:0/2:0/3:7 MINING 38290 population=836
+PASS: 43358 climate, solid-only habitation, deterministic residents, foundations, collision, async budgets, saved destination, landing and atomic-preservation checks / templates=251072 bytes
+<end of output>
+Test time =   2.43 sec
+----------------------------------------------------------
+Test Passed.
+"planetary_weather_and_surface_life" end time: Oct 28 12:19 GMT
+"planetary_weather_and_surface_life" time elapsed: 00:00:02
+----------------------------------------------------------
+
+23/35 Testing: native_weather_and_surface_life
+23/35 Test: native_weather_and_surface_life
+Command: "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake" "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite" "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/surface-native" "-P" "/Users/user/Documents/SC tutorial/Infinite/cmake/RunSurfaceLife.cmake"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_weather_and_surface_life" start time: Oct 28 12:19 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =  27.22 sec
+----------------------------------------------------------
+Test Passed.
+"native_weather_and_surface_life" end time: Oct 28 12:19 GMT
+"native_weather_and_surface_life" time elapsed: 00:00:27
+----------------------------------------------------------
+
+24/35 Testing: native_weather_and_surface_images
+24/35 Test: native_weather_and_surface_images
+Command: "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9" "/Users/user/Documents/SC tutorial/Infinite/tools/check_surface_captures.py" "/Users/user/Documents/SC tutorial/Infinite/build/surface-native"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_weather_and_surface_images" start time: Oct 28 12:19 GMT
+Output:
+----------------------------------------------------------
+PASS: five real surface/weather views, 15 native captures, moving residents, precipitation, bounded caches and three-mode geometry/camera proofs
+<end of output>
+Test time =   0.64 sec
+----------------------------------------------------------
+Test Passed.
+"native_weather_and_surface_images" end time: Oct 28 12:19 GMT
+"native_weather_and_surface_images" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 28 12:19 GMT

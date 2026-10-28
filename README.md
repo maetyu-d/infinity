@@ -1,6 +1,8 @@
 # INFINITE
 
-A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.18 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.19 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+
+Version 0.19 adds deterministic **planetary weather and inhabited surfaces**. Atmospheric retention, temperature and inherited water availability control cloud fronts, wind, rain, snow and dust. Suitable solid worlds can contain cities, sealed colonies, mining or research outposts, buildings and moving residents with persistent home identities. Sites use the existing landing height field and leave terrain untouched. **Shift-K** cycles nearby surface ports, **J** approaches their clear landing area, **L** lands and **Enter** launches. Many worlds remain uninhabited. [WEATHER_AND_SURFACE_LIFE.md](docs/WEATHER_AND_SURFACE_LIFE.md) documents the generation, safeguards, controls and validation.
 
 Version 0.18 adds real local terrain to selected expanded solid planets: **Highlands**, **Volcanic**, **Canyons** and **Ice ridges**. Their deterministic spherical height fields drive visible geometry, streaming, collision and landing together; gas envelopes have no terrain or landing surface. The original planet set and moons retain their existing geological fields, and all seeds/orbits stay intact. Terrain LOD now refines near the ship more accurately. Use **Y** to select a world with one of these terrain names, **J** to approach and **L** to land at a gentle site. [SOLID_TERRAIN.md](docs/SOLID_TERRAIN.md) records the algorithms, compatibility and native captures.
 
@@ -83,8 +85,9 @@ The cockpit shows planet/moon totals and the nearest eight celestial contacts wi
 | B / X | Brake / toggle flight assistance |
 | Y / J | Select next planet / navigate to selected destination |
 | Shift-Y | Cycle moons of the selected/current planet |
-| K / I | Select next traffic contact / hail its actual route status |
-| F6 | Hide/show orbital activity; its clock continues |
+| K / I | Select next port/traffic contact / hail its actual status |
+| Shift-K | Cycle nearby surface settlements; J approaches, L lands |
+| F6 | Hide/show orbital and surface activity; its clock continues |
 | L / G / Enter | Assisted landing / gear / lift off when landed |
 | N | Toggle long-range cruise |
 | - / + or [ / ] | Normal speed multiplier, or cruise speed ceiling |

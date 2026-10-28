@@ -3,6 +3,7 @@
 #include "Navigation.hpp"
 #include "Piloting.hpp"
 #include "Presentation.hpp"
+#include "SurfaceLife.hpp"
 #include "World.hpp"
 #include <memory>
 struct SDL_Window;
@@ -21,6 +22,8 @@ struct FrameStats {
     size_t celestialContacts = 0, celestialLights = 0, skyGas = 0, skyGalaxies = 0;
     size_t moonWorlds = 0;
     size_t activityBodies = 0, activityVisible = 0, activityTriangles = 0, activityBytes = 0;
+    size_t surfaceSites = 0, surfaceBuildings = 0, surfaceResidents = 0, surfaceTriangles = 0;
+    size_t surfaceBytes = 0, surfaceGpuBytes = 0, surfacePending = 0, weatherCells = 0, weatherParticles = 0;
 };
 class Renderer {
   public:
@@ -39,6 +42,8 @@ class Renderer {
     std::span<const CelestialContact> celestialContacts() const;
     std::span<const ActivityContact> activityContacts() const;
     std::optional<ActivityId> pickActivity(double x, double y) const;
+    std::shared_ptr<const SurfaceWorld> surfaceWorld(const Address&) const;
+    uint64_t terrainGeometryDigest() const;
     void setActivity(const ActivityState*);
     void setMode(RenderMode);
     RenderMode mode() const;

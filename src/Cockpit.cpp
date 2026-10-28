@@ -348,6 +348,11 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             label(t.shrinking ? "SHRINK FIELD ACTIVE" : "ORBITAL FLIGHT", w - 296, 125, 258, muted);
         }
     }
+    if (!t.weather.empty() && !t.shrinking) {
+        card(h, {w - 310, 514, 286, 29}, ice);
+        h.hitRegions.push_back({w - 310, 514, 286, 29});
+        fitted(h.lettering, t.weather, w - 296, 524, 258, 8.4, ice);
+    }
 
     // Hyperion's separated navigation, instrument, scope and systems rails.
     card(h, l.navigation, mint);
@@ -471,6 +476,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                                                              {"B / X", "BRAKE / ASSIST"},
                                                              {"Y / SHIFT-Y", "PLANETS / MOONS"},
                                                              {"K / I / J", "TRAFFIC / HAIL / APPROACH"},
+                                                             {"SHIFT-K", "SURFACE PORTS"},
                                                              {"L / G / ENTER", "LAND / GEAR / LAUNCH"},
                                                              {"N / - / +", "LONG CRUISE / DRIVE SPEED"},
                                                              {"Z / , / .", "SHRINK / SMALLER / LARGER"},
@@ -486,7 +492,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
 
     if (catalogues && !activity.empty()) {
         card(h, l.traffic, trafficInk);
-        label("LOCAL TRAFFIC", 38, 188, 160, trafficInk);
+        label("PORTS / TRAFFIC", 38, 188, 160, trafficInk);
         label("K / I", 238, 188, 56, muted);
         const auto rows = cockpitActivityRows(activity);
         for (size_t row = 0; row < rows.size(); ++row) {

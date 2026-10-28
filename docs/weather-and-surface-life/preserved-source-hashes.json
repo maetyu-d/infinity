@@ -1,0 +1,13 @@
+{
+  "baseline": "d5cb05b460f0ae7e8dfff5d82a86a5796549d323",
+  "unchanged": {
+    "src/Core.cpp": "8b6e0854d8e8dfdfde2cc78494a31907cedab63d1512020d66c94f6d1d690cb9",
+    "src/Universe.cpp": "6af136de8e5ebc6612bb461097fa23e02d2114728bdda5aca12cd6935bf3af4e",
+    "src/Processes.cpp": "9ea91c2ee445e94aa5e63a194d80ee970ff3ad4707646cb182b3d3e224851476",
+    "src/Terrain.cpp": "a9fbba49d7deef7e1c5eead2cc8c8ab20f20a8756775bd5aab3c8abe2bb438c3",
+    "src/Crystallography.cpp": "1d135fa1218cea466673723063267fcacdb5c6c56d4240ab5ca00eb0eb042dab",
+    "src/Geometry.cpp": "9bec2c4d3858545ba4f2864ec427a8098f9ba1988d7985ec5f29ef2aacb722af",
+    "src/Navigation.cpp": "c3ad57a8d158e5f70b251697953f8515ba59be5f0a3ef2ba2bed15b823bfa713",
+    "src/Streaming.cpp": "97788cd7f30d28d31af492d40fae19463f3fc0eb4e4a886bee18db6b2500dd2a"
+  }
+}

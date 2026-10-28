@@ -1,0 +1,10 @@
+{
+  "version": "0.19.0",
+  "build": "19",
+  "all_code_and_data_sections_match": true,
+  "section_count": 31,
+  "signature_verified": true,
+  "normal_saved_flight_resumed": true,
+  "live_hyperion_mode_verified": true,
+  "weather_instruments_visible": true
+}

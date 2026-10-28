@@ -1,6 +1,7 @@
 #include "FlightValidation.hpp"
 #include "PilotValidation.hpp"
 #include "StreamingValidation.hpp"
+#include "SurfaceValidation.hpp"
 #include "TerrainValidation.hpp"
 #include "infinite/Continuity.hpp"
 #include "infinite/Flight.hpp"
@@ -30,7 +31,7 @@ struct Options {
     bool compareModes = false;
     bool flightTest = false;
     bool streamingTest = false;
-    bool pilotTest = false, terrainTest = false, explicitMode = false;
+    bool pilotTest = false, terrainTest = false, surfaceTest = false, explicitMode = false;
 };
 static Options options(int argc, char** argv) {
     Options o;
@@ -58,6 +59,9 @@ static Options options(int argc, char** argv) {
             o.visualTime = 12;
         } else if (arg == "--terrain-test") {
             o.terrainTest = o.benchmark = o.smoke = o.fresh = true;
+            o.visualTime = 12;
+        } else if (arg == "--surface-test") {
+            o.surfaceTest = o.benchmark = o.smoke = o.fresh = true;
             o.visualTime = 12;
         } else if (arg == "--fresh")
             o.fresh = true;
@@ -94,23 +98,25 @@ static Options options(int argc, char** argv) {
                    "release mouse / quit.\nCLI: --fresh --tour --smoke-test --frames N --width N "
                    "--height N --seed N "
                    "--benchmark-tour --flight-test --streaming-test --pilot-test --terrain-test "
+                   "--surface-test "
                    "--capture-dir DIR "
                    "--profile CSV "
                    "--data DIR\n";
             std::cout << "H cycles ORIGINAL / HYPERION / HYBRID. --render-mode original|hyperion|hybrid "
                          "--compare-modes --visual-time SECONDS\n";
             std::cout << "Local activity: K cycles traffic, I hails, J approaches/matches course, F6 "
-                         "hides/shows.\n";
+                         "hides/shows. Shift-K cycles surface ports; J approaches, L lands.\n";
             std::exit(0);
         } else
             throw std::invalid_argument("Unknown option " + arg);
     }
-    if (o.compareModes || o.terrainTest) {
+    if (o.compareModes || o.terrainTest || o.surfaceTest) {
         o.renderMode = RenderMode::Original;
         o.visualTime = 12;
     }
-    const unsigned validationModes =
-        unsigned(o.flightTest) + unsigned(o.streamingTest) + unsigned(o.pilotTest) + unsigned(o.terrainTest);
+    const unsigned validationModes = unsigned(o.flightTest) + unsigned(o.streamingTest) +
+                                     unsigned(o.pilotTest) + unsigned(o.terrainTest) +
+                                     unsigned(o.surfaceTest);
     if (validationModes > 1 || (validationModes && o.tour))
         throw std::invalid_argument("Choose one automated validation mode");
     if (o.width < 320 || o.height < 240 || o.width > 7680 || o.height > 4320 || o.frames < 0)
@@ -145,7 +151,7 @@ int main(int argc, char** argv) {
         RegionCache cache(universe);
         FlightController flight(universe, nav, cache);
         Pilot pilot(universe, nav, flight);
-        bool pilotEnabled = (!opt.smoke && !opt.tour) || opt.pilotTest || opt.terrainTest;
+        bool pilotEnabled = (!opt.smoke && !opt.tour) || opt.pilotTest || opt.terrainTest || opt.surfaceTest;
         std::unique_ptr<FlightValidation> flightProof;
         if (opt.flightTest)
             flightProof = std::make_unique<FlightValidation>(universe, nav);
@@ -216,17 +222,39 @@ int main(int argc, char** argv) {
             if (opt.smoke)
                 activity.seconds = opt.visualTime >= 0 ? opt.visualTime : 12;
             renderer.setActivity(&activity);
+            std::unique_ptr<SurfaceValidation> surfaceProof;
+            if (opt.surfaceTest)
+                surfaceProof = std::make_unique<SurfaceValidation>(universe, nav, pilot, activity);
             auto activityBody = [&]() -> std::optional<ActivityBody> {
                 if (!activity.selected)
                     return {};
+                if (activity.selected->slot >= surfaceActivitySlot) {
+                    const auto world = renderer.surfaceWorld(activity.selected->home);
+                    if (!world) {
+                        for (const auto& c : renderer.activityContacts())
+                            if (c.body.id == *activity.selected)
+                                return c.body;
+                        return {};
+                    }
+                    for (const auto& s : world->settlements)
+                        if (surfaceActivitySlot + s.slot == activity.selected->slot)
+                            return surfaceContact(*world, s, activity.seconds);
+                    return {};
+                }
                 return sampleActivity(universe.describe(activity.selected->home), activity.selected->slot,
                                       activity.seconds);
             };
             auto waypointFor = [](const ActivityBody& body) {
-                return FlightWaypoint{body.id.home, body.position, body.velocity,
-                                      body.kind == ActivityKind::Harbour ? body.radius * 4
-                                                                         : std::max(750., body.radius * 5),
-                                      body.name};
+                const bool surface = body.kind == ActivityKind::SurfacePort;
+                return FlightWaypoint{body.id.home,
+                                      body.position +
+                                          (surface ? glm::normalize(body.position) * 60. : glm::dvec3(0)),
+                                      body.velocity,
+                                      surface                              ? 0.
+                                      : body.kind == ActivityKind::Harbour ? body.radius * 4
+                                                                           : std::max(750., body.radius * 5),
+                                      body.name,
+                                      surface};
             };
             auto chooseActivity = [&](const ActivityId& id) {
                 activity.selected = id;
@@ -248,11 +276,14 @@ int main(int argc, char** argv) {
             std::ofstream profile;
             if (!opt.profile.empty()) {
                 profile.open(opt.profile);
-                profile << "frame,kind,view_log_m,wall_ms,cpu_ms,gpu_ms,draws,visible,atoms,cpu_cache_bytes,"
-                           "gpu_bytes,pending,lod_transitions,sections,submit_ms,vertices,triangles,"
-                           "particles,upload_bytes,transitioning,queued,cancelled,evicted,atom_triangles,"
-                           "upload_deferred,render_mode,effect_bytes,terrain_tiles,root_cells,activity_"
-                           "bodies,activity_visible,activity_triangles,activity_bytes,material_bytes\n";
+                profile
+                    << "frame,kind,view_log_m,wall_ms,cpu_ms,gpu_ms,draws,visible,atoms,cpu_cache_bytes,"
+                       "gpu_bytes,pending,lod_transitions,sections,submit_ms,vertices,triangles,"
+                       "particles,upload_bytes,transitioning,queued,cancelled,evicted,atom_triangles,"
+                       "upload_deferred,render_mode,effect_bytes,terrain_tiles,root_cells,activity_"
+                       "bodies,activity_visible,activity_triangles,activity_bytes,material_bytes,"
+                       "surface_sites,surface_buildings,surface_residents,surface_triangles,surface_bytes,"
+                       "surface_gpu_bytes,surface_pending,weather_cells,weather_particles\n";
             }
             bool running = true, overlay = true, looking = false;
             bool mouseFlight = false, rightLook = false;
@@ -267,7 +298,7 @@ int main(int argc, char** argv) {
             std::vector<double> frameTimes;
             double fps = 60, noticeTime = 6;
             std::string notice =
-                "C mouse helm / Y next planet / J navigate / N long cruise / Z shrink / B brake";
+                "C mouse helm / Shift-K surface ports / J approach / L land / Y worlds / B brake";
             auto captureLook = [&] {
                 const bool enabled = mouseFlight || rightLook;
                 if (enabled == looking)
@@ -457,7 +488,11 @@ int main(int argc, char** argv) {
                             break;
                         case SDL_SCANCODE_K:
                             if (pilotEnabled) {
-                                const auto contacts = renderer.activityContacts();
+                                std::vector<ActivityContact> contacts;
+                                for (const auto& c : renderer.activityContacts())
+                                    if (!(event.key.mod & SDL_KMOD_SHIFT) ||
+                                        c.body.kind == ActivityKind::SurfacePort)
+                                        contacts.push_back(c);
                                 if (!contacts.empty()) {
                                     auto it =
                                         std::find_if(contacts.begin(), contacts.end(), [&](const auto& c) {
@@ -470,14 +505,19 @@ int main(int argc, char** argv) {
                                     chooseActivity(contacts[next].body.id);
                                     notice = hailActivity(*activityBody());
                                     noticeTime = 6;
+                                } else if (event.key.mod & SDL_KMOD_SHIFT) {
+                                    notice = "No surface ports detected / approach a suitable solid world / "
+                                             "F6 shows activity";
+                                    noticeTime = 6;
                                 }
                             }
                             break;
                         case SDL_SCANCODE_I:
-                            if (pilotEnabled && activity.selected) {
-                                notice = hailActivity(*activityBody());
-                                noticeTime = 8;
-                            }
+                            if (pilotEnabled)
+                                if (auto body = activityBody()) {
+                                    notice = hailActivity(*body);
+                                    noticeTime = 8;
+                                }
                             break;
                         case SDL_SCANCODE_F6:
                             activity.enabled = !activity.enabled;
@@ -495,10 +535,17 @@ int main(int argc, char** argv) {
                             break;
                         case SDL_SCANCODE_L:
                             if (pilotEnabled) {
-                                activity.selected.reset();
+                                const auto body = activityBody();
+                                const bool surface = body && body->kind == ActivityKind::SurfacePort;
+                                const bool landing =
+                                    surface ? pilot.landAt(body->id.home, glm::normalize(body->position))
+                                            : pilot.land();
+                                if (landing)
+                                    activity.selected.reset();
                                 notice =
-                                    pilot.land()
-                                        ? "Landing site acquired on existing terrain / assisted approach"
+                                    landing ? "Landing site acquired on existing terrain / assisted approach"
+                                    : surface
+                                        ? "J approaches the surface port / L lands when nearby"
                                         : "Approach a planet in ship mode before selecting a landing site";
                                 noticeTime = 5;
                             }
@@ -567,7 +614,13 @@ int main(int argc, char** argv) {
                 if (!opt.smoke)
                     activity.advance(dt);
                 if (pilotEnabled && activity.selected)
-                    pilot.trackWaypoint(waypointFor(*activityBody()));
+                    if (auto body = activityBody())
+                        pilot.trackWaypoint(waypointFor(*body));
+                auto surfaceFrame = nav.anchor;
+                while (surfaceFrame.kind() > Kind::Planet)
+                    surfaceFrame = surfaceFrame.parent();
+                pilot.setSurfaceWorld(
+                    surfaceFrame.kind() == Kind::Planet ? renderer.surfaceWorld(surfaceFrame) : nullptr);
                 const bool* keys = SDL_GetKeyboardState(nullptr);
                 flight.observeGalaxy(renderer.galaxySamples());
                 if (!opt.smoke && (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS)) {
@@ -623,6 +676,11 @@ int main(int argc, char** argv) {
                     if (terrainProof->finished())
                         running = false;
                 }
+                if (surfaceProof) {
+                    surfaceProof->observe(stats, cache, renderer, opt.captures);
+                    if (surfaceProof->finished())
+                        running = false;
+                }
                 noticeTime -= dt;
                 ++frame;
                 if (frame > 10)
@@ -648,7 +706,11 @@ int main(int argc, char** argv) {
                             << stats.effectBytes << ',' << stats.terrainTiles << ',' << stats.rootCells << ','
                             << stats.activityBodies << ',' << stats.activityVisible << ','
                             << stats.activityTriangles << ',' << stats.activityBytes << ','
-                            << stats.materialBytes << '\n';
+                            << stats.materialBytes << ',' << stats.surfaceSites << ','
+                            << stats.surfaceBuildings << ',' << stats.surfaceResidents << ','
+                            << stats.surfaceTriangles << ',' << stats.surfaceBytes << ','
+                            << stats.surfaceGpuBytes << ',' << stats.surfacePending << ','
+                            << stats.weatherCells << ',' << stats.weatherParticles << '\n';
                 if (opt.tour) {
                     if (!nav.transitioning && stats.visibleObjects > 0 && gen.pending == 0 &&
                         gen.queued == 0 && stats.lodTransitions == 0 && stats.uploadDeferred == 0)
@@ -791,7 +853,10 @@ int main(int argc, char** argv) {
             std::cout << "peak_rss_bytes=" << usage.ru_maxrss * 1024 << '\n';
 #endif
 #endif
-            if (opt.terrainTest) {
+            if (opt.surfaceTest) {
+                if (!surfaceProof->finished())
+                    throw std::runtime_error("Native surface life validation incomplete");
+            } else if (opt.terrainTest) {
                 if (!terrainProof->finished())
                     throw std::runtime_error("Native terrain validation incomplete");
             } else if (opt.pilotTest) {
