@@ -164,7 +164,10 @@ struct Renderer::Impl {
     double frameSeconds = 0, fieldOfView = 1;
     std::string sectionLabel;
     TerrainStreamer terrain;
-    bool terrainActive = false;
+    bool terrainActive = false, terrainSunComplete = true, sunShadows = true;
+    std::optional<Address> terrainSunPlanet;
+    glm::dvec3 terrainSunAnchor{};
+    double terrainSunSpan = 0;
     explicit Impl(SDL_Window* w, const Universe& u) : universe(u), window(w), surfaceLife(u), terrain(u) {}
     bgfx::ViewId worldView() const {
         return instruments ? 2 : 0; // Flight sky precedes terrain (1) and opaque local geometry (2).
@@ -911,8 +914,8 @@ struct Renderer::Impl {
                                        : node.address == nav.anchor ? 0
                                                                     : 4,
                                        viewKey);
-        const bool streamedTerrain = terrainActive && kind >= Kind::Planet && kind <= Kind::Mountain &&
-                                     node.address.ancestorOf(nav.anchor);
+        const bool streamedTerrain =
+            terrainActive && streamedTerrainCovers(node.address, nav.anchor, mode == RenderMode::Original);
         // Retain the original node/LOD reference for identity and inspection;
         // streamed tiles provide the terrain draw without duplicate GPU buffers.
         state.blend.update(streamedTerrain || prepareGPU(candidate) ? candidate : nullptr, frameSeconds);
@@ -963,6 +966,36 @@ struct Renderer::Impl {
         for (unsigned i = 0; i < 3; ++i)
             pattern[i] = glm::dvec4(mapping.linear[i] * units, 0);
         pattern[3] = glm::dvec4(mapping(eye * units), 1);
+        bool updateSun = false;
+        SunShadowFrame sun;
+        if (sunShadows && mode != RenderMode::Original && instruments && !instruments->shrinking &&
+            nav.anchor.kind() < Kind::Rock && std::pow(10., nav.logDistance) > .01) {
+            const auto pose = poseFor(planet.address, nav);
+            const double radiusMetres = std::pow(10., planet.frame.logRadius);
+            const auto planetEye = glm::dvec3(pattern[3]) * radiusMetres;
+            const auto direction = glm::normalize(planetEye);
+            const auto light = glm::inverse(pose.orientation) * lightAt(planet.address, nav);
+            const double groundHeight = universe.terrainHeight(planet, direction);
+            const double altitude = glm::length(planetEye) - radiusMetres - groundHeight;
+            if (altitude < 60000 && glm::dot(direction, light) > .035) {
+                // Reuse the existing single map. Its snapped, power-of-two span
+                // follows approach altitude; no additional texture is allocated.
+                terrainSunSpan = std::clamp(std::exp2(std::ceil(std::log2(std::max(2048., altitude * 8.)))),
+                                            2048., 262144.);
+                terrainSunAnchor = direction * (radiusMetres + groundHeight);
+                sun = sunShadowFrame(terrainSunAnchor, light, pose.orientation, planetEye,
+                                     std::pow(10., nav.logDistance), terrainSunSpan,
+                                     bgfx::getCaps()->homogeneousDepth, bgfx::getCaps()->originBottomLeft);
+                uint64_t key = descriptorFingerprint(planet);
+                for (const auto& patch : terrain.patches())
+                    key = mix64(key ^ encodeTile(patch.tile) ^ (uint64_t(patch.stitch) << 32));
+                if (terrain.morphing())
+                    key = mix64(key ^ frame);
+                updateSun = hyperion->prepareSun(sun, key, nav.orientation, float(width) / height,
+                                                 float(std::tan(fieldOfView * .5)));
+                terrainSunPlanet = planet.address;
+            }
+        }
         for (const auto& patch : terrain.patches()) {
             const auto& g = *patch.geometry;
             std::array<glm::dvec3, 81> points;
@@ -975,7 +1008,18 @@ struct Renderer::Impl {
             double radius = 0;
             for (auto p : points)
                 radius = std::max(radius, glm::length(p - centre));
-            if (!LOD::visible(cameraInverse * centre, radius, double(width) / height, fieldOfView))
+            const bool visible =
+                LOD::visible(cameraInverse * centre, radius, double(width) / height, fieldOfView);
+            // Caster visibility is evaluated in the light frame, independently
+            // of the cockpit view. Reuse exactly the current geomorphed vertices.
+            bool caster = false;
+            if (updateSun) {
+                const auto q = glm::dvec3(sun.textureFromWorld * glm::dvec4(centre, 1));
+                const double r = radius * std::pow(10., nav.logDistance) / sun.spanMetres;
+                caster =
+                    q.x + r > 0 && q.y + r > 0 && q.z + r > 0 && q.x - r < 1 && q.y - r < 1 && q.z - r < 1;
+            }
+            if (!visible && !caster)
                 continue;
             const bool smoothTerrain = mode != RenderMode::Original && g.terrainNormals.size() == 81;
             const uint32_t count = uint32_t(g.solid.indexCount());
@@ -984,6 +1028,8 @@ struct Renderer::Impl {
                 bgfx::getAvailTransientIndexBuffer(count, false) < count ||
                 bgfx::getAvailInstanceDataBuffer(1, 80) < 1) {
                 ++stats.uploadDeferred;
+                if (caster)
+                    terrainSunComplete = false;
                 continue;
             }
             bgfx::TransientVertexBuffer vertices, normals;
@@ -995,7 +1041,7 @@ struct Renderer::Impl {
             auto data = reinterpret_cast<Vertex*>(vertices.data);
             for (unsigned i = 0; i < points.size(); ++i)
                 data[i] = {float(points[i].x), float(points[i].y), float(points[i].z),
-                           g.solid.vertices[i].color};
+                           smoothTerrain ? g.terrainAlbedo[i] : g.solid.vertices[i].color};
             if (smoothTerrain) {
                 bgfx::allocTransientVertexBuffer(&normals, 81, normalLayout);
                 auto output = reinterpret_cast<ShadingNormal*>(normals.data);
@@ -1006,23 +1052,33 @@ struct Renderer::Impl {
             std::memcpy(indices.data, g.solid.indexData(), count * 2);
             const Instance identity{glm::mat4(1), glm::vec4(1)};
             std::memcpy(instances.data, &identity, sizeof(identity));
+            if (caster) {
+                bgfx::setVertexBuffer(0, &vertices);
+                bgfx::setIndexBuffer(&indices);
+                bgfx::setInstanceDataBuffer(&instances);
+                bgfx::setState(BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS);
+                bgfx::submit(70, hyperion->sunProgram());
+            }
+            stats.uploadBytes +=
+                81 * sizeof(Vertex) + count * 2 + (smoothTerrain ? 81 * sizeof(ShadingNormal) : 0);
+            if (!visible)
+                continue;
             auto presentation = extractPresentation(planet, g, mode);
             const auto light = lightAt(planet.address, nav);
             glm::vec4 cavity{};
             if (nav.anchor.kind() >= Kind::Rock)
                 cavity = glm::vec4(glm::vec3(-eye), float(std::max(1.3, glm::length(eye) * 1.1)));
-            glm::mat4 micro(0);
-            float relief = 0;
+            glm::mat4 micro(0), meso(0);
+            float relief = 0, mesoRelief = 0;
             if (mode != RenderMode::Original) {
-                const double frequency = std::pow(10., planet.frame.logRadius) / 8.;
-                for (unsigned i = 0; i < 3; i++)
-                    micro[i] = glm::vec4(glm::vec3(pattern[i]) * float(frequency), 0);
-                micro[3] =
-                    glm::vec4(glm::vec3(glm::mod(glm::dvec3(pattern[3]) * frequency, glm::dvec3(64))), 1);
+                const double radiusMetres = std::pow(10., planet.frame.logRadius);
+                micro = periodicMaterialFrame(pattern, radiusMetres, 8, 64);
+                meso = periodicMaterialFrame(pattern, radiusMetres, 256, 4096);
                 relief = float(.36 / std::pow(10., nav.logDistance));
+                mesoRelief = float(8. / std::pow(10., nav.logDistance));
             }
             hyperion->bind(presentation, {}, glm::vec3(light), glm::mat4(pattern),
-                           smoothTerrain ? -2.f : -1.f, visualTime, cavity, micro, relief);
+                           smoothTerrain ? -2.f : -1.f, visualTime, cavity, micro, relief, meso, mesoRelief);
             bgfx::setVertexBuffer(0, &vertices);
             if (smoothTerrain)
                 bgfx::setVertexBuffer(1, &normals);
@@ -1034,9 +1090,9 @@ struct Renderer::Impl {
             ++stats.terrainTiles;
             stats.vertices += 81;
             stats.triangles += count / 3;
-            stats.uploadBytes +=
-                81 * sizeof(Vertex) + count * 2 + (smoothTerrain ? 81 * sizeof(ShadingNormal) : 0);
         }
+        if (updateSun)
+            hyperion->completeSun(terrainSunComplete);
         if (terrain.morphing())
             ++stats.lodTransitions;
     }
@@ -1216,6 +1272,9 @@ std::optional<ActivityId> Renderer::pickActivity(double x, double y) const {
     }
     return selected;
 }
+void Renderer::setSunShadows(bool enabled) {
+    impl_->sunShadows = enabled;
+}
 std::shared_ptr<const Geometry> Renderer::submittedGeometry(const Address& address) const {
     auto found = impl_->details.find(address);
     return found == impl_->details.end() ? nullptr : found->second.blend.current;
@@ -1269,25 +1328,47 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     p.view = glm::mat4_cast(glm::inverse(nav.orientation)) * glm::translate(glm::dmat4(1), -p.eye);
     const double fov = p.instruments ? 70. * std::numbers::pi / 180. : 1.;
     p.fieldOfView = fov;
-    p.projection = bgfx::getCaps()->homogeneousDepth
-                       ? glm::perspectiveRH_NO(fov, static_cast<double>(p.width) / p.height, .00005, 10000.0)
-                       : glm::perspectiveRH_ZO(fov, static_cast<double>(p.width) / p.height, .00005, 10000.0);
+    // Keep Original's projection. In normal flight a metre-scale near plane
+    // makes opaque-depth reconstruction reliable for distant terrain shadows.
+    // Cockpit projection is separate; microscopic inspection retains its range.
+    const double nearPlane = p.mode != RenderMode::Original && p.instruments && !p.instruments->shrinking
+                                 ? std::max(.00005, std::clamp(p.instruments->altitude * .001, .05, 10.) /
+                                                        std::pow(10., nav.logDistance))
+                                 : .00005;
+    p.projection =
+        bgfx::getCaps()->homogeneousDepth
+            ? glm::perspectiveRH_NO(fov, static_cast<double>(p.width) / p.height, nearPlane, 10000.0)
+            : glm::perspectiveRH_ZO(fov, static_cast<double>(p.width) / p.height, nearPlane, 10000.0);
     glm::mat4 v(p.view), proj(p.projection);
     const bool opticalDepth =
         p.instruments && p.instruments->altitude >= 0 &&
         std::any_of(nodes.begin(), nodes.end(), [](const Node& n) {
             return n.address.kind() == Kind::Planet && planetClimate(n).pressureBar > .015;
         });
-    p.hyperion->begin(p.mode, p.width, p.height, bool(p.instruments), bool(p.instruments));
+    p.hyperion->begin(p.mode, p.width, p.height, bool(p.instruments), bool(p.instruments), float(nearPlane));
     p.staticUploadBytes += p.hyperion->materialUploadBytes();
     p.stats.uploadBytes += p.hyperion->materialUploadBytes();
     bgfx::setViewMode(0,
                       p.mode == RenderMode::Original ? bgfx::ViewMode::Default : bgfx::ViewMode::Sequential);
     bgfx::setViewTransform(0, glm::value_ptr(v), glm::value_ptr(proj));
     bgfx::setViewRect(0, 0, 0, static_cast<uint16_t>(p.width), static_cast<uint16_t>(p.height));
-    if (p.mode != RenderMode::Original)
-        p.hyperion->sky(extractSpectralSky(p.universe, nav), p.visualTime, float(p.width) / p.height,
-                        float(std::tan(fov * .5)));
+    if (p.mode != RenderMode::Original) {
+        auto sky = extractSpectralSky(p.universe, nav);
+        for (const auto& planet : nodes)
+            if (planet.address.kind() == Kind::Planet && hasSolidSurface(planet)) {
+                const auto climate = planetClimate(planet);
+                const auto pose = p.poseFor(planet.address, nav);
+                const double radius = std::pow(10., planet.frame.logRadius - nav.logDistance);
+                const auto localEye = glm::inverse(pose.orientation) * (p.eye - pose.position) / radius;
+                const auto light = glm::inverse(pose.orientation) * p.lightAt(planet.address, nav);
+                if (glm::length(localEye) > .99)
+                    sky.strength *= daylightSkyTransmission(
+                        climate.pressureBar,
+                        (glm::length(localEye) - 1) * std::pow(10., planet.frame.logRadius),
+                        climate.scaleHeightMetres, glm::dot(glm::normalize(localEye), light));
+            }
+        p.hyperion->sky(sky, p.visualTime, float(p.width) / p.height, float(std::tan(fov * .5)));
+    }
     if (p.instruments) {
         bgfx::setViewTransform(2, glm::value_ptr(v), glm::value_ptr(proj));
         bgfx::setViewRect(2, 0, 0, uint16_t(p.width), uint16_t(p.height));
@@ -1344,6 +1425,8 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     } else
         p.terrain.clear();
     p.terrainActive = terrainPlanet && p.terrain.ready();
+    p.terrainSunPlanet.reset();
+    p.terrainSunComplete = true;
     std::set<Address> rendered;
     // Request the current focus first. Ancestors remain in the same spatial view
     // while the camera crosses the (possibly very large) physical scale gap.
@@ -1566,17 +1649,18 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                 const auto localEye = glm::inverse(pose.orientation) * (p.eye - pose.position) / radius;
                 // The optical pass consumes the same retained atmosphere as weather.
                 const auto climate = planetClimate(planet);
-                const float strength = float(std::clamp(climate.pressureBar * .65, 0., 1.));
+                const float strength = float(
+                    std::clamp(climate.pressureBar * 288. / std::max(60., climate.temperatureK), 0., 6.));
                 if (glm::length(localEye) < 8 && glm::length(localEye) > .99 && strength > .01f) {
                     auto rotation =
                         glm::mat4_cast(glm::quat(glm::inverse(pose.orientation) * nav.orientation));
                     auto light = glm::inverse(pose.orientation) * p.lightAt(planet.address, nav);
                     const float height = float(std::clamp(
                         climate.scaleHeightMetres / std::pow(10., planet.frame.logRadius), 1e-5, .02));
-                    p.hyperion->atmosphere(
-                        glm::vec3(localEye), glm::vec3(light), rotation, float(radius), height, strength,
-                        float(p.width) / p.height,
-                        hyperionPhase(planet.planetSeed ? planet.planetSeed : planet.seed));
+                    p.hyperion->atmosphere(glm::vec3(localEye), glm::vec3(light), rotation, float(radius),
+                                           height, strength, float(p.width) / p.height,
+                                           hyperionPhase(planet.planetSeed ? planet.planetSeed : planet.seed),
+                                           float(std::pow(10., planet.frame.logRadius) / 1000.));
                     ++p.stats.atmospheres;
                 }
             }

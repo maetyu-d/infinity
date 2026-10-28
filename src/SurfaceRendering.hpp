@@ -228,10 +228,13 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
             if (!world)
                 continue;
             const auto pose = poseFor(planet.address, nav);
-            bool updateSun = false;
+            bool updateSun =
+                terrainSunPlanet && *terrainSunPlanet == planet.address && hyperion->sunUpdated();
+            glm::dvec3 sunCentre = terrainSunAnchor;
+            double sunRange = terrainSunSpan * .75;
             const SurfaceSettlement* shadowCity = nullptr;
             double nearestCity = 1e30;
-            if (mode != RenderMode::Original && instruments && !instruments->shrinking &&
+            if (sunShadows && mode != RenderMode::Original && instruments && !instruments->shrinking &&
                 instruments->altitude < 5000 && units > .01 && !hyperion->sunActive()) {
                 for (const auto& city : world->settlements) {
                     const double range = glm::length(city.landingPoint - planetEye);
@@ -248,6 +251,8 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
                             shadowCity->landingPoint, light, pose.orientation, planetEye, units,
                             std::clamp(shadowCity->radius * 2.2, 512., 4096.),
                             bgfx::getCaps()->homogeneousDepth, bgfx::getCaps()->originBottomLeft);
+                        sunCentre = shadowCity->landingPoint;
+                        sunRange = shadowCity->radius * 1.5;
                         updateSun = hyperion->prepareSun(shadow, world->descriptor ^ shadowCity->layoutSeed,
                                                          nav.orientation, float(width) / height,
                                                          float(std::tan(fieldOfView * .5)));
@@ -271,8 +276,7 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
                     LOD::visible(direction / units, extent / units, double(width) / height, fieldOfView);
                 const bool caster = updateSun && !person && kind != SurfaceMesh::Pad &&
                                     kind != SurfaceMesh::Road && kind != SurfaceMesh::Plaza &&
-                                    kind != SurfaceMesh::Footway &&
-                                    glm::length(point - shadowCity->landingPoint) < shadowCity->radius * 1.5;
+                                    kind != SurfaceMesh::Footway && glm::length(point - sunCentre) < sunRange;
                 if (!visible && !caster)
                     return;
                 const auto model = glm::translate(glm::dmat4(1), delta / units) *
@@ -460,7 +464,7 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
                     objects.clear();
                 }
             if (updateSun)
-                hyperion->completeSun(completeSun);
+                hyperion->completeSun(completeSun && terrainSunComplete);
         }
     }
 }

@@ -12,14 +12,16 @@ namespace infinite {
 class HyperionRenderer {
   public:
     ~HyperionRenderer();
-    void begin(RenderMode, int width, int height, bool opticalDepth = false, bool flight = false);
+    void begin(RenderMode, int width, int height, bool opticalDepth = false, bool flight = false,
+               float nearPlane = .00005f);
     void finish();
     void sky(const SpectralSky&, double visualTime, float aspect, float tanHalfFov);
     void atmosphere(glm::vec3 eye, glm::vec3 light, const glm::mat4& cameraToPlanet, float radiusRenderUnits,
-                    float scaleHeightRatio, float strength, float aspect, float phase);
+                    float scaleHeightRatio, float strength, float aspect, float phase, float radiusKm);
     void bind(const ScenePresentation&, const glm::vec3& eye, const glm::vec3& light,
               const glm::mat4& pattern, float primitive, double visualTime, glm::vec4 cavity = {},
-              const glm::mat4& micro = glm::mat4(0), float relief = 0);
+              const glm::mat4& micro = glm::mat4(0), float relief = 0, const glm::mat4& meso = glm::mat4(0),
+              float mesoRelief = 0);
     void bindEmissions(const Node&, const glm::mat4& pattern, double visualTime);
     bool prepareSun(const SunShadowFrame&, uint64_t stableKey, glm::dquat cameraRotation, float aspect,
                     float tanHalfFov);
@@ -47,7 +49,7 @@ class HyperionRenderer {
         return detailUploadBytes_;
     }
     size_t materialBytes() const {
-        return detailBytes_;
+        return detailBytes_ + noiseBytes_;
     }
     size_t targetBytes() const {
         return bytes_ + sunBytes_;
@@ -60,6 +62,9 @@ class HyperionRenderer {
     struct DetailBake;
     std::shared_ptr<DetailBake> detailBake_;
     oneapi::tbb::task_group detailTasks_;
+    bgfx::TextureHandle noise_ = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle noiseSampler_ = BGFX_INVALID_HANDLE;
+    size_t noiseBytes_ = 0;
     bgfx::TextureHandle detail_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle detailSampler_ = BGFX_INVALID_HANDLE, surface_ = BGFX_INVALID_HANDLE;
     size_t detailBytes_ = 0, detailUploadBytes_ = 0;
@@ -84,6 +89,7 @@ class HyperionRenderer {
     bool readableDepth_ = false;
     bool flight_ = false;
     bgfx::ProgramHandle flightGeometry_ = BGFX_INVALID_HANDLE, flightPost_ = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle meso_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle micro_ = BGFX_INVALID_HANDLE, microParams_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle domain_ = BGFX_INVALID_HANDLE, skyParams_ = BGFX_INVALID_HANDLE,
                         skyRotation_ = BGFX_INVALID_HANDLE;
@@ -97,7 +103,7 @@ class HyperionRenderer {
     glm::vec4 screenParams_{};
     glm::dvec3 sunAnchor_{}, sunLight_{};
     double sunSpan_ = 0;
-    float sunDepthScale_ = 0;
+    float sunDepthScale_ = 0, nearPlane_ = .00005f;
     uint64_t sunKey_ = 0;
     size_t sunBytes_ = 0;
     bool sunActive_ = false, sunValid_ = false, sunUpdated_ = false;

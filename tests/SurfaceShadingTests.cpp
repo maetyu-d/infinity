@@ -63,6 +63,40 @@ int main() {
         check(atomPresentationLevel(100, true) == 2 && atomPresentationLevel(100, false) == 3 &&
                   atomPresentationLevel(12, false) == 1,
               "Atom screen-space detail changed Original mode");
+        const auto planet = Address{}.child(Kind::Galaxy, 0).child(Kind::System, 9).child(Kind::Planet, 0);
+        const auto surface = planet.child(Kind::Surface, 0), neighbour = planet.child(Kind::Surface, 1);
+        const auto mountain = neighbour.child(Kind::Mountain, 0);
+        check(streamedTerrainCovers(planet, surface, false) &&
+                  streamedTerrainCovers(neighbour, surface, false) &&
+                  streamedTerrainCovers(mountain, surface, false) &&
+                  !streamedTerrainCovers(neighbour, surface, true) &&
+                  streamedTerrainCovers(planet, surface, true) &&
+                  !streamedTerrainCovers(mountain.child(Kind::Rock, 0), surface, false) &&
+                  !streamedTerrainCovers(planet.parent().child(Kind::Planet, 1), surface, false),
+              "Overlapping hierarchy terrain draws or unrelated geometry was hidden");
+        // Periodic triplanar fields retain phase across camera subtraction,
+        // scale changes and wrapping, including large translated origins.
+        for (double tile : {8., 256.})
+            for (int i = 0; i < 80; i++) {
+                const auto eye = glm::dvec3(8e6 + i * 71., -4e6 - i * 43., 2e6 + i * 15.);
+                const auto point = eye + glm::dvec3(13.7, -19.3, 42.1);
+                for (double units : {.01, 1., 1e3, 1e6}) {
+                    glm::dmat4 mapping(1. / 6e6);
+                    mapping[3] = glm::dvec4(eye / 6e6, 1);
+                    for (int axis = 0; axis < 3; axis++)
+                        mapping[axis][axis] = units / 6e6;
+                    const auto frame = periodicMaterialFrame(mapping, 6e6, tile, tile == 8 ? 64 : 4096);
+                    const auto actual = glm::vec3(frame * glm::vec4(glm::vec3((point - eye) / units), 1));
+                    const auto expected = glm::mod(point / tile, glm::dvec3(tile == 8 ? 64 : 4096));
+                    const auto error = glm::mod(glm::dvec3(actual) - expected + .5, glm::dvec3(1)) - .5;
+                    check(glm::length(error) < 4e-4,
+                          "Floating origin or magnification shifted material phase");
+                }
+            }
+        check(daylightSkyTransmission(0, 0, 8000, 1) == 1 && daylightSkyTransmission(1, 0, 8000, -1) == 1 &&
+                  daylightSkyTransmission(1, 0, 8000, 1) < .001 &&
+                  daylightSkyTransmission(1, 120000, 8000, 1) > .999,
+              "Daylight sky mask erased airless, night or space views");
         for (bool homogeneous : {false, true})
             for (bool bottom : {false, true})
                 for (int i = 0; i < 40; i++) {

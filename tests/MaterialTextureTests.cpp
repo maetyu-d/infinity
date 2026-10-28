@@ -13,6 +13,25 @@ int main() {
     try {
         std::atomic<bool> cancel{true};
         check(bakeMaterialTexture(&cancel).pixels.empty(), "Cancelled material bake produced data");
+        const auto noise = materialNoiseTexture();
+        check(noise.size() == 256 * 256 * 4 && noise == materialNoiseTexture(),
+              "Shared strata lookup exceeded budget or changed between bakes");
+        for (int y = 0; y < 256; y++)
+            for (int x = 0; x < 256; x++) {
+                const size_t i = size_t(y * 256 + x) * 4;
+                const size_t next = size_t(((y + 17) & 255) * 256 + ((x + 37) & 255)) * 4;
+                check(noise[i + 1] == noise[next] && noise[i + 3] == 255,
+                      "Strata lookup loses continuity between adjacent z cells");
+            }
+        // Mirror the shader's bounded lookup address. Adding the fractional
+        // sample to a large unwrapped address first loses subcell precision.
+        for (float cell : {0.f, 255.f, 4095.f}) {
+            const auto lookup = glm::mod(glm::vec2(cell) + glm::vec2(37, 17) * cell, glm::vec2(256));
+            const auto a = (lookup + glm::vec2(.37f)) / 256.f;
+            const auto b = (lookup + glm::vec2(.371f)) / 256.f;
+            check(glm::all(glm::greaterThan(b - a, glm::vec2(.0000037f))),
+                  "Fractional material lookup quantized into screen-space bands");
+        }
         const auto texture = bakeMaterialTexture(), repeat = bakeMaterialTexture();
         check(texture.pixels.size() == MaterialTexture::byteBudget,
               "Material mip chain exceeds its fixed memory budget");

@@ -13,6 +13,7 @@ struct MaterialTexture {
     static constexpr size_t byteBudget = 1398100;
     std::vector<uint8_t> pixels;
 };
+std::vector<uint8_t> materialNoiseTexture();
 glm::vec4 materialTexel(double u, double v);
 MaterialTexture bakeMaterialTexture(const std::atomic<bool>* cancel = nullptr);
 } // namespace infinite

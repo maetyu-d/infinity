@@ -1,0 +1,29 @@
+{
+  "baseline": "b92a8b7",
+  "checkpoint": "checkpoint/infinite-0.22-before-surface-pass",
+  "unchanged_sources": {
+    "src/Core.cpp": "8b6e0854d8e8dfdfde2cc78494a31907cedab63d1512020d66c94f6d1d690cb9",
+    "src/Universe.cpp": "6af136de8e5ebc6612bb461097fa23e02d2114728bdda5aca12cd6935bf3af4e",
+    "src/Processes.cpp": "9ea91c2ee445e94aa5e63a194d80ee970ff3ad4707646cb182b3d3e224851476",
+    "src/Terrain.cpp": "a9fbba49d7deef7e1c5eead2cc8c8ab20f20a8756775bd5aab3c8abe2bb438c3",
+    "src/Crystallography.cpp": "1d135fa1218cea466673723063267fcacdb5c6c56d4240ab5ca00eb0eb042dab",
+    "src/Geometry.cpp": "9bec2c4d3858545ba4f2864ec427a8098f9ba1988d7985ec5f29ef2aacb722af",
+    "src/World.cpp": "a9bb5755250f322b75ed0e1c131e68d7b535ed8964620743f5c95a8f96572077",
+    "src/Navigation.cpp": "c3ad57a8d158e5f70b251697953f8515ba59be5f0a3ef2ba2bed15b823bfa713",
+    "src/Flight.cpp": "310f2089c2704b1a506eca9499db54d02e6762935e6664874947f372c2158783",
+    "src/Activity.cpp": "2fe385eea5703b9090812beff459d3c2bc4808430311c009d02715253a3ff9f3",
+    "src/ActivityMeshes.cpp": "f0aa893729a22ad90845f2d1d15887ae64f20b138f3d3960b759733e1a30e4cd",
+    "src/Weather.cpp": "ffba25a7ff64dce19cb5252922e1b88e4f9b08d7d9eee66d1112ccd7311ac68c",
+    "src/SurfaceLife.cpp": "e67a64691e95420ba753b1cafe871507619d04be4b5f7221c537250bc7b712ff",
+    "src/SurfaceMeshes.cpp": "3c674d43f6eb4aadbdfa9b0eb0c63edec4d712a6248489e81b8091c8f75e88b4",
+    "src/City.cpp": "7fd610b858e05e46b9f5a3c420a687beeed2bccab91719f9d13100d0ec3d2c04",
+    "src/CityMeshes.cpp": "94e95870dc24ebf433de592ef6ba1fc6b2d01b50909aa2d2b3bcd8b916049b31"
+  },
+  "hyperion_reference": {
+    "src/flight/renderer.cpp": "878a3d321e7a0fed93fed3b8ab8e9a9cd6ed1dd587c27809ff04d77de8baad61",
+    "src/flight/shaders.hpp": "d7e4e6ee7999cb6cbce2e54a32e46469be4c0ca6206ca310fda8fee34ca100a7",
+    "src/flight/surface_detail.hpp": "6a044fcb813af32ee7d779839489615ac29b7f40944faa68eb5baa06f10eb59e",
+    "src/flight/lighting.hpp": "cc1e948cd48fe36c9896aea816f4c8f0da6dc1170575301b6f126ff7350a647a"
+  },
+  "terrain_note": "Streaming.cpp adds read-only normals and unlit albedo only. TerrainTests compare 18 complete original mesh fingerprints from the baseline implementation at three LODs and three stitch masks. Geometry.cpp and every procedural generator remain byte-identical."
+}

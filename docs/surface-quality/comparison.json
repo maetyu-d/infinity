@@ -1,0 +1,67 @@
+{
+  "baseline_commit": "b92a8b7",
+  "resolution": "1440x900",
+  "method": "One native Metal run each, six matched views, last 16 settled Hyperion frames per view. VSync enabled; CPU and GPU times are diagnostic, not a controlled throughput benchmark.",
+  "before": {
+    "steady_frames": 90,
+    "median_wall_ms": 16.6286,
+    "median_cpu_ms": 8.814084999999999,
+    "median_gpu_ms": 7.260565,
+    "median_draws": 80.0,
+    "median_upload_bytes": 150672.0,
+    "median_submit_ms": 7.512915,
+    "max_effect_bytes": 17856000,
+    "max_material_bytes": 1398100,
+    "max_cpu_cache_bytes": 10414608,
+    "max_gpu_bytes": 12384,
+    "max_shadow_bytes": 0,
+    "peak_rss_bytes": 149504000
+  },
+  "after": {
+    "steady_frames": 90,
+    "median_wall_ms": 16.6154,
+    "median_cpu_ms": 8.812525,
+    "median_gpu_ms": 7.73198,
+    "median_draws": 79.0,
+    "median_upload_bytes": 169548.0,
+    "median_submit_ms": 7.61835,
+    "max_effect_bytes": 26244608,
+    "max_material_bytes": 1660244,
+    "max_cpu_cache_bytes": 10325232,
+    "max_gpu_bytes": 12384,
+    "max_shadow_bytes": 8388608,
+    "peak_rss_bytes": 146948096
+  },
+  "original_ground_comparison": {
+    "0-2-Plains-ORIGINAL.png": {
+      "max_channel_difference": 0,
+      "changed_components": 0
+    },
+    "0-1-Plains-ORIGINAL.png": {
+      "max_channel_difference": 0,
+      "changed_components": 0
+    },
+    "0-0-Plains-ORIGINAL.png": {
+      "max_channel_difference": 0,
+      "changed_components": 0
+    },
+    "1-0-Highlands-ORIGINAL.png": {
+      "max_channel_difference": 0,
+      "changed_components": 0
+    },
+    "1-1-Highlands-ORIGINAL.png": {
+      "max_channel_difference": 0,
+      "changed_components": 0
+    },
+    "1-2-Highlands-ORIGINAL.png": {
+      "max_channel_difference": 0,
+      "changed_components": 0
+    }
+  },
+  "original_crop": [
+    400,
+    480,
+    1040,
+    690
+  ]
+}

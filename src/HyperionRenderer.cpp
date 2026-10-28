@@ -84,6 +84,12 @@ void HyperionRenderer::init() {
     if (bgfx::isValid(geometry_))
         return;
     detailSampler_ = bgfx::createUniform("s_materialDetail", bgfx::UniformType::Sampler);
+    noiseSampler_ = bgfx::createUniform("s_materialNoise", bgfx::UniformType::Sampler);
+    const auto noise = materialNoiseTexture();
+    noise_ = bgfx::createTexture2D(256, 256, false, 1, bgfx::TextureFormat::RGBA8, 0,
+                                   bgfx::copy(noise.data(), uint32_t(noise.size())));
+    noiseBytes_ = noise.size();
+    detailUploadBytes_ += noiseBytes_;
     surface_ = bgfx::createUniform("u_surface", bgfx::UniformType::Vec4);
     const uint8_t average[] = {128, 0, 128, 128};
     detail_ = bgfx::createTexture2D(1, 1, false, 1, bgfx::TextureFormat::RGBA8, 0,
@@ -109,6 +115,7 @@ void HyperionRenderer::init() {
     style_ = bgfx::createUniform("u_hyperion", bgfx::UniformType::Vec4, 4);
     pattern_ = bgfx::createUniform("u_pattern", bgfx::UniformType::Mat4);
     cavity_ = bgfx::createUniform("u_cavity", bgfx::UniformType::Vec4);
+    meso_ = bgfx::createUniform("u_meso", bgfx::UniformType::Mat4);
     micro_ = bgfx::createUniform("u_micro", bgfx::UniformType::Mat4);
     microParams_ = bgfx::createUniform("u_microParams", bgfx::UniformType::Vec4);
     domain_ = bgfx::createUniform("u_materialDomain", bgfx::UniformType::Vec4);
@@ -143,17 +150,19 @@ HyperionRenderer::~HyperionRenderer() {
     if (bgfx::isValid(detail_))
         bgfx::destroy(detail_);
     clearTargets();
+    if (bgfx::isValid(noise_))
+        bgfx::destroy(noise_);
     if (bgfx::isValid(sunTarget_))
         bgfx::destroy(sunTarget_);
     for (auto p : {geometry_, glow_, blur_, post_, flightGeometry_, flightPost_, sky_, smoothGeometry_[0],
                    smoothGeometry_[1], sunProgram_, cloudProgram_})
         if (bgfx::isValid(p))
             bgfx::destroy(p);
-    for (auto u : {detailSampler_, surface_,    sceneSampler_,       bloomSampler_,
-                   style_,         pattern_,    postParams_,         cavity_,
-                   depthSampler_,  atmosphere_, atmosphereRotation_, micro_,
-                   microParams_,   domain_,     skyParams_,          skyRotation_,
-                   sunSampler_,    sunMatrix_,  sunParams_,          cameraScreen_})
+    for (auto u :
+         {noiseSampler_, detailSampler_, surface_,   sceneSampler_, bloomSampler_, style_,
+          pattern_,      postParams_,    cavity_,    depthSampler_, atmosphere_,   atmosphereRotation_,
+          micro_,        microParams_,   meso_,      domain_,       skyParams_,    skyRotation_,
+          sunSampler_,   sunMatrix_,     sunParams_, cameraScreen_})
         if (bgfx::isValid(u))
             bgfx::destroy(u);
 }
@@ -171,14 +180,16 @@ bgfx::ProgramHandle HyperionRenderer::geometryProgram(bool smooth) {
         flightGeometry_ = program("vs_hyperion", "fs_hyperion_flight");
     return flightGeometry_;
 }
-void HyperionRenderer::begin(RenderMode mode, int width, int height, bool opticalDepth, bool flight) {
+void HyperionRenderer::begin(RenderMode mode, int width, int height, bool opticalDepth, bool flight,
+                             float nearPlane) {
     detailUploadBytes_ = 0;
     flight_ = flight;
+    nearPlane_ = nearPlane;
     atmosphereData_ = {};
     sunActive_ = false;
     sunUpdated_ = false;
     screenParams_ = {float(width) / height * .7002075f, .7002075f,
-                     bgfx::getCaps()->originBottomLeft ? 1.f : -1.f, 0};
+                     bgfx::getCaps()->originBottomLeft ? 1.f : -1.f, nearPlane_};
     const auto previousMode = mode_;
     mode_ = mode;
     if (mode == RenderMode::Original) {
@@ -246,7 +257,8 @@ bool HyperionRenderer::prepareSun(const SunShadowFrame& frame, uint64_t key, glm
     sunActive_ = true;
     sunFromCamera_ = glm::mat4(frame.textureFromWorld * glm::mat4_cast(camera));
     sunDepthScale_ = float(std::abs(frame.projection[2][2]) * (bgfx::getCaps()->homogeneousDepth ? .5 : 1.));
-    screenParams_ = {aspect * tanHalfFov, tanHalfFov, bgfx::getCaps()->originBottomLeft ? 1.f : -1.f, 0};
+    screenParams_ = {aspect * tanHalfFov, tanHalfFov, bgfx::getCaps()->originBottomLeft ? 1.f : -1.f,
+                     nearPlane_};
     const bool redraw = !sunValid_ || sunKey_ != key || sunSpan_ != frame.spanMetres ||
                         glm::length(frame.anchorPlanet - sunAnchor_) > .001 ||
                         glm::length(frame.lightPlanet - sunLight_) > 1e-7;
@@ -267,16 +279,17 @@ bool HyperionRenderer::prepareSun(const SunShadowFrame& frame, uint64_t key, glm
     return true;
 }
 void HyperionRenderer::atmosphere(glm::vec3 eye, glm::vec3 light, const glm::mat4& rotation, float radius,
-                                  float height, float strength, float aspect, float phase) {
+                                  float height, float strength, float aspect, float phase, float radiusKm) {
     atmosphereData_[0] = glm::vec4(eye, strength);
     atmosphereData_[1] = glm::vec4(light, height);
-    atmosphereData_[2] = {radius, .00005f, 10000.f, phase};
-    atmosphereData_[3] = {aspect * .7002075f, .7002075f, bgfx::getCaps()->originBottomLeft ? 1.f : -1.f, 0};
+    atmosphereData_[2] = {radius, nearPlane_, 10000.f, phase};
+    atmosphereData_[3] = {aspect * .7002075f, .7002075f, bgfx::getCaps()->originBottomLeft ? 1.f : -1.f,
+                          radiusKm};
     atmosphereMatrix_ = rotation;
 }
 void HyperionRenderer::bind(const ScenePresentation& p, const glm::vec3& eye, const glm::vec3& light,
                             const glm::mat4& pattern, float primitive, double seconds, glm::vec4 cavity,
-                            const glm::mat4& micro, float relief) {
+                            const glm::mat4& micro, float relief, const glm::mat4& meso, float mesoRelief) {
     init();
     std::array<glm::vec4, 4> data = {glm::vec4(p.strength, float(seconds), p.phase, primitive), p.material,
                                      glm::vec4(eye, 1), glm::vec4(light, 0)};
@@ -287,9 +300,11 @@ void HyperionRenderer::bind(const ScenePresentation& p, const glm::vec3& eye, co
     bgfx::setUniform(cavity_, glm::value_ptr(cavity));
     {
         bgfx::setUniform(micro_, glm::value_ptr(micro));
+        bgfx::setUniform(meso_, glm::value_ptr(meso));
+        bgfx::setTexture(5, noiseSampler_, noise_);
         bgfx::setTexture(3, detailSampler_, detail_,
                          BGFX_SAMPLER_MIN_ANISOTROPIC | BGFX_SAMPLER_MAG_ANISOTROPIC);
-        const glm::vec4 microParams{relief, detailBytes_ ? 1.f : 0.f, 0, 0};
+        const glm::vec4 microParams{relief, detailBytes_ ? 1.f : 0.f, mesoRelief, 0};
         bgfx::setUniform(microParams_, glm::value_ptr(microParams));
     }
 }

@@ -39,6 +39,7 @@ class Renderer {
     std::optional<Address> pick(double x, double y) const;
     void screenshot(const std::string& path);
     std::string backend() const;
+    void setSunShadows(bool enabled);
     std::shared_ptr<const Geometry> submittedGeometry(const Address&) const;
     std::shared_ptr<const Geometry> galaxySamples() const;
     std::span<const CelestialContact> celestialContacts() const;

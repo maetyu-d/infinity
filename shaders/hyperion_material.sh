@@ -7,6 +7,7 @@ uniform mat4 u_pattern;
 uniform vec4 u_surface;
 #if INFINITE_FLIGHT_RELIEF
 uniform mat4 u_micro;
+uniform mat4 u_meso;
 uniform vec4 u_microParams;
 #include "hyperion_material_detail.sh"
 #endif
@@ -35,6 +36,7 @@ void main(){
  if(u_materialDomain.x>3.5 && u_materialDomain.x<4.5){
   gl_FragColor=vec4(mix(base,architecture(base,N,V,L,v_pattern,v_sphere.y,phase,seconds),strength*.98),v_color0.a);return;
  }
+ bool terrain=primitive< -1.5;
  bool planet=u_materialDomain.x>.5 && u_materialDomain.x<1.5;
  bool atom=primitive>.5 || (u_materialDomain.x>1.5 && u_materialDomain.x<2.5);
  bool craft=u_materialDomain.x>2.5;
@@ -57,14 +59,42 @@ void main(){
  if(planet)spectral=base*.48+mineral*.22+tapestry*.14;
  vec3 albedo=mix(base,spectral,u_hyperion[1].z);
  if(atom || craft)albedo=base;
- else albedo*=planet?.76:.62; // Baked Infinite colours already include illumination.
+ else albedo*=planet?.76:.62; // Non-terrain meshes retain their original baked colour.
+ if(terrain)albedo=base*.44+mineral*.035; // Streamed terrain supplies unlit reflectance.
  if(planet)albedo=mix(vec3(dot(albedo,vec3(.299,.587,.114)))*vec3(.86,.94,1.),albedo,.48);
  float rough=u_hyperion[1].x,microVein=0.,cavity=1.;
  vec3 microGlow=vec3(0.);
 #if INFINITE_FLIGHT_RELIEF
+ // Hyperion surface_detail.hpp: smooth strata/deposits bridge planetary
+ // colour to the separately filtered 16 m close-material texture.
+ if(terrain && u_microParams.z>0. && u_microParams.y>.5){
+  vec3 q=mul(u_meso,vec4(v_position-u_hyperion[2].xyz,1.)).xyz;
+  vec3 offset=phase*vec3(31.,17.,47.);
+  float broad=strataNoise(q*.0625+offset);
+  float warp=strataNoise(q*.25+offset+11.);
+  float middle=strataNoise(q+offset+warp*2.);
+  float grain=strataNoise(q*4.+offset+31.);
+  float strata=broad*.50+warp*.30+middle*.20;
+  float slope=1.-clamp(dot(N,radial),0.,1.);
+  float dust=smoothstep(.30,.76,warp)*(1.-smoothstep(.08,.5,slope));
+  float layer=q.y*(.25*6.283185)+middle*2.+warp*4.;
+  float bedding=mix(.5,.5+.5*sin(layer),1.-smoothstep(.6,2.,fwidth(layer)));
+  float vein=thread(middle*24.+warp*.8,.035)*(1.-smoothstep(.15,.9,fwidth(middle*24.)));
+  vec3 deposits=albedo*(.48+strata*.92+grain*.22+bedding*.10);
+  deposits=mix(deposits,deposits*.75+vec3(.055,.043,.032),dust*.30);
+  deposits+=pigment(phase+strata*.55+grain*.08)*.055;
+  deposits=mix(deposits,deposits*.65+pigment(phase+middle*.18)*.11,vein*.32);
+  albedo=deposits;
+  rough=clamp(rough+(grain-.5)*.16+dust*.10,.22,.98);
+  float height=((middle-.5)*.65+(grain-.5)*.16)*u_microParams.z;
+  vec3 dx=dFdx(v_position),dy=dFdy(v_position),a=cross(dy,N),b=cross(N,dx);float det=dot(dx,a);
+  vec3 gradient=sign(det)*(dFdx(height)*a+dFdy(height)*b)/max(abs(det),1e-20);
+  gradient*=min(1.,.28/max(length(gradient),.001));N=normalize(N-gradient);
+  microGlow=pigment(phase+middle*.18)*vein*.008;
+ }
  if(u_microParams.x>0. && primitive<.5 && !atom && !craft){
   vec3 q=mul(u_micro,vec4(v_position-u_hyperion[2].xyz,1.)).xyz;
-  float footprint=min(length(dFdx(q)),length(dFdy(q))),resolved=1.-smoothstep(.12,.75,footprint);
+  float footprint=max(length(dFdx(q)),length(dFdy(q))),resolved=1.-smoothstep(.12,.75,footprint);
   vec3 materialN=mul(mat3(u_micro),N);
   materialN=normalize(materialN/max(max(abs(materialN.x),max(abs(materialN.y),abs(materialN.z))),1e-30));
   vec3 qdx=dFdx(q),qdy=dFdy(q);
@@ -75,7 +105,7 @@ void main(){
   float ice=1.-step(.1,abs(u_surface.x-3.));
   float frost=smoothstep(.42,.72,deposit+grit*.13)*ice*(1.-smoothstep(245.,278.,u_surface.z));
   float seam=crack*(1.-frost*.45)*(.62+.38*clamp(u_materialDomain.y,0.,1.));
-  float height=((stone-.5)*.75-seam*(.38+ice*.30)+(grit-.5)*.06)*u_microParams.x*u_microParams.y;
+  float height=((stone-.5)*.75-seam*(.38+ice*.30)+(grit-.5)*.06)*u_microParams.x*u_microParams.y*resolved;
   vec3 dx=dFdx(v_position),dy=dFdy(v_position),a=cross(dy,N),b=cross(N,dx);float det=dot(dx,a);
   vec3 gradient=sign(det)*(dFdx(height)*a+dFdy(height)*b)/max(abs(det),1e-20);
   gradient*=min(1.,.65/max(length(gradient),.001));N=normalize(N-gradient);
@@ -96,7 +126,7 @@ void main(){
   microVein=seam*resolved*u_microParams.y;
   cavity=1.-microVein*mix(.22,.38,ice);
   albedo=mix(albedo,body*cavity,resolved*.85*u_microParams.y);
-  microGlow=pigment(phase+deposit*.23+.42)*microVein*.035;
+  microGlow+=pigment(phase+deposit*.23+.42)*microVein*.035;
 
  }
 #endif
@@ -123,9 +153,9 @@ void main(){
   float ecPhase=elevation*176.+detail*2.+sin(n.x*29.+n.z*17.)*.24;
   float ecVeins=thread(ecPhase,.065),ecLace=thread(ecPhase*2.7+u_materialDomain.y*5.,.025);
   vec3 ecColour=pigment(elevation*6.3+phase+n.z*.18+seconds*.0008);
-  lit+=ecColour*(ecVeins*.58+ecLace*.19)*u_hyperion[1].w*(.045+.955*day);
-  lit+=tapestry*(.016+.075*fresnel)*(.12+.88*day)+flow*.012*day;
-  lit+=pigment(n.z*.9+phase+fresnel*.35)*fresnel*.21*(.12+.88*day);
+  lit+=ecColour*(ecVeins*.58+ecLace*.19)*u_hyperion[1].w*(.045+.955*day)*(terrain?.025:1.);
+  lit+=(tapestry*(.016+.075*fresnel)*(.12+.88*day)+flow*.012*day)*(terrain?.12:1.);
+  lit+=pigment(n.z*.9+phase+fresnel*.35)*fresnel*(terrain?.035:.21)*(.12+.88*day);
   lit+=microGlow+pigment(phase+fresnel*.4)*microVein*(.018+fresnel*.16);
  }
  float response=atom?.58:craft?.88:.96;

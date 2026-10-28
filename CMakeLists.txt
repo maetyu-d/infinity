@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Infinite VERSION 0.22.0 LANGUAGES C CXX)
+project(Infinite VERSION 0.23.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -151,6 +151,21 @@ if(INFINITE_VIEWER)
     add_test(NAME native_solid_terrain_images COMMAND "${Python3_EXECUTABLE}"
       "${PROJECT_SOURCE_DIR}/tools/check_terrain_captures.py" "${CMAKE_BINARY_DIR}/terrain-native")
     set_tests_properties(native_solid_terrain_images PROPERTIES FIXTURES_REQUIRED terrain_captures)
+    add_test(NAME native_surface_quality COMMAND "${CMAKE_COMMAND}"
+      "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/surface-quality" "-DQUALITY=ON"
+      -P "${PROJECT_SOURCE_DIR}/cmake/RunTerrain.cmake")
+    set_tests_properties(native_surface_quality PROPERTIES FIXTURES_SETUP surface_quality_captures TIMEOUT 210)
+    add_test(NAME native_surface_quality_images COMMAND "${Python3_EXECUTABLE}"
+      "${PROJECT_SOURCE_DIR}/tools/check_surface_quality.py" "${CMAKE_BINARY_DIR}/surface-quality")
+    set_tests_properties(native_surface_quality_images PROPERTIES FIXTURES_REQUIRED surface_quality_captures)
+    add_test(NAME native_surface_frame_and_retina COMMAND "${CMAKE_COMMAND}"
+      "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/surface-frame-retina"
+      "-DSURFACE_FRAME=ON" "-DWIDTH=2840" "-DHEIGHT=1800"
+      -P "${PROJECT_SOURCE_DIR}/cmake/RunTerrain.cmake")
+    set_tests_properties(native_surface_frame_and_retina PROPERTIES FIXTURES_SETUP surface_retina_captures TIMEOUT 210)
+    add_test(NAME native_surface_frame_and_retina_images COMMAND "${Python3_EXECUTABLE}"
+      "${PROJECT_SOURCE_DIR}/tools/check_surface_quality.py" "${CMAKE_BINARY_DIR}/surface-frame-retina" 2840 1800)
+    set_tests_properties(native_surface_frame_and_retina_images PROPERTIES FIXTURES_REQUIRED surface_retina_captures)
     add_test(NAME native_piloting_loop COMMAND "${CMAKE_COMMAND}"
       "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/pilot-native"
       -P "${PROJECT_SOURCE_DIR}/cmake/RunPilot.cmake")

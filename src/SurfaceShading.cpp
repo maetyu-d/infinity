@@ -110,6 +110,29 @@ unsigned atomPresentationLevel(double pixels, bool original) {
         return 3;
     return pixels > 18 ? 2 : pixels > 6 ? 1 : 0;
 }
+bool streamedTerrainCovers(const Address& object, const Address& focus, bool original) {
+    if (object.kind() < Kind::Planet || object.kind() > Kind::Mountain)
+        return false;
+    if (original)
+        return object.ancestorOf(focus);
+    auto planet = object;
+    while (planet.kind() > Kind::Planet)
+        planet = planet.parent();
+    return planet.ancestorOf(focus);
+}
+glm::mat4 periodicMaterialFrame(const glm::dmat4& mapping, double radius, double tile, double period) {
+    const double frequency = radius / tile;
+    glm::mat4 result(1);
+    for (unsigned i = 0; i < 3; i++)
+        result[i] = glm::vec4(glm::vec3(mapping[i] * frequency), 0);
+    result[3] = glm::vec4(glm::vec3(glm::mod(glm::dvec3(mapping[3]) * frequency, glm::dvec3(period))), 1);
+    return result;
+}
+float daylightSkyTransmission(double pressure, double altitude, double height, double sun) {
+    const double density = pressure * std::exp(-std::max(0., altitude) / std::max(1., height));
+    const double daylight = smoothstep(-.16, .08, sun);
+    return float(std::exp(-density * daylight * 14.));
+}
 SunShadowFrame sunShadowFrame(glm::dvec3 anchor, glm::dvec3 light, glm::dquat rotation, glm::dvec3 eye,
                               double units, double span, bool homogeneous, bool bottom) {
     SunShadowFrame result;

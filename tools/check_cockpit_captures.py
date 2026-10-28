@@ -32,6 +32,6 @@ print("PASS: all fourteen cockpit, controls guide, real moon family, orbital act
 profile = root.parent / "frames.csv"
 if profile.exists():
     rows = list(csv.DictReader(profile.open()))
-    assert {int(r["material_bytes"]) for r in rows} <= {0, 1398100}, "Material texture escaped its fixed budget"
-    assert any(r["render_mode"] == "HYPERION" and int(r["material_bytes"]) == 1398100 for r in rows), "Material bake was never published to the GPU"
-    print("PASS: asynchronous material texture uploaded; complete mip chain uses 1,398,100 bytes")
+    assert {int(r["material_bytes"]) for r in rows} <= {0, 256*256*4, 1398100 + 256*256*4}, "Material texture escaped its fixed budget"
+    assert any(r["render_mode"] == "HYPERION" and int(r["material_bytes"]) == 1398100 + 256*256*4 for r in rows), "Material bake was never published to the GPU"
+    print("PASS: asynchronous material texture uploaded; complete mip chain plus shared strata lookup uses 1,660,244 bytes")

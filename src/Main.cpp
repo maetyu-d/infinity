@@ -32,6 +32,7 @@ struct Options {
     bool compareModes = false;
     bool flightTest = false;
     bool streamingTest = false;
+    bool terrainQuality = false, terrainSurfaceFrame = false, sunShadows = true;
     bool pilotTest = false, terrainTest = false, surfaceTest = false, explicitMode = false;
 };
 static Options options(int argc, char** argv) {
@@ -45,6 +46,8 @@ static Options options(int argc, char** argv) {
         };
         if (arg == "--tour")
             o.tour = true;
+        else if (arg == "--no-sun-shadows")
+            o.sunShadows = false;
         else if (arg == "--smoke-test")
             o.smoke = o.tour = o.fresh = true;
         else if (arg == "--benchmark-tour")
@@ -57,6 +60,12 @@ static Options options(int argc, char** argv) {
             o.visualTime = 12;
         } else if (arg == "--pilot-test") {
             o.pilotTest = o.benchmark = o.smoke = o.fresh = true;
+            o.visualTime = 12;
+        } else if (arg == "--terrain-surface-frame-test") {
+            o.terrainSurfaceFrame = o.terrainQuality = o.terrainTest = o.benchmark = o.smoke = o.fresh = true;
+            o.visualTime = 12;
+        } else if (arg == "--terrain-quality-test") {
+            o.terrainQuality = o.terrainTest = o.benchmark = o.smoke = o.fresh = true;
             o.visualTime = 12;
         } else if (arg == "--terrain-test") {
             o.terrainTest = o.benchmark = o.smoke = o.fresh = true;
@@ -99,7 +108,7 @@ static Options options(int argc, char** argv) {
                    "release mouse / quit.\nCLI: --fresh --tour --smoke-test --frames N --width N "
                    "--height N --seed N "
                    "--benchmark-tour --flight-test --streaming-test --pilot-test --terrain-test "
-                   "--surface-test "
+                   "--surface-test --terrain-quality-test --terrain-surface-frame-test --no-sun-shadows "
                    "--capture-dir DIR "
                    "--profile CSV "
                    "--data DIR\n";
@@ -174,6 +183,7 @@ int main(int argc, char** argv) {
             std::filesystem::create_directories(opt.captures);
         {
             Renderer renderer(window, universe);
+            renderer.setSunShadows(opt.sunShadows);
             if (!opt.smoke && !opt.explicitMode) {
                 opt.renderMode = RenderMode::Hyperion;
                 std::ifstream settings(data / "display.txt");
@@ -191,7 +201,8 @@ int main(int argc, char** argv) {
             renderer.setMode(opt.renderMode);
             std::unique_ptr<TerrainValidation> terrainProof;
             if (opt.terrainTest)
-                terrainProof = std::make_unique<TerrainValidation>(universe, nav, pilot);
+                terrainProof = std::make_unique<TerrainValidation>(universe, nav, pilot, opt.terrainQuality,
+                                                                   opt.terrainSurfaceFrame);
             std::unique_ptr<PilotValidation> pilotProof;
             if (opt.pilotTest)
                 pilotProof = std::make_unique<PilotValidation>(universe, nav, pilot);

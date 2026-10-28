@@ -1,0 +1,26 @@
+{
+  "0-2-Plains-HYPERION": {
+    "changed_components": 0,
+    "max_difference": 0
+  },
+  "0-1-Plains-HYPERION": {
+    "changed_components": 0,
+    "max_difference": 0
+  },
+  "0-0-Plains-HYPERION": {
+    "changed_components": 0,
+    "max_difference": 0
+  },
+  "1-1-Highlands-HYPERION": {
+    "changed_components": 1650,
+    "max_difference": 35
+  },
+  "1-2-Highlands-HYPERION": {
+    "changed_components": 10793,
+    "max_difference": 62
+  },
+  "1-0-Highlands-HYPERION": {
+    "changed_components": 265,
+    "max_difference": 46
+  }
+}

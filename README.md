@@ -1,6 +1,8 @@
 # INFINITE
 
-A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.22 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.23 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+
+Version 0.23 improves **surface lighting, material detail, terrain shadows and atmospheric depth**. Solid-world tiles provide separate unlit albedo and field normals, smooth strata bridge orbital colour to close mineral grain, and the existing sun map includes terrain. Atmospheric scattering follows each world’s retained climate and daylight suppresses the optical sky. All generators, original mesh data, identities and flight controls remain intact. [Surface graphics and validation](docs/SURFACE_QUALITY.md).
 
 Version 0.22 makes inhabited worlds easier to find: **green LIFE badges and population counts**, priority system-list rows, a clickable **LIFE DETECTED** panel, green scope/world markers, and **Ctrl-Y** to cycle confirmed inhabited planets and moons. **J** approaches the selected world. Background surveys use the existing surface generator; pending worlds show SCANNING, and settlements in sealed colonies count as life. [Life-detection HUD](docs/LIFE_HUD.md).
 

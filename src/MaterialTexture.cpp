@@ -25,6 +25,18 @@ int wrap16(int x) {
     return (x % 16 + 16) % 16;
 }
 } // namespace
+std::vector<uint8_t> materialNoiseTexture() {
+    std::vector<uint8_t> pixels(256 * 256 * 4);
+    for (int y = 0; y < 256; y++)
+        for (int x = 0; x < 256; x++) {
+            const size_t i = size_t(y * 256 + x) * 4;
+            pixels[i] = lookup(x, y);
+            pixels[i + 1] = lookup(x + 37, y + 17);
+            pixels[i + 2] = lookup(x + 91, y + 53);
+            pixels[i + 3] = 255;
+        }
+    return pixels;
+}
 glm::vec4 materialTexel(double u, double v) {
     const glm::dvec2 uv = glm::fract(glm::dvec2(u, v)), p = uv * 16.;
     const auto cell = glm::ivec2(glm::floor(p));

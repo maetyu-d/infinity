@@ -9,8 +9,9 @@
 namespace infinite {
 class TerrainValidation {
   public:
-    TerrainValidation(const Universe& universe, Navigation& nav, Pilot& pilot)
-        : universe_(universe), nav_(nav), pilot_(pilot) {
+    TerrainValidation(const Universe& universe, Navigation& nav, Pilot& pilot, bool quality = false,
+                      bool surfaceFrame = false)
+        : universe_(universe), nav_(nav), pilot_(pilot), quality_(quality), surfaceFrame_(surfaceFrame) {
         std::map<TerrainType, Node> examples;
         const auto galaxy = Address{}.child(Kind::Galaxy, 0);
         for (unsigned star = 0; star < 32 && examples.size() < 4; star++) {
@@ -27,6 +28,11 @@ class TerrainValidation {
             throw std::runtime_error("Terrain fixture did not find diverse real solid worlds");
         for (auto& [type, planet] : examples)
             planets_.push_back(std::move(planet));
+        if (quality_) {
+            planets_.resize(1);
+            planets_.insert(planets_.begin(),
+                            universe_.describe(galaxy.child(Kind::System, 9).child(Kind::Planet, 0)));
+        }
         place();
     }
     void observe(const FrameStats& stats, RegionCache& cache, Renderer& renderer,
@@ -40,7 +46,11 @@ class TerrainValidation {
             if (++mode_ < 3)
                 renderer.setMode(static_cast<RenderMode>(mode_));
             else {
-                ++world_;
+                if (quality_ && ++altitude_ < 3) {
+                } else {
+                    ++world_;
+                    altitude_ = 0;
+                }
                 mode_ = 0;
                 if (world_ < planets_.size()) {
                     renderer.setMode(RenderMode::Original);
@@ -68,23 +78,28 @@ class TerrainValidation {
             return;
         if (mode_ == 0) {
             view_ = nav_.serialize();
-            geometry_ = renderer.submittedGeometry(planet.address);
+            geometry_ = renderer.submittedGeometry(surfaceFrame_ ? nav_.anchor : planet.address);
             if (!geometry_)
-                throw std::runtime_error("Terrain fixture lost the original planet geometry");
+                throw std::runtime_error("Terrain fixture lost its original addressed geometry");
             geometryHash_ = geometryFingerprint(*geometry_);
+            terrainHash_ = renderer.terrainGeometryDigest();
         } else if (nav_.serialize() != view_ ||
-                   geometryFingerprint(*renderer.submittedGeometry(planet.address)) != geometryHash_)
+                   geometryFingerprint(*renderer.submittedGeometry(
+                       surfaceFrame_ ? nav_.anchor : planet.address)) != geometryHash_ ||
+                   renderer.terrainGeometryDigest() != terrainHash_)
             throw std::runtime_error("Terrain rendering mode changed geometry or the camera");
         if (!directory.empty())
-            renderer.screenshot(
-                (std::filesystem::path(directory) /
-                 (std::to_string(world_) + "-" + std::string(terrainName(planet.geology->terrain.type)) +
-                  "-" + std::string(renderModeName(renderer.mode())) + ".ppm"))
-                    .string());
+            renderer.screenshot((std::filesystem::path(directory) /
+                                 (std::to_string(world_) + (quality_ ? "-" + std::to_string(altitude_) : "") +
+                                  "-" + std::string(terrainName(planet.geology->terrain.type)) + "-" +
+                                  std::string(renderModeName(renderer.mode())) + ".ppm"))
+                                    .string());
         std::cout << "TERRAIN_RENDER " << planet.address.str()
                   << " type=" << terrainName(planet.geology->terrain.type)
                   << " mode=" << renderModeName(renderer.mode()) << " tiles=" << stats.terrainTiles
-                  << " range_m=" << range_ << '\n';
+                  << " height_m=" << (quality_ ? heights_[altitude_] : 250.)
+                  << " shadow=" << stats.shadowActive << " terrain=" << terrainHash_
+                  << " geometry=" << geometryHash_ << " range_m=" << range_ << '\n';
         stable_ = 0;
         hold_ = 6;
         pendingCapture_ = true;
@@ -99,8 +114,11 @@ class TerrainValidation {
     Pilot& pilot_;
     std::vector<Node> planets_;
     size_t world_ = 0;
+    bool quality_ = false, surfaceFrame_ = false;
+    unsigned altitude_ = 0;
+    static constexpr double heights_[3] = {250, 2000, 11800};
     unsigned mode_ = 0, stable_ = 0, hold_ = 0;
-    uint64_t descriptor_ = 0, geometryHash_ = 0;
+    uint64_t descriptor_ = 0, geometryHash_ = 0, terrainHash_ = 0;
     double range_ = 0;
     bool pendingCapture_ = false;
     std::string view_;
@@ -126,16 +144,19 @@ class TerrainValidation {
                 lo = std::min(lo, h);
                 hi = std::max(hi, h);
             }
-            if (hi - lo > range_) {
+            if (hi - lo > range_ || i == 0) {
                 range_ = hi - lo;
                 chosen = d;
             }
         }
-        if (range_ < 30)
+        if (range_ < 30 && !quality_)
             throw std::runtime_error("Native terrain world has no observable local relief");
         const auto tangent = tangentFrame(chosen) * glm::dvec3(1, 0, 0);
         const auto q = glm::quatLookAtRH(glm::normalize(tangent - chosen * .12), chosen);
-        const auto eye = chosen * (1 + (universe_.terrainHeight(planet, chosen) + 250) / radius);
+        const auto eye =
+            chosen *
+            (1 +
+             (universe_.terrainHeight(planet, chosen) + (quality_ ? heights_[altitude_] : 250.)) / radius);
         constexpr double renderLog = 4;
         const auto offset = eye * std::pow(10., planet.frame.logRadius - renderLog) - q * glm::dvec3(0, 0, 1);
         std::ostringstream state;
@@ -144,11 +165,14 @@ class TerrainValidation {
               << q.z << ' ' << offset.x << ' ' << offset.y << ' ' << offset.z;
         if (!nav_.restore(state.str()))
             throw std::runtime_error("Native terrain placement failed");
+        if (surfaceFrame_)
+            nav_.changeFrame(planet.address.child(Kind::Surface, encodeTile(tileAt(chosen, 7))));
         nav_.selected.reset();
         pilot_.resetMotion();
         descriptor_ = descriptorFingerprint(planet);
         std::cout << "TERRAIN_FIXTURE " << planet.address.str() << " label=" << planet.label()
-                  << " seed=" << planet.seed << " relief_m=" << range_ << '\n';
+                  << " seed=" << planet.seed << " relief_m=" << range_ << " frame=" << nav_.anchor.str()
+                  << '\n';
     }
 };
 } // namespace infinite

@@ -59,9 +59,10 @@ struct Geometry {
     Mesh solid, lines;
     // Streamed terrain retains planet-local doubles until camera subtraction.
     std::vector<glm::dvec3> precisePositions;
-    // Optional field-gradient normals for streamed rugged terrain. Positions
-    // remain authoritative; these only provide smooth illumination.
+    // Read-only field normals and unlit albedo for every solid-world tile.
+    // Original vertex colours and all positions/indices stay authoritative.
     std::vector<glm::vec3> terrainNormals;
+    std::vector<uint32_t> terrainAlbedo;
     std::optional<Tile> terrainTile;
     unsigned terrainStitch = 0;
     std::vector<Particle> particles;
@@ -76,7 +77,7 @@ struct Geometry {
         return solid.bytes() + lines.bytes() + particles.size() * sizeof(Particle) +
                lattice.atoms.size() * sizeof(Atom) + lattice.bonds.size() * sizeof(Bond) +
                lattice.vacantSites.size() * sizeof(uint64_t) + precisePositions.size() * sizeof(glm::dvec3) +
-               terrainNormals.size() * sizeof(glm::vec3);
+               terrainNormals.size() * sizeof(glm::vec3) + terrainAlbedo.size() * sizeof(uint32_t);
     }
     size_t residentBytes() const {
         return sizeof(Geometry) + solid.vertices.capacity() * sizeof(Vertex) + solid.indices.capacity() * 4 +
@@ -86,7 +87,7 @@ struct Geometry {
                lattice.bonds.capacity() * sizeof(Bond) + lattice.vacantSites.capacity() * 8 +
                atomInstances.capacity() * sizeof(Instance) +
                precisePositions.capacity() * sizeof(glm::dvec3) +
-               terrainNormals.capacity() * sizeof(glm::vec3);
+               terrainNormals.capacity() * sizeof(glm::vec3) + terrainAlbedo.capacity() * sizeof(uint32_t);
     }
 };
 uint32_t rgba(glm::vec3, float alpha = 1);

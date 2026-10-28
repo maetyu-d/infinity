@@ -1,0 +1,15 @@
+{
+  "resolution": [
+    2840,
+    1800
+  ],
+  "comparison": "Planet-frame fixture before final filtering versus same physical view in a surface frame after filtering/terrain coverage correction",
+  "crop": [
+    800,
+    1000,
+    1824,
+    1512
+  ],
+  "mean_absolute_channel_difference": 0.39651044209798175,
+  "max_channel_difference": 5
+}

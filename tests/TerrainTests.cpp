@@ -109,6 +109,51 @@ int main() {
             check(mesh->precisePositions[i] == expected,
                   "Streamed terrain differs from the collision height field");
         }
+        // Captured from b92a8b7's terrainGeometry implementation, compiled
+        // against the current immutable descriptor API. Includes every original
+        // vertex colour, position and index, with edge stitching at three LODs.
+        const uint64_t originalTiles[] = {
+            8732566901351970831ULL,  11077755634067242990ULL, 4170208593386473552ULL,
+            5063890994104898538ULL,  14719642070300385007ULL, 13760645048301932663ULL,
+            13846345641173000075ULL, 10633665284142523898ULL, 7280726599465176103ULL,
+            9205391699238090587ULL,  4184421966678382107ULL,  17685900974369419495ULL,
+            6635290239928751265ULL,  9061997958241101634ULL,  2195908602913796480ULL,
+            9014495794211952667ULL,  16780647719588031657ULL, 2833596960696537995ULL};
+        unsigned tileIndex = 0;
+        for (auto a : {Address{}.child(Kind::Galaxy, 0).child(Kind::System, 9).child(Kind::Planet, 0),
+                       Address{}.child(Kind::Galaxy, 0).child(Kind::System, 1).child(Kind::Planet, 10)})
+            for (unsigned level : {0u, 6u, 14u})
+                for (unsigned stitch : {0u, 5u, 15u}) {
+                    const auto t = tileAt(glm::normalize(glm::dvec3(.3, .7, -.2)), level);
+                    check(geometryFingerprint(*terrainGeometry(universe, universe.describe(a), t, stitch)) ==
+                              originalTiles[tileIndex++],
+                          "Surface presentation changed a baseline terrain mesh");
+                }
+        // Lighting metadata is independent of the exact pre-existing mesh.
+        for (unsigned id : {0u, unsigned(planet.address.id())}) {
+            const auto body = universe.describe(system.address.child(Kind::Planet, id));
+            const auto tileMesh = terrainGeometry(universe, body, tile, 0);
+            check(tileMesh->terrainNormals.size() == 81 && tileMesh->terrainAlbedo.size() == 81,
+                  "Legacy solid terrain lacks field normals or unlit albedo");
+            const auto fingerprint = geometryFingerprint(*tileMesh);
+            for (unsigned i = 0; i < 81; i++) {
+                const auto d = terrainVertexDirection(terrainVertexKey(tile, i % 9, i / 9));
+                const auto normal = universe.terrainNormal(body, d);
+                const auto albedo = universe.terrainAlbedo(body, d);
+                const auto original =
+                    albedo *
+                    float(.19 + .81 * std::max(0., glm::dot(normal, glm::normalize(glm::dvec3(-.5, .8, 1)))));
+                check(tileMesh->solid.vertices[i].color == rgba(original) &&
+                          tileMesh->terrainAlbedo[i] == rgba(albedo),
+                      "Lighting changed Original mesh colours or baked light into albedo");
+                check(glm::dot(tileMesh->terrainNormals[i], glm::vec3(normal)) > .999999f,
+                      "Legacy or rugged normal diverged from collision field");
+            }
+            tileMesh->terrainNormals.clear();
+            tileMesh->terrainAlbedo.clear();
+            check(geometryFingerprint(*tileMesh) == fingerprint,
+                  "Render-only metadata changed procedural geometry identity");
+        }
         // The existing hierarchy must carry the same new terrain all the way
         // through mineral/lattice inspection and back to its parent world.
         auto address = planet.address;
