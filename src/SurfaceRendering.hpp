@@ -253,9 +253,7 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
                             bgfx::getCaps()->homogeneousDepth, bgfx::getCaps()->originBottomLeft);
                         sunCentre = shadowCity->landingPoint;
                         sunRange = shadowCity->radius * 1.5;
-                        updateSun = hyperion->prepareSun(shadow, world->descriptor ^ shadowCity->layoutSeed,
-                                                         nav.orientation, float(width) / height,
-                                                         float(std::tan(fieldOfView * .5)));
+                        updateSun = hyperion->prepareSun(shadow, world->descriptor ^ shadowCity->layoutSeed);
                     }
                 }
             }

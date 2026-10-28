@@ -16,6 +16,7 @@
 #include <iostream>
 #include <numeric>
 #include <oneapi/tbb/global_control.h>
+#include <sstream>
 #include <thread>
 #if defined(__APPLE__) || defined(__linux__)
 #include <sys/resource.h>
@@ -26,7 +27,7 @@ struct Options {
     bool tour = false, smoke = false, fresh = false, benchmark = false;
     int frames = 0, width = 1440, height = 900;
     uint64_t seed = 0x494e46494e495445ULL;
-    std::string captures, profile, data;
+    std::string captures, profile, data, terrainView;
     RenderMode renderMode = RenderMode::Original;
     double visualTime = -1;
     bool compareModes = false;
@@ -60,6 +61,10 @@ static Options options(int argc, char** argv) {
             o.visualTime = 12;
         } else if (arg == "--pilot-test") {
             o.pilotTest = o.benchmark = o.smoke = o.fresh = true;
+            o.visualTime = 12;
+        } else if (arg == "--terrain-saved-view-test") {
+            o.terrainView = value();
+            o.terrainTest = o.benchmark = o.smoke = o.fresh = true;
             o.visualTime = 12;
         } else if (arg == "--terrain-surface-frame-test") {
             o.terrainSurfaceFrame = o.terrainQuality = o.terrainTest = o.benchmark = o.smoke = o.fresh = true;
@@ -108,7 +113,8 @@ static Options options(int argc, char** argv) {
                    "release mouse / quit.\nCLI: --fresh --tour --smoke-test --frames N --width N "
                    "--height N --seed N "
                    "--benchmark-tour --flight-test --streaming-test --pilot-test --terrain-test "
-                   "--surface-test --terrain-quality-test --terrain-surface-frame-test --no-sun-shadows "
+                   "--surface-test --terrain-quality-test --terrain-surface-frame-test "
+                   "--terrain-saved-view-test FILE --no-sun-shadows "
                    "--capture-dir DIR "
                    "--profile CSV "
                    "--data DIR\n";
@@ -200,9 +206,18 @@ int main(int argc, char** argv) {
             }
             renderer.setMode(opt.renderMode);
             std::unique_ptr<TerrainValidation> terrainProof;
+            std::string terrainView;
+            if (!opt.terrainView.empty()) {
+                std::ifstream input(opt.terrainView);
+                std::ostringstream contents;
+                contents << input.rdbuf();
+                terrainView = contents.str();
+                if (terrainView.empty())
+                    throw std::runtime_error("Cannot read terrain view fixture");
+            }
             if (opt.terrainTest)
                 terrainProof = std::make_unique<TerrainValidation>(universe, nav, pilot, opt.terrainQuality,
-                                                                   opt.terrainSurfaceFrame);
+                                                                   opt.terrainSurfaceFrame, terrainView);
             std::unique_ptr<PilotValidation> pilotProof;
             if (opt.pilotTest)
                 pilotProof = std::make_unique<PilotValidation>(universe, nav, pilot);

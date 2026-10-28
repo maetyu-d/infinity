@@ -12,8 +12,7 @@ namespace infinite {
 class HyperionRenderer {
   public:
     ~HyperionRenderer();
-    void begin(RenderMode, int width, int height, bool opticalDepth = false, bool flight = false,
-               float nearPlane = .00005f);
+    void begin(RenderMode, int width, int height, bool opticalDepth = false, bool flight = false);
     void finish();
     void sky(const SpectralSky&, double visualTime, float aspect, float tanHalfFov);
     void atmosphere(glm::vec3 eye, glm::vec3 light, const glm::mat4& cameraToPlanet, float radiusRenderUnits,
@@ -23,8 +22,7 @@ class HyperionRenderer {
               const glm::mat4& micro = glm::mat4(0), float relief = 0, const glm::mat4& meso = glm::mat4(0),
               float mesoRelief = 0);
     void bindEmissions(const Node&, const glm::mat4& pattern, double visualTime);
-    bool prepareSun(const SunShadowFrame&, uint64_t stableKey, glm::dquat cameraRotation, float aspect,
-                    float tanHalfFov);
+    bool prepareSun(const SunShadowFrame&, uint64_t stableKey);
     bgfx::ProgramHandle sunProgram();
     bgfx::ProgramHandle cloudProgram();
     bool sunActive() const {
@@ -98,12 +96,10 @@ class HyperionRenderer {
     bgfx::ProgramHandle sunProgram_ = BGFX_INVALID_HANDLE;
     bgfx::ProgramHandle cloudProgram_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle sunSampler_ = BGFX_INVALID_HANDLE, sunMatrix_ = BGFX_INVALID_HANDLE,
-                        sunParams_ = BGFX_INVALID_HANDLE, cameraScreen_ = BGFX_INVALID_HANDLE;
-    glm::mat4 sunFromCamera_{1};
-    glm::vec4 screenParams_{};
+                        sunParams_ = BGFX_INVALID_HANDLE;
+    glm::mat4 sunFromWorld_{1};
     glm::dvec3 sunAnchor_{}, sunLight_{};
     double sunSpan_ = 0;
-    float sunDepthScale_ = 0, nearPlane_ = .00005f;
     uint64_t sunKey_ = 0;
     size_t sunBytes_ = 0;
     bool sunActive_ = false, sunValid_ = false, sunUpdated_ = false;

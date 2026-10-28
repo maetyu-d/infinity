@@ -23,13 +23,15 @@ Full-resolution testing also exposed overlapping hierarchy patches: nearby surfa
 
 Material frames subtract the camera in doubles before conversion to floats. The close frame wraps at 512 m; the strata frame wraps at 1,048,576 m. Every octave and bedding cycle divides its frame period. World position, magnification and origin changes therefore do not randomize the surface. The noise lookup wraps its integer address before adding the fractional sample, avoiding float quantization at large coordinates. Close-grain filtering uses the largest screen-space footprint and fades normal relief with unresolved detail. Material relief changes shading only.
 
-## Sun shadows and depth
+## Sun shadows and precision
 
 The existing **2048² D16, 8 MiB** sun map now includes the exact current, geomorphed terrain triangles and nearby building/prop instances. Caster visibility uses the light frame independently of the camera frustum. The snapped, power-of-two span follows terrain-relative approach altitude from 2 km to 262 km; terrain shadows operate below 60 km AGL when sunlight is above the horizon. Microscopic/shrinking views do not inherit this field.
 
 Tile/stitch changes, geomorphing, snapped movement and light changes invalidate the map. Stationary views reuse it. Incomplete transient uploads prevent reuse of a partial map. This adds no second shadow texture or full-resolution colour buffer. At larger spans small building shadows lose resolution; near landing, a smaller span restores detail.
 
-Normal Hyperion flight uses a bounded physical near plane, up to 10 m when far above terrain, to improve distant opaque-depth reconstruction. Cockpit projection is separate; Original and shrinking retain their previous range. Coordinates, camera pose, collision and navigation do not change. The atmosphere and shadow receiver use the actual current near plane.
+Shadow reception uses the actual interpolated geometry position, following Hyperion’s `lighting.hpp`, rather than reconstructing a receiver from perspective depth. Receiver-plane slopes are retained without the old clamp. This avoids repeated bands and stipple under grazing sunlight. The reserved light view 70 executes before colour shading through an explicit view order; materials sample the current map. Shadows attenuate direct sunlight while ambient, reflection and emission remain separate. The original camera projection and clipping range are retained in every mode.
+
+The actual saved-flight angle is recorded as a stationary regression fixture. It renders with shadows enabled and disabled at 2840 × 1800 and checks matching geometry/camera identities, Original exclusion, and false-shadow suppression on the smooth ground. [Faulty reconstruction](surface-quality/grazing-shadow-before.png), [geometry-based reception](surface-quality/grazing-shadow-after.png).
 
 ## Atmosphere and sky
 
@@ -47,7 +49,7 @@ The fixture uses the screenshot's **Planet 93612** and **Highlands 63563**, with
 | Planet 93612, 250 m | [Before](surface-quality/before-0-0-Plains-HYPERION.png) | [After](surface-quality/after-0-0-Plains-HYPERION.png) |
 | Highlands, 250 m | [Before](surface-quality/before-1-0-Highlands-HYPERION.png) | [After](surface-quality/after-1-0-Highlands-HYPERION.png) |
 
-The fixed-camera shadow-off diagnostic retained all 18 terrain/planet hashes. On Highlands it changes 265, 1,650 and 10,793 RGB components by more than one level in the same ground crop at 250 m, 2 km and 11.8 km respectively (maximum difference 62/255). The smooth plains produce no terrain-shadow difference, as expected. [Measurements](surface-quality/shadow-comparison.json), [Highlands with shadows disabled](surface-quality/shadow-off-1-2-Highlands-HYPERION.png).
+The grazing-angle pair has mean shadow-on/off ground difference **0.014/255**, avoiding false bands while keeping the same geometry. A second fixture uses a real ridge with an independently measured **317.81 m** occlusion margin along a 2480 m sun ray. It produces 354,078 RGB components differing by more than 3/255 in Hyperion mode (maximum 45/255); Hybrid retains a subtle shadow and Original is pixel-identical on/off. [Ridge with shadows](surface-quality/terrain-cast-on.png), [without shadows](surface-quality/terrain-cast-off.png), [precision data](surface-quality/grazing-precision.json), [fixture search](surface-quality/shadow-view-search.cpp).
 
 Also inspected: [city approach](surface-quality/after-1-city-approach-HYPERION.png), [street inhabitants](surface-quality/after-2-inhabitants-HYPERION.png), and all three heights/modes in the native fixture. An existing smooth world remains smooth; this pass does not add mountains to its generator.
 
@@ -55,9 +57,9 @@ Also inspected: [city approach](surface-quality/after-1-city-approach-HYPERION.p
 
 `checkpoint/infinite-0.22-before-surface-pass` preserves baseline **b92a8b7**. [Source preservation](surface-quality/preservation.json) verifies 16 byte-identical generation, geometry, simulation, history, city and navigation source files. `Streaming.cpp` only retains additional read-only lighting metadata.
 
-CPU tests compare **18 baseline terrain mesh fingerprints**, including original positions, colours and indices, across three LODs and three stitch masks on legacy and rugged worlds. They also check field normals, unlit albedo, metadata-independent identity, periodic material frames through rebasing/magnification, lookup continuity and daylight behaviour. Native tests verify identical terrain/planet hashes and serialized cameras across rendering modes. All **six Original terrain crops are pixel-identical** to baseline (640 × 210 pixels, excluding cockpit/HUD); see [comparison.json](surface-quality/comparison.json).
+CPU tests compare **18 baseline terrain mesh fingerprints**, including original positions, colours and indices, across three LODs and three stitch masks on legacy and rugged worlds. They also check field normals, unlit albedo, metadata-independent identity, periodic material frames through rebasing/magnification, lookup continuity and daylight behaviour. Native tests verify identical terrain/planet hashes and serialized cameras across rendering modes, plus a paired grazing-sun test of the exact saved-flight camera. All **six Original terrain crops are pixel-identical** to baseline (640 × 210 pixels, excluding cockpit/HUD); see [comparison.json](surface-quality/comparison.json).
 
-**All 41 tests pass in 332.24 seconds**, including the full-resolution surface-frame fixture, city/inhabitant/weather images, landing/departure, streaming, shrinking and galaxy-to-atomic rendering-mode return journeys. The image-budget checks account for the exact 256 KiB lookup allocation. [Full test log](surface-quality/full-tests.log).
+**All 45 checks are verified**: the complete 43-check suite passed in 346.26 seconds and the two additional real-ridge checks passed in 14.67 seconds. Coverage includes the full-resolution surface-frame fixture, city/inhabitant/weather images, landing/departure, streaming, shrinking and galaxy-to-atomic rendering-mode return journeys. The image-budget checks account for the exact 256 KiB lookup allocation. [Full test log](surface-quality/full-tests.log), [ridge test log](surface-quality/terrain-shadow-tests.log), [combined validation](surface-quality/validation.json).
 
 Shader binaries and their manifest were rebuilt for Metal, SPIR-V and GLSL. Metal is exercised natively on this Mac; other backends are compiled, not claimed as runtime tested.
 
@@ -75,12 +77,12 @@ build/infinite --terrain-quality-test --no-sun-shadows --capture-dir build/shado
 
 | Metric | Before | After |
 | --- | ---: | ---: |
-| Frame interval | 16.63 ms | 16.62 ms |
-| CPU frame | 8.81 ms | 8.81 ms |
-| GPU frame | 7.26 ms | 7.73 ms |
+| Frame interval | 16.63 ms | 16.61 ms |
+| CPU frame | 8.81 ms | 8.76 ms |
+| GPU frame | 7.26 ms | 8.28 ms |
 | Shared material textures | 1,398,100 B | 1,660,244 B |
-| Maximum CPU generation cache | 10,414,608 B | 10,325,232 B |
+| Maximum CPU generation cache | 10,414,608 B | 10,311,280 B |
 | Scene/effect targets in these views | 17,856,000 B | 26,244,608 B |
-| Peak process RSS | 149,504,000 B | 146,948,096 B |
+| Peak process RSS | 149,504,000 B | 156,172,288 B |
 
-The new lookup adds **256 KiB** to the global material budget. These previously empty terrain views now allocate the already-supported 8 MiB shadow map; the renderer's maximum shadow-target budget is unchanged. Extra tile metadata is accounted in cache residency and remains subject to existing eviction. Terrain GPU positions/indices remain transient; no per-tile textures or persistent terrain GPU meshes are added. Frame pacing remains near 60 Hz here, with approximately 0.47 ms more measured GPU work.
+The new lookup adds **256 KiB** to the global material budget. These previously empty terrain views now allocate the already-supported 8 MiB shadow map; the renderer's maximum shadow-target budget is unchanged. Extra tile metadata is accounted in cache residency and remains subject to existing eviction. Terrain GPU positions/indices remain transient; no per-tile textures or persistent terrain GPU meshes are added. Frame pacing remains near 60 Hz here, with approximately 1.02 ms more measured GPU work.

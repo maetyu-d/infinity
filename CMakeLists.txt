@@ -166,6 +166,22 @@ if(INFINITE_VIEWER)
     add_test(NAME native_surface_frame_and_retina_images COMMAND "${Python3_EXECUTABLE}"
       "${PROJECT_SOURCE_DIR}/tools/check_surface_quality.py" "${CMAKE_BINARY_DIR}/surface-frame-retina" 2840 1800)
     set_tests_properties(native_surface_frame_and_retina_images PROPERTIES FIXTURES_REQUIRED surface_retina_captures)
+    add_test(NAME native_grazing_sun_receivers COMMAND "${CMAKE_COMMAND}"
+      "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/grazing-surface"
+      "-DVIEW_PATH=${PROJECT_SOURCE_DIR}/tests/data/surface-view-0.23.txt"
+      -P "${PROJECT_SOURCE_DIR}/cmake/RunGrazingSurface.cmake")
+    set_tests_properties(native_grazing_sun_receivers PROPERTIES FIXTURES_SETUP grazing_captures TIMEOUT 210)
+    add_test(NAME native_grazing_sun_images COMMAND "${Python3_EXECUTABLE}"
+      "${PROJECT_SOURCE_DIR}/tools/check_grazing_surface.py" "${CMAKE_BINARY_DIR}/grazing-surface")
+    set_tests_properties(native_grazing_sun_images PROPERTIES FIXTURES_REQUIRED grazing_captures)
+    add_test(NAME native_terrain_cast_shadows COMMAND "${CMAKE_COMMAND}"
+      "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/terrain-cast-shadow"
+      "-DVIEW_PATH=${PROJECT_SOURCE_DIR}/tests/data/terrain-shadow-view-0.23.txt" "-DWIDTH=1440" "-DHEIGHT=900"
+      -P "${PROJECT_SOURCE_DIR}/cmake/RunGrazingSurface.cmake")
+    set_tests_properties(native_terrain_cast_shadows PROPERTIES FIXTURES_SETUP terrain_shadow_captures TIMEOUT 210)
+    add_test(NAME native_terrain_cast_shadow_images COMMAND "${Python3_EXECUTABLE}"
+      "${PROJECT_SOURCE_DIR}/tools/check_cast_shadow.py" "${CMAKE_BINARY_DIR}/terrain-cast-shadow")
+    set_tests_properties(native_terrain_cast_shadow_images PROPERTIES FIXTURES_REQUIRED terrain_shadow_captures)
     add_test(NAME native_piloting_loop COMMAND "${CMAKE_COMMAND}"
       "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/pilot-native"
       -P "${PROJECT_SOURCE_DIR}/cmake/RunPilot.cmake")

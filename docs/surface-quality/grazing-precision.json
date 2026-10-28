@@ -1,0 +1,10 @@
+{
+  "crop": [
+    600,
+    900,
+    1200,
+    1400
+  ],
+  "mean_shadow_on_off_channel_difference": 0.013965555555555556,
+  "max_difference": 18
+}

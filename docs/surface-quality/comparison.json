@@ -19,18 +19,18 @@
   },
   "after": {
     "steady_frames": 90,
-    "median_wall_ms": 16.6154,
-    "median_cpu_ms": 8.812525,
-    "median_gpu_ms": 7.73198,
+    "median_wall_ms": 16.614,
+    "median_cpu_ms": 8.758855,
+    "median_gpu_ms": 8.28412,
     "median_draws": 79.0,
     "median_upload_bytes": 169548.0,
-    "median_submit_ms": 7.61835,
+    "median_submit_ms": 7.6205,
     "max_effect_bytes": 26244608,
     "max_material_bytes": 1660244,
-    "max_cpu_cache_bytes": 10325232,
+    "max_cpu_cache_bytes": 10311280,
     "max_gpu_bytes": 12384,
     "max_shadow_bytes": 8388608,
-    "peak_rss_bytes": 146948096
+    "peak_rss_bytes": 156172288
   },
   "original_ground_comparison": {
     "0-2-Plains-ORIGINAL.png": {

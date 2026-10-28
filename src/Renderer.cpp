@@ -991,8 +991,7 @@ struct Renderer::Impl {
                     key = mix64(key ^ encodeTile(patch.tile) ^ (uint64_t(patch.stitch) << 32));
                 if (terrain.morphing())
                     key = mix64(key ^ frame);
-                updateSun = hyperion->prepareSun(sun, key, nav.orientation, float(width) / height,
-                                                 float(std::tan(fieldOfView * .5)));
+                updateSun = hyperion->prepareSun(sun, key);
                 terrainSunPlanet = planet.address;
             }
         }
@@ -1154,6 +1153,16 @@ Renderer::Renderer(SDL_Window* window, const Universe& universe)
         throw std::runtime_error("SDL did not provide a native window handle");
     if (!bgfx::init(init))
         throw std::runtime_error("bgfx could not initialize a graphics device");
+    // Shadow casters are submitted during extraction but execute before colour
+    // draws. Materials sample this frame's map using their actual positions.
+    std::array<bgfx::ViewId, 84> order{};
+    order[0] = 70;
+    size_t next = 1;
+    for (bgfx::ViewId id = 0; id < order.size(); id++)
+        if (id != 70)
+            order[next++] = id;
+    bgfx::setViewOrder(0, uint16_t(order.size()), order.data());
+
     p.initialized = true;
     p.swapChain = init.swapChain;
     p.layout.begin()
@@ -1328,24 +1337,16 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     p.view = glm::mat4_cast(glm::inverse(nav.orientation)) * glm::translate(glm::dmat4(1), -p.eye);
     const double fov = p.instruments ? 70. * std::numbers::pi / 180. : 1.;
     p.fieldOfView = fov;
-    // Keep Original's projection. In normal flight a metre-scale near plane
-    // makes opaque-depth reconstruction reliable for distant terrain shadows.
-    // Cockpit projection is separate; microscopic inspection retains its range.
-    const double nearPlane = p.mode != RenderMode::Original && p.instruments && !p.instruments->shrinking
-                                 ? std::max(.00005, std::clamp(p.instruments->altitude * .001, .05, 10.) /
-                                                        std::pow(10., nav.logDistance))
-                                 : .00005;
-    p.projection =
-        bgfx::getCaps()->homogeneousDepth
-            ? glm::perspectiveRH_NO(fov, static_cast<double>(p.width) / p.height, nearPlane, 10000.0)
-            : glm::perspectiveRH_ZO(fov, static_cast<double>(p.width) / p.height, nearPlane, 10000.0);
+    p.projection = bgfx::getCaps()->homogeneousDepth
+                       ? glm::perspectiveRH_NO(fov, static_cast<double>(p.width) / p.height, .00005, 10000.0)
+                       : glm::perspectiveRH_ZO(fov, static_cast<double>(p.width) / p.height, .00005, 10000.0);
     glm::mat4 v(p.view), proj(p.projection);
     const bool opticalDepth =
         p.instruments && p.instruments->altitude >= 0 &&
         std::any_of(nodes.begin(), nodes.end(), [](const Node& n) {
             return n.address.kind() == Kind::Planet && planetClimate(n).pressureBar > .015;
         });
-    p.hyperion->begin(p.mode, p.width, p.height, bool(p.instruments), bool(p.instruments), float(nearPlane));
+    p.hyperion->begin(p.mode, p.width, p.height, bool(p.instruments), bool(p.instruments));
     p.staticUploadBytes += p.hyperion->materialUploadBytes();
     p.stats.uploadBytes += p.hyperion->materialUploadBytes();
     bgfx::setViewMode(0,

@@ -1,0 +1,1 @@
+physical_occlusion_margin_m=317.81 ray_distance_m=2480 sun_dot=0.0648631

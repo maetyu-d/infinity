@@ -10,8 +10,9 @@ namespace infinite {
 class TerrainValidation {
   public:
     TerrainValidation(const Universe& universe, Navigation& nav, Pilot& pilot, bool quality = false,
-                      bool surfaceFrame = false)
-        : universe_(universe), nav_(nav), pilot_(pilot), quality_(quality), surfaceFrame_(surfaceFrame) {
+                      bool surfaceFrame = false, std::string fixedView = {})
+        : universe_(universe), nav_(nav), pilot_(pilot), quality_(quality), surfaceFrame_(surfaceFrame),
+          fixedView_(std::move(fixedView)) {
         std::map<TerrainType, Node> examples;
         const auto galaxy = Address{}.child(Kind::Galaxy, 0);
         for (unsigned star = 0; star < 32 && examples.size() < 4; star++) {
@@ -32,6 +33,17 @@ class TerrainValidation {
             planets_.resize(1);
             planets_.insert(planets_.begin(),
                             universe_.describe(galaxy.child(Kind::System, 9).child(Kind::Planet, 0)));
+        }
+        if (!fixedView_.empty()) {
+            if (!nav_.restore(fixedView_))
+                throw std::runtime_error("Invalid saved terrain test view");
+            auto address = nav_.anchor;
+            while (address.kind() > Kind::Planet)
+                address = address.parent();
+            if (address.kind() != Kind::Planet)
+                throw std::runtime_error("Saved view has no solid planet");
+            planets_ = {universe_.describe(address)};
+            surfaceFrame_ = nav_.anchor != address;
         }
         place();
     }
@@ -97,7 +109,10 @@ class TerrainValidation {
         std::cout << "TERRAIN_RENDER " << planet.address.str()
                   << " type=" << terrainName(planet.geology->terrain.type)
                   << " mode=" << renderModeName(renderer.mode()) << " tiles=" << stats.terrainTiles
-                  << " height_m=" << (quality_ ? heights_[altitude_] : 250.)
+                  << " height_m="
+                  << (!fixedView_.empty() ? pilot_.instruments().altitude
+                      : quality_          ? heights_[altitude_]
+                                          : 250.)
                   << " shadow=" << stats.shadowActive << " terrain=" << terrainHash_
                   << " geometry=" << geometryHash_ << " range_m=" << range_ << '\n';
         stable_ = 0;
@@ -121,10 +136,17 @@ class TerrainValidation {
     uint64_t descriptor_ = 0, geometryHash_ = 0, terrainHash_ = 0;
     double range_ = 0;
     bool pendingCapture_ = false;
-    std::string view_;
+    std::string view_, fixedView_;
     std::shared_ptr<const Geometry> geometry_;
     void place() {
         const auto& planet = planets_[world_];
+        if (!fixedView_.empty()) {
+            nav_.restore(fixedView_);
+            nav_.selected.reset();
+            pilot_.resetMotion();
+            descriptor_ = descriptorFingerprint(planet);
+            return;
+        }
         const double radius = std::pow(10., planet.frame.logRadius),
                      wave = planet.geology->terrain.wavelengthMetres;
         const auto light = glm::normalize(

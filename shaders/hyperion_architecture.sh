@@ -2,7 +2,7 @@
 // ceramic coating, room lighting, prismatic paint and grazing-film branches.
 // Only material presentation; local metre coordinates never follow the camera.
 float structureHash(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}
-vec3 architecture(vec3 base,vec3 N,vec3 V,vec3 L,vec3 p,float localY,float phase,float seconds){
+vec3 architecture(vec3 base,vec3 N,vec3 V,vec3 L,vec3 p,float localY,float phase,float seconds,float sunVisibility){
  float role=u_materialDomain.y;
  bool vegetation=role>16.5&&role<17.5;
  bool person=role>8.5&&role<10.5;
@@ -28,7 +28,7 @@ vec3 architecture(vec3 base,vec3 N,vec3 V,vec3 L,vec3 p,float localY,float phase
  float day=smoothstep(-.15,.18,u_surface.x);
  float fresnel=pow(1.-clamp(dot(N,V),0.,1.),4.);
  float footing=mix(.62,1.,smoothstep(.015,.15,localY));
- vec3 c=brdf(albedo,N,V,L,rough,metal);
+ vec3 c=brdf(albedo,N,V,L,rough,metal)*sunVisibility;
  c+=albedo*mix(vec3(.07,.09,.14),vec3(.28,.34,.43),day)*footing;
  vec3 r=reflect(-V,N),sky=mix(vec3(.008,.016,.030),vec3(.10,.17,.24),day);
  c+=sky*glass*(.10+fresnel*.85);

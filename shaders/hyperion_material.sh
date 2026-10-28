@@ -19,6 +19,28 @@ vec3 brdf(vec3 albedo,vec3 N,vec3 V,vec3 L,float rough,float metallic) {
  vec3 F0=mix(vec3(.035),albedo,metallic),F=F0+(1.-F0)*pow(1.-vh,5.);
  return ((1.-F)*(1.-metallic)*albedo/3.14159+F*D*G/max(4.*nv*max(nl,.001),.001))*nl*3.8;
 }
+// Hyperion lighting.hpp receiver-plane PCF, evaluated on actual geometry.
+// Depth-buffer reconstruction cannot retain grazing-angle surface precision.
+SAMPLER2D(s_sunShadow,4);
+uniform mat4 u_sunFromWorld;
+uniform vec4 u_sunShadowParams;
+float surfaceSun(vec3 position,float nl){
+ if(u_sunShadowParams.x<.5)return 1.;
+ vec3 q=mul(u_sunFromWorld,vec4(position,1.)).xyz;
+ if(q.z<=0.||q.z>=1.||min(q.x,q.y)<=.002||max(q.x,q.y)>=.998)return 1.;
+ vec3 dx=dFdx(q),dy=dFdy(q);float det=dx.x*dy.y-dx.y*dy.x;
+ vec2 gradient=abs(det)>1e-16?vec2(dx.z*dy.y-dy.z*dx.y,dy.z*dx.x-dx.z*dy.x)/det:vec2(0.);
+ float texel=u_sunShadowParams.y;
+ vec2 pixel=q.xy/texel-.5,base=(floor(pixel)+.5)*texel,f=fract(pixel);
+ float receiver=q.z-max(.00006,.00016*(1.-clamp(nl,0.,1.)));
+ float a=step(receiver+dot(gradient,base-q.xy),texture2D(s_sunShadow,base).r);
+ float b=step(receiver+dot(gradient,base+vec2(texel,0.)-q.xy),texture2D(s_sunShadow,base+vec2(texel,0.)).r);
+ float c=step(receiver+dot(gradient,base+vec2(0.,texel)-q.xy),texture2D(s_sunShadow,base+vec2(0.,texel)).r);
+ float e=step(receiver+dot(gradient,base+vec2(texel,texel)-q.xy),texture2D(s_sunShadow,base+vec2(texel,texel)).r);
+ float visibility=mix(mix(a,b,f.x),mix(c,e,f.x),f.y);
+ float edge=smoothstep(.015,.085,min(min(q.x,q.y),min(1.-q.x,1.-q.y)));
+ return mix(1.,visibility,edge);
+}
 #include "hyperion_architecture.sh"
 void main(){
  float strength=u_hyperion[0].x,seconds=u_hyperion[0].y,phase=u_hyperion[0].z,primitive=u_hyperion[0].w;
@@ -34,7 +56,7 @@ void main(){
  if(primitive< -1.5){float nv=dot(N,V);if(nv<.025)N=normalize(N+V*(.025-nv));}
  else if(dot(N,V)<0.)N=-N;
  if(u_materialDomain.x>3.5 && u_materialDomain.x<4.5){
-  gl_FragColor=vec4(mix(base,architecture(base,N,V,L,v_pattern,v_sphere.y,phase,seconds),strength*.98),v_color0.a);return;
+  gl_FragColor=vec4(mix(base,architecture(base,N,V,L,v_pattern,v_sphere.y,phase,seconds,surfaceSun(v_position-u_hyperion[2].xyz,dot(N,L))),strength*.98),v_color0.a);return;
  }
  bool terrain=primitive< -1.5;
  bool planet=u_materialDomain.x>.5 && u_materialDomain.x<1.5;
@@ -138,7 +160,7 @@ void main(){
  float skyFacing=planet?clamp(dot(N,radial)*.5+.5,0.,1.):.65;
  vec3 skyTint=vec3(.025,.044,.075)*(.18+.82*day);
  vec3 groundBounce=albedo*vec3(.045,.030,.025)*(.15+.85*day);
- vec3 lit=brdf(albedo,N,V,L,rough,u_hyperion[1].y)*cavity;
+ vec3 lit=brdf(albedo,N,V,L,rough,u_hyperion[1].y)*cavity*surfaceSun(v_position-u_hyperion[2].xyz,sunDot);
  lit+=albedo*mix(groundBounce,skyTint,skyFacing)*cavity;
  vec3 reflection=reflect(-V,N);
  vec3 reflectedPigment=pigment(dot(reflection,vec3(.19,.31,.23))+phase);
