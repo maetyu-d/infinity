@@ -57,6 +57,15 @@ class PilotValidation {
                 p_.toggleShrink();
             p_.update({}, 1. / 30, renderer.submittedGeometry(n_.anchor));
         }
+        if (stage_ >= 14 && stage_ <= 16) {
+            HelmInput keys;
+            if (stage_ == 14)
+                keys.strafe = 1; // Same resolver as Alt+D in the live SDL helm.
+            if (stage_ == 15)
+                keys.roll = -1; // Dedicated U key, without any mouse capture.
+            p_.update(resolveHelmInput(keys, {}, 1. / 30, stage_ == 14), 1. / 30,
+                      renderer.submittedGeometry(n_.anchor));
+        }
     }
     void observe(const FrameStats& stats, Renderer& renderer, const std::string& directory) {
         if (descriptorFingerprint(u_.describe(planet_)) != descriptor_)
@@ -324,6 +333,35 @@ class PilotValidation {
         } else if (stage_ == 13 && age_ == 10) {
             renderer.toggleCockpitHelp();
             std::cout << "PILOT_COCKPIT_GUIDE unchanged camera, blocked click-through, guide capture=PASS\n";
+            place(true);
+            const auto attitude = u_.relative(n_.anchor, planet_, 0).orientation * n_.orientation;
+            rollForward_ = attitude * glm::dvec3(0, 0, -1);
+            rollRight_ = attitude * glm::dvec3(1, 0, 0);
+            stage_ = 14;
+            age_ = 0;
+        } else if ((stage_ == 14 && age_ == 30) || (stage_ == 15 && age_ == 60)) {
+            const auto attitude = u_.relative(n_.anchor, planet_, 0).orientation * n_.orientation;
+            const auto bank = glm::dot(attitude * glm::dvec3(0, 1, 0), rollRight_);
+            const double side = stage_ == 14 ? 1 : -1;
+            if (p_.instruments().rollRate * side < 1.7 || bank * side < .5 ||
+                glm::dot(attitude * glm::dvec3(0, 0, -1), rollForward_) < .99999)
+                throw std::runtime_error(
+                    "Native roll did not bank in the commanded direction about ship forward");
+            capture(stage_ == 14 ? "roll-right" : "roll-left");
+            std::cout << "PILOT_ROLL side=" << side << " rate_rad_s=" << p_.instruments().rollRate
+                      << " bank=" << bank << " forward=retained\n";
+            ++stage_;
+            age_ = 0;
+        } else if (stage_ == 16 && age_ == 42) {
+            if (std::abs(p_.instruments().rollRate) > .002)
+                throw std::runtime_error("Native assisted roll did not settle on release");
+            capture("roll-stopped");
+            std::cout << "PILOT_ROLL_RELEASE rate_rad_s=" << p_.instruments().rollRate << " PASS\n";
+            stage_ = 17;
+            age_ = 0;
+        } else if (stage_ == 17 && age_ > 6) {
+            // Screenshot readback is asynchronous; keep rendering the held
+            // attitude until the final framebuffer callback has completed.
             finished_ = true;
         }
         if (age_ > 4000)
@@ -342,6 +380,7 @@ class PilotValidation {
     ActivityId harbourId_;
     bool microCaptured_ = false;
     glm::dvec3 direction_{};
+    glm::dvec3 rollForward_{}, rollRight_{};
     uint64_t descriptor_ = 0, geometry_ = 0;
     std::string camera_;
     int stage_ = 0, age_ = 0, mode_ = 0, hold_ = 0;

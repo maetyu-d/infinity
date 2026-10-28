@@ -7,7 +7,7 @@ import sys
 root = pathlib.Path(sys.argv[1])
 images = {}
 for name in ("orbit-original", "orbit-hyperion", "orbit-hybrid", "landing-approach",
-             "landed", "departure", "atomic-shrink", "stellar-background", "micro-shrink", "system-contacts", "orbital-activity", "busy-orbit", "moon-family", "controls"):
+             "landed", "departure", "atomic-shrink", "stellar-background", "micro-shrink", "system-contacts", "orbital-activity", "busy-orbit", "moon-family", "controls", "roll-right", "roll-left", "roll-stopped"):
     with (root / (name + ".ppm")).open("rb") as file:
         assert file.readline().strip() == b"P6"
         width, height = map(int, file.readline().split())
@@ -27,7 +27,8 @@ assert images["orbit-hyperion"] != images["orbit-hybrid"]
 assert images["system-contacts"] != images["orbit-hyperion"]
 assert images["orbital-activity"] != images["orbit-hyperion"]
 assert images["controls"] != images["moon-family"]
-print("PASS: all fourteen cockpit, controls guide, real moon family, orbital activity, celestial contacts, addressed stellar background, landing/departure and micro/nano ship captures contain scene geometry and flight instruments")
+assert images["roll-right"] != images["roll-left"] != images["roll-stopped"]
+print("PASS: all seventeen cockpit, roll/release, controls guide, real moon family, orbital activity, celestial contacts, addressed stellar background, landing/departure and micro/nano ship captures contain scene geometry and flight instruments")
 
 profile = root.parent / "frames.csv"
 if profile.exists():

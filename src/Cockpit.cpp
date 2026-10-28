@@ -427,6 +427,9 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
              flight.w < 210 ? 17.5 : 21, pearl);
     quantity("STOP " + flightQuantity(t.stoppingDistance), flight.x + 14, flight.y + 70, flight.w - 28, 10.5,
              ice);
+    std::snprintf(value, sizeof(value), "ROLL %+.0f DEG/S / U-O", t.rollRate * 57.2957795);
+    fitted(h.lettering, value, flight.x + 14, flight.y + 88, flight.w - 28, 8.4,
+           std::abs(t.rollRate) > .02 ? ice : muted);
     label(t.assist ? "X  ASSIST ON" : "X  INERTIAL", flight.x + 14, flight.y + 105, flight.w - 28,
           t.assist ? mint : amber);
     const double gaugeWidth = (systems.w - 42) * .5;
@@ -514,7 +517,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
         const std::pair<const char*, const char*> controls[]{{"W / S", "THROTTLE"},
                                                              {"A / D   Q / E", "STRAFE / LIFT"},
                                                              {"C / MOUSE / ARROWS", "HELM / LOOK"},
-                                                             {"U / O", "ROLL"},
+                                                             {"U / O  ALT+A / D", "ROLL"},
                                                              {"B / X", "BRAKE / ASSIST"},
                                                              {"Y / SHIFT-Y", "PLANETS / MOONS"},
                                                              {"CTRL-Y", "LIFE-DETECTED WORLDS"},

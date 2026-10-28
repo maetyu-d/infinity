@@ -1,6 +1,8 @@
 # INFINITE
 
-A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.24 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.25 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+
+Version 0.25 improves **ship handling and unrestricted roll**. Assisted steering responds more quickly, releasing the helm arrests rotation while retaining bank, and stronger manoeuvring jets control lateral drift during turns. Re-engaging assist blends smoothly from the current velocity. **U/O** rolls left/right; **Alt+A/D** adds a nearby roll binding while ordinary A/D strafes and Q/E provides lift. The cockpit displays signed roll rate. Existing saves, universe generation and automatic scale changes are retained. [Handling measurements and validation](docs/SHIP_HANDLING.md).
 
 Version 0.24 strengthens **Hyperion's spectral sky, stellar highlights, planetary colour, mineral seams, cloud illumination, city glass and lighting, cockpit materials and atomic bonds**. Physical gas-envelope and climate metadata control planetary effects; microscopic detail fades below floating-point resolution. The same geometry, identities, seeds and flight behaviour remain intact. Original mode retains its prior rendering; H cycles Original / Hyperion / Hybrid. [Visual changes, matched screenshots and measurements](docs/SPECTACULAR_0_24.md).
 
@@ -88,7 +90,8 @@ The cockpit shows planet/moon totals and the nearest eight celestial contacts wi
 |---|---|
 | W / S | Increase / decrease persistent throttle |
 | A / D; Q / E | Strafe; descend / ascend |
-| Mouse / arrow keys; U / O | Pitch/yaw; roll |
+| Mouse / arrow keys | Pitch / yaw |
+| U / O or Alt+A / D | Roll left / right (Option on Mac) |
 | C / right drag | Capture / temporarily use mouse helm |
 | B / X | Brake / toggle flight assistance |
 | Y / J | Select next planet / navigate to selected destination |

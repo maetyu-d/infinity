@@ -51,6 +51,21 @@ std::optional<Address> planetOf(Address a) {
     return a.kind() == Kind::Planet ? std::optional<Address>(a) : std::nullopt;
 }
 } // namespace
+HelmInput resolveHelmInput(HelmInput keyboard, glm::dvec2 mouseDelta, double seconds, bool bankModifier) {
+    if (bankModifier) {
+        keyboard.roll += keyboard.strafe;
+        keyboard.strafe = 0;
+    }
+    if (seconds > 0 && std::isfinite(seconds) && std::isfinite(mouseDelta.x) && std::isfinite(mouseDelta.y)) {
+        const auto rate = glm::clamp(mouseDelta * (.15 / (60 * seconds)), glm::dvec2(-1), glm::dvec2(1));
+        keyboard.pitch -= rate.y;
+        keyboard.yaw += rate.x;
+    }
+    for (auto* value : {&keyboard.throttle, &keyboard.strafe, &keyboard.lift, &keyboard.pitch, &keyboard.yaw,
+                        &keyboard.roll})
+        *value = std::isfinite(*value) ? std::clamp(*value, -1., 1.) : 0;
+    return keyboard;
+}
 Pilot::Pilot(const Universe& u, Navigation& n, FlightController& f)
     : universe_(u), nav_(n), spatial_(f), lastLog_(n.logDistance) {
     ship_.frame = n.anchor;
@@ -61,6 +76,7 @@ void Pilot::synchronizeFrame() {
         const auto rotation = universe_.relative(ship_.frame, nav_.anchor, 0).orientation;
         ship_.velocity = rotation * ship_.velocity;
         ship_.positionResidual = rotation * ship_.positionResidual;
+        assistCapture_ = rotation * assistCapture_;
         ship_.frame = nav_.anchor;
     }
 }
@@ -71,6 +87,7 @@ void Pilot::setVelocity(glm::dvec3 v) {
     }
 }
 void Pilot::resetMotion() {
+    clearAssistCapture();
     waypoint_.reset();
     ship_.frame = nav_.anchor;
     ship_.velocity = ship_.angularVelocity = ship_.thrusters = ship_.positionResidual = {};
@@ -85,6 +102,7 @@ void Pilot::resetMotion() {
     instrument();
 }
 void Pilot::brake() {
+    clearAssistCapture();
     autopilot_ = landing_ = false;
     launchTime_ = 0;
     ship_.throttle = 0;
@@ -92,11 +110,18 @@ void Pilot::brake() {
     phase_ = "BRAKING";
 }
 void Pilot::toggleAssist() {
+    synchronizeFrame();
+    clearAssistCapture();
     ship_.assist = !ship_.assist;
     autopilot_ = landing_ = false;
-    if (ship_.assist)
+    if (ship_.assist) {
         ship_.throttle = std::clamp(
             glm::dot(ship_.velocity, nav_.orientation * glm::dvec3(0, 0, -1)) / speedLimit(), 0., 1.);
+        // Hyperion handling.cpp captures the current SI velocity before blending
+        // to forward-speed assistance. Re-engaging assist must not kick sideways.
+        assistCapture_ = ship_.velocity;
+        assistCaptureTime_ = .8;
+    }
     phase_ = ship_.assist ? "ASSIST / MATCHING VELOCITY" : "INERTIAL / MOMENTUM RETAINED";
 }
 void Pilot::toggleCruise() {
@@ -443,6 +468,7 @@ std::optional<Pilot::Ground> Pilot::ground() const {
         std::acos(std::clamp(glm::dot(normal, direction), -1., 1.))};
 }
 void Pilot::navigate(const Address& a) {
+    clearAssistCapture();
     waypoint_.reset();
     a.validate();
     if (ship_.landed)
@@ -542,6 +568,7 @@ bool Pilot::landAt(const Address& planet, glm::dvec3 direction) {
 void Pilot::launch() {
     if (!ship_.landed)
         return;
+    clearAssistCapture();
     ship_.landed = false;
     ship_.assist = true;
     ship_.throttle = 0;
@@ -591,6 +618,9 @@ void Pilot::step(const HelmInput& input, double dt) {
     }
     if (input.brake)
         brake();
+    if (autopilot_ || launchTime_ > 0 ||
+        std::abs(input.throttle) + std::abs(input.strafe) + std::abs(input.lift) > .01)
+        clearAssistCapture();
     ship_.boost += ((input.boost && !input.precision && !autopilot_ ? 1. : 0.) - ship_.boost) *
                    (1 - std::exp(-dt / .18));
     ship_.throttle = std::clamp(ship_.throttle + input.throttle * dt * .36, 0., 1.);
@@ -600,11 +630,12 @@ void Pilot::step(const HelmInput& input, double dt) {
     // Hyperion's asymmetric jet envelope, rate governor and 120 ms spool.
     const double gain =
         std::max(1e-14, std::max(sizeRatio(), std::max(limit, glm::length(ship_.velocity) * .7) / 85.));
-    const glm::dvec3 caps{22 * gain, 26 * gain, 52 * gain};
+    const bool manualControl = ship_.assist && !autopilot_ && launchTime_ <= 0;
+    const glm::dvec3 caps = (manualControl ? glm::dvec3(44, 48, 52) : glm::dvec3(22, 26, 52)) * gain;
     const double retro = 32 * gain;
     glm::dvec3 wanted = nav_.orientation * glm::dvec3(input.strafe * limit * .28, input.lift * limit * .30,
                                                       -ship_.throttle * limit);
-    glm::dvec3 spin{input.pitch * 1.05, -input.yaw * .95, -input.roll * 1.2};
+    glm::dvec3 spin{input.pitch * 1.20, -input.yaw * 1.10, -input.roll * 1.80};
     if (input.precision)
         spin *= .35;
     if (autopilot_) {
@@ -695,6 +726,12 @@ void Pilot::step(const HelmInput& input, double dt) {
             phase_ = "ARRIVED / L SELECTS LANDING SITE";
         }
     }
+    if (ship_.assist && assistCaptureTime_ > 0 && !autopilot_) {
+        const double t = std::clamp(1 - assistCaptureTime_ / .8, 0., 1.);
+        wanted = glm::mix(assistCapture_, wanted, t * t * (3 - 2 * t));
+        assistCaptureTime_ = std::max(0., assistCaptureTime_ - dt);
+    }
+    const bool manualAssist = ship_.assist && !autopilot_ && launchTime_ <= 0;
     if (launchTime_ > 0) {
         wanted = up * (8. * sizeRatio());
         spin = {};
@@ -704,9 +741,27 @@ void Pilot::step(const HelmInput& input, double dt) {
             phase_ = "DEPARTURE COMPLETE";
         }
     }
-    auto angularAcceleration =
-        limited((ship_.assist ? (spin - ship_.angularVelocity) * 9. : spin * 3.5), 4.2);
-    auto nextSpin = ship_.angularVelocity + angularAcceleration * dt;
+    glm::dvec3 nextSpin;
+    if (manualAssist) {
+        // Rate control, not auto-levelling: releasing a key arrests rotation
+        // while retaining the attained attitude. Exact decay avoids frame-rate
+        // dependent mouse response; finite torque still limits reversals.
+        glm::dvec3 correction;
+        for (int axis = 0; axis < 3; ++axis) {
+            const bool slowing = spin[axis] * ship_.angularVelocity[axis] <= 0 ||
+                                 std::abs(spin[axis]) < std::abs(ship_.angularVelocity[axis]);
+            correction[axis] =
+                (spin[axis] - ship_.angularVelocity[axis]) * -std::expm1(-dt * (slowing ? 18. : 11.));
+        }
+        const bool slowing = glm::dot(ship_.angularVelocity, correction) < 0;
+        nextSpin = ship_.angularVelocity + limited(correction, (slowing ? 9.5 : 6.5) * dt);
+    } else {
+        // Navigation/landing retain their established controller. Inertial
+        // flight retains spin when no rotational torque is commanded.
+        const auto acceleration =
+            limited(ship_.assist ? (spin - ship_.angularVelocity) * 9. : spin * 3.5, 4.2);
+        nextSpin = ship_.angularVelocity + acceleration * dt;
+    }
     if (!ship_.assist)
         nextSpin = limited(nextSpin, std::max(2.2, glm::length(ship_.angularVelocity)));
     const auto midSpin = (ship_.angularVelocity + nextSpin) * .5;
@@ -716,10 +771,17 @@ void Pilot::step(const HelmInput& input, double dt) {
         nav_.orientation = glm::normalize(nav_.orientation * glm::angleAxis(angle, glm::normalize(midSpin)));
     // Ship-only point gravity; no world descriptor or orbit is advanced.
     const auto gravity = beforeGround ? gravityAt(*beforeGround) * sizeRatio() : glm::dvec3(0);
-    auto local =
-        glm::inverse(nav_.orientation) * (ship_.assist ? (wanted - ship_.velocity) * 1.6 : wanted * .6);
+    auto local = glm::inverse(nav_.orientation) * (ship_.assist ? wanted - ship_.velocity : wanted * .6);
+    if (ship_.assist)
+        local *= manualAssist ? glm::dvec3(2.4, 2.4, 1.6) : glm::dvec3(1.6);
     auto support = ship_.assist ? glm::inverse(nav_.orientation) * -gravity : glm::dvec3(0);
-    local = allocateForce(support, local, caps, retro);
+    if (manualAssist) {
+        // Gravity support, then lateral control, then main-drive demand. Full
+        // throttle must not consume the steering jets' entire shared envelope.
+        const auto steering = allocateForce(support, {local.x, local.y, 0}, caps, retro);
+        local = allocateForce(steering, {0, 0, local.z}, caps, retro);
+    } else
+        local = allocateForce(support, local, caps, retro);
     // Body -Z is forward. Fit all commands into one convex force envelope.
     glm::dvec3 demand{local.x / caps.x, local.y / caps.y, local.z / (local.z < 0 ? caps.z : retro)};
     demand = limited(demand, 1.);
@@ -926,10 +988,12 @@ void Pilot::instrument() {
     instruments_ = {};
     auto& t = instruments_;
     t.localVelocity = glm::inverse(nav_.orientation) * ship_.velocity;
+    t.rollRate = -ship_.angularVelocity.z;
     t.speed = glm::length(ship_.velocity);
     t.driveSpeed = speedLimit() * precisionScale_;
     const double gain = std::max(1e-14, std::max(sizeRatio(), std::max(t.driveSpeed, t.speed * .7) / 85.));
-    const glm::dvec3 caps{22 * gain, 26 * gain, 52 * gain};
+    const bool manualControl = ship_.assist && !autopilot_ && launchTime_ <= 0;
+    const glm::dvec3 caps = (manualControl ? glm::dvec3(44, 48, 52) : glm::dvec3(22, 26, 52)) * gain;
     const auto g = ground();
     const auto gravity = g && continuumContact() ? gravityAt(*g) * sizeRatio() : glm::dvec3(0);
     if (t.speed > 1e-30) {
@@ -1093,6 +1157,7 @@ bool Pilot::restore(std::string_view text) {
             (candidate.landed && (!body || !candidate.gear)))
             return false;
         ship_ = candidate;
+        clearAssistCapture();
         waypoint_.reset();
         destination_ = dest;
         landingPlanet_ = body;

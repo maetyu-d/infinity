@@ -1,0 +1,23 @@
+{
+  "baseline": "8d3bf01",
+  "version": "0.25.0",
+  "cpu_tests_passed": 25,
+  "handling_assertions": 137,
+  "native_checks_verified": 4,
+  "native_checks": [
+    "native_weather_and_surface_life",
+    "native_weather_and_surface_images",
+    "native_piloting_loop",
+    "native_cockpit_images"
+  ],
+  "native_backend": "Metal",
+  "native_capture_count": 17,
+  "native_roll_sides": [
+    "right via Alt+D resolver",
+    "left via dedicated U resolver"
+  ],
+  "native_release_rate_rad_s": -6.68474e-11,
+  "initial_capture_issue": "The final screenshot was requested on the shutdown frame; a six-frame readback hold fixes the fixture. Both native piloting/image checks then pass.",
+  "ship_save_format": 3,
+  "universe_preserved": true
+}

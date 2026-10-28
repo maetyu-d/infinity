@@ -1,5 +1,7 @@
 # Planetary flight, long voyages and a shrinking ship — Infinite 0.10
 
+Current handling and roll controls: [Ship handling, Infinite 0.25](SHIP_HANDLING.md).
+
 The universe remains generation recipe 3. Its geometry generators, physical descriptors, spatial addresses, histories, procedural seeds, orbital snapshots, terrain/geology and crystallography are unchanged. Checkpoint `4906530` preserves the working 0.9 ship integration. This change replaces the always-scaling cruise/probe model with three explicit operating regimes.
 
 ## Normal flight among planets

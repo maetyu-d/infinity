@@ -8,6 +8,10 @@ struct HelmInput {
     double throttle = 0, strafe = 0, lift = 0, pitch = 0, yaw = 0, roll = 0;
     bool boost = false, precision = false, brake = false;
 };
+// Keyboard commands and frame-distance mouse motion share one bounded helm.
+// The bank modifier routes A/D to roll while Q/E remains vertical thrust.
+HelmInput resolveHelmInput(HelmInput keyboard, glm::dvec2 mouseDelta, double seconds,
+                           bool bankModifier = false);
 struct FlightWaypoint {
     Address reference;
     glm::dvec3 metres{}, velocity{};
@@ -31,7 +35,7 @@ struct FlightInstruments {
     glm::dvec3 localVelocity{}, localTarget{}, localUp{0, 1, 0};
     double speed = 0, stoppingDistance = 0, altitude = -1, descent = 0, drift = 0;
     double range = 0, approachError = 0, throttle = 0, engine = 0, hull = 100, logMetres = 0, scaleRate = 0;
-    double roll = 0, pitch = 0, driveSpeed = 0;
+    double roll = 0, pitch = 0, driveSpeed = 0, rollRate = 0;
     bool gear = false, landed = false, assist = true, shrinking = false, navigating = false;
     bool autoShrink = false, growthBlocked = false;
     double hullMetres = 12, targetHullMetres = 12, flightSeconds = 0, travelMetres = 0, etaSeconds = -1;
@@ -105,6 +109,12 @@ class Pilot {
     bool fieldBraking_ = false;
     bool growthBlocked_ = false;
     double launchTime_ = 0, lastLog_ = 0, scaleRate_ = 0, precisionScale_ = 1;
+    glm::dvec3 assistCapture_{};
+    double assistCaptureTime_ = 0;
+    void clearAssistCapture() {
+        assistCapture_ = {};
+        assistCaptureTime_ = 0;
+    }
     std::string phase_ = "MANUAL";
     std::optional<Ground> ground() const;
     glm::dvec3 gravityAt(const Ground&) const;

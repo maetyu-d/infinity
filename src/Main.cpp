@@ -104,7 +104,8 @@ static Options options(int argc, char** argv) {
             o.data = value();
         else if (arg == "--help") {
             std::cout
-                << "Infinite pilot: W/S throttle, A/D strafe, Q/E lift, U/O roll, B brake, X assist, "
+                << "Infinite pilot: W/S throttle, A/D strafe, Q/E lift, U/O or Alt+A/D roll, B brake, X "
+                   "assist, "
                    "J navigate, L land, Enter launch, G gear, N long cruise, Z shrink, comma/period "
                    "size, Y planets, Shift-Y moons, V explorer. "
                    "C mouse helm, arrows pitch/yaw, right-drag look, "
@@ -325,8 +326,7 @@ int main(int argc, char** argv) {
             std::vector<std::pair<Address, uint64_t>> visited;
             std::vector<double> frameTimes;
             double fps = 60, noticeTime = 6;
-            std::string notice =
-                "C mouse helm / Shift-K surface ports / J approach / L land / Y worlds / B brake";
+            std::string notice = "C mouse helm / U-O or Alt+A-D roll / J approach / L land / B brake";
             auto captureLook = [&] {
                 const bool enabled = mouseFlight || rightLook;
                 if (enabled == looking)
@@ -686,14 +686,14 @@ int main(int argc, char** argv) {
                         helm.throttle = -axes.z;
                         helm.strafe = axes.x;
                         helm.lift = axes.y;
-                        helm.pitch = std::clamp(-mouseY * .15 / (60 * dt), -1., 1.) + keys[SDL_SCANCODE_UP] -
-                                     keys[SDL_SCANCODE_DOWN];
-                        helm.yaw = std::clamp(mouseX * .15 / (60 * dt), -1., 1.) + keys[SDL_SCANCODE_RIGHT] -
-                                   keys[SDL_SCANCODE_LEFT];
+                        helm.pitch = double(keys[SDL_SCANCODE_UP]) - keys[SDL_SCANCODE_DOWN];
+                        helm.yaw = double(keys[SDL_SCANCODE_RIGHT]) - keys[SDL_SCANCODE_LEFT];
                         helm.roll = double(keys[SDL_SCANCODE_O]) - keys[SDL_SCANCODE_U];
                         helm.boost = keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT];
                         helm.precision = keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL];
                         helm.brake = keys[SDL_SCANCODE_B];
+                        helm = resolveHelmInput(helm, {mouseX, mouseY}, dt,
+                                                keys[SDL_SCANCODE_LALT] || keys[SDL_SCANCODE_RALT]);
                         pilot.update(helm, dt, renderer.submittedGeometry(nav.anchor));
                     } else if (!opt.tour)
                         flight.update(axes, dt, keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT],
