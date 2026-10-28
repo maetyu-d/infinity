@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Real legacy/rugged worlds: approach heights, lighting and material budgets."""
 import csv
+import gzip
 import pathlib
 import re
 import sys
@@ -20,10 +21,17 @@ assert len(scenes) == 6
 for scene in scenes.values():
     assert {r[0] for r in scene} == {'ORIGINAL', 'HYPERION', 'HYBRID'}
     assert len({r[1:] for r in scene}) == 1, 'Mode changed terrain or planet geometry'
-images = sorted((root / 'captures').glob('*.ppm'))
+images = sorted({p.with_suffix('') if p.suffix == '.gz' else p
+                 for pattern in ['*.ppm', '*.ppm.gz']
+                 for p in (root / 'captures').glob(pattern)})
 assert len(images) == 18
 for path in images:
-    with path.open('rb') as image:
+    # A lossless archive contains exactly the same P6 frame and assertions.
+    try:
+        stream = path.open('rb')
+    except FileNotFoundError:
+        stream = gzip.open(path.with_suffix('.ppm.gz'), 'rb')
+    with stream as image:
         assert image.readline().strip() == b'P6'
         w, h = map(int, image.readline().split())
         assert (w, h) == (width, height) and image.readline().strip() == b'255'

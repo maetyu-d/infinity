@@ -1,0 +1,10 @@
+BACKBUFFER 1920x1080 (requested 1920x1080)
+Infinite / Metal / seed 5282236693612155973
+STREAM_CROSS cell=1 physical=1.03639
+STREAM_TERRAIN face-crossing complete
+STREAM_RENDER HYPERION tiles=53 cells=27 cache=9236744
+STREAM_RENDER HYBRID tiles=53 cells=27 cache=9236744
+STREAM_RENDER ORIGINAL tiles=53 cells=27 cache=9236744
+PASS: native cell crossing, invariant camera rebase, continuous terrain face traversal and three rendering modes.
+FRAME median_ms=16.6629 p95_ms=17.6692 frames=688 cache_bytes=9236744
+peak_rss_bytes=141524992

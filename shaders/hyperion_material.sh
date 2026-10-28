@@ -43,6 +43,7 @@ float surfaceSun(vec3 position,float nl){
  float edge=smoothstep(.015,.085,min(min(q.x,q.y),min(1.-q.x,1.-q.y)));
  return mix(1.,visibility,edge);
 }
+#include "hyperion_illumination.sh"
 #include "hyperion_architecture.sh"
 void main(){
  float strength=u_hyperion[0].x,seconds=u_hyperion[0].y,phase=u_hyperion[0].z,primitive=u_hyperion[0].w;
@@ -61,7 +62,7 @@ void main(){
  if(primitive< -1.5){float nv=dot(N,V);if(nv<.025)N=normalize(N+V*(.025-nv));}
  else if(dot(N,V)<0.)N=-N;
  if(u_materialDomain.x>3.5 && u_materialDomain.x<4.5){
-  gl_FragColor=vec4(mix(base,architecture(base,N,V,L,v_pattern,v_sphere.y,phase,seconds,surfaceSun(v_position-u_hyperion[2].xyz,dot(N,L))),strength*.98),v_color0.a);return;
+  gl_FragColor=vec4(mix(base,architecture(base,N,V,L,v_pattern,v_sphere.y,phase,seconds,surfaceSun(v_position-u_hyperion[2].xyz,dot(N,L)),v_position),strength*.98),v_color0.a);return;
  }
  bool terrain=primitive< -1.5;
  bool planet=u_materialDomain.x>.5 && u_materialDomain.x<1.5;
@@ -90,7 +91,7 @@ void main(){
  if(atom || craft)albedo=base;
  if(cockpit)albedo=base*.09;
  else albedo*=planet?.76:.62; // Non-terrain meshes retain their original baked colour.
- if(terrain)albedo=base*.42+mineral*.065; // Streamed terrain supplies unlit reflectance.
+ if(terrain)albedo=base*.38+mineral*.018; // Streamed terrain supplies unlit reflectance.
  if(planet)albedo=mix(vec3(dot(albedo,vec3(.299,.587,.114)))*vec3(.86,.94,1.),albedo,.82);
  if(gas){
   // Hyperion worldFragment's latitude belts and continuous storm pigment.
@@ -100,7 +101,7 @@ void main(){
   albedo=mix(base*.42,pigment(phase+bands*.28+n.y*.17)*.48+base*.24,.75);
   albedo+=tapestry*.10;
  }
- float rough=atom?.30:craft?u_hyperion[1].x:u_hyperion[1].x*.88,microVein=0.,cavity=1.;
+ float rough=atom?.24:craft?u_hyperion[1].x:u_hyperion[1].x*.88,microVein=0.,cavity=1.;
  vec3 microGlow=vec3(0.),coatHue=mineral;
 #if INFINITE_FLIGHT_RELIEF
  // Hyperion surface_detail.hpp: smooth strata/deposits bridge planetary
@@ -118,23 +119,24 @@ void main(){
   float layer=q.y*(.25*6.283185)+middle*2.+warp*4.;
   float bedding=mix(.5,.5+.5*sin(layer),1.-smoothstep(.6,2.,fwidth(layer)));
   float vein=thread(middle*24.+warp*.8,.035)*(1.-smoothstep(.15,.9,fwidth(middle*24.)));
-  vec3 deposits=albedo*(.48+strata*.92+grain*.22+bedding*.10);
+  vec3 deposits=albedo*(.24+strata*1.45+grain*.34+bedding*.12);
   deposits=mix(deposits,deposits*.75+vec3(.055,.043,.032),dust*.30);
-  coatHue=pigment(phase+strata*.55+grain*.08);
-  deposits=mix(deposits,deposits*.55+coatHue*.16,.36);
-  deposits+=coatHue*.035;
+  coatHue=pigment(phase+strata*1.4+grain*.35);
+  deposits=mix(deposits,deposits*.88+coatHue*.028,.20);
+  deposits+=coatHue*.006;
   deposits=mix(deposits,deposits*.65+pigment(phase+middle*.18)*.11,vein*.32);
   albedo=deposits;
   rough=clamp(rough+(grain-.5)*.16+dust*.10,.22,.98);
-  float height=((middle-.5)*.65+(grain-.5)*.16)*u_microParams.z;
+  float height=((middle-.5)*1.8+(grain-.5)*.35)*u_microParams.z;
   vec3 dx=dFdx(v_position),dy=dFdy(v_position),a=cross(dy,N),b=cross(N,dx);float det=dot(dx,a);
   vec3 gradient=sign(det)*(dFdx(height)*a+dFdy(height)*b)/max(abs(det),1e-20);
-  gradient*=min(1.,.28/max(length(gradient),.001));N=normalize(N-gradient);
+  gradient*=min(1.,.42/max(length(gradient),.001));N=normalize(N-gradient);
+  cavity*=mix(.60,1.,smoothstep(.28,.58,middle+grain*.08));
   float ice=1.-step(.1,abs(u_surface.x-3.));
   float quartz=1.-step(.1,abs(u_surface.x));
   float hot=smoothstep(800.,1350.,u_surface.z)*smoothstep(.35,.80,u_materialDomain.z);
   vec3 seamColour=mix(coatHue,mix(vec3(1.6,.13,.015),vec3(1.9,.55,.06),middle),hot);
-  microGlow=seamColour*vein*(.18+ice*.15+quartz*.25+hot*.65);
+  microGlow=seamColour*vein*(.016+ice*.028+quartz*.022+hot*.36);
  }
  if(u_microParams.x>0. && primitive<.5 && !atom && !craft){
   vec3 q=mul(u_micro,vec4(v_position-u_hyperion[2].xyz,1.)).xyz;
@@ -152,7 +154,7 @@ void main(){
   float ice=1.-step(.1,abs(u_surface.x-3.));
   float frost=smoothstep(.42,.72,deposit+grit*.13)*ice*(1.-smoothstep(245.,278.,u_surface.z));
   float seam=crack*(1.-frost*.45)*(.62+.38*clamp(u_materialDomain.y,0.,1.));
-  float height=((stone-.5)*.75-seam*(.38+ice*.30)+(grit-.5)*.06)*u_microParams.x*u_microParams.y*resolved;
+  float height=((stone-.5)*1.1-seam*(.55+ice*.35)+(grit-.5)*.09)*u_microParams.x*u_microParams.y*resolved;
   vec3 dx=dFdx(v_position),dy=dFdy(v_position),a=cross(dy,N),b=cross(N,dx);float det=dot(dx,a);
   vec3 gradient=sign(det)*(dFdx(height)*a+dFdy(height)*b)/max(abs(det),1e-20);
   gradient*=min(1.,.65/max(length(gradient),.001));N=normalize(N-gradient);
@@ -171,7 +173,7 @@ void main(){
   }
   rough=mix(originalRough,rough,resolved*u_microParams.y);
   microVein=seam*resolved*u_microParams.y;
-  cavity=1.-microVein*mix(.22,.38,ice);
+  cavity*=1.-microVein*mix(.38,.50,ice);
   albedo=mix(albedo,body*cavity,resolved*.85*u_microParams.y);
   microGlow+=pigment(phase+deposit*.23+.42)*microVein*.035;
 
@@ -182,18 +184,23 @@ void main(){
  float fresnel=pow(1.-max(0.,dot(N,V)),4.),sunDot=dot(N,L),day=smoothstep(-.10,.18,sunDot);
  // Hyperion worldFragment: directional light plus sky/ground irradiance.
  // The broad view-dependent reflection stays subordinate to surface relief.
- float skyFacing=planet?clamp(dot(N,radial)*.5+.5,0.,1.):.65;
- vec3 skyTint=vec3(.025,.044,.075)*(.18+.82*day);
- vec3 groundBounce=albedo*vec3(.045,.030,.025)*(.15+.85*day);
- vec3 lit=brdf(albedo,N,V,L,rough,atom?.20:u_hyperion[1].y)*cavity*(cockpit?1.:surfaceSun(v_position-u_hyperion[2].xyz,sunDot));
- lit+=albedo*mix(groundBounce,skyTint,skyFacing)*cavity;
- vec3 reflection=reflect(-V,N);
- vec3 reflectedPigment=pigment(dot(reflection,vec3(.19,.31,.23))+phase);
- lit+=mix(albedo,reflectedPigment,.35)*fresnel*(1.-rough)*(.035+.11*day)*cavity;
+ vec3 up=planet?radial:normalize(L+vec3(.15,.4,.2));
+ float skyDay=planet?smoothstep(-.16,.10,dot(radial,L)):1.;
+ float air=planet?clamp(u_environment.x*.7,0.,1.):.15;
+ float visibility=cockpit?1.:surfaceSun(v_position-u_hyperion[2].xyz,sunDot);
+ vec3 lit=brdf(albedo,N,V,L,rough,atom?.32:u_hyperion[1].y)*cavity*visibility;
+ lit+=diffuseEnvironment(N,up,albedo,skyDay,air)*cavity;
+ // Directional environment reflection makes rough rock, ice, polished ore and
+ // atomic sites respond differently to the same sun and broad sky.
+ vec3 reflected=reflectedEnvironment(reflect(-V,N),up,skyDay,phase,rough);
+ vec3 f0=mix(vec3(.035),albedo,atom?.32:u_hyperion[1].y);
+ vec3 reflectance=f0+(1.-f0)*fresnel;
+ lit+=reflected*reflectance*(1.-rough*.65)*cavity;
+ lit+=albedo*pow(max(0.,dot(V,L)),4.)*day*visibility*(terrain?.045:.012)*cavity;
  if(atom){
   // Element hue and all bond/site identities stay legible. Only illumination,
   // a small grazing spectral sheen and the existing bloom affect the atoms.
-  lit+=base*.22+mix(base,pigment(phase+fresnel*.35),.22)*fresnel*.55;
+  lit+=base*.075+mix(base,pigment(phase+fresnel*.35),.22)*fresnel*.26;
   lit+=mix(base,vec3(1.),.35)*pow(max(0.,dot(N,normalize(V+L))),48.)*.24;
  }else if(craft){
   lit+=base*(cockpit?.015:.14)+pigment(phase+fresnel*.4)*fresnel*(cockpit?.16:.38);
@@ -203,7 +210,7 @@ void main(){
   vec3 ecColour=pigment(elevation*6.3+phase+n.z*.18+seconds*.0008);
   lit+=ecColour*(ecVeins*.58+ecLace*.19)*u_hyperion[1].w*(.045+.955*day)*(terrain?.025:1.);
   lit+=(tapestry*(.016+.075*fresnel)*(.12+.88*day)+flow*.012*day)*(terrain?.12:1.);
-  lit+=mix(pigment(n.z*.9+phase+fresnel*.35),coatHue,terrain?.35:0.)*fresnel*(terrain?.12:.38)*(.18+.82*day);
+  lit+=mix(pigment(n.z*.9+phase+fresnel*.35),coatHue,terrain?.35:0.)*fresnel*(terrain?.025:.15)*(.18+.82*day);
   if(planet && !terrain){
    float air=gas?1.:clamp(u_environment.x*.7,0.,1.);
    vec3 limb=mix(vec3(.10,.42,.85),pigment(phase+fresnel*.28)*.8,.32);
@@ -214,7 +221,7 @@ void main(){
  // The existing cutaway remains visible behind the specimen, with lower
  // reflected illumination so its facets do not overwhelm the inspected sites.
  if(u_surface.w>.5)lit*=.22;
- float response=atom?.58:cockpit?.98:craft?.88:.96;
+ float response=atom?.91:cockpit?.98:craft?.88:.96;
  vec3 colour=mix(base,lit,strength*response);
  if(cockpit)colour=toneColour(colour);
  gl_FragColor=vec4(colour,v_color0.a);

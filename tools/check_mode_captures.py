@@ -12,7 +12,11 @@ def read_ppm(path):
     # Optional lossless archival keeps the 51 full-resolution frames practical
     # on disk-constrained development machines; validate identical P6 bytes.
     compressed = path.with_suffix(path.suffix + ".gz")
-    with (path.open("rb") if path.exists() else gzip.open(compressed, "rb")) as stream:
+    try:
+        source = path.open("rb")
+    except FileNotFoundError:
+        source = gzip.open(compressed, "rb")
+    with source as stream:
         assert stream.readline().strip() == b"P6", path
         width, height = map(int, stream.readline().split())
         assert stream.readline().strip() == b"255", path

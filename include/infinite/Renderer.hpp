@@ -40,6 +40,7 @@ class Renderer {
     void screenshot(const std::string& path);
     std::string backend() const;
     void setSunShadows(bool enabled);
+    void setTerrainCoverageDebug(bool enabled); // Native raster-coverage validation only.
     std::shared_ptr<const Geometry> submittedGeometry(const Address&) const;
     std::shared_ptr<const Geometry> galaxySamples() const;
     std::span<const CelestialContact> celestialContacts() const;

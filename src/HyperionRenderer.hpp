@@ -25,6 +25,7 @@ class HyperionRenderer {
     bool prepareSun(const SunShadowFrame&, uint64_t stableKey);
     bgfx::ProgramHandle sunProgram();
     bgfx::ProgramHandle cloudProgram();
+    bgfx::ProgramHandle coverageProgram();
     bool sunActive() const {
         return sunActive_;
     }
@@ -96,6 +97,7 @@ class HyperionRenderer {
     bgfx::FrameBufferHandle sunTarget_ = BGFX_INVALID_HANDLE;
     bgfx::ProgramHandle sunProgram_ = BGFX_INVALID_HANDLE;
     bgfx::ProgramHandle cloudProgram_ = BGFX_INVALID_HANDLE;
+    bgfx::ProgramHandle coverageProgram_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle sunSampler_ = BGFX_INVALID_HANDLE, sunMatrix_ = BGFX_INVALID_HANDLE,
                         sunParams_ = BGFX_INVALID_HANDLE;
     glm::mat4 sunFromWorld_{1};

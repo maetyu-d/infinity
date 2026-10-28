@@ -165,6 +165,7 @@ struct Renderer::Impl {
     std::string sectionLabel;
     TerrainStreamer terrain;
     bool terrainActive = false, terrainSunComplete = true, sunShadows = true;
+    bool terrainCoverageDebug = false;
     std::optional<Address> terrainSunPlanet;
     glm::dvec3 terrainSunAnchor{};
     double terrainSunSpan = 0;
@@ -1085,7 +1086,8 @@ struct Renderer::Impl {
             bgfx::setInstanceDataBuffer(&instances);
             bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z |
                            BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_MSAA);
-            bgfx::submit(1, hyperion->geometryProgram(smoothTerrain));
+            bgfx::submit(1, terrainCoverageDebug ? hyperion->coverageProgram()
+                                                 : hyperion->geometryProgram(smoothTerrain));
             ++stats.terrainTiles;
             stats.vertices += 81;
             stats.triangles += count / 3;
@@ -1283,6 +1285,9 @@ std::optional<ActivityId> Renderer::pickActivity(double x, double y) const {
 }
 void Renderer::setSunShadows(bool enabled) {
     impl_->sunShadows = enabled;
+}
+void Renderer::setTerrainCoverageDebug(bool enabled) {
+    impl_->terrainCoverageDebug = enabled;
 }
 std::shared_ptr<const Geometry> Renderer::submittedGeometry(const Address& address) const {
     auto found = impl_->details.find(address);

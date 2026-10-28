@@ -44,7 +44,7 @@ vec3 atmosphere(vec2 uv, out vec3 transmission) {
     float horizon=exp(-abs(dot(d,normalize(o)))*7.);
     float dusk=1.-smoothstep(.03,.32,abs(dot(normalize(o),L)));
     vec3 prism=pigment(dot(sampleDirection,vec3(.3,.8,.4))*.45+u_atmosphere[2].w+mu*.08);
-    scattering*=mix(vec3(1.),.48+prism*1.35,.18+horizon*.22+dusk*.13);
+    scattering*=mix(vec3(1.),.48+prism*1.35,.08+horizon*.10+dusk*.12);
     transmission=exp(-beta*optical);
     return scattering;
 }

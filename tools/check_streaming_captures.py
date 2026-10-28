@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Check the actual root handoff and terrain pixels from the native fixture."""
 from pathlib import Path
-from collections import Counter
 import json
 import math
 import sys
@@ -35,21 +34,31 @@ rms = math.sqrt(squared / samples)
 fraction = changed / samples
 assert rms < 1 and fraction < .005, f'Root rebase changed the image: RMS={rms}, fraction={fraction}'
 
-ground = {}
-for name in ['terrain-before.ppm', 'terrain-HYPERION.ppm', 'terrain-HYBRID.ppm', 'terrain-ORIGINAL.ppm']:
-    width, height, data = read(name)
-    sky = Counter(tuple(data[(y * width + x) * 3:(y * width + x) * 3 + 3])
-                  for y in range(0, 20, 2) for x in range(0, width, 4)).most_common(1)[0][0]
-    holes = 0
-    count = 0
+# Shade colours are not coverage: blue ice can legitimately match blue sky.
+# The native fixture rerasterizes the same tile digest with a flat mask shader,
+# retaining the actual positions, indices, projection and depth test.
+def uncovered(width, data):
+    holes = count = 0
     for y in range(300, 880):
         for x in range(30, width - 30):
-            offset = (y * width + x) * 3
-            holes += all(abs(data[offset + c] - sky[c]) <= 3 for c in range(3))
+            i = (y * width + x) * 3
+            holes += not (data[i] < 8 and data[i+1] > 180 and data[i+2] < 8)
             count += 1
-    ratio = holes / count
-    assert ratio < .001, f'Terrain has uncovered pixels in {name}: {ratio}'
+    return holes / count
+
+ground = {}
+for name in ['before', 'HYPERION', 'HYBRID', 'ORIGINAL']:
+    read('terrain-' + name + '.ppm')  # All normal presentation captures remain required.
+    width, height, data = read('coverage-' + name + '.ppm')
+    ratio = uncovered(width, data)
+    assert ratio < .001, f'Terrain has uncovered raster pixels in {name}: {ratio}'
     ground[name] = ratio
+# A deliberate 64x64 missing block must still fail the same 0.1% bound.
+negative = bytearray(data)
+for y in range(500, 564):
+    start = (y * width + 700) * 3
+    negative[start:start + 64*3] = bytes(64*3)
+assert uncovered(width, negative) > .001, 'Coverage detector missed a deliberate terrain hole'
 report = {'root_rebase_rms_rgb': rms, 'root_rebase_fraction_over_2': fraction,
           'terrain_uncovered_fraction': ground}
 print(json.dumps(report, indent=2))

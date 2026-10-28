@@ -31,7 +31,7 @@ void main(){
  vec3 gasColour=mix(vec3(.025,.13,.22),pigment(phase+wisps*.48+d.z*.12)*.38,.70);
  c+=gasColour*emission*(.18+wisps*.72)*(1.-cavity*.55);
  c+=pigment(phase+wisps*.36+.12)*rim*.24;
- c=c*.58+tapestry*(.34+cloud*1.65)*folds+silk(d.zxy,phase+.31,t)*.14;
+ c=c*.58+tapestry*(.055+cloud*3.8+emission*.22)*folds+silk(d.zxy,phase+.31,t)*(.025+emission*.12);
  c+=pigment(d.y*.8+d.x*.3+phase)*thread((d.y+sin(d.x*4.+d.z)*.19)*48.,.025)*.065;
  c*=exp(-cavity*.8);
  float density=.20+.80*clamp(u_sky[0].z,0.,1.);

@@ -1,0 +1,24 @@
+{
+  "before": {
+    "samples": 90,
+    "views": 6,
+    "wall_ms": 16.6385,
+    "cpu_ms": 9.604289999999999,
+    "gpu_ms": 5.819165,
+    "effect_bytes": 26244608,
+    "material_bytes": 1660244,
+    "cpu_cache_bytes": 10255560,
+    "peak_rss_bytes": 149798912
+  },
+  "after": {
+    "samples": 90,
+    "views": 6,
+    "wall_ms": 9.014309999999998,
+    "cpu_ms": 8.64081,
+    "gpu_ms": 5.697185,
+    "effect_bytes": 26244608,
+    "material_bytes": 1660244,
+    "cpu_cache_bytes": 10359144,
+    "peak_rss_bytes": 153763840
+  }
+}

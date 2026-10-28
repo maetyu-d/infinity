@@ -2,7 +2,7 @@
 // ceramic coating, room lighting, prismatic paint and grazing-film branches.
 // Only material presentation; local metre coordinates never follow the camera.
 float structureHash(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}
-vec3 architecture(vec3 base,vec3 N,vec3 V,vec3 L,vec3 p,float localY,float phase,float seconds,float sunVisibility){
+vec3 architecture(vec3 base,vec3 N,vec3 V,vec3 L,vec3 p,float localY,float phase,float seconds,float sunVisibility,vec3 position){
  float role=u_materialDomain.y;
  bool vegetation=role>16.5&&role<17.5;
  bool person=role>8.5&&role<10.5;
@@ -15,9 +15,10 @@ vec3 architecture(vec3 base,vec3 N,vec3 V,vec3 L,vec3 p,float localY,float phase
  float footprint=max(length(dFdx(p)),length(dFdy(p)));
  float fine=1.-smoothstep(.4,1.8,footprint);
  float panel=structureHash(vec3(floor(grid),phase*113.));
- float joint=(1.-smoothstep(.006,.018,min(edge.x,edge.y)))*fine;
+ float panelAA=max(fwidth(grid.x),fwidth(grid.y));
+ float joint=(1.-smoothstep(.006,.018+panelAA,min(edge.x,edge.y)))*fine;
  vec3 pigmentPaint=pigment(phase+p.y*.009+p.x*.005+sin(p.z*.021)*.16);
- vec3 albedo=pow(max(base,vec3(.001)),vec3(1.15))*.80;
+ vec3 albedo=pow(max(base,vec3(.001)),vec3(1.85))*.62;
  albedo*=mix(vec3(1.),.65+pigmentPaint*.9,.40);
  albedo*=.92+panel*.08*fine;
  albedo*=1.-joint*.25;
@@ -26,12 +27,23 @@ vec3 architecture(vec3 base,vec3 N,vec3 V,vec3 L,vec3 p,float localY,float phase
  if(person){albedo=base*.48;rough=.76;metal=.05;}
  if(glass>.1)albedo=mix(albedo,vec3(.008,.025,.044)*(.75+panel*.5),glass);
  float day=smoothstep(-.15,.18,u_surface.x);
+ // Hyperion structureBump's recessed panel joints, in actual local metres.
+ // Position and silhouettes stay untouched; unresolved joints fade out.
+ if(!vegetation && !person){
+  float relief=(-joint*.018+(panel-.5)*.0015*fine)/max(u_materialDomain.z,1e-12);
+  N=materialBump(N,position,relief,.28);
+ }
  float fresnel=pow(1.-clamp(dot(N,V),0.,1.),4.);
  float footing=mix(.62,1.,smoothstep(.015,.15,localY));
  vec3 c=brdf(albedo,N,V,L,rough,metal)*sunVisibility;
  c+=albedo*mix(vec3(.07,.09,.14),vec3(.28,.34,.43),day)*footing;
- vec3 r=reflect(-V,N),sky=mix(vec3(.008,.016,.030),vec3(.10,.17,.24),day);
- c+=sky*glass*(.10+fresnel*1.15);
+ vec3 r=reflect(-V,N);
+ vec3 skyUp=normalize(u_environment.xyz);
+ vec3 sky=reflectedEnvironment(r,skyUp,day,phase,rough);
+ sky*=mix(.24,1.,clamp(u_environment.w*.7,0.,1.));
+ c+=sky*glass*(.14+fresnel*1.6);
+ c*=1.-joint*.24;
+ // Lit rooms recede into dark glass; they never bleach the facade coating.
  float room=step(.37,panel),blind=smoothstep(.18,.28,cell.y)*(1.-smoothstep(.80,.86,cell.y));
  vec3 roomColour=mix(vec3(.12,.65,.72),vec3(1.,.49,.16),step(.53,panel));
  c+=roomColour*glass*room*blind*(.035+(1.-day)*.85)*fine;

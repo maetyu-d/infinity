@@ -26,9 +26,10 @@ class StreamingValidation {
                 std::cout << "STREAM_CROSS cell=1 physical=" << physicalEye().x << '\n';
             }
         } else if (stage_ >= 5) {
-            const double ratio = stage_ == 6  ? .9998 + .0004 * std::min(1., travel_ / 48.)
-                                 : stage_ > 6 ? 1.0002
-                                              : .9998;
+            const bool before = stage_ == 5 || stage_ == 10 || stage_ == 11 || stage_ == 12;
+            const double ratio = stage_ == 6 ? .9998 + .0004 * std::min(1., travel_ / 48.)
+                                 : before    ? .9998
+                                             : 1.0002;
             const auto direction = glm::normalize(glm::dvec3(ratio, 1, .2));
             const auto point = direction * (1.00003 + universe_.terrainHeight(*planet_, direction) /
                                                           std::pow(10., planet_->frame.logRadius));
@@ -92,6 +93,20 @@ class StreamingValidation {
             stable_ = 0;
         } else if (stage_ == 5 && stable_ >= 8) {
             capture("terrain-before.ppm");
+            coverageHash_ = renderer.terrainGeometryDigest();
+            stage_ = 10;
+            stable_ = 0;
+        } else if (stage_ == 10) {
+            renderer.setTerrainCoverageDebug(true);
+            stage_ = 11;
+            stable_ = 0;
+        } else if (stage_ == 11 && stable_ >= 8) {
+            if (renderer.terrainGeometryDigest() != coverageHash_)
+                throw std::runtime_error("Coverage diagnostic changed the terrain geometry");
+            capture("coverage-before.ppm");
+            stage_ = 12;
+        } else if (stage_ == 12) {
+            renderer.setTerrainCoverageDebug(false);
             stage_ = 6;
             stable_ = 0;
         } else if (stage_ == 7 && stable_ >= 8) {
@@ -99,11 +114,21 @@ class StreamingValidation {
             std::cout << "STREAM_RENDER " << renderModeName(renderer.mode())
                       << " tiles=" << stats.terrainTiles << " cells=" << stats.rootCells
                       << " cache=" << generation.bytes << '\n';
-            if (modes_++ == 2) {
-                stage_ = 9;
-            } else {
-                stage_ = 8;
-            }
+            coverageHash_ = renderer.terrainGeometryDigest();
+            stage_ = 13;
+            stable_ = 0;
+        } else if (stage_ == 13) {
+            renderer.setTerrainCoverageDebug(true);
+            stage_ = 14;
+            stable_ = 0;
+        } else if (stage_ == 14 && stable_ >= 8) {
+            if (renderer.terrainGeometryDigest() != coverageHash_)
+                throw std::runtime_error("Coverage diagnostic changed the streamed terrain geometry");
+            capture("coverage-" + std::string(renderModeName(renderer.mode())) + ".ppm");
+            stage_ = 15;
+        } else if (stage_ == 15) {
+            renderer.setTerrainCoverageDebug(false);
+            stage_ = modes_++ == 2 ? 9 : 8;
             stable_ = 0;
         } else if (stage_ == 8) {
             renderer.setMode(nextRenderMode(renderer.mode()));
@@ -126,6 +151,7 @@ class StreamingValidation {
     std::optional<Node> planet_;
     int stage_ = 0, stable_ = 0, hold_ = 0, travel_ = 0, modes_ = 0;
     bool finished_ = false;
+    uint64_t coverageHash_ = 0;
     glm::dvec3 worldEye_{};
     glm::dvec3 physicalEye() const {
         const auto node = universe_.describe(nav_.anchor);

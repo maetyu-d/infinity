@@ -1,0 +1,9 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 45: native_render_mode_round_trip
+1/2 Test #45: native_render_mode_round_trip ....   Passed   49.86 sec
+    Start 46: native_render_mode_images
+2/2 Test #46: native_render_mode_images ........   Passed    9.37 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =  59.24 sec

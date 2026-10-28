@@ -425,7 +425,9 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
                                 {4, float(role), float(units), 0},
                                 {float(glm::dot(glm::normalize(planetEye), glm::inverse(pose.orientation) *
                                                                                lightAt(planet.address, nav))),
-                                 float(world->climate.pressureBar), 0, 0}};
+                                 float(world->climate.pressureBar), 0, 0},
+                                glm::vec4(glm::vec3(pose.orientation * glm::normalize(planetEye)),
+                                          float(world->climate.pressureBar))};
                             hyperion->bind(presentation, {}, glm::vec3(lightAt(planet.address, nav)),
                                            glm::mat4(1), 0, activity->seconds);
                         }

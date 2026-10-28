@@ -17,6 +17,7 @@ bgfx::ShaderHandle shader(const char* name) {
     LOAD_SHADER(vs_hyperion_smooth, BACKEND);                                                                \
     LOAD_SHADER(vs_hyperion_shadow, BACKEND);                                                                \
     LOAD_SHADER(fs_hyperion_shadow, BACKEND);                                                                \
+    LOAD_SHADER(fs_hyperion_coverage, BACKEND);                                                              \
     LOAD_SHADER(fs_hyperion_cloud, BACKEND);                                                                 \
     LOAD_SHADER(fs_hyperion, BACKEND);                                                                       \
     LOAD_SHADER(fs_hyperion_flight, BACKEND);                                                                \
@@ -155,7 +156,7 @@ HyperionRenderer::~HyperionRenderer() {
     if (bgfx::isValid(sunTarget_))
         bgfx::destroy(sunTarget_);
     for (auto p : {geometry_, glow_, blur_, post_, flightGeometry_, flightPost_, sky_, smoothGeometry_[0],
-                   smoothGeometry_[1], sunProgram_, cloudProgram_})
+                   smoothGeometry_[1], sunProgram_, cloudProgram_, coverageProgram_})
         if (bgfx::isValid(p))
             bgfx::destroy(p);
     for (auto u : {environment_,
@@ -252,6 +253,11 @@ bgfx::ProgramHandle HyperionRenderer::cloudProgram() {
     if (!bgfx::isValid(cloudProgram_))
         cloudProgram_ = program("vs_hyperion", "fs_hyperion_cloud");
     return cloudProgram_;
+}
+bgfx::ProgramHandle HyperionRenderer::coverageProgram() {
+    if (!bgfx::isValid(coverageProgram_))
+        coverageProgram_ = program("vs_hyperion_shadow", "fs_hyperion_coverage");
+    return coverageProgram_;
 }
 bool HyperionRenderer::prepareSun(const SunShadowFrame& frame, uint64_t key) {
     if (mode_ == RenderMode::Original || !readableDepth_)

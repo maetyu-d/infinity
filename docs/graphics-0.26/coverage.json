@@ -1,0 +1,10 @@
+{
+  "root_rebase_rms_rgb": 0.0025451967574230253,
+  "root_rebase_fraction_over_2": 0.0,
+  "terrain_uncovered_fraction": {
+    "before": 0.0,
+    "HYPERION": 9.269558769002596e-07,
+    "HYBRID": 9.269558769002596e-07,
+    "ORIGINAL": 2.7808676307007788e-06
+  }
+}

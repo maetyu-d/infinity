@@ -1,0 +1,29 @@
+{
+  "baseline": "5dc5789",
+  "packaged_version": "0.26.0",
+  "packaged_build": 26,
+  "checks_verified": 46,
+  "full_run_passes_before_coverage_fixture_fix": 45,
+  "final_cpu_tests_passed": 25,
+  "final_mode_checks_passed": 2,
+  "final_boundary_checks_passed": 2,
+  "original_world_crops_pixel_identical": 23,
+  "native_backend": "Metal",
+  "compiled_backends": [
+    "Metal",
+    "SPIR-V",
+    "GLSL"
+  ],
+  "coverage": {
+    "root_rebase_rms_rgb": 0.0025451967574230253,
+    "root_rebase_fraction_over_2": 0.0,
+    "terrain_uncovered_fraction": {
+      "before": 0.0,
+      "HYPERION": 9.269558769002596e-07,
+      "HYBRID": 9.269558769002596e-07,
+      "ORIGINAL": 2.7808676307007788e-06
+    }
+  },
+  "gpu_texture_target_bytes_unchanged": true,
+  "generation_and_handling_sources_unchanged": true
+}

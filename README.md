@@ -1,6 +1,8 @@
 # INFINITE
 
-A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.25 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.26 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+
+Version 0.26 gives **terrain, cities and planets stronger depth and material definition**. Shaded mineral recesses and filtered relief replace the broad ground glow, glass reflects a planetary sky gradient, facade joints receive subtle relief, and atoms retain clearer light/shadow separation. Darker gaps in the spectral sky improve celestial silhouettes; a hue-preserving bloom pass keeps bright emitters distinct. Geometry, seeds, ship handling and all three render modes are preserved. [Matched images, validation and measured cost](docs/GRAPHICS_0_26.md).
 
 Version 0.25 improves **ship handling and unrestricted roll**. Assisted steering responds more quickly, releasing the helm arrests rotation while retaining bank, and stronger manoeuvring jets control lateral drift during turns. Re-engaging assist blends smoothly from the current velocity. **U/O** rolls left/right; **Alt+A/D** adds a nearby roll binding while ordinary A/D strafes and Q/E provides lift. The cockpit displays signed roll rate. Existing saves, universe generation and automatic scale changes are retained. [Handling measurements and validation](docs/SHIP_HANDLING.md).
 

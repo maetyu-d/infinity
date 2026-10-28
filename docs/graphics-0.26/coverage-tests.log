@@ -1,0 +1,9 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 40: native_boundary_streaming
+1/2 Test #40: native_boundary_streaming ........   Passed   13.77 sec
+    Start 41: native_boundary_pixels
+2/2 Test #41: native_boundary_pixels ...........   Passed    3.46 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =  17.24 sec
