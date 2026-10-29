@@ -25,6 +25,10 @@ struct SunShadowFrame {
 // conversion to floats. Every sampled frequency must divide this period.
 glm::mat4 periodicMaterialFrame(const glm::dmat4& planetFromCamera, double radiusMetres, double tileMetres,
                                 double period);
+// Split the periodic origin before casting to float. XYZ stays close to the
+// camera; the last row carries integer noise cells, added after floor/fract.
+glm::mat4 periodicNoiseFrame(const glm::dmat4& planetFromCamera, double radiusMetres, double tileMetres,
+                             double period);
 // Atmospheric daylight masks the optical galaxy field using retained climate.
 float daylightSkyTransmission(double pressureBar, double altitudeMetres, double scaleHeightMetres,
                               double sunElevation);

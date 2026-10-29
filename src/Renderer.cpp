@@ -1074,7 +1074,7 @@ struct Renderer::Impl {
             if (mode != RenderMode::Original) {
                 const double radiusMetres = std::pow(10., planet.frame.logRadius);
                 micro = periodicMaterialFrame(pattern, radiusMetres, 8, 64);
-                meso = periodicMaterialFrame(pattern, radiusMetres, 256, 4096);
+                meso = periodicNoiseFrame(pattern, radiusMetres, 256, 4096);
                 relief = float(.36 / std::pow(10., nav.logDistance));
                 mesoRelief = float(8. / std::pow(10., nav.logDistance));
             }

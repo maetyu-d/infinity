@@ -133,6 +133,17 @@ float daylightSkyTransmission(double pressure, double altitude, double height, d
     const double daylight = smoothstep(-.16, .08, sun);
     return float(std::exp(-density * daylight * 14.));
 }
+glm::mat4 periodicNoiseFrame(const glm::dmat4& mapping, double radius, double tile, double period) {
+    const double frequency = radius / tile;
+    const auto origin = glm::mod(glm::dvec3(mapping[3]) * frequency, glm::dvec3(period));
+    // All sampled octaves (.0625, .25, 1, 4) preserve integer high cells.
+    const auto high = glm::floor(origin / 16.) * 16.;
+    glm::mat4 result(1);
+    for (unsigned i = 0; i < 3; ++i)
+        result[i] = glm::vec4(glm::vec3(mapping[i] * frequency), float(high[i]));
+    result[3] = glm::vec4(glm::vec3(origin - high), 1);
+    return result;
+}
 SunShadowFrame sunShadowFrame(glm::dvec3 anchor, glm::dvec3 light, glm::dquat rotation, glm::dvec3 eye,
                               double units, double span, bool homogeneous, bool bottom) {
     SunShadowFrame result;

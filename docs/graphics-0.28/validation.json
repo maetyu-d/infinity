@@ -1,0 +1,21 @@
+{
+  "total_checks": 49,
+  "status": "passed",
+  "cpu_checks": 26,
+  "native_checks": 23,
+  "original_world_crops_identical": 30,
+  "unchanged_existing_source_files": 41,
+  "texture_bytes_before": 1660244,
+  "texture_bytes_after": 1660244,
+  "effect_bytes_before": 26244608,
+  "effect_bytes_after": 26244608,
+  "new_passes": 0,
+  "new_targets": 0,
+  "new_dependencies": 0,
+  "precision_regression": "Four millimetres of camera motion at all four strata octaves, canonical phase, negative legacy control",
+  "native_backend": "Metal",
+  "other_shader_backends_compiled": [
+    "glsl",
+    "spirv"
+  ]
+}

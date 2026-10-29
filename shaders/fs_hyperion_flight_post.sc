@@ -27,15 +27,15 @@ vec3 atmosphere(vec2 uv, out vec3 transmission) {
     float depth=texture2D(s_opaqueDepth,uv).r;
     if(depth>0.){float near=u_atmosphere[2].y,far=u_atmosphere[2].z;float z=near*far/(near+depth*(far-near));end=min(end,z/max(-cameraRay.z,.0001)/u_atmosphere[2].x);}
     if(end<=start || end-start<H*.00001)return vec3(0.);
-    float stepSize=(end-start)/8.,optical=0.;vec3 sum=vec3(0.,0.,0.);
+    float stepSize=(end-start)/12.,optical=0.;vec3 sum=vec3(0.,0.,0.);
     vec3 beta=vec3(.0058,.0135,.029)*u_atmosphere[0].w;
     float mu=dot(d,L),rayleigh=.05968*(1.+mu*mu),mie=.012*pow(max(.02,1.-.76*mu),-1.5);
-    for(int i=0;i<8;i++){
+    for(int i=0;i<12;i++){
         vec3 p=o+d*(start+(float(i)+.5)*stepSize);
         float density=exp(-max(0.,length(p)-1.)/H),kmStep=stepSize*u_atmosphere[3].w;optical+=density*kmStep;
         vec2 sun=sphereSpan(p,L,outer),hit=sphereSpan(p,L,1.);
         float sunlight=hit.x>0.?0.:1.,sunOptical=0.;
-        for(int j=0;j<2;j++){vec3 sp=p+L*sun.y*(float(j)+.5)/2.;sunOptical+=exp(-max(0.,length(sp)-1.)/H)*sun.y*u_atmosphere[3].w*.5;}
+        for(int j=0;j<4;j++){vec3 sp=p+L*sun.y*(float(j)+.5)/4.;sunOptical+=exp(-max(0.,length(sp)-1.)/H)*sun.y*u_atmosphere[3].w*.25;}
         sum+=exp(-beta*(optical+sunOptical))*density*kmStep*sunlight;
     }
     vec3 scattering=sum*(beta*rayleigh+vec3(.0016,.0016,.0016)*mie)*7.;
@@ -44,7 +44,7 @@ vec3 atmosphere(vec2 uv, out vec3 transmission) {
     float horizon=exp(-abs(dot(d,normalize(o)))*7.);
     float dusk=1.-smoothstep(.03,.32,abs(dot(normalize(o),L)));
     vec3 prism=pigment(dot(sampleDirection,vec3(.3,.8,.4))*.45+u_atmosphere[2].w+mu*.08);
-    scattering*=mix(vec3(1.),.48+prism*1.35,.08+horizon*.10+dusk*.12);
+    scattering*=mix(vec3(1.),.38+prism*1.45,.10+horizon*.20+dusk*.22);
     transmission=exp(-beta*optical);
     return scattering;
 }

@@ -1,4 +1,4 @@
-$input v_color0, v_position, v_pattern, v_sphere
+$input v_color0, v_position, v_pattern, v_sphere, v_elevation
 #include <bgfx_shader.sh>
 uniform vec4 u_hyperion[4];
 #include "hyperion_pigment.sh"

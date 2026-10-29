@@ -1,0 +1,8 @@
+{
+  "version": "0.28.0",
+  "build": "28",
+  "binary_sha256": "96896d29d6d2dd9c571c9bb74e244a846e625f25e5d43c571d0d8308b405783c",
+  "signed": true,
+  "verified": "codesign --verify --deep --strict",
+  "baseline": "1b1819e"
+}

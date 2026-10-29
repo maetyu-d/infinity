@@ -3,6 +3,7 @@ vec3 v_position : TEXCOORD0;
 vec3 v_pattern : TEXCOORD1;
 vec3 v_sphere : TEXCOORD2;
 vec2 v_texcoord0 : TEXCOORD3;
+float v_elevation : TEXCOORD4;
 vec3 a_position : POSITION;
 vec2 a_normal : NORMAL;
 vec4 a_color0 : COLOR0;

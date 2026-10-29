@@ -1,0 +1,332 @@
+{
+  "surface/0-0-Plains-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      360,
+      225,
+      1123,
+      675
+    ],
+    "before": "7e0964766b265614c1fecaca30e92a8961f510e7bb06bcb68fef199b4e0ce2cf",
+    "after": "7e0964766b265614c1fecaca30e92a8961f510e7bb06bcb68fef199b4e0ce2cf"
+  },
+  "surface/0-1-Plains-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      360,
+      225,
+      1123,
+      675
+    ],
+    "before": "5efe6b13ead8a375c093ef9c890d295d516bfab1b040b3f42c68393c2e3cb0a5",
+    "after": "5efe6b13ead8a375c093ef9c890d295d516bfab1b040b3f42c68393c2e3cb0a5"
+  },
+  "surface/0-2-Plains-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      360,
+      225,
+      1123,
+      675
+    ],
+    "before": "528a8cf3570c00ba25e8e50d6fedec6c8266a5b40f085852e5458dc78602e215",
+    "after": "528a8cf3570c00ba25e8e50d6fedec6c8266a5b40f085852e5458dc78602e215"
+  },
+  "surface/1-0-Highlands-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      360,
+      225,
+      1123,
+      675
+    ],
+    "before": "4fb0354216a7e21b2dffddfcc39f6476783b81158fada91b44da3ef549acb861",
+    "after": "4fb0354216a7e21b2dffddfcc39f6476783b81158fada91b44da3ef549acb861"
+  },
+  "surface/1-1-Highlands-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      360,
+      225,
+      1123,
+      675
+    ],
+    "before": "eb54622d8efddf67d68877240d188a39d78da8546747834ffc194a9b34f65a69",
+    "after": "eb54622d8efddf67d68877240d188a39d78da8546747834ffc194a9b34f65a69"
+  },
+  "surface/1-2-Highlands-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      360,
+      225,
+      1123,
+      675
+    ],
+    "before": "75d931707cb4f7d1b32d909bcd39b1180342e840596de6d3a685a3327425ed90",
+    "after": "75d931707cb4f7d1b32d909bcd39b1180342e840596de6d3a685a3327425ed90"
+  },
+  "life/0-weather-orbit-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      360,
+      225,
+      1123,
+      675
+    ],
+    "before": "c32b619d68828abf0c879baaa276f52e3e8758ee855d8a951bd29c036d3a8400",
+    "after": "c32b619d68828abf0c879baaa276f52e3e8758ee855d8a951bd29c036d3a8400"
+  },
+  "life/1-city-approach-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      360,
+      225,
+      1123,
+      675
+    ],
+    "before": "204488109c6faf7a936b3267f573bd51ca88e80c7c696ac1422e405466f32af2",
+    "after": "204488109c6faf7a936b3267f573bd51ca88e80c7c696ac1422e405466f32af2"
+  },
+  "life/2-inhabitants-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      360,
+      225,
+      1123,
+      675
+    ],
+    "before": "bcf68cefc8bbe985b1e02e01bb30bc30148cdf7de671985530e37d35971fa4cf",
+    "after": "bcf68cefc8bbe985b1e02e01bb30bc30148cdf7de671985530e37d35971fa4cf"
+  },
+  "life/3-sealed-colony-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      360,
+      225,
+      1123,
+      675
+    ],
+    "before": "1833cfbb2d4ce10191898f05ade02619107806954b61a6f7244bf8b9500ed15f",
+    "after": "1833cfbb2d4ce10191898f05ade02619107806954b61a6f7244bf8b9500ed15f"
+  },
+  "life/4-precipitation-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      360,
+      225,
+      1123,
+      675
+    ],
+    "before": "b278c55020b31b44157b8dc649ecb997d275cb5230f7dc6174c5afc975ec075b",
+    "after": "b278c55020b31b44157b8dc649ecb997d275cb5230f7dc6174c5afc975ec075b"
+  },
+  "life/5-organic-overview-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      360,
+      225,
+      1123,
+      675
+    ],
+    "before": "271e56909141cc0c59a82b6911d7acbadd107fbe2b00f17ec42a29425a98b414",
+    "after": "271e56909141cc0c59a82b6911d7acbadd107fbe2b00f17ec42a29425a98b414"
+  },
+  "life/6-planned-overview-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      360,
+      225,
+      1123,
+      675
+    ],
+    "before": "a90e0f84943cd13b3ddf56db8bdd95f516d713eeab1e052662023a4893fb8050",
+    "after": "a90e0f84943cd13b3ddf56db8bdd95f516d713eeab1e052662023a4893fb8050"
+  },
+  "mode-tour/0-COSMIC WEB-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      0,
+      240,
+      1920,
+      900
+    ],
+    "before": "4ad9b1df59e7f98320419aaed59032cf1d794664d8a82353058046cf89720d57",
+    "after": "4ad9b1df59e7f98320419aaed59032cf1d794664d8a82353058046cf89720d57"
+  },
+  "mode-tour/8-CRYSTAL LATTICE-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      0,
+      240,
+      1920,
+      900
+    ],
+    "before": "2350276b907b12d13f04cc85253354160cf6ef8ad9b97331aa0f746c2fc30114",
+    "after": "2350276b907b12d13f04cc85253354160cf6ef8ad9b97331aa0f746c2fc30114"
+  },
+  "mode-tour/11-MOUNTAIN-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      0,
+      240,
+      1920,
+      900
+    ],
+    "before": "8d7c3421990434054e440d926a9d6e97744e2d641cefbd7a2fb621f373e12c4f",
+    "after": "8d7c3421990434054e440d926a9d6e97744e2d641cefbd7a2fb621f373e12c4f"
+  },
+  "mode-tour/9-MINERAL GRAIN-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      0,
+      240,
+      1920,
+      900
+    ],
+    "before": "da40d1680635007511cf46b90019e2c581e628c5fa9bab76e5972f3cba93dd6d",
+    "after": "da40d1680635007511cf46b90019e2c581e628c5fa9bab76e5972f3cba93dd6d"
+  },
+  "mode-tour/4-SURFACE-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      0,
+      240,
+      1920,
+      900
+    ],
+    "before": "77dc29765d4ee6525e93ecabc434e51ad7fa96acc4ad5100738be20992b796ca",
+    "after": "77dc29765d4ee6525e93ecabc434e51ad7fa96acc4ad5100738be20992b796ca"
+  },
+  "mode-tour/6-ROCK-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      0,
+      240,
+      1920,
+      900
+    ],
+    "before": "5a2ef812a73def0f6eff5a6a11344286518af8b34ad97fe590c1b09390b1ec2e",
+    "after": "5a2ef812a73def0f6eff5a6a11344286518af8b34ad97fe590c1b09390b1ec2e"
+  },
+  "mode-tour/16-COSMIC WEB-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      0,
+      240,
+      1920,
+      900
+    ],
+    "before": "4ad9b1df59e7f98320419aaed59032cf1d794664d8a82353058046cf89720d57",
+    "after": "4ad9b1df59e7f98320419aaed59032cf1d794664d8a82353058046cf89720d57"
+  },
+  "mode-tour/12-SURFACE-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      0,
+      240,
+      1920,
+      900
+    ],
+    "before": "77dc29765d4ee6525e93ecabc434e51ad7fa96acc4ad5100738be20992b796ca",
+    "after": "77dc29765d4ee6525e93ecabc434e51ad7fa96acc4ad5100738be20992b796ca"
+  },
+  "mode-tour/13-PLANET-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      0,
+      240,
+      1920,
+      900
+    ],
+    "before": "16b400fcd54dcbe9610028bb3916a56541327bd403852948766f9a3889b2818b",
+    "after": "16b400fcd54dcbe9610028bb3916a56541327bd403852948766f9a3889b2818b"
+  },
+  "mode-tour/14-STAR SYSTEM-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      0,
+      240,
+      1920,
+      900
+    ],
+    "before": "d2fdaeae2e7c8d1261a7a69e2b0829f9e9c66a70388153c8bd2d5dc9b259fba3",
+    "after": "d2fdaeae2e7c8d1261a7a69e2b0829f9e9c66a70388153c8bd2d5dc9b259fba3"
+  },
+  "mode-tour/3-PLANET-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      0,
+      240,
+      1920,
+      900
+    ],
+    "before": "16b400fcd54dcbe9610028bb3916a56541327bd403852948766f9a3889b2818b",
+    "after": "16b400fcd54dcbe9610028bb3916a56541327bd403852948766f9a3889b2818b"
+  },
+  "mode-tour/5-MOUNTAIN-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      0,
+      240,
+      1920,
+      900
+    ],
+    "before": "8d7c3421990434054e440d926a9d6e97744e2d641cefbd7a2fb621f373e12c4f",
+    "after": "8d7c3421990434054e440d926a9d6e97744e2d641cefbd7a2fb621f373e12c4f"
+  },
+  "mode-tour/10-ROCK-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      0,
+      240,
+      1920,
+      900
+    ],
+    "before": "5a2ef812a73def0f6eff5a6a11344286518af8b34ad97fe590c1b09390b1ec2e",
+    "after": "5a2ef812a73def0f6eff5a6a11344286518af8b34ad97fe590c1b09390b1ec2e"
+  },
+  "mode-tour/1-GALAXY-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      0,
+      240,
+      1920,
+      900
+    ],
+    "before": "13056258990dd209a75f8d0b6e2b607005ac4c65bc9bbaad5d9b7f97fae1b16e",
+    "after": "13056258990dd209a75f8d0b6e2b607005ac4c65bc9bbaad5d9b7f97fae1b16e"
+  },
+  "mode-tour/7-MINERAL GRAIN-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      0,
+      240,
+      1920,
+      900
+    ],
+    "before": "da40d1680635007511cf46b90019e2c581e628c5fa9bab76e5972f3cba93dd6d",
+    "after": "da40d1680635007511cf46b90019e2c581e628c5fa9bab76e5972f3cba93dd6d"
+  },
+  "mode-tour/2-STAR SYSTEM-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      0,
+      240,
+      1920,
+      900
+    ],
+    "before": "d2fdaeae2e7c8d1261a7a69e2b0829f9e9c66a70388153c8bd2d5dc9b259fba3",
+    "after": "d2fdaeae2e7c8d1261a7a69e2b0829f9e9c66a70388153c8bd2d5dc9b259fba3"
+  },
+  "mode-tour/15-GALAXY-ORIGINAL.ppm": {
+    "identical": true,
+    "crop": [
+      0,
+      240,
+      1920,
+      900
+    ],
+    "before": "13056258990dd209a75f8d0b6e2b607005ac4c65bc9bbaad5d9b7f97fae1b16e",
+    "after": "13056258990dd209a75f8d0b6e2b607005ac4c65bc9bbaad5d9b7f97fae1b16e"
+  }
+}

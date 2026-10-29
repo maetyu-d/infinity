@@ -80,7 +80,7 @@ void main(){
   float slope=1.-clamp(dot(radial,N),0.,1.);
   if(primitive<.1 && primitive> -1.5)N=normalize(mix(radial,N,.08+.92*smoothstep(.004,.045,slope)));
  }
- float elevation=planet?.5+(length(p)-1.)*32.:dot(p,vec3(.31,.73,.19));
+ float elevation=planet?.5+v_elevation*32.:dot(p,vec3(.31,.73,.19));
  float detail=sin(n.x*13.+sin(n.z*6.))*.13;
  vec3 mineral=pigment(elevation*3.7+phase+detail);
  vec3 tapestry=vec3(0.),flow=vec3(0.);
@@ -101,6 +101,11 @@ void main(){
   albedo=mix(base*.42,pigment(phase+bands*.28+n.y*.17)*.48+base*.24,.75);
   albedo+=tapestry*.10;
  }
+ // Mineral identity and the existing geological lowland/temperature rule
+ // control coating; no liquid plane, height field or new biome is generated.
+ float ice=max(1.-step(.1,abs(u_surface.x-3.)),planet?1.-step(.1,abs(u_environment.w-2.)):0.);
+ float liquid=planet?u_surface.y*smoothstep(235.,275.,u_surface.z)*(1.-smoothstep(340.,410.,u_surface.z)):0.;
+ float wet=liquid*(1.-smoothstep(-.00088,-.00072,v_elevation));
  float rough=atom?.24:craft?u_hyperion[1].x:u_hyperion[1].x*.88,microVein=0.,cavity=1.;
  vec3 microGlow=vec3(0.),coatHue=mineral;
 #if INFINITE_FLIGHT_RELIEF
@@ -108,11 +113,12 @@ void main(){
  // colour to the separately filtered 16 m close-material texture.
  if(terrain && u_microParams.z>0. && u_microParams.y>.5){
   vec3 q=mul(u_meso,vec4(v_position-u_hyperion[2].xyz,1.)).xyz;
+  vec3 origin=mul(transpose(u_meso),vec4(0.,0.,0.,1.)).xyz;
   vec3 offset=phase*vec3(31.,17.,47.);
-  float broad=strataNoise(q*.0625+offset);
-  float warp=strataNoise(q*.25+offset+11.);
-  float middle=strataNoise(q+offset+warp*2.);
-  float grain=strataNoise(q*4.+offset+31.);
+  float broad=strataNoise(q*.0625+offset,origin*.0625);
+  float warp=strataNoise(q*.25+offset+11.,origin*.25);
+  float middle=strataNoise(q+offset+warp*2.,origin);
+  float grain=strataNoise(q*4.+offset+31.,origin*4.);
   float strata=broad*.50+warp*.30+middle*.20;
   float slope=1.-clamp(dot(N,radial),0.,1.);
   float dust=smoothstep(.30,.76,warp)*(1.-smoothstep(.08,.5,slope));
@@ -121,9 +127,14 @@ void main(){
   float vein=thread(middle*24.+warp*.8,.035)*(1.-smoothstep(.15,.9,fwidth(middle*24.)));
   vec3 deposits=albedo*(.24+strata*1.45+grain*.34+bedding*.12);
   deposits=mix(deposits,deposits*.75+vec3(.055,.043,.032),dust*.30);
-  coatHue=pigment(phase+strata*1.4+grain*.35);
+  coatHue=pigment(phase+strata*.85+grain*.16);
+  // Hyperion's geological pigment sits in the reflectance. Light and shadow
+  // still describe the existing relief; this is not an emissive overlay.
+  vec3 dryPigment=deposits*.68+coatHue*.19;
+  vec3 frozenPigment=deposits*vec3(.57,.83,1.05)+coatHue*.075;
+  deposits=mix(deposits,mix(dryPigment,frozenPigment,ice),.62);
   deposits=mix(deposits,deposits*.88+coatHue*.028,.20);
-  deposits+=coatHue*.006;
+  deposits+=coatHue*.003;
   deposits=mix(deposits,deposits*.65+pigment(phase+middle*.18)*.11,vein*.32);
   albedo=deposits;
   rough=clamp(rough+(grain-.5)*.16+dust*.10,.22,.98);
@@ -132,11 +143,11 @@ void main(){
   vec3 gradient=sign(det)*(dFdx(height)*a+dFdy(height)*b)/max(abs(det),1e-20);
   gradient*=min(1.,.42/max(length(gradient),.001));N=normalize(N-gradient);
   cavity*=mix(.60,1.,smoothstep(.28,.58,middle+grain*.08));
-  float ice=1.-step(.1,abs(u_surface.x-3.));
+  float mineralIce=ice;
   float quartz=1.-step(.1,abs(u_surface.x));
   float hot=smoothstep(800.,1350.,u_surface.z)*smoothstep(.35,.80,u_materialDomain.z);
   vec3 seamColour=mix(coatHue,mix(vec3(1.6,.13,.015),vec3(1.9,.55,.06),middle),hot);
-  microGlow=seamColour*vein*(.016+ice*.028+quartz*.022+hot*.36);
+  microGlow=seamColour*vein*(.016+mineralIce*.028+quartz*.022+hot*.36);
  }
  if(u_microParams.x>0. && primitive<.5 && !atom && !craft){
   vec3 q=mul(u_micro,vec4(v_position-u_hyperion[2].xyz,1.)).xyz;
@@ -151,7 +162,6 @@ void main(){
   if(resolved>.001 && u_microParams.y>.5)field=closeField(q+phase*vec3(31.,17.,47.),materialN,qdx,qdy,planet?.5:.125);
   float stone=field.r,crack=field.g,deposit=field.b,grit=field.a;
   float originalRough=rough;
-  float ice=1.-step(.1,abs(u_surface.x-3.));
   float frost=smoothstep(.42,.72,deposit+grit*.13)*ice*(1.-smoothstep(245.,278.,u_surface.z));
   float seam=crack*(1.-frost*.45)*(.62+.38*clamp(u_materialDomain.y,0.,1.));
   float height=((stone-.5)*1.1-seam*(.55+ice*.35)+(grit-.5)*.09)*u_microParams.x*u_microParams.y*resolved;
@@ -163,9 +173,9 @@ void main(){
   vec3 body=albedo*(.63+stone*.55+grit*.16);
   body+=pigment(phase+deposit*.23)*.035+flow*.045;
   if(ice>.5){
-   body=mix(body,body*.65+vec3(.10,.20,.23),frost*.58);
-   body=mix(body,body*.25+vec3(.004,.018,.045),seam*.72);
-   rough=mix(.25+grit*.17,.58,frost*.78);
+   body=mix(body,body*.57+vec3(.17,.28,.33),frost*.65);
+   body=mix(body,body*.18+vec3(.003,.010,.034),seam*.82);
+   rough=mix(.19+grit*.16,.68,frost*.82);
   }else{
    float dust=smoothstep(.45,.73,deposit)*(1.-crack);
    body=mix(body,body*.79+albedo*.14,dust*.40);
@@ -179,8 +189,17 @@ void main(){
 
  }
 #endif
+ // Hyperion's wet lowland response and glacial depth tint. These shade
+ // the retained triangles; they never flatten terrain or change collision.
+ if(planet){
+  albedo=mix(albedo,albedo*.47+vec3(.003,.018,.025),wet*.72);
+  rough=mix(rough,.19,wet*.78);
+ }
  vec3 ndx=dFdx(N),ndy=dFdy(N);float variance=min(.25,max(dot(ndx,ndx),dot(ndy,ndy))*.5);
  rough=pow(min(1.,pow(rough,4.)+variance),.25);
+ // Hyperion worldFragment's pixel-angle roughness floor suppresses distant
+ // glints while close ice/mineral highlights remain crisp.
+ if(planet){float pixelAngle=max(length(dFdx(n)),length(dFdy(n)));rough=max(rough,mix(.13,.48,smoothstep(.002,.025,pixelAngle)));}
  float fresnel=pow(1.-max(0.,dot(N,V)),4.),sunDot=dot(N,L),day=smoothstep(-.10,.18,sunDot);
  // Hyperion worldFragment: directional light plus sky/ground irradiance.
  // The broad view-dependent reflection stays subordinate to surface relief.
@@ -188,14 +207,24 @@ void main(){
  float skyDay=planet?smoothstep(-.16,.10,dot(radial,L)):1.;
  float air=planet?clamp(u_environment.x*.7,0.,1.):.15;
  float visibility=cockpit?1.:surfaceSun(v_position-u_hyperion[2].xyz,sunDot);
- vec3 lit=brdf(albedo,N,V,L,rough,atom?.32:u_hyperion[1].y)*cavity*visibility;
+ // Atmospheric sunset light changes only illumination, with the retained
+ // stellar direction and pressure. Airless worlds keep their neutral sun.
+ vec3 sunlight=mix(vec3(1.18,.40,.16),vec3(1.,.96,.88),smoothstep(-.02,.30,dot(up,L)));
+ sunlight=mix(vec3(1.),sunlight,air*.80);
+ vec3 lit=brdf(albedo,N,V,L,rough,atom?.32:u_hyperion[1].y)*cavity*visibility*sunlight;
  lit+=diffuseEnvironment(N,up,albedo,skyDay,air)*cavity;
  // Directional environment reflection makes rough rock, ice, polished ore and
  // atomic sites respond differently to the same sun and broad sky.
  vec3 reflected=reflectedEnvironment(reflect(-V,N),up,skyDay,phase,rough);
  vec3 f0=mix(vec3(.035),albedo,atom?.32:u_hyperion[1].y);
  vec3 reflectance=f0+(1.-f0)*fresnel;
- lit+=reflected*reflectance*(1.-rough*.65)*cavity;
+ lit+=reflected*reflectance*(1.-rough*.65)*cavity*(1.+wet*1.4+ice*.38);
+ if(planet){
+  // Low-energy transmission tint at glacial grazing angles; the dark
+  // fractures and opaque silhouettes continue to come from the material.
+  lit+=albedo*vec3(.12,.36,.45)*ice*pow(1.-max(0.,dot(N,V)),2.)*day*.22;
+  lit+=coatHue*fresnel*(ice*.055+wet*.07)*day;
+ }
  lit+=albedo*pow(max(0.,dot(V,L)),4.)*day*visibility*(terrain?.045:.012)*cavity;
  if(atom){
   // Element hue and all bond/site identities stay legible. Only illumination,

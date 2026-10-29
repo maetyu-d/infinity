@@ -1,4 +1,4 @@
-$input v_color0, v_position, v_pattern, v_sphere
+$input v_color0, v_position, v_pattern, v_sphere, v_elevation
 #include <bgfx_shader.sh>
 #include "hyperion_pigment.sh"
 uniform vec4 u_hyperion[4];
@@ -26,15 +26,25 @@ void main(){
  float density=max(0.,cover*1.15+shape*.85-.62)*cover;
  float alpha=1.-exp(-density*2.4);
  if(alpha<.005)discard;
+ // Hyperion cloudFragment's density-gradient lighting, powder scattering
+ // and silver lining. The existing weather cover still owns every bank.
  float obscurer=cloudNoise(q*.1+L*.8);
- float selfShadow=exp(-max(0.,cover*.9+obscurer*.7-.6)*2.2);
+ float lightBillow=cloudNoise(q*.21+7.1+L*.65);
+ float gradient=clamp(.5+(shape-(obscurer*.67+lightBillow*.33))*2.4,0.,1.);
+ float selfShadow=exp(-max(0.,cover*.9+obscurer*.7-.6)*2.2)*(.22+.78*gradient);
  float sun=dot(n,L),day=smoothstep(-.15,.20,sun);
  vec3 view=normalize(u_hyperion[2].xyz-v_position);
- float forward=pow(max(0.,dot(view,u_hyperion[3].xyz)),6.);
- vec3 ambient=mix(vec3(.018,.028,.06),vec3(.20,.29,.42),day)*(.72+shape*.45);
- vec3 sunlight=vec3(1.,.88,.74)*day*selfShadow*(.55+max(0.,sun)*.65+forward*1.35);
+ float forward=pow(max(0.,dot(view,u_hyperion[3].xyz)),12.);
+ float powder=1.-exp(-density*2.4*.28);
+ float silver=pow(1.-clamp(density,0.,1.),2.)*forward;
+ vec3 ambient=mix(vec3(.012,.023,.050),vec3(.16,.25,.39),day)*(.58+shape*.42);
+ vec3 sunColour=mix(vec3(1.12,.29,.12),vec3(1.05,.96,.82),smoothstep(.02,.45,sun));
+ vec3 sunlight=sunColour*day*selfShadow*(.60+max(0.,sun)*.8+forward*1.7+powder*.34);
  vec3 color=(ambient+sunlight)*mix(vec3(.72,.81,.95),v_color0.rgb,.23);
- color+=pigment(u_hyperion[0].z+shape*.3)*pow(1.-abs(sun),3.)*day*.18;
+ vec3 opal=pigment(u_hyperion[0].z+dot(n,vec3(.53,.71,.46))*.96+shape*.24+forward*.15);
+ color*=mix(vec3(1.),.25+opal*1.35,.46);
+ color+=sunColour*day*silver*.19*(.3+.7*selfShadow);
+ color+=opal*pow(1.-abs(sun),3.)*day*.15;
  float strength=u_hyperion[0].x;
  gl_FragColor=vec4(mix(v_color0.rgb,color,strength),mix(v_color0.a,alpha,strength));
 }

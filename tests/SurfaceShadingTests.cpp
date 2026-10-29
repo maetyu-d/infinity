@@ -93,6 +93,38 @@ int main() {
                           "Floating origin or magnification shifted material phase");
                 }
             }
+        // A camera motion well below a pixel must still reach the material.
+        // Check independent world-space positions, octave cells and fractional
+        // phase against doubles, including modulo and cell boundaries.
+        for (double origin : {-.001, .001, 4095.123, 4096.001, 8191.123}) {
+            glm::dmat4 mapping(1. / 6e6);
+            mapping[3] = glm::dvec4(glm::dvec3(origin * 256. / 6e6), 1);
+            const auto split = periodicNoiseFrame(mapping, 6e6, 256, 4096);
+            for (double octave : {.0625, .25, 1., 4.}) {
+                const auto high = glm::dvec3(split[0].w, split[1].w, split[2].w) * octave;
+                check(high == glm::floor(high), "Noise origin is not integral at a sampled octave");
+                const auto a = glm::vec3(split * glm::vec4(0, 0, 0, 1)) * float(octave);
+                const auto b = glm::vec3(split * glm::vec4(.004f, 0, 0, 1)) * float(octave);
+                check(std::abs(double(b.x - a.x) * 256. / octave - .004) < .0003,
+                      "Periodic noise lost four-millimetre camera motion");
+                for (double point : {0., .004, 10., -32.}) {
+                    const auto local = glm::vec3(split * glm::vec4(float(point), 0, 0, 1));
+                    const auto actual = glm::dvec3(local) * octave + high;
+                    const auto expected =
+                        (glm::mod(glm::dvec3(origin), glm::dvec3(4096)) + glm::dvec3(point / 256., 0, 0)) *
+                        octave;
+                    check(glm::length(actual - expected) < 2e-5,
+                          "Splitting noise origin changed its canonical phase");
+                }
+            }
+        }
+        {
+            glm::dmat4 mapping(1. / 6e6);
+            mapping[3] = glm::dvec4(glm::dvec3(4095.123 * 256. / 6e6), 1);
+            const auto old = periodicMaterialFrame(mapping, 6e6, 256, 4096);
+            check((old * glm::vec4(.004f, 0, 0, 1)).x == old[3].x,
+                  "Negative control no longer reproduces quantised material motion");
+        }
         check(daylightSkyTransmission(0, 0, 8000, 1) == 1 && daylightSkyTransmission(1, 0, 8000, -1) == 1 &&
                   daylightSkyTransmission(1, 0, 8000, 1) < .001 &&
                   daylightSkyTransmission(1, 120000, 8000, 1) > .999,
