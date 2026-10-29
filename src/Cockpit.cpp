@@ -142,6 +142,32 @@ bool CockpitRect::contains(glm::dvec2 p) const {
 bool CockpitRect::overlaps(const CockpitRect& r) const {
     return x < r.x + r.w && x + w > r.x && y < r.y + r.h && y + h > r.y;
 }
+CockpitViewport::CockpitViewport(int w, int h, CockpitRect safe) {
+    w = std::max(1, w);
+    h = std::max(1, h);
+    const double halfW =
+        std::min(w * .5 - std::max(0., safe.x), std::min(double(w), safe.x + safe.w) - w * .5);
+    const double halfH =
+        std::min(h * .5 - std::max(0., safe.y), std::min(double(h), safe.y + safe.h) - h * .5);
+    width = std::clamp(int(std::floor(halfW * 2)), 1, w);
+    height = std::clamp(int(std::floor(halfH * 2)), 1, h);
+    if ((w - width) % 2 && width > 1)
+        --width;
+    // The 900-unit design needs at least a square canvas. Fit uniformly in
+    // tall windows rather than creating negative instrument/label widths.
+    height = std::min(height, width);
+    if ((h - height) % 2 && height > 1)
+        --height;
+    x = (w - width) / 2;
+    y = (h - height) / 2;
+    projectionScale = double(h) / height;
+}
+glm::dvec2 CockpitViewport::toCanvas(glm::dvec2 p) const {
+    return (p - glm::dvec2(x, y)) * (900. / height);
+}
+glm::dvec2 CockpitViewport::toPixels(glm::dvec2 p) const {
+    return p * (height / 900.) + glm::dvec2(x, y);
+}
 CockpitLayout::CockpitLayout(double aspect)
     : width(900 * aspect), traffic{24, 176, 274, 263}, celestial{width - 310, 176, 286, 331},
       life{width - 310, 550, 286, 48}, navigation{24, 758, std::clamp((width - 48) * .31, 240., 430.), 124},
@@ -199,7 +225,7 @@ std::optional<Address> nextLivingWorld(std::span<const CelestialContact> contact
     const auto next = current ? std::upper_bound(worlds.begin(), worlds.end(), *current) : worlds.begin();
     return next == worlds.end() ? worlds.front() : *next;
 }
-CockpitTargetMarker cockpitTargetMarker(glm::dvec3 d, double aspect) {
+CockpitTargetMarker cockpitTargetMarker(glm::dvec3 d, double aspect, double projectionScale) {
     CockpitLayout l(aspect);
     const glm::dvec2 center{l.width * .5, 450};
     CockpitTargetMarker result;
@@ -211,7 +237,7 @@ CockpitTargetMarker cockpitTargetMarker(glm::dvec3 d, double aspect) {
     result.aft = d.z >= 0;
     glm::dvec2 offset{d.x, -d.y};
     if (!result.aft) {
-        const auto projected = center + offset * (450 / .7002075 / -d.z);
+        const auto projected = center + offset * (450 / .7002075 / -d.z * projectionScale);
         if (l.windscreen.contains(projected)) {
             result.point = projected;
             return result;
@@ -303,7 +329,7 @@ Mesh cockpitMesh(double aspect) {
 }
 CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::string_view mode,
                               std::string_view notice, std::span<const CelestialContact> contacts,
-                              std::span<const ActivityContact> activity, bool help) {
+                              std::span<const ActivityContact> activity, bool help, double projectionScale) {
     CockpitOverlay h;
     const CockpitLayout l(aspect);
     const double w = l.width, center = w * .5;
@@ -506,10 +532,12 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     }
 
     // Only a compact hint remains at the bottom; the full guide is opt-in.
-    label("F1 CONTROLS", 26, 889, 145, muted);
+    rect(h.panels, 0, 884, w, 16, ink);
+    h.hitRegions.push_back({0, 884, w, 16});
+    label("F1 CONTROLS", 26, 887, 145, muted);
     quantity("FLIGHT " + duration(t.flightSeconds) + " / " + flightQuantity(t.travelMetres),
-             std::max(178., center - 180), 889, std::max(180., w - 490), 9, muted);
-    label("H RENDER / TAB HUD", w - 200, 889, 178, muted);
+             std::max(178., center - 180), 887, std::max(180., w - 490), 9, muted);
+    label("H RENDER / TAB HUD", w - 200, 887, 178, muted);
     if (help) {
         const CockpitRect guide{center - std::min(700., w - 80) * .5, 205, std::min(700., w - 80), 418};
         card(h, guide, mint);
@@ -642,7 +670,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
         return false;
     };
     if (t.targetVisible) {
-        const auto marker = cockpitTargetMarker(t.localTarget, aspect);
+        const auto marker = cockpitTargetMarker(t.localTarget, aspect, projectionScale);
         const auto p = marker.point;
         if (marker.offscreen) {
             const auto d = marker.direction, across = glm::dvec2(-d.y, d.x);
@@ -669,8 +697,8 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     }
     rect(h.panels, center - 1, 449, 2, 2, pearl);
     if (t.speed > 1e-15 && -t.localVelocity.z > t.speed * .12) {
-        const glm::dvec2 p{center + t.localVelocity.x / -t.localVelocity.z * 450 / .7002075,
-                           450 - t.localVelocity.y / -t.localVelocity.z * 450 / .7002075};
+        const glm::dvec2 p{center + t.localVelocity.x / -t.localVelocity.z * 450 / .7002075 * projectionScale,
+                           450 - t.localVelocity.y / -t.localVelocity.z * 450 / .7002075 * projectionScale};
         if (l.windscreen.contains(p)) {
             for (int i = 0; i < 24; ++i) {
                 const double a = i * 6.283185307 / 24, b = (i + 1) * 6.283185307 / 24;
@@ -686,7 +714,8 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
         auto marker = [&](glm::dvec3 d, std::string_view name, double range, glm::vec3 color) {
             if (d.z >= -.01 || secondary >= 3)
                 return;
-            const glm::dvec2 p{center + d.x / -d.z * 450 / .7002075, 450 - d.y / -d.z * 450 / .7002075};
+            const glm::dvec2 p{center + d.x / -d.z * 450 / .7002075 * projectionScale,
+                               450 - d.y / -d.z * 450 / .7002075 * projectionScale};
             if (!l.windscreen.contains(p) || aim.contains(p))
                 return;
             if (worldLabel(p, name, flightQuantity(range), color)) {

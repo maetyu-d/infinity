@@ -132,6 +132,44 @@ int main() {
                 check(guide.worldLabels.empty(), "Guide permits distracting world labels");
             }
         }
+        t.shrinking = false;
+        t.hullMetres = 12;
+        t.hull = 100;
+        t.gear = true;
+        t.altitude = 35;
+        t.weather = "HEAVY SNOW / 260K / 0.66BAR / WIND 12M/S";
+        for (auto size : {glm::ivec2(800, 500), glm::ivec2(600, 900), glm::ivec2(601, 1001),
+                          glm::ivec2(1920, 1200), glm::ivec2(3840, 2160)})
+            for (double inset : {0., 24., 48.}) {
+                const CockpitRect safe{inset, inset, size.x - inset * 1.5, size.y - inset * 1.25};
+                const CockpitViewport v(size.x, size.y, safe);
+                check(v.x >= safe.x && v.y >= safe.y && v.x + v.width <= safe.x + safe.w &&
+                          v.y + v.height <= safe.y + safe.h && v.aspect() >= 1.,
+                      "Fitted UI escaped the safe area or became too narrow");
+                const CockpitLayout layout(v.aspect());
+                for (bool help : {false, true}) {
+                    const auto hud = cockpitOverlay(t, v.aspect(), "HYPERION", "DESTINATION SELECTED", worlds,
+                                                    traffic, help, v.projectionScale);
+                    for (const auto* mesh : {&hud.panels, &hud.strokes, &hud.lettering})
+                        for (auto vertex : mesh->vertices) {
+                            const auto p = v.toPixels({vertex.x, vertex.y});
+                            check(std::isfinite(p.x) && std::isfinite(p.y) && p.x >= safe.x - .01 &&
+                                      p.x <= safe.x + safe.w + .01 && p.y >= safe.y - .01 &&
+                                      p.y <= safe.y + safe.h + .01,
+                                  "HUD or controls guide is clipped after fitting");
+                        }
+                }
+                const auto worldPixel =
+                    glm::dvec2(size) * .5 + glm::dvec2(.05, -.03) * (size.y * .5 / .7002075);
+                const auto marker = cockpitTargetMarker({.05, .03, -1}, v.aspect(), v.projectionScale);
+                check(!marker.offscreen && glm::length(v.toPixels(marker.point) - worldPixel) < 1e-7,
+                      "Fitted HUD target no longer aligns with its world-space bearing");
+                const auto row = glm::dvec2(layout.celestial.x + 20, 217);
+                check(layout.celestialRow(v.toCanvas(v.toPixels(row)), 70) == 0,
+                      "Retina/narrow-window coordinate conversion lost the clickable contact row");
+                check(glm::length(v.toPixels(v.toCanvas(worldPixel)) - worldPixel) < 1e-9,
+                      "Fitted hit testing does not invert the drawing transform");
+            }
         std::cout
             << "PASS: " << checks
             << " cockpit layout, target projection, decluttering, stable selection and SI unit checks\n";

@@ -1,0 +1,13 @@
+WINDOW_FIT client=28,78,1383,757 usable=0,30,1440,829 borders=32,8,8,8
+BACKBUFFER 2766x1514 (requested 1440x900)
+UI_STARTUP window_and_decorations=inside_work_area
+Infinite / Metal / seed 5282236693612155973
+UI_FIT case=small pixels=800,500 viewport=0,0,800,500 projection=1 hit_testing=PASS camera=unchanged
+UI_FIT case=square pixels=600,600 viewport=0,0,600,600 projection=1 hit_testing=PASS camera=unchanged
+UI_FIT case=portrait pixels=600,900 viewport=0,150,600,600 projection=1.5 hit_testing=PASS camera=unchanged
+UI_FIT case=retina pixels=1920,1200 viewport=0,0,1920,1200 projection=1 hit_testing=PASS camera=unchanged
+UI_FIT case=wide pixels=1440,900 viewport=0,0,1440,900 projection=1 hit_testing=PASS camera=unchanged
+UI_FIT case=controls pixels=800,500 viewport=0,0,800,500 projection=1 hit_testing=PASS camera=unchanged
+PASS: native UI fit / six sizes and guide / world and traffic hit testing / camera unchanged
+FRAME median_ms=16.3458 p95_ms=19.5724 frames=547 cache_bytes=10794984
+peak_rss_bytes=150487040

@@ -8,6 +8,7 @@
 #include <memory>
 struct SDL_Window;
 namespace infinite {
+struct CockpitViewport;
 struct FrameStats {
     double cpuMs = 0, gpuMs = 0, submitMs = 0;
     uint32_t drawCalls = 0;
@@ -48,6 +49,7 @@ class Renderer {
     std::optional<ActivityId> pickActivity(double x, double y) const;
     std::shared_ptr<const SurfaceWorld> surfaceWorld(const Address&) const;
     uint64_t terrainGeometryDigest() const;
+    CockpitViewport cockpitViewport() const;
     void setActivity(const ActivityState*);
     void setMode(RenderMode);
     RenderMode mode() const;

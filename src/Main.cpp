@@ -4,6 +4,8 @@
 #include "StreamingValidation.hpp"
 #include "SurfaceValidation.hpp"
 #include "TerrainValidation.hpp"
+#include "UiValidation.hpp"
+#include "WindowSizing.hpp"
 #include "infinite/Cockpit.hpp"
 #include "infinite/Continuity.hpp"
 #include "infinite/Flight.hpp"
@@ -32,7 +34,7 @@ struct Options {
     RenderMode renderMode = RenderMode::Original;
     double visualTime = -1;
     bool compareModes = false;
-    bool flightTest = false, planetTest = false;
+    bool flightTest = false, planetTest = false, uiFitTest = false;
     bool streamingTest = false;
     bool terrainQuality = false, terrainSurfaceFrame = false, sunShadows = true;
     bool pilotTest = false, terrainTest = false, surfaceTest = false, explicitMode = false;
@@ -54,7 +56,10 @@ static Options options(int argc, char** argv) {
             o.smoke = o.tour = o.fresh = true;
         else if (arg == "--benchmark-tour")
             o.benchmark = o.smoke = o.tour = o.fresh = true;
-        else if (arg == "--planet-stability-test") {
+        else if (arg == "--ui-fit-test") {
+            o.uiFitTest = o.benchmark = o.smoke = o.fresh = true;
+            o.visualTime = 12;
+        } else if (arg == "--planet-stability-test") {
             o.planetTest = o.benchmark = o.smoke = o.fresh = true;
             o.visualTime = 12;
         } else if (arg == "--flight-test") {
@@ -118,6 +123,7 @@ static Options options(int argc, char** argv) {
                    "release mouse / quit.\nCLI: --fresh --tour --smoke-test --frames N --width N "
                    "--height N --seed N "
                    "--benchmark-tour --flight-test --streaming-test --pilot-test --planet-stability-test "
+                   "--ui-fit-test "
                    "--terrain-test "
                    "--surface-test --terrain-quality-test --terrain-surface-frame-test "
                    "--terrain-saved-view-test FILE --no-sun-shadows "
@@ -138,7 +144,7 @@ static Options options(int argc, char** argv) {
     }
     const unsigned validationModes = unsigned(o.flightTest) + unsigned(o.streamingTest) +
                                      unsigned(o.pilotTest) + unsigned(o.terrainTest) +
-                                     unsigned(o.surfaceTest) + unsigned(o.planetTest);
+                                     unsigned(o.surfaceTest) + unsigned(o.planetTest) + unsigned(o.uiFitTest);
     if (validationModes > 1 || (validationModes && o.tour))
         throw std::invalid_argument("Choose one automated validation mode");
     if (o.width < 320 || o.height < 240 || o.width > 7680 || o.height > 4320 || o.frames < 0)
@@ -153,14 +159,18 @@ int main(int argc, char** argv) {
         if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
             throw std::runtime_error(SDL_GetError());
         window = SDL_CreateWindow("INFINITE / A deterministic universe", opt.width, opt.height,
-                                  opt.smoke ? SDL_WINDOW_HIGH_PIXEL_DENSITY : SDL_WINDOW_RESIZABLE);
+                                  (opt.smoke ? SDL_WINDOW_HIGH_PIXEL_DENSITY : 0) |
+                                      ((!opt.smoke || opt.uiFitTest) ? SDL_WINDOW_RESIZABLE : 0));
         if (!window)
             throw std::runtime_error(SDL_GetError());
-        if (opt.smoke) {
+        if (opt.smoke && !opt.uiFitTest) {
             double density = std::max(1.0, static_cast<double>(SDL_GetWindowPixelDensity(window)));
             SDL_SetWindowSize(window, static_cast<int>(std::lround(opt.width / density)),
                               static_cast<int>(std::lround(opt.height / density)));
             SDL_SyncWindow(window);
+        } else {
+            SDL_SyncWindow(window);
+            fitWindowToDisplay(window, true);
         }
         int pixelWidth = 0, pixelHeight = 0;
         SDL_GetWindowSizeInPixels(window, &pixelWidth, &pixelHeight);
@@ -174,7 +184,7 @@ int main(int argc, char** argv) {
         FlightController flight(universe, nav, cache);
         Pilot pilot(universe, nav, flight);
         bool pilotEnabled = (!opt.smoke && !opt.tour) || opt.pilotTest || opt.terrainTest ||
-                            opt.surfaceTest || opt.planetTest;
+                            opt.surfaceTest || opt.planetTest || opt.uiFitTest;
         std::unique_ptr<FlightValidation> flightProof;
         if (opt.flightTest)
             flightProof = std::make_unique<FlightValidation>(universe, nav);
@@ -231,6 +241,9 @@ int main(int argc, char** argv) {
             std::unique_ptr<PlanetValidation> planetProof;
             if (opt.planetTest)
                 planetProof = std::make_unique<PlanetValidation>(universe, nav, pilot);
+            std::unique_ptr<UiValidation> uiProof;
+            if (opt.uiFitTest)
+                uiProof = std::make_unique<UiValidation>(window, nav, pilot);
             bool shipRestored = false, legacyShip = false;
             if (!opt.fresh && !opt.smoke) {
                 std::ifstream saved(data / ("ship-" + std::to_string(universe.seed()) + ".txt"));
@@ -372,6 +385,12 @@ int main(int argc, char** argv) {
                         running = false;
                     if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST)
                         releaseLook();
+                    if (!opt.smoke && (event.type == SDL_EVENT_WINDOW_DISPLAY_CHANGED ||
+                                       event.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED ||
+                                       event.type == SDL_EVENT_WINDOW_RESTORED ||
+                                       event.type == SDL_EVENT_DISPLAY_CONTENT_SCALE_CHANGED ||
+                                       event.type == SDL_EVENT_DISPLAY_DESKTOP_MODE_CHANGED))
+                        fitWindowToDisplay(window, false);
                     if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
                         int w, h;
                         SDL_GetWindowSizeInPixels(window, &w, &h);
@@ -719,6 +738,8 @@ int main(int argc, char** argv) {
                     streamingProof->advance(flight, renderer);
                 if (pilotProof)
                     pilotProof->advance(renderer);
+                if (uiProof)
+                    uiProof->advance(renderer);
                 renderer.setCockpit(pilotEnabled ? &pilot.instruments() : nullptr);
                 auto stats = renderer.render(nav, cache, overlay, fps, persistence.markerCount(),
                                              noticeTime > 0 ? notice : "", looking);
@@ -740,6 +761,11 @@ int main(int argc, char** argv) {
                 if (planetProof) {
                     planetProof->observe(stats, cache, renderer, opt.captures);
                     if (planetProof->finished())
+                        running = false;
+                }
+                if (uiProof) {
+                    uiProof->observe(stats, cache, renderer, opt.captures);
+                    if (uiProof->finished())
                         running = false;
                 }
                 if (surfaceProof) {
@@ -921,7 +947,10 @@ int main(int argc, char** argv) {
             std::cout << "peak_rss_bytes=" << usage.ru_maxrss * 1024 << '\n';
 #endif
 #endif
-            if (opt.planetTest) {
+            if (opt.uiFitTest) {
+                if (!uiProof->finished())
+                    throw std::runtime_error("Native UI fit validation incomplete");
+            } else if (opt.planetTest) {
                 if (!planetProof->finished())
                     throw std::runtime_error("Native planet stability validation incomplete");
             } else if (opt.surfaceTest) {

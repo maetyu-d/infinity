@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Infinite VERSION 0.28.0 LANGUAGES C CXX)
+project(Infinite VERSION 0.29.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -39,6 +39,9 @@ else()
   target_compile_options(infinite_performance_tests PRIVATE -ffp-contract=off)
 endif()
 enable_testing()
+add_executable(infinite_window_tests tests/WindowLayoutTests.cpp)
+target_link_libraries(infinite_window_tests PRIVATE infinite_core)
+add_test(NAME window_fits_display_work_area COMMAND infinite_window_tests)
 add_executable(infinite_depth_tests tests/WorldDepthTests.cpp)
 target_link_libraries(infinite_depth_tests PRIVATE infinite_core)
 add_test(NAME multiscale_depth_precision COMMAND infinite_depth_tests)
@@ -144,6 +147,13 @@ if(INFINITE_VIEWER)
   endif()
   if(INFINITE_GPU_TESTS)
     find_package(Python3 3.9 COMPONENTS Interpreter REQUIRED)
+    add_test(NAME native_ui_fit COMMAND "${CMAKE_COMMAND}"
+      "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/ui-fit-native"
+      -P "${PROJECT_SOURCE_DIR}/cmake/RunUiFit.cmake")
+    set_tests_properties(native_ui_fit PROPERTIES FIXTURES_SETUP ui_fit TIMEOUT 150)
+    add_test(NAME native_ui_fit_images COMMAND "${Python3_EXECUTABLE}"
+      "${PROJECT_SOURCE_DIR}/tools/check_ui_fit.py" "${CMAKE_BINARY_DIR}/ui-fit-native")
+    set_tests_properties(native_ui_fit_images PROPERTIES FIXTURES_REQUIRED ui_fit)
     add_test(NAME native_planet_stability COMMAND "${CMAKE_COMMAND}"
       "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/planet-stability"
       -P "${PROJECT_SOURCE_DIR}/cmake/RunPlanetStability.cmake")

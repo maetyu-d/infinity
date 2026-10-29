@@ -1,0 +1,13 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 28: native_ui_fit
+1/4 Test #28: native_ui_fit ....................   Passed    9.74 sec
+    Start 29: native_ui_fit_images
+2/4 Test #29: native_ui_fit_images .............   Passed    0.11 sec
+    Start 44: native_piloting_loop
+3/4 Test #44: native_piloting_loop .............   Passed   34.13 sec
+    Start 45: native_cockpit_images
+4/4 Test #45: native_cockpit_images ............   Passed    4.24 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =  48.23 sec

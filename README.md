@@ -1,6 +1,8 @@
 # INFINITE
 
-A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.28 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.29 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+
+Version 0.29 fits the **window and cockpit to the display**. Startup reserves space for the title bar, menu bar and Dock; moving between displays or restoring the window refits it to the usable work area. Narrow and portrait windows keep every instrument and the F1 guide inside a centred HUD viewport, with matching mouse selection and world-marker projection. Footer hints have a dark backing and extra edge clearance. [Fit checks and native screenshots](docs/UI_FIT.md).
 
 Version 0.28 improves **glacial materials, geological colour, wet lowland reflections, sunset lighting, opalescent clouds and the depth behind existing glass windows**. Magnified materials use smoother filtering and a split noise origin to retain fine camera motion. Planetary colour follows the existing vertex heights, while additional atmosphere samples improve the horizon. The same universe, geometry, controls, three render modes and reversed-depth fix remain intact. [Matched scenes, preservation and measured cost](docs/GRAPHICS_0_28.md).
 

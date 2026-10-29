@@ -120,6 +120,7 @@ struct Renderer::Impl {
     std::optional<FlightInstruments> instruments;
     bool cockpitHelp = false, cockpitVisible = false;
     std::vector<CockpitRect> cockpitHitRegions;
+    CockpitViewport hudViewport;
     std::shared_ptr<const Geometry> skyGeometry;
     std::vector<CelestialContact> contacts;
     std::optional<Address> lifeSelection;
@@ -173,6 +174,16 @@ struct Renderer::Impl {
     explicit Impl(SDL_Window* w, const Universe& u) : universe(u), window(w), surfaceLife(u), terrain(u) {}
     bgfx::ViewId worldView() const {
         return instruments ? 2 : 0; // Flight sky precedes terrain (1) and opaque local geometry (2).
+    }
+    CockpitViewport cockpitViewport() const {
+        int logicalW = width, logicalH = height;
+        SDL_GetWindowSize(window, &logicalW, &logicalH);
+        SDL_Rect safe{0, 0, logicalW, logicalH};
+        if (!SDL_GetWindowSafeArea(window, &safe))
+            safe = {0, 0, logicalW, logicalH};
+        const double sx = double(width) / std::max(1, logicalW);
+        const double sy = double(height) / std::max(1, logicalH);
+        return {width, height, {safe.x * sx, safe.y * sy, safe.w * sx, safe.h * sy}};
     }
     ~Impl() {
         for (auto& [key, g] : gpu)
@@ -1256,6 +1267,9 @@ uint64_t Renderer::terrainGeometryDigest() const {
         digest = mix64(digest ^ encodeTile(patch.tile) ^ patch.stitch ^ geometryFingerprint(*patch.geometry));
     return digest;
 }
+CockpitViewport Renderer::cockpitViewport() const {
+    return impl_->hudViewport;
+}
 void Renderer::setActivity(const ActivityState* state) {
     impl_->activity = state;
 }
@@ -1266,15 +1280,14 @@ std::optional<ActivityId> Renderer::pickActivity(double x, double y) const {
     if (!p.activity || !p.activity->enabled)
         return {};
     if (p.cockpitVisible && (!p.instruments->shrinking || p.instruments->hullMetres >= .001)) {
-        const double scale = 900. / p.height;
+        const auto point = p.hudViewport.toCanvas({x, y});
         const auto rows = cockpitActivityRows(p.activityContacts);
-        if (auto row =
-                CockpitLayout(double(p.width) / p.height).trafficRow({x * scale, y * scale}, rows.size()))
+        if (auto row = CockpitLayout(p.hudViewport.aspect()).trafficRow(point, rows.size()))
             return p.activityContacts[rows[*row]].body.id;
     }
     if (p.cockpitVisible &&
         std::any_of(p.cockpitHitRegions.begin(), p.cockpitHitRegions.end(),
-                    [&](const auto& r) { return r.contains({x * 900. / p.height, y * 900. / p.height}); }))
+                    [&](const auto& r) { return r.contains(p.hudViewport.toCanvas({x, y})); }))
         return {};
     double best = 18 * 18;
     std::optional<ActivityId> selected;
@@ -1328,6 +1341,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     p.frameFrames.clear();
     p.framePoses.clear();
     p.cockpitVisible = p.instruments.has_value() && overlay;
+    p.hudViewport = p.cockpitViewport();
     p.cockpitHitRegions.clear();
     p.atomView = p.instruments ? 3 : 2;
     p.contacts.clear();
@@ -1716,16 +1730,18 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         bgfx::setViewClear(84, BGFX_CLEAR_NONE);
 
     if (p.instruments && overlay) {
-        const double aspect = double(p.width) / p.height;
+        const auto& viewport = p.hudViewport;
+        const double aspect = viewport.aspect();
         auto cockpit = *p.instruments;
         cockpit.weather = p.weatherReport;
         const auto hud = cockpitOverlay(cockpit, aspect, renderModeName(p.mode), notice, p.contacts,
-                                        p.activityContacts, p.cockpitHelp);
+                                        p.activityContacts, p.cockpitHelp, viewport.projectionScale);
         p.cockpitHitRegions = hud.hitRegions;
         const auto projection = bgfx::getCaps()->homogeneousDepth
                                     ? glm::orthoRH_NO(0.f, float(900 * aspect), 900.f, 0.f, -1.f, 1.f)
                                     : glm::orthoRH_ZO(0.f, float(900 * aspect), 900.f, 0.f, -1.f, 1.f);
-        bgfx::setViewRect(254, 0, 0, uint16_t(p.width), uint16_t(p.height));
+        bgfx::setViewRect(254, uint16_t(viewport.x), uint16_t(viewport.y), uint16_t(viewport.width),
+                          uint16_t(viewport.height));
         bgfx::setViewTransform(254, nullptr, glm::value_ptr(projection));
         bgfx::setViewMode(254, bgfx::ViewMode::Sequential);
         p.transient(hud.panels, 254, false, false, false);
@@ -1829,18 +1845,17 @@ std::optional<Address> Renderer::pick(double x, double y) const {
     if (p.cockpitVisible && p.cockpitHelp)
         return {};
     if (p.cockpitVisible && (!p.instruments->shrinking || p.instruments->hullMetres >= .001)) {
-        const double scale = 900. / p.height;
-        const CockpitLayout layout(double(p.width) / p.height);
-        if (!p.contacts.empty() && layout.life.contains({x * scale, y * scale})) {
+        const auto point = p.hudViewport.toCanvas({x, y});
+        const CockpitLayout layout(p.hudViewport.aspect());
+        if (!p.contacts.empty() && layout.life.contains(point)) {
             return nextLivingWorld(p.contacts, p.lifeSelection);
         }
-        if (auto row = CockpitLayout(double(p.width) / p.height)
-                           .celestialRow({x * scale, y * scale}, p.contacts.size()))
+        if (auto row = layout.celestialRow(point, p.contacts.size()))
             return p.contacts[cockpitCelestialRows(p.contacts)[*row]].address;
     }
     if (p.cockpitVisible &&
         std::any_of(p.cockpitHitRegions.begin(), p.cockpitHitRegions.end(),
-                    [&](const auto& r) { return r.contains({x * 900. / p.height, y * 900. / p.height}); }))
+                    [&](const auto& r) { return r.contains(p.hudViewport.toCanvas({x, y})); }))
         return {};
     const Pick* chosen = nullptr;
     double best = 40 * 40;

@@ -8,6 +8,19 @@ struct CockpitRect {
     bool contains(glm::dvec2) const;
     bool overlaps(const CockpitRect&) const;
 };
+// A uniform fit in framebuffer pixels. A centred safe area keeps the reticle
+// aligned with the world projection, including notches and portrait windows.
+struct CockpitViewport {
+    int x = 0, y = 0, width = 1, height = 1;
+    double projectionScale = 1;
+    CockpitViewport() = default;
+    CockpitViewport(int pixelWidth, int pixelHeight, CockpitRect safe);
+    double aspect() const {
+        return double(width) / height;
+    }
+    glm::dvec2 toCanvas(glm::dvec2 point) const;
+    glm::dvec2 toPixels(glm::dvec2 point) const;
+};
 struct CockpitLayout {
     double width;
     CockpitRect traffic, celestial, life, navigation, flight, scope, systems, windscreen;
@@ -24,7 +37,7 @@ struct CockpitTargetMarker {
     glm::dvec2 point{}, direction{};
     bool offscreen = false, aft = false;
 };
-CockpitTargetMarker cockpitTargetMarker(glm::dvec3 bearing, double aspect);
+CockpitTargetMarker cockpitTargetMarker(glm::dvec3 bearing, double aspect, double projectionScale = 1);
 struct CockpitOverlay {
     Mesh panels, strokes, lettering;
     std::vector<CockpitRect> worldLabels, hitRegions;
@@ -33,6 +46,7 @@ struct CockpitOverlay {
 Mesh cockpitMesh(double aspect);
 CockpitOverlay cockpitOverlay(const FlightInstruments&, double aspect, std::string_view mode,
                               std::string_view notice = {}, std::span<const CelestialContact> contacts = {},
-                              std::span<const ActivityContact> activity = {}, bool help = false);
+                              std::span<const ActivityContact> activity = {}, bool help = false,
+                              double projectionScale = 1);
 std::string flightQuantity(double value, bool speed = false);
 } // namespace infinite
