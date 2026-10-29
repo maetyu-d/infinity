@@ -5,15 +5,8 @@ SAMPLER2D(s_scene,0);
 SAMPLER2D(s_bloom,1);
 SAMPLER2D(s_opaqueDepth,2);
 uniform vec4 u_post[2]; // texel.xy, strength, unused; reserved
-uniform vec4 u_atmosphere[4];
-uniform mat4 u_atmosphereRotation;
-// Hyperion atmoFragment: occupied ray span, exponential density, Rayleigh/Mie
-// phases and sun optical depth. Radii convert to actual kilometres; retained
-// climate supplies density and scale height. Opaque depth limits each ray.
-vec2 sphereSpan(vec3 o,vec3 d,float r) {
-    float b=dot(o,d),h=r*r-dot(cross(o,d),cross(o,d));
-    if(h<0.)return vec2(-1.,-1.);h=sqrt(h);return vec2(-b-h,-b+h);
-}
+#include "hyperion_optical_ray.sh"
+// Retained atmospheric density, Rayleigh/Mie phases and stellar optical depth.
 vec3 atmosphere(vec2 uv, out vec3 transmission) {
     transmission=vec3(1.);
     vec3 o=u_atmosphere[0].xyz,L=normalize(u_atmosphere[1].xyz);
@@ -49,11 +42,13 @@ vec3 atmosphere(vec2 uv, out vec3 transmission) {
     return scattering;
 }
 #include "hyperion_display.sh"
+#define INFINITE_POLAR_RESOLVE 1
+#include "hyperion_polar.sh"
 void main() {
     vec2 uv=v_texcoord0;
     vec3 original=texture2D(s_scene,uv).rgb,c=resolveScene(uv);
     c+=texture2D(s_bloom,uv).rgb*.50;
-    if(u_atmosphere[0].w>0.){vec3 transmission;vec3 air=atmosphere(uv,transmission);c=c*transmission+air;}
+    if(u_atmosphere[0].w>0.){vec3 transmission;vec3 air=atmosphere(uv,transmission);c=(c+resolvePolar(uv))*transmission+air;}
     c=displayTransform(c,uv);
     gl_FragColor=vec4(mix(original,c,u_post[0].z),1.);
 }

@@ -37,6 +37,62 @@ int main() {
                   "HDR display bounded");
         }
         check(glm::length(hyperionDisplay({0, 0, 0})) == 0, "Black remains black");
+        {
+            const PolarLight optical{{0, 1, 0}, 1, 1.01, 1.03};
+            const auto front = polarLightSpan({0, 0, 2}, {0, 0, -1}, optical, 100);
+            check(glm::length(front - glm::dvec2(.97, .99)) < 1e-12,
+                  "Polar light escaped its near-side hollow shell");
+            check(polarLightSpan({0, 0, 2}, {0, 0, -1}, optical, .5) == glm::dvec2(0),
+                  "Foreground geometry did not hide the polar light");
+            const auto ground = polarLightSpan({0, 0, 1.005}, {0, 0, 1}, optical, 100);
+            check(glm::length(ground - glm::dvec2(.005, .025)) < 1e-12,
+                  "Ground observer integrated emission below the polar layer");
+            check(polarLightSpan({0, 0, 1.005}, {0, 0, -1}, optical, 100) == glm::dvec2(0),
+                  "Polar light was visible through the planet");
+            check(polarLightSpan({0, 0, 2}, {0, 0, 1}, optical, 100) == glm::dvec2(0),
+                  "A ray pointing away from the atmosphere emitted light");
+            const auto grazing = polarLightSpan({1.02, 0, 2}, {0, 0, -1}, optical, 100);
+            check(grazing.x > 0 && grazing.y > grazing.x, "Tangent rays lost the visible polar limb");
+            check(polarLightSpan({0, 0, 2}, {0, 0, -1}, {}, 100) == glm::dvec2(0),
+                  "Disabled polar light retained an old atmosphere");
+            Universe u;
+            bool air = false, vacuum = false;
+            for (unsigned star = 0; star < 256; ++star) {
+                const auto system = u.describe(Address{}.child(Kind::Galaxy, 0).child(Kind::System, star));
+                for (auto a : u.children(system)) {
+                    const auto node = u.describe(a);
+                    const auto hash = descriptorFingerprint(node);
+                    const auto climate = planetClimate(node);
+                    const auto light = extractPolarLight(node);
+                    check(light.strength >= 0 && light.strength <= 1 &&
+                              glm::length(light.axis - climate.axis) < 1e-14,
+                          "Polar optics lost the inherited climate axis or bounded strength");
+                    if (light.strength > 0) {
+                        air = true;
+                        check(climate.solid && climate.pressureBar > .04 && light.innerRadius > 1 &&
+                                  light.outerRadius > light.innerRadius && light.outerRadius <= 1.101,
+                              "Polar optics escaped the retained solid atmosphere");
+                    }
+                    if (climate.pressureBar == 0) {
+                        vacuum = true;
+                        check(light.strength == 0, "Airless body acquired an aurora");
+                    }
+                    check(descriptorFingerprint(u.describe(a)) == hash,
+                          "Polar-light presentation mutated the world descriptor");
+                }
+            }
+            check(air, "Polar optics fixtures omitted an atmospheric world");
+            check(vacuum, "Polar optics fixtures omitted an airless world");
+            // The current generated catalogue is solid. Exercise the supported
+            // envelope classification with an isolated descriptor fixture.
+            auto gas =
+                u.describe(Address{}.child(Kind::Galaxy, 0).child(Kind::System, 9).child(Kind::Planet, 0));
+            auto envelope = std::make_shared<PlanetProcess>(*gas.geology);
+            envelope->type = GeologyType::GasEnvelope;
+            gas.geology = envelope;
+            check(extractPolarLight(gas).strength == 0,
+                  "Optical solid-world shell was applied to a gas envelope");
+        }
         const auto highlight = hyperionDisplay({8, .03, .4});
         check(highlight.r - highlight.g > .5f, "Bright spectral pigments washed out to white");
         {

@@ -12,6 +12,7 @@ uniform mat4 u_meso;
 uniform vec4 u_microParams;
 #include "hyperion_material_detail.sh"
 #endif
+#include "hyperion_noise.sh"
 #include "hyperion_pigment.sh"
 #include "hyperion_tone.sh"
 vec3 brdf(vec3 albedo,vec3 N,vec3 V,vec3 L,float rough,float metallic) {
@@ -100,6 +101,15 @@ void main(){
   float bands=mix(.5,.5+.5*sin(belt),resolved);
   albedo=mix(base*.42,pigment(phase+bands*.28+n.y*.17)*.48+base*.24,.75);
   albedo+=tapestry*.10;
+ }
+ // Geological contrast follows the actual authored height and slopes at
+ // every LOD. Reuse the inherited mineral pigment instead of evaluating a
+ // second regional noise field for every terrain fragment.
+ if(planet && !gas){
+  float exposed=smoothstep(-.0004,.0008,v_elevation);
+  float steep=1.-clamp(dot(N,radial),0.,1.);
+  albedo*=.68+exposed*.46;
+  albedo=mix(albedo,albedo*.68+mineral*.055,smoothstep(.08,.40,steep)*.32);
  }
  // Mineral identity and the existing geological lowland/temperature rule
  // control coating; no liquid plane, height field or new biome is generated.

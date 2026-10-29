@@ -41,6 +41,7 @@ class Renderer {
     void screenshot(const std::string& path);
     std::string backend() const;
     void setSunShadows(bool enabled);
+    void setPolarLights(bool enabled);          // Presentation switch for native negative-control captures.
     void setTerrainCoverageDebug(bool enabled); // Native raster-coverage validation only.
     std::shared_ptr<const Geometry> submittedGeometry(const Address&) const;
     std::shared_ptr<const Geometry> galaxySamples() const;

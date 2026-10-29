@@ -121,6 +121,7 @@ struct Renderer::Impl {
     bool cockpitHelp = false, cockpitVisible = false;
     std::vector<CockpitRect> cockpitHitRegions;
     CockpitViewport hudViewport;
+    bool polarLights = true;
     std::shared_ptr<const Geometry> skyGeometry;
     std::vector<CelestialContact> contacts;
     std::optional<Address> lifeSelection;
@@ -1303,6 +1304,9 @@ std::optional<ActivityId> Renderer::pickActivity(double x, double y) const {
 void Renderer::setSunShadows(bool enabled) {
     impl_->sunShadows = enabled;
 }
+void Renderer::setPolarLights(bool enabled) {
+    impl_->polarLights = enabled;
+}
 void Renderer::setTerrainCoverageDebug(bool enabled) {
     impl_->terrainCoverageDebug = enabled;
 }
@@ -1680,10 +1684,13 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                     auto light = glm::inverse(pose.orientation) * p.lightAt(planet.address, nav);
                     const float height = float(std::clamp(
                         climate.scaleHeightMetres / std::pow(10., planet.frame.logRadius), 1e-5, .02));
-                    p.hyperion->atmosphere(glm::vec3(localEye), glm::vec3(light), rotation, float(radius),
-                                           height, strength, float(p.width) / p.height,
-                                           hyperionPhase(planet.planetSeed ? planet.planetSeed : planet.seed),
-                                           float(std::pow(10., planet.frame.logRadius) / 1000.));
+                    p.hyperion->atmosphere(
+                        glm::vec3(localEye), glm::vec3(light), rotation, float(radius), height, strength,
+                        float(p.width) / p.height,
+                        hyperionPhase(planet.planetSeed ? planet.planetSeed : planet.seed),
+                        float(std::pow(10., planet.frame.logRadius) / 1000.),
+                        p.polarLights && !p.instruments->shrinking ? extractPolarLight(planet) : PolarLight{},
+                        p.visualTime);
                     ++p.stats.atmospheres;
                 }
             }

@@ -35,6 +35,17 @@ struct SpectralSky {
 };
 SpectralSky extractSpectralSky(const Universe&, const Navigation&);
 
+// Optical polar emission only. The retained climate supplies its axis and
+// atmosphere; this does not add a magnetic simulation or alter weather.
+struct PolarLight {
+    glm::dvec3 axis{0, 1, 0};
+    double strength = 0, innerRadius = 1, outerRadius = 1;
+};
+PolarLight extractPolarLight(const Node&);
+// CPU reference for the shader's hollow, opaque-depth-clipped optical shell.
+// Distances and radii are expressed in planet radii, independent of render units.
+glm::dvec2 polarLightSpan(glm::dvec3 eye, glm::dvec3 ray, const PolarLight&, double opaqueDistance);
+
 // Unresolved celestial lights and cockpit contacts retain the real addresses,
 // bearings and distances. Their screen footprint never changes world geometry.
 enum class LifeDetection : uint8_t { Unknown, Scanning, None, Detected };

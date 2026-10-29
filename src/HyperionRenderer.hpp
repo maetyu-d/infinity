@@ -16,7 +16,8 @@ class HyperionRenderer {
     void finish();
     void sky(const SpectralSky&, double visualTime, float aspect, float tanHalfFov);
     void atmosphere(glm::vec3 eye, glm::vec3 light, const glm::mat4& cameraToPlanet, float radiusRenderUnits,
-                    float scaleHeightRatio, float strength, float aspect, float phase, float radiusKm);
+                    float scaleHeightRatio, float strength, float aspect, float phase, float radiusKm,
+                    const PolarLight&, double visualTime);
     void bind(const ScenePresentation&, const glm::vec3& eye, const glm::vec3& light,
               const glm::mat4& pattern, float primitive, double visualTime, glm::vec4 cavity = {},
               const glm::mat4& micro = glm::mat4(0), float relief = 0, const glm::mat4& meso = glm::mat4(0),
@@ -85,6 +86,11 @@ class HyperionRenderer {
     bgfx::UniformHandle depthSampler_ = BGFX_INVALID_HANDLE, atmosphere_ = BGFX_INVALID_HANDLE,
                         atmosphereRotation_ = BGFX_INVALID_HANDLE;
     std::array<glm::vec4, 4> atmosphereData_{};
+    bgfx::UniformHandle polar_ = BGFX_INVALID_HANDLE;
+    std::array<glm::vec4, 2> polarData_{};
+    bgfx::FrameBufferHandle polarTarget_ = BGFX_INVALID_HANDLE;
+    bgfx::ProgramHandle polarProgram_ = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle polarSampler_ = BGFX_INVALID_HANDLE;
     glm::mat4 atmosphereMatrix_{1};
     bool readableDepth_ = false;
     bool flight_ = false;

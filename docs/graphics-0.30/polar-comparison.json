@@ -1,0 +1,27 @@
+{
+  "night": {
+    "changed_pixels": 57893,
+    "rebase_rms_255": 0.008240220541217404,
+    "large_error_fraction": 0.0
+  },
+  "day": {
+    "changed_pixels": 0,
+    "rebase_rms_255": 0.008606629658238704,
+    "large_error_fraction": 0.0
+  },
+  "ground": {
+    "changed_pixels": 1022314,
+    "rebase_rms_255": 0.006085806194501846,
+    "large_error_fraction": 0.0
+  },
+  "blocked": {
+    "changed_pixels": 0,
+    "rebase_rms_255": 0.032960882164869615,
+    "large_error_fraction": 0.0
+  },
+  "airless": {
+    "changed_pixels": 0,
+    "rebase_rms_255": 0.003042903097250923,
+    "large_error_fraction": 0.0
+  }
+}

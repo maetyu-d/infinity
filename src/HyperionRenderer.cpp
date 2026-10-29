@@ -23,6 +23,7 @@ bgfx::ShaderHandle shader(const char* name) {
     LOAD_SHADER(fs_hyperion, BACKEND);                                                                       \
     LOAD_SHADER(fs_hyperion_flight, BACKEND);                                                                \
     LOAD_SHADER(fs_hyperion_flight_post, BACKEND);                                                           \
+    LOAD_SHADER(fs_hyperion_polar, BACKEND);                                                                 \
     LOAD_SHADER(fs_hyperion_sky, BACKEND);                                                                   \
     LOAD_SHADER(fs_hyperion_glow, BACKEND);                                                                  \
     LOAD_SHADER(vs_hyperion_screen, BACKEND);                                                                \
@@ -114,6 +115,8 @@ void HyperionRenderer::init() {
     bloomSampler_ = bgfx::createUniform("s_bloom", bgfx::UniformType::Sampler);
     depthSampler_ = bgfx::createUniform("s_opaqueDepth", bgfx::UniformType::Sampler);
     atmosphere_ = bgfx::createUniform("u_atmosphere", bgfx::UniformType::Vec4, 4);
+    polar_ = bgfx::createUniform("u_polar", bgfx::UniformType::Vec4, 2);
+    polarSampler_ = bgfx::createUniform("s_polarLight", bgfx::UniformType::Sampler);
     atmosphereRotation_ = bgfx::createUniform("u_atmosphereRotation", bgfx::UniformType::Mat4);
     style_ = bgfx::createUniform("u_hyperion", bgfx::UniformType::Vec4, 4);
     pattern_ = bgfx::createUniform("u_pattern", bgfx::UniformType::Mat4);
@@ -142,6 +145,9 @@ void HyperionRenderer::clearTargets() {
             bgfx::destroy(target);
         target = BGFX_INVALID_HANDLE;
     }
+    if (bgfx::isValid(polarTarget_))
+        bgfx::destroy(polarTarget_);
+    polarTarget_ = BGFX_INVALID_HANDLE;
     bytes_ = 0;
     width_ = height_ = 0;
 }
@@ -157,31 +163,14 @@ HyperionRenderer::~HyperionRenderer() {
     if (bgfx::isValid(sunTarget_))
         bgfx::destroy(sunTarget_);
     for (auto p : {geometry_, glow_, blur_, post_, flightGeometry_, flightPost_, sky_, smoothGeometry_[0],
-                   smoothGeometry_[1], sunProgram_, cloudProgram_, coverageProgram_})
+                   smoothGeometry_[1], sunProgram_, cloudProgram_, coverageProgram_, polarProgram_})
         if (bgfx::isValid(p))
             bgfx::destroy(p);
-    for (auto u : {environment_,
-                   noiseSampler_,
-                   detailSampler_,
-                   surface_,
-                   sceneSampler_,
-                   bloomSampler_,
-                   style_,
-                   pattern_,
-                   postParams_,
-                   cavity_,
-                   depthSampler_,
-                   atmosphere_,
-                   atmosphereRotation_,
-                   micro_,
-                   microParams_,
-                   meso_,
-                   domain_,
-                   skyParams_,
-                   skyRotation_,
-                   sunSampler_,
-                   sunMatrix_,
-                   sunParams_})
+    for (auto u : {polarSampler_, polar_,        environment_,  noiseSampler_, detailSampler_,
+                   surface_,      sceneSampler_, bloomSampler_, style_,        pattern_,
+                   postParams_,   cavity_,       depthSampler_, atmosphere_,   atmosphereRotation_,
+                   micro_,        microParams_,  meso_,         domain_,       skyParams_,
+                   skyRotation_,  sunSampler_,   sunMatrix_,    sunParams_})
         if (bgfx::isValid(u))
             bgfx::destroy(u);
 }
@@ -203,6 +192,7 @@ void HyperionRenderer::begin(RenderMode mode, int width, int height, bool optica
     detailUploadBytes_ = 0;
     flight_ = flight;
     atmosphereData_ = {};
+    polarData_ = {};
     sunActive_ = false;
     sunUpdated_ = false;
     const auto previousMode = mode_;
@@ -237,6 +227,13 @@ void HyperionRenderer::begin(RenderMode mode, int width, int height, bool optica
         if (!bgfx::isValid(scene_) || !bgfx::isValid(bloom_[0]) || !bgfx::isValid(bloom_[1]))
             throw std::runtime_error("Hyperion HDR target allocation failed");
         bytes_ = size_t(width) * height * 12 + size_t(std::max(1, width / 3)) * std::max(1, height / 3) * 16;
+        if (opticalDepth) {
+            polarTarget_ = bgfx::createFrameBuffer(std::max(1, width / 2), std::max(1, height / 2),
+                                                   bgfx::TextureFormat::RGBA16F, BGFX_TEXTURE_RT | sampling);
+            if (!bgfx::isValid(polarTarget_))
+                throw std::runtime_error("Polar optical target allocation failed");
+            bytes_ += size_t(std::max(1, width / 2)) * std::max(1, height / 2) * 8;
+        }
     }
     if (replaceTarget || previousMode == RenderMode::Original)
         for (bgfx::ViewId id = 0; id < 64; ++id)
@@ -295,13 +292,16 @@ bool HyperionRenderer::prepareSun(const SunShadowFrame& frame, uint64_t key) {
     return true;
 }
 void HyperionRenderer::atmosphere(glm::vec3 eye, glm::vec3 light, const glm::mat4& rotation, float radius,
-                                  float height, float strength, float aspect, float phase, float radiusKm) {
+                                  float height, float strength, float aspect, float phase, float radiusKm,
+                                  const PolarLight& polar, double seconds) {
     atmosphereData_[0] = glm::vec4(eye, strength);
     atmosphereData_[1] = glm::vec4(light, height);
     atmosphereData_[2] = {radius, float(worldNearPlane), float(worldFarPlane), phase};
     atmosphereData_[3] = {aspect * .7002075f, .7002075f, bgfx::getCaps()->originBottomLeft ? 1.f : -1.f,
                           radiusKm};
     atmosphereMatrix_ = rotation;
+    polarData_[0] = glm::vec4(polar.axis, polar.strength);
+    polarData_[1] = {float(polar.innerRadius), float(polar.outerRadius), float(seconds), 0};
 }
 void HyperionRenderer::bind(const ScenePresentation& p, const glm::vec3& eye, const glm::vec3& light,
                             const glm::mat4& pattern, float primitive, double seconds, glm::vec4 cavity,
@@ -374,6 +374,22 @@ void HyperionRenderer::screen(bgfx::ViewId id, bgfx::ProgramHandle p) {
 void HyperionRenderer::finish() {
     if (mode_ == RenderMode::Original)
         return;
+    if (readableDepth_) {
+        bgfx::setViewFrameBuffer(79, polarTarget_);
+        bgfx::setViewRect(79, 0, 0, std::max(1, width_ / 2), std::max(1, height_ / 2));
+        bgfx::setViewClear(79, BGFX_CLEAR_COLOR, 0);
+        bgfx::touch(79);
+        if (polarData_[0].w > 0) {
+            if (!bgfx::isValid(polarProgram_))
+                polarProgram_ = program("vs_hyperion_screen", "fs_hyperion_polar");
+            bgfx::setTexture(2, depthSampler_, bgfx::getTexture(scene_, 1),
+                             sampling | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT);
+            bgfx::setUniform(atmosphere_, atmosphereData_.data(), 4);
+            bgfx::setUniform(atmosphereRotation_, glm::value_ptr(atmosphereMatrix_));
+            bgfx::setUniform(polar_, polarData_.data(), 2);
+            screen(79, polarProgram_);
+        }
+    }
     for (unsigned i = 0; i < 2; ++i) {
         auto id = bgfx::ViewId(80 + i);
         bgfx::setViewFrameBuffer(id, bloom_[i]);
@@ -390,6 +406,7 @@ void HyperionRenderer::finish() {
     bgfx::setViewRect(83, 0, 0, width_, height_);
     std::array<glm::vec4, 2> params{};
     params[0] = {1.f / width_, 1.f / height_, mode_ == RenderMode::Hybrid ? .36f : 1.f, 0};
+    params[1] = {1.f / std::max(1, width_ / 2), 1.f / std::max(1, height_ / 2), 0, 0};
     bgfx::setUniform(postParams_, params.data(), 2);
     bgfx::setTexture(0, sceneSampler_, bgfx::getTexture(scene_), sampling);
     bgfx::setTexture(1, bloomSampler_, bgfx::getTexture(bloom_[1]), sampling);
@@ -400,6 +417,9 @@ void HyperionRenderer::finish() {
         bgfx::setTexture(2, depthSampler_, bgfx::getTexture(scene_, 1),
                          sampling | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT);
         bgfx::setUniform(atmosphere_, atmosphereData_.data(), 4);
+        bgfx::setUniform(polar_, polarData_.data(), 2);
+        bgfx::setTexture(6, polarSampler_, bgfx::getTexture(polarTarget_),
+                         sampling | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT);
         bgfx::setUniform(atmosphereRotation_, glm::value_ptr(atmosphereMatrix_));
     }
     screen(83, optical ? flightPost_ : post_);

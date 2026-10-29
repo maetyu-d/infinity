@@ -121,6 +121,43 @@ SpectralSky extractSpectralSky(const Universe& universe, const Navigation& nav) 
                          smoothstep(-2., 3., nav.logDistance));
     return sky;
 }
+PolarLight extractPolarLight(const Node& planet) {
+    const auto climate = planetClimate(planet);
+    PolarLight result;
+    result.axis = climate.axis;
+    if (!climate.solid || climate.pressureBar < .04)
+        return result;
+    const double radius = std::pow(10., planet.frame.logRadius);
+    const double base = std::clamp(climate.scaleHeightMetres * 6., radius * .001, radius * .04);
+    const double thickness = std::clamp(climate.scaleHeightMetres * 8., radius * .002, radius * .06);
+    result.innerRadius = 1 + base / radius;
+    result.outerRadius = result.innerRadius + thickness / radius;
+    result.strength = smoothstep(.04, .30, climate.pressureBar) * std::min(1., climate.pressureBar);
+    return result;
+}
+glm::dvec2 polarLightSpan(glm::dvec3 eye, glm::dvec3 ray, const PolarLight& light, double opaque) {
+    if (light.strength <= 0)
+        return {};
+    ray = glm::normalize(ray);
+    const auto sphere = [&](double radius) {
+        const auto perpendicular = glm::cross(eye, ray);
+        const double h = radius * radius - glm::dot(perpendicular, perpendicular);
+        if (h < 0)
+            return glm::dvec2(-1);
+        const double b = glm::dot(eye, ray), root = std::sqrt(h);
+        return glm::dvec2(-b - root, -b + root);
+    };
+    const auto outer = sphere(light.outerRadius), inner = sphere(light.innerRadius);
+    double start = std::max(0., outer.x), end = std::min(outer.y, opaque);
+    if (inner.x > 0)
+        end = std::min(end, inner.x);
+    else if (glm::length(eye) < light.innerRadius)
+        start = std::max(start, inner.y);
+    const auto ground = sphere(1.);
+    if (ground.x > 0)
+        end = std::min(end, ground.x);
+    return end > start ? glm::dvec2(start, end) : glm::dvec2(0);
+}
 bool celestialOccluded(glm::dvec3 direction, double distance, std::span<const CelestialContact> contacts,
                        const Address* except, double targetAngularRadius) {
     for (const auto& body : contacts) {

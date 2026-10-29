@@ -1,0 +1,29 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+      Start 28: native_polar_optics
+ 1/12 Test #28: native_polar_optics ......................   Passed   46.29 sec
+      Start 29: native_polar_optics_images
+ 2/12 Test #29: native_polar_optics_images ...............   Passed    8.98 sec
+      Start 32: native_planet_stability
+ 3/12 Test #32: native_planet_stability ..................   Passed   22.63 sec
+      Start 33: native_planet_stability_images
+ 4/12 Test #33: native_planet_stability_images ...........   Passed    1.13 sec
+      Start 34: native_weather_and_surface_life
+ 5/12 Test #34: native_weather_and_surface_life ..........   Passed   52.02 sec
+      Start 35: native_weather_and_surface_images
+ 6/12 Test #35: native_weather_and_surface_images ........   Passed    2.01 sec
+      Start 38: native_surface_quality
+ 7/12 Test #38: native_surface_quality ...................   Passed   23.97 sec
+      Start 39: native_surface_quality_images
+ 8/12 Test #39: native_surface_quality_images ............   Passed    0.81 sec
+      Start 40: native_surface_frame_and_retina
+ 9/12 Test #40: native_surface_frame_and_retina ..........   Passed   34.79 sec
+      Start 41: native_surface_frame_and_retina_images
+10/12 Test #41: native_surface_frame_and_retina_images ...   Passed    3.85 sec
+      Start 53: native_render_mode_round_trip
+11/12 Test #53: native_render_mode_round_trip ............   Passed   50.54 sec
+      Start 54: native_render_mode_images
+12/12 Test #54: native_render_mode_images ................   Passed    9.93 sec
+
+100% tests passed, 0 tests failed out of 12
+
+Total Test time (real) = 256.99 sec

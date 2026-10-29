@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Infinite VERSION 0.29.0 LANGUAGES C CXX)
+project(Infinite VERSION 0.30.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -147,6 +147,13 @@ if(INFINITE_VIEWER)
   endif()
   if(INFINITE_GPU_TESTS)
     find_package(Python3 3.9 COMPONENTS Interpreter REQUIRED)
+    add_test(NAME native_polar_optics COMMAND "${CMAKE_COMMAND}"
+      "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/polar-optics"
+      -P "${PROJECT_SOURCE_DIR}/cmake/RunPolarOptics.cmake")
+    set_tests_properties(native_polar_optics PROPERTIES FIXTURES_SETUP polar_optics TIMEOUT 180)
+    add_test(NAME native_polar_optics_images COMMAND "${Python3_EXECUTABLE}"
+      "${PROJECT_SOURCE_DIR}/tools/check_polar_optics.py" "${CMAKE_BINARY_DIR}/polar-optics")
+    set_tests_properties(native_polar_optics_images PROPERTIES FIXTURES_REQUIRED polar_optics)
     add_test(NAME native_ui_fit COMMAND "${CMAKE_COMMAND}"
       "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/ui-fit-native"
       -P "${PROJECT_SOURCE_DIR}/cmake/RunUiFit.cmake")

@@ -18,6 +18,13 @@ vec3 resolveScene(vec2 uv){
   float candidate=edgeLuma(wide);
   c=mix(c,candidate<lo||candidate>hi?narrow:wide,.88);
  }
+ // Hyperion postFragment's bounded material clarity. Reuse the AA taps;
+ // leave silhouettes, stars and bright glints alone to avoid sharpening
+ // noise into flicker. The cockpit is composited after this pass.
+ vec3 neighbourhood=(a+b+d+e)*.25;
+ float contrast=(hi-lo)/max(hi,.02);
+ float clarity=(1.-smoothstep(.12,.32,contrast))*smoothstep(.015,.08,luma(c));
+ c=max(vec3(0.),c+(c-neighbourhood)*clarity*.24);
  return c;
 }
 vec3 displayTransform(vec3 c,vec2 uv){

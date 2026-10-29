@@ -43,5 +43,5 @@ profile=list(csv.DictReader((root/'frames.csv').open()))
 updates=sum(int(row['shadow_updates']) for row in profile)
 active=sum(int(row['shadow_active']) for row in profile)
 assert 1<=updates<=12 and active>updates*3, 'Stationary city shadows were not cached'
-assert all(int(row['effect_bytes'])-int(row['shadow_bytes']) in {0,17856000} for row in profile), 'Unexpected extra full-resolution effects'
+assert all(int(row['effect_bytes'])-int(row['shadow_bytes']) in {0,20448000} for row in profile), 'Unexpected targets beyond scene, bloom and half-resolution polar light'
 print('PASS: seven real city/weather views, 21 native captures, connected city morphologies, residents, bounded caches, cached sun shadows and three-mode geometry/camera/city-data proofs')

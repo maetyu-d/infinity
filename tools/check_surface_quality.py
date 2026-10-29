@@ -43,6 +43,6 @@ for path in images:
     assert max(ground) > 10, 'Missing surface'
 frames = list(csv.DictReader((root / 'frames.csv').open()))
 assert max(int(f['material_bytes']) for f in frames) <= 1398100 + 256*256*4
-assert max(int(f['effect_bytes']) for f in frames) <= width*height*12 + (width//3)*(height//3)*16 + 8388608
+assert max(int(f['effect_bytes']) for f in frames) <= width*height*12 + (width//3)*(height//3)*16 + (width//2)*(height//2)*8 + 8388608
 assert any(int(f['shadow_updates']) for f in frames)
 print('PASS: 18 native views at 250 m, 2 km and 11.8 km; identical planet/terrain meshes across modes; sun maps active; fixed texture budgets')
