@@ -1,0 +1,20 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+CLOUD_VOLUME scene=orbit sample=0 geometry=1603244689843674803 terrain=5648329196461491993 log=6.66817 frame=528 camera=unchanged
+CLOUD_VOLUME scene=orbit sample=1 geometry=1603244689843674803 terrain=5648329196461491993 log=6.66817 frame=559 camera=unchanged
+CLOUD_VOLUME scene=orbit sample=2 geometry=1603244689843674803 terrain=5648329196461491993 log=5.66817 frame=590 camera=unchanged
+CLOUD_VOLUME scene=below sample=0 geometry=1603244689843674803 terrain=13476927535423820184 log=4 frame=964 camera=unchanged
+CLOUD_VOLUME scene=below sample=1 geometry=1603244689843674803 terrain=13476927535423820184 log=4 frame=995 camera=unchanged
+CLOUD_VOLUME scene=below sample=2 geometry=1603244689843674803 terrain=13476927535423820184 log=3 frame=1026 camera=unchanged
+CLOUD_VOLUME scene=inside sample=0 geometry=1603244689843674803 terrain=9751056685886734178 log=5 frame=1105 camera=unchanged
+CLOUD_VOLUME scene=inside sample=1 geometry=1603244689843674803 terrain=9751056685886734178 log=5 frame=1136 camera=unchanged
+CLOUD_VOLUME scene=inside sample=2 geometry=1603244689843674803 terrain=9751056685886734178 log=6 frame=1167 camera=unchanged
+CLOUD_VOLUME scene=blocked sample=0 geometry=1603244689843674803 terrain=13476927535423820184 log=4 frame=1378 camera=unchanged
+CLOUD_VOLUME scene=blocked sample=1 geometry=1603244689843674803 terrain=13476927535423820184 log=4 frame=1409 camera=unchanged
+CLOUD_VOLUME scene=blocked sample=2 geometry=1603244689843674803 terrain=13476927535423820184 log=5 frame=1440 camera=unchanged
+CLOUD_VOLUME scene=airless sample=0 geometry=13678190922086678432 terrain=3564228885319615020 log=7.0141 frame=1812 camera=unchanged
+CLOUD_VOLUME scene=airless sample=1 geometry=13678190922086678432 terrain=3564228885319615020 log=7.0141 frame=1843 camera=unchanged
+CLOUD_VOLUME scene=airless sample=2 geometry=13678190922086678432 terrain=3564228885319615020 log=6.0141 frame=1874 camera=unchanged
+PASS: cloud volumes / orbit, below, inside, blocked and airless / opaque depth / magnification / unchanged geometry
+FRAME median_ms=32.3107 p95_ms=49.9625 frames=1881 cache_bytes=10516832
+peak_rss_bytes=131170304

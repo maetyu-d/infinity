@@ -1,3 +1,4 @@
+#include "CloudValidation.hpp"
 #include "FlightValidation.hpp"
 #include "PilotValidation.hpp"
 #include "PlanetValidation.hpp"
@@ -35,7 +36,7 @@ struct Options {
     RenderMode renderMode = RenderMode::Original;
     double visualTime = -1;
     bool compareModes = false;
-    bool flightTest = false, planetTest = false, uiFitTest = false, polarTest = false;
+    bool flightTest = false, planetTest = false, uiFitTest = false, polarTest = false, cloudTest = false;
     bool streamingTest = false;
     bool terrainQuality = false, terrainSurfaceFrame = false, sunShadows = true;
     bool pilotTest = false, terrainTest = false, surfaceTest = false, explicitMode = false;
@@ -57,7 +58,10 @@ static Options options(int argc, char** argv) {
             o.smoke = o.tour = o.fresh = true;
         else if (arg == "--benchmark-tour")
             o.benchmark = o.smoke = o.tour = o.fresh = true;
-        else if (arg == "--polar-optics-test") {
+        else if (arg == "--cloud-volume-test") {
+            o.cloudTest = o.benchmark = o.smoke = o.fresh = true;
+            o.visualTime = 12;
+        } else if (arg == "--polar-optics-test") {
             o.polarTest = o.benchmark = o.smoke = o.fresh = true;
             o.visualTime = 12;
         } else if (arg == "--ui-fit-test") {
@@ -127,7 +131,7 @@ static Options options(int argc, char** argv) {
                    "release mouse / quit.\nCLI: --fresh --tour --smoke-test --frames N --width N "
                    "--height N --seed N "
                    "--benchmark-tour --flight-test --streaming-test --pilot-test --planet-stability-test "
-                   "--ui-fit-test --polar-optics-test "
+                   "--ui-fit-test --polar-optics-test --cloud-volume-test "
                    "--terrain-test "
                    "--surface-test --terrain-quality-test --terrain-surface-frame-test "
                    "--terrain-saved-view-test FILE --no-sun-shadows "
@@ -146,9 +150,10 @@ static Options options(int argc, char** argv) {
         o.renderMode = RenderMode::Original;
         o.visualTime = 12;
     }
-    const unsigned validationModes =
-        unsigned(o.flightTest) + unsigned(o.streamingTest) + unsigned(o.pilotTest) + unsigned(o.terrainTest) +
-        unsigned(o.surfaceTest) + unsigned(o.planetTest) + unsigned(o.uiFitTest) + unsigned(o.polarTest);
+    const unsigned validationModes = unsigned(o.flightTest) + unsigned(o.streamingTest) +
+                                     unsigned(o.pilotTest) + unsigned(o.terrainTest) +
+                                     unsigned(o.surfaceTest) + unsigned(o.planetTest) +
+                                     unsigned(o.uiFitTest) + unsigned(o.polarTest) + unsigned(o.cloudTest);
     if (validationModes > 1 || (validationModes && o.tour))
         throw std::invalid_argument("Choose one automated validation mode");
     if (o.width < 320 || o.height < 240 || o.width > 7680 || o.height > 4320 || o.frames < 0)
@@ -188,7 +193,8 @@ int main(int argc, char** argv) {
         FlightController flight(universe, nav, cache);
         Pilot pilot(universe, nav, flight);
         bool pilotEnabled = (!opt.smoke && !opt.tour) || opt.pilotTest || opt.terrainTest ||
-                            opt.surfaceTest || opt.planetTest || opt.uiFitTest || opt.polarTest;
+                            opt.surfaceTest || opt.planetTest || opt.uiFitTest || opt.polarTest ||
+                            opt.cloudTest;
         std::unique_ptr<FlightValidation> flightProof;
         if (opt.flightTest)
             flightProof = std::make_unique<FlightValidation>(universe, nav);
@@ -251,6 +257,9 @@ int main(int argc, char** argv) {
             std::unique_ptr<PolarValidation> polarProof;
             if (opt.polarTest)
                 polarProof = std::make_unique<PolarValidation>(universe, nav, pilot);
+            std::unique_ptr<CloudValidation> cloudProof;
+            if (opt.cloudTest)
+                cloudProof = std::make_unique<CloudValidation>(universe, nav, pilot);
             bool shipRestored = false, legacyShip = false;
             if (!opt.fresh && !opt.smoke) {
                 std::ifstream saved(data / ("ship-" + std::to_string(universe.seed()) + ".txt"));
@@ -341,7 +350,8 @@ int main(int argc, char** argv) {
                        "bodies,activity_visible,activity_triangles,activity_bytes,material_bytes,"
                        "surface_sites,surface_buildings,surface_residents,surface_triangles,surface_bytes,"
                        "surface_gpu_bytes,surface_pending,weather_cells,weather_particles,shadow_bytes,"
-                       "shadow_active,shadow_updates\n";
+                       "shadow_active,shadow_updates,weather_pending,weather_cache_bytes,weather_gpu_bytes,"
+                       "weather_volumes\n";
             }
             bool running = true, overlay = true, looking = false;
             bool mouseFlight = false, rightLook = false;
@@ -749,10 +759,12 @@ int main(int argc, char** argv) {
                     uiProof->advance(renderer);
                 if (polarProof)
                     polarProof->advance(renderer);
+                if (cloudProof)
+                    cloudProof->advance(renderer);
                 renderer.setCockpit(pilotEnabled ? &pilot.instruments() : nullptr);
                 auto stats =
-                    renderer.render(nav, cache, overlay && !opt.polarTest, fps, persistence.markerCount(),
-                                    noticeTime > 0 ? notice : "", looking);
+                    renderer.render(nav, cache, overlay && !opt.polarTest && !opt.cloudTest, fps,
+                                    persistence.markerCount(), noticeTime > 0 ? notice : "", looking);
                 if (flightProof) {
                     flightProof->observe(stats, renderer, opt.captures);
                     if (flightProof->finished())
@@ -781,6 +793,11 @@ int main(int argc, char** argv) {
                 if (polarProof) {
                     polarProof->observe(stats, cache, renderer, opt.captures);
                     if (polarProof->finished())
+                        running = false;
+                }
+                if (cloudProof) {
+                    cloudProof->observe(stats, cache, renderer, opt.captures);
+                    if (cloudProof->finished())
                         running = false;
                 }
                 if (surfaceProof) {
@@ -818,11 +835,13 @@ int main(int argc, char** argv) {
                             << stats.surfaceTriangles << ',' << stats.surfaceBytes << ','
                             << stats.surfaceGpuBytes << ',' << stats.surfacePending << ','
                             << stats.weatherCells << ',' << stats.weatherParticles << ',' << stats.shadowBytes
-                            << ',' << stats.shadowActive << ',' << stats.shadowUpdates << '\n';
+                            << ',' << stats.shadowActive << ',' << stats.shadowUpdates << ','
+                            << stats.weatherPending << ',' << stats.weatherCacheBytes << ','
+                            << stats.weatherGpuBytes << ',' << stats.weatherVolumes << '\n';
                 if (opt.tour) {
                     if (!nav.transitioning && stats.visibleObjects > 0 && gen.pending == 0 &&
-                        gen.queued == 0 && stats.surfacePending == 0 && stats.lodTransitions == 0 &&
-                        stats.uploadDeferred == 0)
+                        gen.queued == 0 && stats.surfacePending == 0 && stats.weatherPending == 0 &&
+                        stats.lodTransitions == 0 && stats.uploadDeferred == 0)
                         ++stable;
                     else
                         stable = 0;
@@ -962,7 +981,10 @@ int main(int argc, char** argv) {
             std::cout << "peak_rss_bytes=" << usage.ru_maxrss * 1024 << '\n';
 #endif
 #endif
-            if (opt.polarTest) {
+            if (opt.cloudTest) {
+                if (!cloudProof->finished())
+                    throw std::runtime_error("Native cloud validation incomplete");
+            } else if (opt.polarTest) {
                 if (!polarProof->finished())
                     throw std::runtime_error("Native polar optics validation incomplete");
             } else if (opt.uiFitTest) {

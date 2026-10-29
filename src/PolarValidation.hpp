@@ -28,6 +28,8 @@ class PolarValidation {
     void advance(Renderer& renderer) {
         renderer.setMode(RenderMode::Hyperion);
         renderer.setPolarLights(sample_ != 0);
+        // Isolate emission: an actual overcast sky may correctly hide aurora.
+        renderer.setCloudVolumes(false);
     }
     void observe(const FrameStats& stats, RegionCache& cache, Renderer& renderer, const std::string& dir) {
         ++frames_;
@@ -50,7 +52,7 @@ class PolarValidation {
         }
         const auto gen = cache.stats();
         stable_ = stats.visibleObjects && !gen.pending && !gen.queued && !stats.lodTransitions &&
-                          !stats.uploadDeferred && !stats.surfacePending
+                          !stats.uploadDeferred && !stats.weatherPending && !stats.surfacePending
                       ? stable_ + 1
                       : 0;
         if (stable_ < 24)

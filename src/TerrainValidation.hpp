@@ -80,7 +80,8 @@ class TerrainValidation {
             throw std::runtime_error("Native terrain exploration changed its descriptor");
         auto generation = cache.stats();
         const bool ready = stats.terrainTiles > 50 && generation.pending == 0 && generation.queued == 0 &&
-                           stats.lodTransitions == 0 && stats.uploadDeferred == 0;
+                           stats.lodTransitions == 0 && stats.uploadDeferred == 0 &&
+                           stats.weatherPending == 0;
         stable_ = ready ? stable_ + 1 : 0;
         if (hold_) {
             --hold_;

@@ -1,0 +1,62 @@
+{
+  "solid-ORIGINAL-1": {
+    "rms_255": 0.2390785340461656,
+    "large_error_fraction": 0.0,
+    "passed": true
+  },
+  "solid-ORIGINAL-2": {
+    "rms_255": 0.23904148770921954,
+    "large_error_fraction": 0.0,
+    "passed": true
+  },
+  "solid-HYPERION-1": {
+    "rms_255": 0.06284829973940069,
+    "large_error_fraction": 0.0,
+    "passed": true
+  },
+  "solid-HYPERION-2": {
+    "rms_255": 0.06354897133130159,
+    "large_error_fraction": 0.0,
+    "passed": true
+  },
+  "solid-HYBRID-1": {
+    "rms_255": 0.010309004440761832,
+    "large_error_fraction": 0.0,
+    "passed": true
+  },
+  "solid-HYBRID-2": {
+    "rms_255": 0.010309004440761832,
+    "large_error_fraction": 0.0,
+    "passed": true
+  },
+  "moon-ORIGINAL-1": {
+    "rms_255": 1.035717241444896,
+    "large_error_fraction": 0.00010627557255964716,
+    "passed": true
+  },
+  "moon-ORIGINAL-2": {
+    "rms_255": 1.035717241444896,
+    "large_error_fraction": 0.00010627557255964716,
+    "passed": true
+  },
+  "moon-HYPERION-1": {
+    "rms_255": 1.1807373431177985,
+    "large_error_fraction": 5.313778627982358e-05,
+    "passed": true
+  },
+  "moon-HYPERION-2": {
+    "rms_255": 1.1807973467942292,
+    "large_error_fraction": 5.313778627982358e-05,
+    "passed": true
+  },
+  "moon-HYBRID-1": {
+    "rms_255": 0.632486337963073,
+    "large_error_fraction": 5.313778627982358e-05,
+    "passed": true
+  },
+  "moon-HYBRID-2": {
+    "rms_255": 0.6325003401622525,
+    "large_error_fraction": 5.313778627982358e-05,
+    "passed": true
+  }
+}

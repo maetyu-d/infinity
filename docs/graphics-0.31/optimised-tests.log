@@ -1,0 +1,35 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+      Start  1: read_only_weather_optics
+ 1/15 Test  #1: read_only_weather_optics .................   Passed    0.63 sec
+      Start 29: native_cloud_volumes
+ 2/15 Test #29: native_cloud_volumes .....................   Passed   54.53 sec
+      Start 30: native_cloud_volume_images
+ 3/15 Test #30: native_cloud_volume_images ...............   Passed   10.92 sec
+      Start 31: native_polar_optics
+ 4/15 Test #31: native_polar_optics ......................   Passed   45.27 sec
+      Start 32: native_polar_optics_images
+ 5/15 Test #32: native_polar_optics_images ...............   Passed   10.43 sec
+      Start 35: native_planet_stability
+ 6/15 Test #35: native_planet_stability ..................   Passed   24.56 sec
+      Start 36: native_planet_stability_images
+ 7/15 Test #36: native_planet_stability_images ...........   Passed    0.95 sec
+      Start 37: native_weather_and_surface_life
+ 8/15 Test #37: native_weather_and_surface_life ..........   Passed   53.50 sec
+      Start 38: native_weather_and_surface_images
+ 9/15 Test #38: native_weather_and_surface_images ........   Passed    1.13 sec
+      Start 41: native_surface_quality
+10/15 Test #41: native_surface_quality ...................   Passed   19.29 sec
+      Start 42: native_surface_quality_images
+11/15 Test #42: native_surface_quality_images ............   Passed    0.50 sec
+      Start 43: native_surface_frame_and_retina
+12/15 Test #43: native_surface_frame_and_retina ..........   Passed   25.20 sec
+      Start 44: native_surface_frame_and_retina_images
+13/15 Test #44: native_surface_frame_and_retina_images ...   Passed    1.76 sec
+      Start 56: native_render_mode_round_trip
+14/15 Test #56: native_render_mode_round_trip ............   Passed   30.90 sec
+      Start 57: native_render_mode_images
+15/15 Test #57: native_render_mode_images ................   Passed    9.30 sec
+
+100% tests passed, 0 tests failed out of 15
+
+Total Test time (real) = 288.89 sec

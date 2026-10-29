@@ -122,6 +122,8 @@ struct Renderer::Impl {
     std::vector<CockpitRect> cockpitHitRegions;
     CockpitViewport hudViewport;
     bool polarLights = true;
+    bool cloudVolumes = true;
+    float stellarExposure = 1;
     std::shared_ptr<const Geometry> skyGeometry;
     std::vector<CelestialContact> contacts;
     std::optional<Address> lifeSelection;
@@ -281,8 +283,10 @@ struct Renderer::Impl {
         return pose;
     }
     void addBillboard(glm::dvec3 p, double radius, glm::vec3 color, bool cosmic = false,
-                      float opticalMaterial = 0) {
+                      float opticalMaterial = 0, bool background = false) {
         ++stats.particles;
+        if (background && mode != RenderMode::Original)
+            color *= stellarExposure;
         auto right = cameraQ * glm::dvec3(radius, 0, 0), up = cameraQ * glm::dvec3(0, radius, 0);
         glm::mat4 transform(1);
         transform[0] = glm::vec4(glm::vec3(right), 0);
@@ -573,7 +577,8 @@ struct Renderer::Impl {
                              geometry->address.kind() == Kind::Cosmic ? 2.f
                              : geometry->address.kind() == Kind::Galaxy && particle.objectId == UINT64_MAX
                                  ? 1.f
-                                 : 0.f);
+                                 : 0.f,
+                             geometry->address.kind() <= Kind::Galaxy);
         }
         if (!geometry->lattice.atoms.empty() && bgfx::isValid(item.instances) && atomView < 64) {
             double diameter =
@@ -663,7 +668,8 @@ struct Renderer::Impl {
                 if (celestialOccluded(local, physicalDistance, skyOccluders))
                     continue;
                 const auto point = eye + direction * 500.;
-                addBillboard(point, size, star.color * (handoff * (gas ? .5f : 1.f)), true, gas ? 1.f : 0.f);
+                addBillboard(point, size, star.color * (handoff * (gas ? .5f : 1.f)), true, gas ? 1.f : 0.f,
+                             true);
                 if (gas)
                     ++stats.skyGas;
                 else {
@@ -706,7 +712,7 @@ struct Renderer::Impl {
                 const glm::vec3 tint = galaxy.galaxy.type == GalaxyType::Elliptical
                                            ? glm::vec3(.65, .49, .32)
                                            : glm::vec3(.34, .48, .68);
-                addBillboard(point, angular * 500., tint * float(exposure), true);
+                addBillboard(point, angular * 500., tint * float(exposure), true, 0, true);
                 if (auto screen = project(point))
                     picks.push_back(
                         {galaxy.address, *screen, distance * std::pow(10., root.frame.logRadius)});
@@ -1307,6 +1313,9 @@ void Renderer::setSunShadows(bool enabled) {
 void Renderer::setPolarLights(bool enabled) {
     impl_->polarLights = enabled;
 }
+void Renderer::setCloudVolumes(bool enabled) {
+    impl_->cloudVolumes = enabled;
+}
 void Renderer::setTerrainCoverageDebug(bool enabled) {
     impl_->terrainCoverageDebug = enabled;
 }
@@ -1368,17 +1377,40 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         worldProjection(fov, static_cast<double>(p.width) / p.height, bgfx::getCaps()->homogeneousDepth);
     glm::mat4 v(p.view), proj(p.projection);
     const bool opticalDepth =
-        p.instruments && p.instruments->altitude >= 0 &&
-        std::any_of(nodes.begin(), nodes.end(), [](const Node& n) {
-            return n.address.kind() == Kind::Planet && planetClimate(n).pressureBar > .015;
-        });
-    p.hyperion->begin(p.mode, p.width, p.height, bool(p.instruments), bool(p.instruments));
+        (!p.instruments || p.instruments->altitude >= 0) && nav.anchor.kind() < Kind::Rock &&
+        std::any_of(
+            nodes.begin(), nodes.end(),
+            [](const Node& n) {
+                return n.address.kind() == Kind::Planet && planetClimate(n).pressureBar > .015;
+            });
+    p.hyperion->begin(p.mode, p.width, p.height, bool(p.instruments) || opticalDepth, bool(p.instruments));
+    if (p.mode != RenderMode::Original && nav.anchor.kind() < Kind::Rock &&
+        (!p.instruments || !p.instruments->shrinking))
+        for (const auto& planet : nodes)
+            if (planet.address.kind() == Kind::Planet && hasSolidSurface(planet)) {
+                const auto climate = planetClimate(planet);
+                const auto pose = p.poseFor(planet.address, nav);
+                const double physicalRadius = std::pow(10., planet.frame.logRadius),
+                             units = std::pow(10., nav.logDistance);
+                const auto localEye =
+                    glm::inverse(pose.orientation) * (p.eye - pose.position) * units / physicalRadius;
+                if (glm::length(localEye) > .99 && glm::length(localEye) < 8 &&
+                    climate.pressureBar * 288 / std::max(60., climate.temperatureK) > .01) {
+                    glm::dmat4 mapping(glm::mat3_cast(glm::inverse(pose.orientation)) *
+                                       (units / physicalRadius));
+                    mapping[3] = glm::dvec4(localEye, 1);
+                    p.hyperion->prepareWeather(planet, mapping,
+                                               p.activity ? p.activity->seconds : p.visualTime,
+                                               p.frameSeconds, p.cloudVolumes, p.fixedVisualTime >= 0);
+                }
+            }
     p.staticUploadBytes += p.hyperion->materialUploadBytes();
     p.stats.uploadBytes += p.hyperion->materialUploadBytes();
     bgfx::setViewMode(0,
                       p.mode == RenderMode::Original ? bgfx::ViewMode::Default : bgfx::ViewMode::Sequential);
     bgfx::setViewTransform(0, glm::value_ptr(v), glm::value_ptr(proj));
     bgfx::setViewRect(0, 0, 0, static_cast<uint16_t>(p.width), static_cast<uint16_t>(p.height));
+    p.stellarExposure = 1;
     if (p.mode != RenderMode::Original) {
         auto sky = extractSpectralSky(p.universe, nav);
         for (const auto& planet : nodes)
@@ -1388,11 +1420,15 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                 const double radius = std::pow(10., planet.frame.logRadius - nav.logDistance);
                 const auto localEye = glm::inverse(pose.orientation) * (p.eye - pose.position) / radius;
                 const auto light = glm::inverse(pose.orientation) * p.lightAt(planet.address, nav);
-                if (glm::length(localEye) > .99)
-                    sky.strength *= daylightSkyTransmission(
+                if (glm::length(localEye) > .99) {
+                    const float transmission = daylightSkyTransmission(
                         climate.pressureBar,
                         (glm::length(localEye) - 1) * std::pow(10., planet.frame.logRadius),
                         climate.scaleHeightMetres, glm::dot(glm::normalize(localEye), light));
+                    sky.strength *= transmission;
+                    p.stellarExposure *=
+                        p.mode == RenderMode::Hybrid ? glm::mix(1.f, transmission, .36f) : transmission;
+                }
             }
         p.hyperion->sky(sky, p.visualTime, float(p.width) / p.height, float(std::tan(fov * .5)));
     }
@@ -1684,13 +1720,15 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                     auto light = glm::inverse(pose.orientation) * p.lightAt(planet.address, nav);
                     const float height = float(std::clamp(
                         climate.scaleHeightMetres / std::pow(10., planet.frame.logRadius), 1e-5, .02));
-                    p.hyperion->atmosphere(
-                        glm::vec3(localEye), glm::vec3(light), rotation, float(radius), height, strength,
-                        float(p.width) / p.height,
-                        hyperionPhase(planet.planetSeed ? planet.planetSeed : planet.seed),
-                        float(std::pow(10., planet.frame.logRadius) / 1000.),
-                        p.polarLights && !p.instruments->shrinking ? extractPolarLight(planet) : PolarLight{},
-                        p.visualTime);
+                    p.hyperion->atmosphere(glm::vec3(localEye), glm::vec3(light), rotation, float(radius),
+                                           height, strength, float(p.width) / p.height,
+                                           float(std::tan(fov * .5)),
+                                           hyperionPhase(planet.planetSeed ? planet.planetSeed : planet.seed),
+                                           float(std::pow(10., planet.frame.logRadius) / 1000.),
+                                           p.polarLights && (!p.instruments || !p.instruments->shrinking)
+                                               ? extractPolarLight(planet)
+                                               : PolarLight{},
+                                           p.visualTime);
                     ++p.stats.atmospheres;
                 }
             }
@@ -1841,6 +1879,9 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     p.stats.shadowUpdates = p.hyperion->sunUpdated();
     p.stats.shadowActive = p.hyperion->sunActive();
     p.stats.materialBytes = p.hyperion->materialBytes();
+    p.stats.weatherPending = p.hyperion->weatherPending();
+    p.stats.weatherCacheBytes = p.hyperion->weatherStats().bytes;
+    p.stats.weatherGpuBytes = p.hyperion->weatherGpuBytes();
     p.stats.drawCalls = st->numDraw;
     p.stats.gpuMs = st->gpuTimerFreq
                         ? 1000. * static_cast<double>(st->gpuTimeEnd - st->gpuTimeBegin) / st->gpuTimerFreq

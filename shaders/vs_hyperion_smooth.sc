@@ -12,7 +12,7 @@ void main() {
     // Interpolate the authored vertex height, not the radius of a chord
     // through the planet. Coarse triangles must not invent lowland bands.
     v_elevation = length(v_pattern) - 1.0;
-    if(u_materialDomain.x>3.5 && u_materialDomain.x<4.5)
+    if(u_materialDomain.x>3.5 && u_materialDomain.x<4.5 && u_materialDomain.w<.5)
         v_pattern=a_position*vec3(length(i_data0.xyz),length(i_data1.xyz),length(i_data2.xyz))*u_materialDomain.z;
     vec3 normal = vec3(a_normal, 1. - abs(a_normal.x) - abs(a_normal.y));
     if(normal.z < 0.) normal.xy = (1. - abs(normal.yx)) * step(vec2(0.), normal.xy) * 2. - (1. - abs(normal.yx));

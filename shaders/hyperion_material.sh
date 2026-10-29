@@ -45,6 +45,7 @@ float surfaceSun(vec3 position,float nl){
  return mix(1.,visibility,edge);
 }
 #include "hyperion_illumination.sh"
+#include "hyperion_weather.sh"
 #include "hyperion_architecture.sh"
 void main(){
  float strength=u_hyperion[0].x,seconds=u_hyperion[0].y,phase=u_hyperion[0].z,primitive=u_hyperion[0].w;
@@ -63,7 +64,7 @@ void main(){
  if(primitive< -1.5){float nv=dot(N,V);if(nv<.025)N=normalize(N+V*(.025-nv));}
  else if(dot(N,V)<0.)N=-N;
  if(u_materialDomain.x>3.5 && u_materialDomain.x<4.5){
-  gl_FragColor=vec4(mix(base,architecture(base,N,V,L,v_pattern,v_sphere.y,phase,seconds,surfaceSun(v_position-u_hyperion[2].xyz,dot(N,L)),v_position),strength*.98),v_color0.a);return;
+  gl_FragColor=vec4(mix(base,architecture(base,N,V,L,v_pattern,v_sphere,phase,seconds,surfaceSun(v_position-u_hyperion[2].xyz,dot(N,L))*weatherSun(v_position,u_hyperion[2].xyz,L),v_position),strength*.98),v_color0.a);return;
  }
  bool terrain=primitive< -1.5;
  bool planet=u_materialDomain.x>.5 && u_materialDomain.x<1.5;
@@ -199,6 +200,21 @@ void main(){
 
  }
 #endif
+#if INFINITE_FLIGHT_RELIEF
+ // Hyperion water.hpp: filtered, metre-anchored ripple normals on the
+ // existing warm wet coating. Integer frequencies preserve the 64-unit
+ // material-origin period; no sea plane or landing surface is added.
+ if(planet && wet>.02 && ice<.5 && u_microParams.x>0.){
+  vec3 q=mul(u_micro,vec4(v_position-u_hyperion[2].xyz,1.)).xyz;
+  vec3 a=vec3(31.,0.,17.)*.0981747704,b=vec3(-69.,0.,19.)*.0981747704,c=vec3(113.,0.,-67.)*.0981747704;
+  vec3 wave=vec3(dot(q,a)-seconds*.94+phase*2.7,dot(q,b)-seconds*1.41+phase*4.1,dot(q,c)-seconds*2.37+phase*7.);
+  vec3 footprint=abs(vec3(dot(dFdx(q),a),dot(dFdx(q),b),dot(dFdx(q),c)))+abs(vec3(dot(dFdy(q),a),dot(dFdy(q),b),dot(dFdy(q),c)));
+  vec3 resolved=1.-smoothstep(vec3(.45),vec3(1.65),footprint);
+  float height=dot(sin(wave),resolved*vec3(.12,.035,.012))*u_microParams.x;
+  N=materialBump(N,v_position,height*wet,.38);
+  rough=mix(rough,.13+dot(1.-resolved,vec3(.028,.020,.012)),wet*.8);
+ }
+#endif
  // Hyperion's wet lowland response and glacial depth tint. These shade
  // the retained triangles; they never flatten terrain or change collision.
  if(planet){
@@ -217,6 +233,7 @@ void main(){
  float skyDay=planet?smoothstep(-.16,.10,dot(radial,L)):1.;
  float air=planet?clamp(u_environment.x*.7,0.,1.):.15;
  float visibility=cockpit?1.:surfaceSun(v_position-u_hyperion[2].xyz,sunDot);
+ if(planet)visibility*=weatherSun(v_position,u_hyperion[2].xyz,L);
  // Atmospheric sunset light changes only illumination, with the retained
  // stellar direction and pressure. Airless worlds keep their neutral sun.
  vec3 sunlight=mix(vec3(1.18,.40,.16),vec3(1.,.96,.88),smoothstep(-.02,.30,dot(up,L)));

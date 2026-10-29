@@ -1,0 +1,88 @@
+{
+  "crop": [
+    360,
+    225,
+    1123,
+    675
+  ],
+  "results": [
+    {
+      "scene": "surface/0-0-Plains-ORIGINAL",
+      "identical": true,
+      "before_sha256": "7e0964766b265614c1fecaca30e92a8961f510e7bb06bcb68fef199b4e0ce2cf",
+      "after_sha256": "7e0964766b265614c1fecaca30e92a8961f510e7bb06bcb68fef199b4e0ce2cf"
+    },
+    {
+      "scene": "surface/0-1-Plains-ORIGINAL",
+      "identical": true,
+      "before_sha256": "5efe6b13ead8a375c093ef9c890d295d516bfab1b040b3f42c68393c2e3cb0a5",
+      "after_sha256": "5efe6b13ead8a375c093ef9c890d295d516bfab1b040b3f42c68393c2e3cb0a5"
+    },
+    {
+      "scene": "surface/0-2-Plains-ORIGINAL",
+      "identical": true,
+      "before_sha256": "528a8cf3570c00ba25e8e50d6fedec6c8266a5b40f085852e5458dc78602e215",
+      "after_sha256": "528a8cf3570c00ba25e8e50d6fedec6c8266a5b40f085852e5458dc78602e215"
+    },
+    {
+      "scene": "surface/1-0-Highlands-ORIGINAL",
+      "identical": true,
+      "before_sha256": "4fb0354216a7e21b2dffddfcc39f6476783b81158fada91b44da3ef549acb861",
+      "after_sha256": "4fb0354216a7e21b2dffddfcc39f6476783b81158fada91b44da3ef549acb861"
+    },
+    {
+      "scene": "surface/1-1-Highlands-ORIGINAL",
+      "identical": true,
+      "before_sha256": "eb54622d8efddf67d68877240d188a39d78da8546747834ffc194a9b34f65a69",
+      "after_sha256": "eb54622d8efddf67d68877240d188a39d78da8546747834ffc194a9b34f65a69"
+    },
+    {
+      "scene": "surface/1-2-Highlands-ORIGINAL",
+      "identical": true,
+      "before_sha256": "75d931707cb4f7d1b32d909bcd39b1180342e840596de6d3a685a3327425ed90",
+      "after_sha256": "75d931707cb4f7d1b32d909bcd39b1180342e840596de6d3a685a3327425ed90"
+    },
+    {
+      "scene": "city/0-weather-orbit-ORIGINAL",
+      "identical": true,
+      "before_sha256": "c32b619d68828abf0c879baaa276f52e3e8758ee855d8a951bd29c036d3a8400",
+      "after_sha256": "c32b619d68828abf0c879baaa276f52e3e8758ee855d8a951bd29c036d3a8400"
+    },
+    {
+      "scene": "city/1-city-approach-ORIGINAL",
+      "identical": true,
+      "before_sha256": "204488109c6faf7a936b3267f573bd51ca88e80c7c696ac1422e405466f32af2",
+      "after_sha256": "204488109c6faf7a936b3267f573bd51ca88e80c7c696ac1422e405466f32af2"
+    },
+    {
+      "scene": "city/2-inhabitants-ORIGINAL",
+      "identical": true,
+      "before_sha256": "bcf68cefc8bbe985b1e02e01bb30bc30148cdf7de671985530e37d35971fa4cf",
+      "after_sha256": "bcf68cefc8bbe985b1e02e01bb30bc30148cdf7de671985530e37d35971fa4cf"
+    },
+    {
+      "scene": "city/3-sealed-colony-ORIGINAL",
+      "identical": true,
+      "before_sha256": "1833cfbb2d4ce10191898f05ade02619107806954b61a6f7244bf8b9500ed15f",
+      "after_sha256": "1833cfbb2d4ce10191898f05ade02619107806954b61a6f7244bf8b9500ed15f"
+    },
+    {
+      "scene": "city/4-precipitation-ORIGINAL",
+      "identical": true,
+      "before_sha256": "b278c55020b31b44157b8dc649ecb997d275cb5230f7dc6174c5afc975ec075b",
+      "after_sha256": "b278c55020b31b44157b8dc649ecb997d275cb5230f7dc6174c5afc975ec075b"
+    },
+    {
+      "scene": "city/5-organic-overview-ORIGINAL",
+      "identical": true,
+      "before_sha256": "271e56909141cc0c59a82b6911d7acbadd107fbe2b00f17ec42a29425a98b414",
+      "after_sha256": "271e56909141cc0c59a82b6911d7acbadd107fbe2b00f17ec42a29425a98b414"
+    },
+    {
+      "scene": "city/6-planned-overview-ORIGINAL",
+      "identical": true,
+      "before_sha256": "a90e0f84943cd13b3ddf56db8bdd95f516d713eeab1e052662023a4893fb8050",
+      "after_sha256": "a90e0f84943cd13b3ddf56db8bdd95f516d713eeab1e052662023a4893fb8050"
+    }
+  ]
+}

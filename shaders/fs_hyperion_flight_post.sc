@@ -1,13 +1,14 @@
 $input v_texcoord0
 #include <bgfx_shader.sh>
 #include "hyperion_pigment.sh"
+#include "hyperion_weather.sh"
 SAMPLER2D(s_scene,0);
 SAMPLER2D(s_bloom,1);
 SAMPLER2D(s_opaqueDepth,2);
 uniform vec4 u_post[2]; // texel.xy, strength, unused; reserved
 #include "hyperion_optical_ray.sh"
 // Retained atmospheric density, Rayleigh/Mie phases and stellar optical depth.
-vec3 atmosphere(vec2 uv, out vec3 transmission) {
+vec3 atmosphere(vec2 uv, vec2 cloudClip, out vec3 transmission) {
     transmission=vec3(1.);
     vec3 o=u_atmosphere[0].xyz,L=normalize(u_atmosphere[1].xyz);
     float H=u_atmosphere[1].w,outer=1.+H*4.444;
@@ -19,6 +20,7 @@ vec3 atmosphere(vec2 uv, out vec3 transmission) {
     vec2 ground=sphereSpan(o,d,1.);if(ground.x>0.)end=min(end,ground.x);
     float depth=texture2D(s_opaqueDepth,uv).r;
     if(depth>0.){float near=u_atmosphere[2].y,far=u_atmosphere[2].z;float z=near*far/(near+depth*(far-near));end=min(end,z/max(-cameraRay.z,.0001)/u_atmosphere[2].x);}
+    end=mix(end,min(end,cloudClip.x),smoothstep(.10,.85,cloudClip.y));
     if(end<=start || end-start<H*.00001)return vec3(0.);
     float stepSize=(end-start)/12.,optical=0.;vec3 sum=vec3(0.,0.,0.);
     vec3 beta=vec3(.0058,.0135,.029)*u_atmosphere[0].w;
@@ -44,11 +46,15 @@ vec3 atmosphere(vec2 uv, out vec3 transmission) {
 #include "hyperion_display.sh"
 #define INFINITE_POLAR_RESOLVE 1
 #include "hyperion_polar.sh"
+#include "hyperion_cloud_resolve.sh"
 void main() {
     vec2 uv=v_texcoord0;
     vec3 original=texture2D(s_scene,uv).rgb,c=resolveScene(uv);
     c+=texture2D(s_bloom,uv).rgb*.50;
-    if(u_atmosphere[0].w>0.){vec3 transmission;vec3 air=atmosphere(uv,transmission);c=(c+resolvePolar(uv))*transmission+air;}
+    if(u_atmosphere[0].w>0.){
+        vec2 cloudClip;vec4 clouds=resolveClouds(uv,cloudClip);c=(c+resolvePolar(uv))*clouds.a+clouds.rgb;
+        vec3 transmission;vec3 air=atmosphere(uv,cloudClip,transmission);c=c*transmission+air;
+    }
     c=displayTransform(c,uv);
     gl_FragColor=vec4(mix(original,c,u_post[0].z),1.);
 }

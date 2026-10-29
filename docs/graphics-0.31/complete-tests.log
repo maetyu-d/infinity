@@ -1,0 +1,128 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+      Start  1: read_only_weather_optics
+ 1/57 Test  #1: read_only_weather_optics .................   Passed    0.02 sec
+      Start  2: window_fits_display_work_area
+ 2/57 Test  #2: window_fits_display_work_area ............   Passed    0.00 sec
+      Start  3: multiscale_depth_precision
+ 3/57 Test  #3: multiscale_depth_precision ...............   Passed    0.00 sec
+      Start  4: surface_site_preservation
+ 4/57 Test  #4: surface_site_preservation ................   Passed    0.86 sec
+      Start  5: procedural_city_structure
+ 5/57 Test  #5: procedural_city_structure ................   Passed    0.78 sec
+      Start  6: planetary_weather_and_surface_life
+ 6/57 Test  #6: planetary_weather_and_surface_life .......   Passed    4.65 sec
+      Start  7: solid_planet_local_terrain
+ 7/57 Test  #7: solid_planet_local_terrain ...............   Passed    0.29 sec
+      Start  8: cockpit_layout_and_targeting
+ 8/57 Test  #8: cockpit_layout_and_targeting .............   Passed    0.07 sec
+      Start  9: planetary_population_and_moons
+ 9/57 Test  #9: planetary_population_and_moons ...........   Passed    0.33 sec
+      Start 10: legacy_population_preservation
+10/57 Test #10: legacy_population_preservation ...........   Passed    0.17 sec
+      Start 11: persistent_orbital_activity
+11/57 Test #11: persistent_orbital_activity ..............   Passed    2.66 sec
+      Start 12: operating_regimes_and_shrinking
+12/57 Test #12: operating_regimes_and_shrinking ..........   Passed    1.85 sec
+      Start 13: ship_dynamics_and_landing
+13/57 Test #13: ship_dynamics_and_landing ................   Passed    0.42 sec
+      Start 14: ship_handling_and_roll
+14/57 Test #14: ship_handling_and_roll ...................   Passed    0.27 sec
+      Start 15: unbounded_spatial_streaming
+15/57 Test #15: unbounded_spatial_streaming ..............   Passed    2.04 sec
+      Start 16: seamless_scale_flight
+16/57 Test #16: seamless_scale_flight ....................   Passed    2.24 sec
+      Start 17: free_flight_navigation
+17/57 Test #17: free_flight_navigation ...................   Passed    0.01 sec
+      Start 18: filtered_material_texture
+18/57 Test #18: filtered_material_texture ................   Passed    0.14 sec
+      Start 19: surface_shading_preserves_mesh
+19/57 Test #19: surface_shading_preserves_mesh ...........   Passed    0.01 sec
+      Start 20: rendering_preserves_universe
+20/57 Test #20: rendering_preserves_universe .............   Passed    1.02 sec
+      Start 21: performance_invariants
+21/57 Test #21: performance_invariants ...................   Passed    0.17 sec
+      Start 22: structural_processes
+22/57 Test #22: structural_processes .....................   Passed    0.39 sec
+      Start 23: universe_regressions
+23/57 Test #23: universe_regressions .....................   Passed    0.29 sec
+      Start 24: persistence_process_write
+24/57 Test #24: persistence_process_write ................   Passed    0.02 sec
+      Start 25: persistence_process_read
+25/57 Test #25: persistence_process_read .................   Passed    0.02 sec
+      Start 26: cross_scale_round_trip
+26/57 Test #26: cross_scale_round_trip ...................   Passed    5.34 sec
+      Start 27: continuity_restart_write
+27/57 Test #27: continuity_restart_write .................   Passed    0.50 sec
+      Start 28: continuity_restart_read
+28/57 Test #28: continuity_restart_read ..................   Passed    0.46 sec
+      Start 29: native_cloud_volumes
+29/57 Test #29: native_cloud_volumes .....................   Passed   52.30 sec
+      Start 30: native_cloud_volume_images
+30/57 Test #30: native_cloud_volume_images ...............   Passed   10.03 sec
+      Start 31: native_polar_optics
+31/57 Test #31: native_polar_optics ......................   Passed   52.52 sec
+      Start 32: native_polar_optics_images
+32/57 Test #32: native_polar_optics_images ...............***Failed   10.27 sec
+Traceback (most recent call last):
+  File "/Users/user/Documents/SC tutorial/Infinite/tools/check_polar_optics.py", line 36, in <module>
+    assert result['ground']['changed_pixels'] > 100, 'Polar sky lost the emission seen from the ground'
+AssertionError: Polar sky lost the emission seen from the ground
+
+      Start 33: native_ui_fit
+33/57 Test #33: native_ui_fit ............................   Passed   12.86 sec
+      Start 34: native_ui_fit_images
+34/57 Test #34: native_ui_fit_images .....................   Passed    0.18 sec
+      Start 35: native_planet_stability
+35/57 Test #35: native_planet_stability ..................   Passed   24.85 sec
+      Start 36: native_planet_stability_images
+36/57 Test #36: native_planet_stability_images ...........   Passed    0.94 sec
+      Start 37: native_weather_and_surface_life
+37/57 Test #37: native_weather_and_surface_life ..........   Passed   57.89 sec
+      Start 38: native_weather_and_surface_images
+38/57 Test #38: native_weather_and_surface_images ........   Passed    1.77 sec
+      Start 39: native_solid_terrain
+39/57 Test #39: native_solid_terrain .....................   Passed   33.60 sec
+      Start 40: native_solid_terrain_images
+40/57 Test #40: native_solid_terrain_images ..............   Passed    0.66 sec
+      Start 41: native_surface_quality
+41/57 Test #41: native_surface_quality ...................   Passed   22.91 sec
+      Start 42: native_surface_quality_images
+42/57 Test #42: native_surface_quality_images ............   Passed    0.68 sec
+      Start 43: native_surface_frame_and_retina
+43/57 Test #43: native_surface_frame_and_retina ..........   Passed   38.67 sec
+      Start 44: native_surface_frame_and_retina_images
+44/57 Test #44: native_surface_frame_and_retina_images ...   Passed    2.59 sec
+      Start 45: native_grazing_sun_receivers
+45/57 Test #45: native_grazing_sun_receivers .............   Passed   23.88 sec
+      Start 46: native_grazing_sun_images
+46/57 Test #46: native_grazing_sun_images ................   Passed    1.12 sec
+      Start 47: native_terrain_cast_shadows
+47/57 Test #47: native_terrain_cast_shadows ..............   Passed   15.23 sec
+      Start 48: native_terrain_cast_shadow_images
+48/57 Test #48: native_terrain_cast_shadow_images ........   Passed    0.51 sec
+      Start 49: native_piloting_loop
+49/57 Test #49: native_piloting_loop .....................   Passed   57.16 sec
+      Start 50: native_cockpit_images
+50/57 Test #50: native_cockpit_images ....................   Passed    5.29 sec
+      Start 51: native_boundary_streaming
+51/57 Test #51: native_boundary_streaming ................   Passed   23.13 sec
+      Start 52: native_boundary_pixels
+52/57 Test #52: native_boundary_pixels ...................   Passed    4.50 sec
+      Start 53: native_seamless_scale_flight
+53/57 Test #53: native_seamless_scale_flight .............   Passed   54.38 sec
+      Start 54: native_cross_scale_round_trip
+54/57 Test #54: native_cross_scale_round_trip ............   Passed   20.27 sec
+      Start 55: native_atomic_visibility
+55/57 Test #55: native_atomic_visibility .................   Passed    1.76 sec
+      Start 56: native_render_mode_round_trip
+56/57 Test #56: native_render_mode_round_trip ............   Passed   41.20 sec
+      Start 57: native_render_mode_images
+57/57 Test #57: native_render_mode_images ................   Passed   12.63 sec
+
+98% tests passed, 1 tests failed out of 57
+
+Total Test time (real) = 608.84 sec
+
+The following tests FAILED:
+	 32 - native_polar_optics_images (Failed)
+Errors while running CTest

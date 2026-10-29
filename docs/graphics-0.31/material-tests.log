@@ -1,0 +1,13 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 37: native_weather_and_surface_life
+1/4 Test #37: native_weather_and_surface_life .....   Passed   40.36 sec
+    Start 38: native_weather_and_surface_images
+2/4 Test #38: native_weather_and_surface_images ...   Passed    1.23 sec
+    Start 41: native_surface_quality
+3/4 Test #41: native_surface_quality ..............   Passed   15.54 sec
+    Start 42: native_surface_quality_images
+4/4 Test #42: native_surface_quality_images .......   Passed    0.57 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =  57.72 sec

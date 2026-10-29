@@ -1,6 +1,7 @@
 #pragma once
 #include "infinite/Presentation.hpp"
 #include "infinite/SurfaceShading.hpp"
+#include "infinite/WeatherField.hpp"
 #include <array>
 #include <bgfx/bgfx.h>
 #include <memory>
@@ -16,13 +17,25 @@ class HyperionRenderer {
     void finish();
     void sky(const SpectralSky&, double visualTime, float aspect, float tanHalfFov);
     void atmosphere(glm::vec3 eye, glm::vec3 light, const glm::mat4& cameraToPlanet, float radiusRenderUnits,
-                    float scaleHeightRatio, float strength, float aspect, float phase, float radiusKm,
-                    const PolarLight&, double visualTime);
+                    float scaleHeightRatio, float strength, float aspect, float tanHalfFov, float phase,
+                    float radiusKm, const PolarLight&, double visualTime);
     void bind(const ScenePresentation&, const glm::vec3& eye, const glm::vec3& light,
               const glm::mat4& pattern, float primitive, double visualTime, glm::vec4 cavity = {},
               const glm::mat4& micro = glm::mat4(0), float relief = 0, const glm::mat4& meso = glm::mat4(0),
               float mesoRelief = 0);
     void bindEmissions(const Node&, const glm::mat4& pattern, double visualTime);
+    void prepareWeather(const Node&, const glm::dmat4& planetFromEye, double seconds, double delta,
+                        bool volumes = true, bool frozen = false);
+    float weatherBlend(const Address& planet) const;
+    bool weatherPending() const {
+        return weatherPending_;
+    }
+    size_t weatherGpuBytes() const {
+        return weatherGpuBytes_;
+    }
+    WeatherFieldStats weatherStats() const {
+        return weatherCache_.stats();
+    }
     bool prepareSun(const SunShadowFrame&, uint64_t stableKey);
     bgfx::ProgramHandle sunProgram();
     bgfx::ProgramHandle cloudProgram();
@@ -104,6 +117,21 @@ class HyperionRenderer {
     bgfx::ProgramHandle sunProgram_ = BGFX_INVALID_HANDLE;
     bgfx::ProgramHandle cloudProgram_ = BGFX_INVALID_HANDLE;
     bgfx::ProgramHandle coverageProgram_ = BGFX_INVALID_HANDLE;
+    WeatherFieldCache weatherCache_;
+    std::optional<Address> weatherPlanet_;
+    std::array<std::shared_ptr<const WeatherField>, 2> weatherFields_;
+    std::array<bgfx::TextureHandle, 2> weatherTextures_{{BGFX_INVALID_HANDLE, BGFX_INVALID_HANDLE}};
+    std::array<glm::vec4, 4> weatherData_{};
+    glm::mat4 weatherFromEye_{1};
+    float weatherRamp_ = 0;
+    bool weatherPending_ = false;
+    size_t weatherGpuBytes_ = 0;
+    bgfx::UniformHandle weatherParams_ = BGFX_INVALID_HANDLE, weatherMatrix_ = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle weatherSampler_ = BGFX_INVALID_HANDLE, weatherNextSampler_ = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle cloudSampler_ = BGFX_INVALID_HANDLE;
+    bgfx::FrameBufferHandle cloudTarget_ = BGFX_INVALID_HANDLE;
+    bgfx::ProgramHandle cloudVolumeProgram_ = BGFX_INVALID_HANDLE;
+    int cloudWidth_ = 1, cloudHeight_ = 1;
     bgfx::UniformHandle sunSampler_ = BGFX_INVALID_HANDLE, sunMatrix_ = BGFX_INVALID_HANDLE,
                         sunParams_ = BGFX_INVALID_HANDLE;
     glm::mat4 sunFromWorld_{1};

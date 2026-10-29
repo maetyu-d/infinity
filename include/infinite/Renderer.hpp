@@ -27,6 +27,7 @@ struct FrameStats {
     size_t activityBodies = 0, activityVisible = 0, activityTriangles = 0, activityBytes = 0;
     size_t surfaceSites = 0, surfaceBuildings = 0, surfaceResidents = 0, surfaceTriangles = 0;
     size_t surfaceBytes = 0, surfaceGpuBytes = 0, surfacePending = 0, weatherCells = 0, weatherParticles = 0;
+    size_t weatherPending = 0, weatherCacheBytes = 0, weatherGpuBytes = 0, weatherVolumes = 0;
 };
 class Renderer {
   public:
@@ -41,7 +42,8 @@ class Renderer {
     void screenshot(const std::string& path);
     std::string backend() const;
     void setSunShadows(bool enabled);
-    void setPolarLights(bool enabled);          // Presentation switch for native negative-control captures.
+    void setPolarLights(bool enabled);  // Presentation switch for native negative-control captures.
+    void setCloudVolumes(bool enabled); // Native optical-volume negative control; weather is unchanged.
     void setTerrainCoverageDebug(bool enabled); // Native raster-coverage validation only.
     std::shared_ptr<const Geometry> submittedGeometry(const Address&) const;
     std::shared_ptr<const Geometry> galaxySamples() const;

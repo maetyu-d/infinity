@@ -35,6 +35,11 @@ void renderWeather(const Node& planet, glm::dvec3 localEye, const Navigation& na
                           std::cos(latitude) * std::sin(longitude));
     };
     const auto light = glm::inverse(pose.orientation) * lightAt(planet.address, nav);
+    const float legacyWeight = mode == RenderMode::Original ? 1.f
+                               : cloudVolumes               ? 1.f - hyperion->weatherBlend(planet.address)
+                                                            : 0.f;
+    if (mode != RenderMode::Original && hyperion->weatherBlend(planet.address) > 0)
+        ++stats.weatherVolumes;
     for (unsigned ring = 0; ring < rings; ring++)
         for (unsigned sector = 0; sector < sectors; sector++) {
             const double a = -std::numbers::pi / 2 + ring * std::numbers::pi / rings;
@@ -47,10 +52,14 @@ void renderWeather(const Node& planet, glm::dvec3 localEye, const Navigation& na
             const auto viewPoint = cameraInverse * (pose.orientation * (centre - localEye)) / units;
             if (!LOD::visible(viewPoint, shellRadius * .22 / units, double(width) / height, fieldOfView))
                 continue;
+            ++stats.weatherCells;
+            if (legacyWeight < .001f)
+                continue;
             const auto first = uint32_t(clouds.vertices.size());
             for (auto q : {direction(a, x), direction(b, x), direction(b, z), direction(a, z)}) {
                 const auto sample = sampleWeather(climate, q, 0, seconds);
-                const float alpha = float(sample.cloud * .54 * std::min(1., climate.pressureBar * 2));
+                const float alpha =
+                    float(sample.cloud * .54 * std::min(1., climate.pressureBar * 2)) * legacyWeight;
                 const auto delta = pose.orientation * (q * shellRadius - localEye) / units;
                 const float sun = float(.22 + .78 * std::max(0., glm::dot(q, light)));
                 const glm::vec3 tint =
@@ -62,7 +71,6 @@ void renderWeather(const Node& planet, glm::dvec3 localEye, const Navigation& na
             }
             clouds.indices.insert(clouds.indices.end(),
                                   {first, first + 1, first + 2, first, first + 2, first + 3});
-            ++stats.weatherCells;
         }
     if (mode == RenderMode::Original)
         transient(clouds, 63, false, false, true, false, true);
@@ -179,12 +187,27 @@ void drawCityPaving(const Mesh& mesh, const Node& planet, const Navigation& nav)
         bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_GEQUAL |
                        BGFX_STATE_MSAA);
         Geometry source;
-        const ScenePresentation presentation{source,
-                                             planet.address,
-                                             {.42, .6, .025, .01},
-                                             float(SurfaceMesh::Road) / float(SurfaceMesh::Count),
-                                             mode == RenderMode::Hybrid ? .36f : 1.f};
-        hyperion->bind(presentation, {}, glm::vec3(lightAt(planet.address, nav)), glm::mat4(1), 0,
+        const auto pose = poseFor(planet.address, nav);
+        const double units = std::pow(10., nav.logDistance);
+        const auto localEye = universe.pointRelative(
+            nav.anchor, eye * std::pow(10., nav.logDistance - anchorFrames.back().logRadius), planet.address,
+            0);
+        const auto up = glm::normalize(localEye);
+        const auto climate = planetClimate(planet);
+        const auto light = lightAt(planet.address, nav);
+        const ScenePresentation presentation{
+            source,
+            planet.address,
+            {.92, 0, .025, .01},
+            hyperionPhase(planet.seed),
+            mode == RenderMode::Hybrid ? .36f : 1.f,
+            {4, float(SurfaceMesh::Road), float(units), 1},
+            {float(glm::dot(up, glm::inverse(pose.orientation) * light)), float(climate.pressureBar), 0, 0},
+            glm::vec4(glm::vec3(pose.orientation * up), float(climate.pressureBar))};
+        glm::dmat4 material(glm::mat3_cast(glm::inverse(pose.orientation)) * units);
+        // This period is an integer number of both 3.6 m and 3.2 m panels.
+        material[3] = glm::dvec4(glm::mod(localEye, glm::dvec3(7372.8)), 1);
+        hyperion->bind(presentation, {}, glm::vec3(lightAt(planet.address, nav)), glm::mat4(material), 0,
                        activity->seconds);
         bgfx::submit(61, hyperion->geometryProgram());
     }

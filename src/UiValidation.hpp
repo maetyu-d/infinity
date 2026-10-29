@@ -62,7 +62,7 @@ class UiValidation {
         }
         const auto gen = cache.stats();
         stable_ = stats.visibleObjects && !gen.pending && !gen.queued && !stats.lodTransitions &&
-                          !stats.uploadDeferred
+                          !stats.uploadDeferred && !stats.weatherPending
                       ? stable_ + 1
                       : 0;
         if (stable_ < 10)

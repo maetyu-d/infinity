@@ -103,7 +103,7 @@ class SurfaceValidation {
         }
         const auto generation = cache.stats();
         bool ready = stats.surfacePending == 0 && generation.pending == 0 && generation.queued == 0 &&
-                     stats.lodTransitions == 0 && stats.uploadDeferred == 0;
+                     stats.lodTransitions == 0 && stats.uploadDeferred == 0 && stats.weatherPending == 0;
         ready &= stats.lifeWorlds > 0;
         if (stage_ == 0)
             ready &= stats.weatherCells > 0 && stats.surfaceSites > 0;

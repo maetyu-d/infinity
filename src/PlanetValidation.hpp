@@ -53,7 +53,7 @@ class PlanetValidation {
         }
         const auto generation = cache.stats();
         stable_ = stats.visibleObjects && !generation.pending && !generation.queued &&
-                          !stats.lodTransitions && !stats.uploadDeferred
+                          !stats.lodTransitions && !stats.uploadDeferred && !stats.weatherPending
                       ? stable_ + 1
                       : 0;
         if (stable_ < 24)
