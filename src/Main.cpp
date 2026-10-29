@@ -1,5 +1,6 @@
 #include "FlightValidation.hpp"
 #include "PilotValidation.hpp"
+#include "PlanetValidation.hpp"
 #include "StreamingValidation.hpp"
 #include "SurfaceValidation.hpp"
 #include "TerrainValidation.hpp"
@@ -31,7 +32,7 @@ struct Options {
     RenderMode renderMode = RenderMode::Original;
     double visualTime = -1;
     bool compareModes = false;
-    bool flightTest = false;
+    bool flightTest = false, planetTest = false;
     bool streamingTest = false;
     bool terrainQuality = false, terrainSurfaceFrame = false, sunShadows = true;
     bool pilotTest = false, terrainTest = false, surfaceTest = false, explicitMode = false;
@@ -53,7 +54,10 @@ static Options options(int argc, char** argv) {
             o.smoke = o.tour = o.fresh = true;
         else if (arg == "--benchmark-tour")
             o.benchmark = o.smoke = o.tour = o.fresh = true;
-        else if (arg == "--flight-test") {
+        else if (arg == "--planet-stability-test") {
+            o.planetTest = o.benchmark = o.smoke = o.fresh = true;
+            o.visualTime = 12;
+        } else if (arg == "--flight-test") {
             o.flightTest = o.benchmark = o.smoke = o.fresh = true;
             o.visualTime = 12;
         } else if (arg == "--streaming-test") {
@@ -113,7 +117,8 @@ static Options options(int argc, char** argv) {
                    "Backspace parent, F1 controls, Tab overlay, R reset, M marker, P screenshot, T tour, Esc "
                    "release mouse / quit.\nCLI: --fresh --tour --smoke-test --frames N --width N "
                    "--height N --seed N "
-                   "--benchmark-tour --flight-test --streaming-test --pilot-test --terrain-test "
+                   "--benchmark-tour --flight-test --streaming-test --pilot-test --planet-stability-test "
+                   "--terrain-test "
                    "--surface-test --terrain-quality-test --terrain-surface-frame-test "
                    "--terrain-saved-view-test FILE --no-sun-shadows "
                    "--capture-dir DIR "
@@ -127,13 +132,13 @@ static Options options(int argc, char** argv) {
         } else
             throw std::invalid_argument("Unknown option " + arg);
     }
-    if (o.compareModes || o.terrainTest || o.surfaceTest) {
+    if (o.compareModes || o.terrainTest || o.surfaceTest || o.planetTest) {
         o.renderMode = RenderMode::Original;
         o.visualTime = 12;
     }
     const unsigned validationModes = unsigned(o.flightTest) + unsigned(o.streamingTest) +
                                      unsigned(o.pilotTest) + unsigned(o.terrainTest) +
-                                     unsigned(o.surfaceTest);
+                                     unsigned(o.surfaceTest) + unsigned(o.planetTest);
     if (validationModes > 1 || (validationModes && o.tour))
         throw std::invalid_argument("Choose one automated validation mode");
     if (o.width < 320 || o.height < 240 || o.width > 7680 || o.height > 4320 || o.frames < 0)
@@ -168,7 +173,8 @@ int main(int argc, char** argv) {
         RegionCache cache(universe);
         FlightController flight(universe, nav, cache);
         Pilot pilot(universe, nav, flight);
-        bool pilotEnabled = (!opt.smoke && !opt.tour) || opt.pilotTest || opt.terrainTest || opt.surfaceTest;
+        bool pilotEnabled = (!opt.smoke && !opt.tour) || opt.pilotTest || opt.terrainTest ||
+                            opt.surfaceTest || opt.planetTest;
         std::unique_ptr<FlightValidation> flightProof;
         if (opt.flightTest)
             flightProof = std::make_unique<FlightValidation>(universe, nav);
@@ -222,6 +228,9 @@ int main(int argc, char** argv) {
             std::unique_ptr<PilotValidation> pilotProof;
             if (opt.pilotTest)
                 pilotProof = std::make_unique<PilotValidation>(universe, nav, pilot);
+            std::unique_ptr<PlanetValidation> planetProof;
+            if (opt.planetTest)
+                planetProof = std::make_unique<PlanetValidation>(universe, nav, pilot);
             bool shipRestored = false, legacyShip = false;
             if (!opt.fresh && !opt.smoke) {
                 std::ifstream saved(data / ("ship-" + std::to_string(universe.seed()) + ".txt"));
@@ -728,6 +737,11 @@ int main(int argc, char** argv) {
                     if (terrainProof->finished())
                         running = false;
                 }
+                if (planetProof) {
+                    planetProof->observe(stats, cache, renderer, opt.captures);
+                    if (planetProof->finished())
+                        running = false;
+                }
                 if (surfaceProof) {
                     surfaceProof->observe(stats, cache, renderer, opt.captures);
                     if (surfaceProof->finished())
@@ -907,7 +921,10 @@ int main(int argc, char** argv) {
             std::cout << "peak_rss_bytes=" << usage.ru_maxrss * 1024 << '\n';
 #endif
 #endif
-            if (opt.surfaceTest) {
+            if (opt.planetTest) {
+                if (!planetProof->finished())
+                    throw std::runtime_error("Native planet stability validation incomplete");
+            } else if (opt.surfaceTest) {
                 if (!surfaceProof->finished())
                     throw std::runtime_error("Native surface life validation incomplete");
             } else if (opt.terrainTest) {

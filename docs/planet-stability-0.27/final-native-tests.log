@@ -1,0 +1,21 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 27: native_planet_stability
+1/8 Test #27: native_planet_stability .............   Passed   16.27 sec
+    Start 28: native_planet_stability_images
+2/8 Test #28: native_planet_stability_images ......   Passed    0.43 sec
+    Start 29: native_weather_and_surface_life
+3/8 Test #29: native_weather_and_surface_life .....   Passed   45.98 sec
+    Start 30: native_weather_and_surface_images
+4/8 Test #30: native_weather_and_surface_images ...   Passed    0.70 sec
+    Start 31: native_solid_terrain
+5/8 Test #31: native_solid_terrain ................   Passed   24.28 sec
+    Start 32: native_solid_terrain_images
+6/8 Test #32: native_solid_terrain_images .........   Passed    0.25 sec
+    Start 33: native_surface_quality
+7/8 Test #33: native_surface_quality ..............   Passed   18.01 sec
+    Start 34: native_surface_quality_images
+8/8 Test #34: native_surface_quality_images .......   Passed    0.34 sec
+
+100% tests passed, 0 tests failed out of 8
+
+Total Test time (real) = 106.26 sec

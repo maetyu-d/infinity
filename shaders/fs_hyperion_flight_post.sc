@@ -25,7 +25,7 @@ vec3 atmosphere(vec2 uv, out vec3 transmission) {
     float start=max(0.,span.x),end=span.y;
     vec2 ground=sphereSpan(o,d,1.);if(ground.x>0.)end=min(end,ground.x);
     float depth=texture2D(s_opaqueDepth,uv).r;
-    if(depth<.999999){float near=u_atmosphere[2].y,far=u_atmosphere[2].z;float z=near*far/(far-depth*(far-near));end=min(end,z/max(-cameraRay.z,.0001)/u_atmosphere[2].x);}
+    if(depth>0.){float near=u_atmosphere[2].y,far=u_atmosphere[2].z;float z=near*far/(near+depth*(far-near));end=min(end,z/max(-cameraRay.z,.0001)/u_atmosphere[2].x);}
     if(end<=start || end-start<H*.00001)return vec3(0.);
     float stepSize=(end-start)/8.,optical=0.;vec3 sum=vec3(0.,0.,0.);
     vec3 beta=vec3(.0058,.0135,.029)*u_atmosphere[0].w;

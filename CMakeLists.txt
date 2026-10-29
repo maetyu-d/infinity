@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Infinite VERSION 0.26.0 LANGUAGES C CXX)
+project(Infinite VERSION 0.27.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -39,6 +39,9 @@ else()
   target_compile_options(infinite_performance_tests PRIVATE -ffp-contract=off)
 endif()
 enable_testing()
+add_executable(infinite_depth_tests tests/WorldDepthTests.cpp)
+target_link_libraries(infinite_depth_tests PRIVATE infinite_core)
+add_test(NAME multiscale_depth_precision COMMAND infinite_depth_tests)
 add_executable(infinite_surface_site_snapshot tools/SurfaceSiteSnapshot.cpp)
 target_link_libraries(infinite_surface_site_snapshot PRIVATE infinite_core)
 add_test(NAME surface_site_preservation COMMAND infinite_surface_site_snapshot --check "${PROJECT_SOURCE_DIR}/tests/data/surface-sites-0.19.txt")
@@ -141,6 +144,13 @@ if(INFINITE_VIEWER)
   endif()
   if(INFINITE_GPU_TESTS)
     find_package(Python3 3.9 COMPONENTS Interpreter REQUIRED)
+    add_test(NAME native_planet_stability COMMAND "${CMAKE_COMMAND}"
+      "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/planet-stability"
+      -P "${PROJECT_SOURCE_DIR}/cmake/RunPlanetStability.cmake")
+    set_tests_properties(native_planet_stability PROPERTIES FIXTURES_SETUP planet_stability TIMEOUT 180)
+    add_test(NAME native_planet_stability_images COMMAND "${Python3_EXECUTABLE}"
+      "${PROJECT_SOURCE_DIR}/tools/check_planet_stability.py" "${CMAKE_BINARY_DIR}/planet-stability/captures")
+    set_tests_properties(native_planet_stability_images PROPERTIES FIXTURES_REQUIRED planet_stability)
     add_test(NAME native_weather_and_surface_life COMMAND "${CMAKE_COMMAND}"
       "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/surface-native"
       -P "${PROJECT_SOURCE_DIR}/cmake/RunSurfaceLife.cmake")

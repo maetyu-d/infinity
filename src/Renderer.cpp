@@ -3,6 +3,7 @@
 #include "infinite/Cockpit.hpp"
 #include "infinite/Streaming.hpp"
 #include "infinite/SurfaceShading.hpp"
+#include "infinite/WorldDepth.hpp"
 #include <InstanceShaders.hpp>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_metal.h>
@@ -369,7 +370,7 @@ struct Renderer::Impl {
             bgfx::setVertexBuffer(1, normals);
         bgfx::setInstanceDataBuffer(&idb);
         uint64_t state =
-            BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_MSAA;
+            BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_DEPTH_TEST_GREATER | BGFX_STATE_MSAA;
         if (lines)
             state |= BGFX_STATE_PT_LINES;
         if (opacity > .99f)
@@ -386,7 +387,7 @@ struct Renderer::Impl {
         bgfx::setTransform(glm::value_ptr(model));
         bgfx::setVertexBuffer(0, m.vertices);
         bgfx::setIndexBuffer(m.indices);
-        bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_PT_LINES | BGFX_STATE_DEPTH_TEST_LEQUAL |
+        bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_PT_LINES | BGFX_STATE_DEPTH_TEST_GEQUAL |
                        BGFX_STATE_MSAA);
         bgfx::submit(worldView(), colorProgram);
     }
@@ -409,9 +410,9 @@ struct Renderer::Impl {
         bgfx::setIndexBuffer(&ib);
         uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_MSAA;
         if (lines)
-            state |= BGFX_STATE_PT_LINES | (depth ? BGFX_STATE_DEPTH_TEST_LEQUAL : 0);
+            state |= BGFX_STATE_PT_LINES | (depth ? BGFX_STATE_DEPTH_TEST_GEQUAL : 0);
         else if (depth)
-            state |= BGFX_STATE_DEPTH_TEST_LEQUAL;
+            state |= BGFX_STATE_DEPTH_TEST_GEQUAL;
         if (writeDepth)
             state |= BGFX_STATE_WRITE_Z;
         if (additive)
@@ -584,7 +585,7 @@ struct Renderer::Impl {
             bgfx::setVertexBuffer(0, atomSpheres[level].vertices);
             bgfx::setIndexBuffer(atomSpheres[level].indices);
             bgfx::setInstanceDataBuffer(item.instances, 0, static_cast<uint32_t>(count));
-            uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_MSAA;
+            uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_DEPTH_TEST_GREATER | BGFX_STATE_MSAA;
             if (opacity > .99f)
                 state |= BGFX_STATE_WRITE_Z;
             else
@@ -836,7 +837,7 @@ struct Renderer::Impl {
                     bgfx::setVertexBuffer(0, mesh.vertices);
                     bgfx::setIndexBuffer(mesh.indices);
                     bgfx::setInstanceDataBuffer(&buffer);
-                    bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS |
+                    bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_GREATER |
                                    BGFX_STATE_MSAA);
                     if (mode != RenderMode::Original) {
                         Geometry source;
@@ -1085,7 +1086,7 @@ struct Renderer::Impl {
             bgfx::setIndexBuffer(&indices);
             bgfx::setInstanceDataBuffer(&instances);
             bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z |
-                           BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_MSAA);
+                           BGFX_STATE_DEPTH_TEST_GREATER | BGFX_STATE_MSAA);
             bgfx::submit(1, terrainCoverageDebug ? hyperion->coverageProgram()
                                                  : hyperion->geometryProgram(smoothTerrain));
             ++stats.terrainTiles;
@@ -1148,6 +1149,9 @@ Renderer::Renderer(SDL_Window* window, const Universe& universe)
     init.swapChain.width = p.width;
     init.swapChain.height = p.height;
     init.swapChain.flags = BGFX_SWAP_CHAIN_MSAA_X4;
+    // Reversed-Z needs floating-point storage in Original mode too. A fixed
+    // 24-bit default swap-chain depth buffer would retain the far-world bug.
+    init.swapChain.formatDepthStencil = bgfx::TextureFormat::D32F;
     init.reset = BGFX_RESET_VSYNC | BGFX_RESET_MAXANISOTROPY;
     init.limits.maxTransientVbSize = 8 * 1024 * 1024;
     init.limits.maxTransientIbSize = 3 * 1024 * 1024;
@@ -1209,7 +1213,7 @@ Renderer::Renderer(SDL_Window* window, const Universe& universe)
         p.instanceLayout.add(static_cast<bgfx::Attrib::Enum>(bgfx::Attrib::TexCoord0 + i), 4,
                              bgfx::AttribType::Float);
     p.instanceLayout.end();
-    bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, UINT32_C(0x03060cff), 1.0f, uint8_t(0));
+    bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, UINT32_C(0x03060cff), 0.0f, uint8_t(0));
     bgfx::setViewMode(0, bgfx::ViewMode::Default);
     bgfx::setViewMode(1, bgfx::ViewMode::Sequential);
     bgfx::setDebug(BGFX_DEBUG_TEXT);
@@ -1342,9 +1346,8 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     p.view = glm::mat4_cast(glm::inverse(nav.orientation)) * glm::translate(glm::dmat4(1), -p.eye);
     const double fov = p.instruments ? 70. * std::numbers::pi / 180. : 1.;
     p.fieldOfView = fov;
-    p.projection = bgfx::getCaps()->homogeneousDepth
-                       ? glm::perspectiveRH_NO(fov, static_cast<double>(p.width) / p.height, .00005, 10000.0)
-                       : glm::perspectiveRH_ZO(fov, static_cast<double>(p.width) / p.height, .00005, 10000.0);
+    p.projection =
+        worldProjection(fov, static_cast<double>(p.width) / p.height, bgfx::getCaps()->homogeneousDepth);
     glm::mat4 v(p.view), proj(p.projection);
     const bool opticalDepth =
         p.instruments && p.instruments->altitude >= 0 &&
@@ -1586,7 +1589,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
             bgfx::setVertexBuffer(0, mesh.vertices);
             bgfx::setIndexBuffer(mesh.indices);
             bgfx::setInstanceDataBuffer(&buffer);
-            bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_MSAA | BGFX_STATE_DEPTH_TEST_LEQUAL |
+            bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_MSAA | BGFX_STATE_DEPTH_TEST_GEQUAL |
                            BGFX_STATE_BLEND_ADD);
             if (p.mode != RenderMode::Original) {
                 // Use the same focus-local reference at every magnification.
@@ -1737,7 +1740,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     bgfx::setViewTransform(255, nullptr, glm::value_ptr(ortho));
     bgfx::setViewRect(255, 0, 0, static_cast<uint16_t>(p.width), static_cast<uint16_t>(p.height));
     if (!p.instruments)
-        p.transient(locators, 255, true, false);
+        p.transient(locators, 255, true, false, false);
     bgfx::dbgTextClear();
     if (looking && !p.instruments)
         bgfx::dbgTextPrintf(p.width / 16, p.height / 32, 0x0f, "+");

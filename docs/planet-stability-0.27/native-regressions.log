@@ -1,0 +1,47 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+      Start 29: native_weather_and_surface_life
+ 1/21 Test #29: native_weather_and_surface_life ..........   Passed   70.92 sec
+      Start 30: native_weather_and_surface_images
+ 2/21 Test #30: native_weather_and_surface_images ........   Passed    1.31 sec
+      Start 31: native_solid_terrain
+ 3/21 Test #31: native_solid_terrain .....................   Passed   46.00 sec
+      Start 32: native_solid_terrain_images
+ 4/21 Test #32: native_solid_terrain_images ..............   Passed    0.62 sec
+      Start 33: native_surface_quality
+ 5/21 Test #33: native_surface_quality ...................   Passed   29.85 sec
+      Start 34: native_surface_quality_images
+ 6/21 Test #34: native_surface_quality_images ............   Passed    0.58 sec
+      Start 35: native_surface_frame_and_retina
+ 7/21 Test #35: native_surface_frame_and_retina ..........   Passed   23.04 sec
+      Start 36: native_surface_frame_and_retina_images
+ 8/21 Test #36: native_surface_frame_and_retina_images ...   Passed    1.14 sec
+      Start 37: native_grazing_sun_receivers
+ 9/21 Test #37: native_grazing_sun_receivers .............   Passed   14.73 sec
+      Start 38: native_grazing_sun_images
+10/21 Test #38: native_grazing_sun_images ................   Passed    0.34 sec
+      Start 39: native_terrain_cast_shadows
+11/21 Test #39: native_terrain_cast_shadows ..............   Passed   13.42 sec
+      Start 40: native_terrain_cast_shadow_images
+12/21 Test #40: native_terrain_cast_shadow_images ........   Passed    0.30 sec
+      Start 41: native_piloting_loop
+13/21 Test #41: native_piloting_loop .....................   Passed   35.47 sec
+      Start 42: native_cockpit_images
+14/21 Test #42: native_cockpit_images ....................   Passed    4.36 sec
+      Start 43: native_boundary_streaming
+15/21 Test #43: native_boundary_streaming ................   Passed   11.79 sec
+      Start 44: native_boundary_pixels
+16/21 Test #44: native_boundary_pixels ...................   Passed    3.11 sec
+      Start 45: native_seamless_scale_flight
+17/21 Test #45: native_seamless_scale_flight .............   Passed   37.59 sec
+      Start 46: native_cross_scale_round_trip
+18/21 Test #46: native_cross_scale_round_trip ............   Passed   30.90 sec
+      Start 47: native_atomic_visibility
+19/21 Test #47: native_atomic_visibility .................   Passed    1.05 sec
+      Start 48: native_render_mode_round_trip
+20/21 Test #48: native_render_mode_round_trip ............   Passed   42.96 sec
+      Start 49: native_render_mode_images
+21/21 Test #49: native_render_mode_images ................   Passed    8.14 sec
+
+100% tests passed, 0 tests failed out of 21
+
+Total Test time (real) = 377.63 sec

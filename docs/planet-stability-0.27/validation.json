@@ -1,0 +1,21 @@
+{
+  "total_unique_checks": 49,
+  "cpu_checks": 26,
+  "native_checks": 23,
+  "status": "passed",
+  "existing_native_regressions": 21,
+  "final_native_repeat_checks": 8,
+  "final_repeat_includes": [
+    "new planet stability",
+    "weather and surface life",
+    "solid terrain",
+    "surface quality"
+  ],
+  "baseline_image_comparisons_failed": 12,
+  "corrected_image_comparisons_passed": 12,
+  "preserved_source_files": 40,
+  "mode_round_trip": "9 scales, 17 camera/identity/generation proofs",
+  "automatic_flight": "8 inward and 8 outward reference changes, all 9 scales visible",
+  "new_gpu_targets": 0,
+  "native_backend": "Metal"
+}

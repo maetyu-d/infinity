@@ -1,5 +1,6 @@
 #include "HyperionRenderer.hpp"
 #include "infinite/MaterialTexture.hpp"
+#include "infinite/WorldDepth.hpp"
 #include <HyperionShaders.hpp>
 #include <algorithm>
 #include <cstring>
@@ -212,7 +213,7 @@ void HyperionRenderer::begin(RenderMode mode, int width, int height, bool optica
             for (bgfx::ViewId id = 0; id < 64; ++id)
                 bgfx::setViewFrameBuffer(id, BGFX_INVALID_HANDLE);
         if (previousMode != RenderMode::Original)
-            bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x03060cff, 1.f, 0);
+            bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x03060cff, 0.f, 0);
         return;
     }
     init();
@@ -242,7 +243,7 @@ void HyperionRenderer::begin(RenderMode mode, int width, int height, bool optica
             bgfx::setViewFrameBuffer(id, scene_);
     // Hyperion skyFragment's linear ink (.004,.007,.016), rounded to the
     // clear API's RGBA8 input; the HDR display transform is applied later.
-    bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x010204ff, 1.f, 0);
+    bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x010204ff, 0.f, 0);
 }
 bgfx::ProgramHandle HyperionRenderer::sunProgram() {
     if (!bgfx::isValid(sunProgram_))
@@ -297,7 +298,7 @@ void HyperionRenderer::atmosphere(glm::vec3 eye, glm::vec3 light, const glm::mat
                                   float height, float strength, float aspect, float phase, float radiusKm) {
     atmosphereData_[0] = glm::vec4(eye, strength);
     atmosphereData_[1] = glm::vec4(light, height);
-    atmosphereData_[2] = {radius, .00005f, 10000.f, phase};
+    atmosphereData_[2] = {radius, float(worldNearPlane), float(worldFarPlane), phase};
     atmosphereData_[3] = {aspect * .7002075f, .7002075f, bgfx::getCaps()->originBottomLeft ? 1.f : -1.f,
                           radiusKm};
     atmosphereMatrix_ = rotation;

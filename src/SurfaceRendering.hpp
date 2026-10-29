@@ -93,7 +93,7 @@ void renderWeather(const Node& planet, glm::dvec3 localEye, const Navigation& na
             bgfx::setVertexBuffer(0, &vertices);
             bgfx::setIndexBuffer(&indices);
             bgfx::setInstanceDataBuffer(&buffer);
-            bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_DEPTH_TEST_LEQUAL | BGFX_STATE_BLEND_ALPHA |
+            bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_DEPTH_TEST_GEQUAL | BGFX_STATE_BLEND_ALPHA |
                            BGFX_STATE_MSAA);
             bgfx::submit(63, hyperion->cloudProgram());
         }
@@ -176,7 +176,7 @@ void drawCityPaving(const Mesh& mesh, const Node& planet, const Navigation& nav)
         bgfx::setVertexBuffer(0, &vertices);
         bgfx::setIndexBuffer(&indices);
         bgfx::setInstanceDataBuffer(&buffer);
-        bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LEQUAL |
+        bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_GEQUAL |
                        BGFX_STATE_MSAA);
         Geometry source;
         const ScenePresentation presentation{source,
@@ -413,7 +413,7 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
                         bgfx::setIndexBuffer(mesh.indices);
                         bgfx::setInstanceDataBuffer(&buffer);
                         bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_Z |
-                                       BGFX_STATE_DEPTH_TEST_LEQUAL | BGFX_STATE_MSAA);
+                                       BGFX_STATE_DEPTH_TEST_GEQUAL | BGFX_STATE_MSAA);
                         if (mode != RenderMode::Original) {
                             Geometry source;
                             const ScenePresentation presentation{

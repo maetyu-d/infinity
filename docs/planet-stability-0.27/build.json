@@ -1,0 +1,15 @@
+{
+  "version": "0.27.0",
+  "bundle_build": "27",
+  "binary_sha256": "d6f953b1d0cc5c2b427eb4be6d8fab96ced51f8f7789e8bcfbe09e893294b0c7",
+  "renderer": "Metal",
+  "shader_backends_compiled": [
+    "metal",
+    "spirv",
+    "glsl"
+  ],
+  "world_depth": "reversed Z, D32F",
+  "clip_near": 5e-05,
+  "clip_far": 10000,
+  "new_targets": 0
+}

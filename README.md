@@ -1,6 +1,8 @@
 # INFINITE
 
-A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.26 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.27 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+
+Version 0.27 fixes **flickering planetary surfaces across magnification changes** using floating-point reversed-Z world depth in all three rendering modes. Atmospheric depth reading, terrain, cities, traffic and atomic rendering use the matching convention. A new native primary/moon fixture reproduces the old flashing patches and verifies identical geometry at different rendering unit sizes. The universe and saved flight remain intact. [Cause, matched captures and regression checks](docs/PLANET_STABILITY_0_27.md).
 
 Version 0.26 gives **terrain, cities and planets stronger depth and material definition**. Shaded mineral recesses and filtered relief replace the broad ground glow, glass reflects a planetary sky gradient, facade joints receive subtle relief, and atoms retain clearer light/shadow separation. Darker gaps in the spectral sky improve celestial silhouettes; a hue-preserving bloom pass keeps bright emitters distinct. Geometry, seeds, ship handling and all three render modes are preserved. [Matched images, validation and measured cost](docs/GRAPHICS_0_26.md).
 
