@@ -97,6 +97,7 @@ void HyperionRenderer::init() {
                                    bgfx::copy(noise.data(), uint32_t(noise.size())));
     noiseBytes_ = noise.size();
     stellarParams_ = bgfx::createUniform("u_stellar", bgfx::UniformType::Vec4, 3);
+    landingParams_ = bgfx::createUniform("u_landingContact", bgfx::UniformType::Vec4, 2);
     weatherParams_ = bgfx::createUniform("u_weather", bgfx::UniformType::Vec4, 4);
     weatherMatrix_ = bgfx::createUniform("u_weatherFromEye", bgfx::UniformType::Mat4);
     weatherSampler_ = bgfx::createUniform("s_weatherField", bgfx::UniformType::Sampler);
@@ -183,35 +184,21 @@ HyperionRenderer::~HyperionRenderer() {
                    cloudVolumeProgram_, corona_, solarBlur_, stellarGeometry_[0], stellarGeometry_[1]})
         if (bgfx::isValid(p))
             bgfx::destroy(p);
-    for (auto u : {stellarParams_,
-                   weatherParams_,
-                   weatherMatrix_,
-                   weatherSampler_,
-                   weatherNextSampler_,
-                   cloudSampler_,
-                   polarSampler_,
-                   polar_,
-                   environment_,
-                   noiseSampler_,
-                   detailSampler_,
-                   surface_,
-                   sceneSampler_,
-                   bloomSampler_,
-                   style_,
-                   pattern_,
-                   postParams_,
-                   cavity_,
-                   depthSampler_,
-                   atmosphere_,
-                   atmosphereRotation_,
-                   micro_,
-                   microParams_,
-                   meso_,
-                   domain_,
-                   skyParams_,
-                   skyRotation_,
-                   sunSampler_,
-                   sunMatrix_,
+    for (auto u : {landingParams_,  stellarParams_,
+                   weatherParams_,  weatherMatrix_,
+                   weatherSampler_, weatherNextSampler_,
+                   cloudSampler_,   polarSampler_,
+                   polar_,          environment_,
+                   noiseSampler_,   detailSampler_,
+                   surface_,        sceneSampler_,
+                   bloomSampler_,   style_,
+                   pattern_,        postParams_,
+                   cavity_,         depthSampler_,
+                   atmosphere_,     atmosphereRotation_,
+                   micro_,          microParams_,
+                   meso_,           domain_,
+                   skyParams_,      skyRotation_,
+                   sunSampler_,     sunMatrix_,
                    sunParams_})
         if (bgfx::isValid(u))
             bgfx::destroy(u);
@@ -245,6 +232,8 @@ bgfx::ProgramHandle HyperionRenderer::geometryProgram(bool smooth, bool stellar)
 void HyperionRenderer::begin(RenderMode mode, int width, int height, bool opticalDepth, bool flight) {
     detailUploadBytes_ = 0;
     flight_ = flight;
+    landingData_ = {};
+    landingPlanet_.reset();
     stellarData_ = {};
     atmosphereData_ = {};
     polarData_ = {};
@@ -369,6 +358,12 @@ void HyperionRenderer::atmosphere(glm::vec3 eye, glm::vec3 light, const glm::mat
     polarData_[0] = glm::vec4(polar.axis, polar.strength);
     polarData_[1] = {float(polar.innerRadius), float(polar.outerRadius), float(seconds), 0};
 }
+void HyperionRenderer::landingContact(const Address& planet, glm::vec3 point, glm::vec3 up, float radius,
+                                      float strength) {
+    landingPlanet_ = planet;
+    landingData_[0] = glm::vec4(point, radius);
+    landingData_[1] = glm::vec4(up, strength);
+}
 void HyperionRenderer::stellar(const StellarImage& image, float aspect, float tanHalfFov) {
     if (!readableDepth_ || image.visibility <= 0 || image.direction.z >= -.0001)
         return;
@@ -469,6 +464,9 @@ void HyperionRenderer::bind(const ScenePresentation& p, const glm::vec3& eye, co
     bgfx::setUniform(domain_, glm::value_ptr(p.domain));
     bgfx::setUniform(surface_, glm::value_ptr(p.surface));
     bgfx::setUniform(environment_, glm::value_ptr(p.environment));
+    const auto contact =
+        landingPlanet_ && *landingPlanet_ == p.materialFrame ? landingData_ : std::array<glm::vec4, 2>{};
+    bgfx::setUniform(landingParams_, contact.data(), 2);
     bgfx::setUniform(cavity_, glm::value_ptr(cavity));
     auto weather = weatherData_;
     weather[1].w =

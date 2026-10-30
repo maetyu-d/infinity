@@ -1,0 +1,138 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+      Start  1: addressed_stellar_optics
+ 1/62 Test  #1: addressed_stellar_optics .................   Passed    0.09 sec
+      Start  2: read_only_weather_optics
+ 2/62 Test  #2: read_only_weather_optics .................   Passed    0.65 sec
+      Start  3: window_fits_display_work_area
+ 3/62 Test  #3: window_fits_display_work_area ............   Passed    0.67 sec
+      Start  4: multiscale_depth_precision
+ 4/62 Test  #4: multiscale_depth_precision ...............   Passed    0.57 sec
+      Start  5: surface_site_preservation
+ 5/62 Test  #5: surface_site_preservation ................   Passed    4.15 sec
+      Start  6: procedural_city_structure
+ 6/62 Test  #6: procedural_city_structure ................   Passed    3.40 sec
+      Start  7: planetary_weather_and_surface_life
+ 7/62 Test  #7: planetary_weather_and_surface_life .......   Passed   16.86 sec
+      Start  8: solid_planet_local_terrain
+ 8/62 Test  #8: solid_planet_local_terrain ...............   Passed    1.62 sec
+      Start  9: cockpit_layout_and_targeting
+ 9/62 Test  #9: cockpit_layout_and_targeting .............   Passed    0.83 sec
+      Start 10: planetary_population_and_moons
+10/62 Test #10: planetary_population_and_moons ...........   Passed    1.59 sec
+      Start 11: legacy_population_preservation
+11/62 Test #11: legacy_population_preservation ...........   Passed    1.05 sec
+      Start 12: persistent_orbital_activity
+12/62 Test #12: persistent_orbital_activity ..............   Passed    3.15 sec
+      Start 13: operating_regimes_and_shrinking
+13/62 Test #13: operating_regimes_and_shrinking ..........   Passed    2.01 sec
+      Start 14: ship_dynamics_and_landing
+14/62 Test #14: ship_dynamics_and_landing ................   Passed    1.04 sec
+      Start 15: ship_handling_and_roll
+15/62 Test #15: ship_handling_and_roll ...................   Passed    0.77 sec
+      Start 16: unbounded_spatial_streaming
+16/62 Test #16: unbounded_spatial_streaming ..............   Passed    2.19 sec
+      Start 17: seamless_scale_flight
+17/62 Test #17: seamless_scale_flight ....................   Passed    3.52 sec
+      Start 18: free_flight_navigation
+18/62 Test #18: free_flight_navigation ...................   Passed    0.32 sec
+      Start 19: filtered_material_texture
+19/62 Test #19: filtered_material_texture ................   Passed    0.50 sec
+      Start 20: surface_shading_preserves_mesh
+20/62 Test #20: surface_shading_preserves_mesh ...........   Passed    0.31 sec
+      Start 21: rendering_preserves_universe
+21/62 Test #21: rendering_preserves_universe .............   Passed    1.20 sec
+      Start 22: performance_invariants
+22/62 Test #22: performance_invariants ...................   Passed    0.56 sec
+      Start 23: structural_processes
+23/62 Test #23: structural_processes .....................   Passed    0.72 sec
+      Start 24: universe_regressions
+24/62 Test #24: universe_regressions .....................   Passed    0.57 sec
+      Start 25: persistence_process_write
+25/62 Test #25: persistence_process_write ................   Passed    0.01 sec
+      Start 26: persistence_process_read
+26/62 Test #26: persistence_process_read .................   Passed    0.01 sec
+      Start 27: cross_scale_round_trip
+27/62 Test #27: cross_scale_round_trip ...................   Passed    3.87 sec
+      Start 28: continuity_restart_write
+28/62 Test #28: continuity_restart_write .................   Passed    0.46 sec
+      Start 29: continuity_restart_read
+29/62 Test #29: continuity_restart_read ..................   Passed    0.46 sec
+      Start 30: native_landing_light
+30/62 Test #30: native_landing_light .....................   Passed   28.00 sec
+      Start 31: native_landing_light_images
+31/62 Test #31: native_landing_light_images ..............***Failed    7.56 sec
+Traceback (most recent call last):
+  File "/Users/user/Documents/SC tutorial/Infinite/tools/check_landing_light.py", line 32, in <module>
+    assert 100 < changed < 1440 * 900 * .85, scene + ': contact shade missing or screen-wide'
+AssertionError: hybrid: contact shade missing or screen-wide
+
+      Start 32: native_celestial_optics
+32/62 Test #32: native_celestial_optics ..................   Passed   39.51 sec
+      Start 33: native_celestial_optics_images
+33/62 Test #33: native_celestial_optics_images ...........   Passed    7.94 sec
+      Start 34: native_cloud_volumes
+34/62 Test #34: native_cloud_volumes .....................   Passed   47.92 sec
+      Start 35: native_cloud_volume_images
+35/62 Test #35: native_cloud_volume_images ...............   Passed    9.26 sec
+      Start 36: native_polar_optics
+36/62 Test #36: native_polar_optics ......................   Passed   40.77 sec
+      Start 37: native_polar_optics_images
+37/62 Test #37: native_polar_optics_images ...............   Passed    6.80 sec
+      Start 38: native_ui_fit
+38/62 Test #38: native_ui_fit ............................   Passed   10.88 sec
+      Start 39: native_ui_fit_images
+39/62 Test #39: native_ui_fit_images .....................   Passed    0.11 sec
+      Start 40: native_planet_stability
+40/62 Test #40: native_planet_stability ..................   Passed   24.67 sec
+      Start 41: native_planet_stability_images
+41/62 Test #41: native_planet_stability_images ...........   Passed    0.83 sec
+      Start 42: native_weather_and_surface_life
+42/62 Test #42: native_weather_and_surface_life ..........   Passed   58.89 sec
+      Start 43: native_weather_and_surface_images
+43/62 Test #43: native_weather_and_surface_images ........   Passed    0.90 sec
+      Start 44: native_solid_terrain
+44/62 Test #44: native_solid_terrain .....................   Passed   35.30 sec
+      Start 45: native_solid_terrain_images
+45/62 Test #45: native_solid_terrain_images ..............   Passed    0.80 sec
+      Start 46: native_surface_quality
+46/62 Test #46: native_surface_quality ...................   Passed   28.45 sec
+      Start 47: native_surface_quality_images
+47/62 Test #47: native_surface_quality_images ............   Passed    0.85 sec
+      Start 48: native_surface_frame_and_retina
+48/62 Test #48: native_surface_frame_and_retina ..........   Passed   26.78 sec
+      Start 49: native_surface_frame_and_retina_images
+49/62 Test #49: native_surface_frame_and_retina_images ...   Passed    2.68 sec
+      Start 50: native_grazing_sun_receivers
+50/62 Test #50: native_grazing_sun_receivers .............   Passed   17.37 sec
+      Start 51: native_grazing_sun_images
+51/62 Test #51: native_grazing_sun_images ................   Passed    0.73 sec
+      Start 52: native_terrain_cast_shadows
+52/62 Test #52: native_terrain_cast_shadows ..............   Passed   18.67 sec
+      Start 53: native_terrain_cast_shadow_images
+53/62 Test #53: native_terrain_cast_shadow_images ........   Passed    0.42 sec
+      Start 54: native_piloting_loop
+54/62 Test #54: native_piloting_loop .....................   Passed   50.67 sec
+      Start 55: native_cockpit_images
+55/62 Test #55: native_cockpit_images ....................   Passed    4.80 sec
+      Start 56: native_boundary_streaming
+56/62 Test #56: native_boundary_streaming ................   Passed   20.80 sec
+      Start 57: native_boundary_pixels
+57/62 Test #57: native_boundary_pixels ...................   Passed    3.74 sec
+      Start 58: native_seamless_scale_flight
+58/62 Test #58: native_seamless_scale_flight .............   Passed   47.98 sec
+      Start 59: native_cross_scale_round_trip
+59/62 Test #59: native_cross_scale_round_trip ............   Passed   31.93 sec
+      Start 60: native_atomic_visibility
+60/62 Test #60: native_atomic_visibility .................   Passed    1.20 sec
+      Start 61: native_render_mode_round_trip
+61/62 Test #61: native_render_mode_round_trip ............   Passed   74.81 sec
+      Start 62: native_render_mode_images
+62/62 Test #62: native_render_mode_images ................   Passed   19.15 sec
+
+98% tests passed, 1 tests failed out of 62
+
+Total Test time (real) = 724.41 sec
+
+The following tests FAILED:
+	 31 - native_landing_light_images (Failed)
+Errors while running CTest

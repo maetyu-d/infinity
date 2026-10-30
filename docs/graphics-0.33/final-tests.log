@@ -1,0 +1,9 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 30: native_landing_light
+1/2 Test #30: native_landing_light .............   Passed   41.13 sec
+    Start 31: native_landing_light_images
+2/2 Test #31: native_landing_light_images ......   Passed   16.04 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =  57.18 sec

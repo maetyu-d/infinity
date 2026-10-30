@@ -1,0 +1,30 @@
+{
+  "platform": "Apple M1 / MacBookAir10,1 / 16 GiB / macOS 26.4.1 / Metal",
+  "resolution": [
+    1440,
+    900
+  ],
+  "fixture": "tests/data/surface-view-0.23.txt",
+  "sampling": "One final serial pair, same retained grazing camera, time 12 s, three rendering modes. VSync disabled in both benchmark executables. Whole-run timings include asynchronous generation, mode changes and screenshots. Normal gameplay retains VSync.",
+  "before": {
+    "median_frame_ms": 11.0768,
+    "p95_frame_ms": 22.3023,
+    "frame_count": 651,
+    "peak_process_rss_bytes": 145489920,
+    "max_effect_bytes_including_shadows": 29988608,
+    "max_material_bytes": 1660244,
+    "max_weather_gpu_bytes": 87384,
+    "executable_sha256": "8f635e47dfe39f7f5a2a2825361cfb153aab278380b01775cb959405780ca6a8"
+  },
+  "after": {
+    "median_frame_ms": 7.67021,
+    "p95_frame_ms": 13.8427,
+    "frame_count": 604,
+    "peak_process_rss_bytes": 141787136,
+    "max_effect_bytes_including_shadows": 29988608,
+    "max_material_bytes": 1660244,
+    "max_weather_gpu_bytes": 87384,
+    "executable_sha256": "f64459d8088969e027d1892f323d411ad86925f70fc63a525d2c652e3c09e849"
+  },
+  "geometry_and_camera_match": true
+}

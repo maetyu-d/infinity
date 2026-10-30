@@ -6,6 +6,7 @@ uniform vec4 u_materialDomain;
 uniform mat4 u_pattern;
 uniform vec4 u_surface;
 uniform vec4 u_environment;
+uniform vec4 u_landingContact[2]; // ground point/radius and tangent up/strength, camera-relative
 #if INFINITE_FLIGHT_RELIEF
 uniform mat4 u_micro;
 uniform mat4 u_meso;
@@ -158,7 +159,9 @@ void main(){
   coatHue=pigment(phase+strata*.85+grain*.16);
   // Hyperion's geological pigment sits in the reflectance. Light and shadow
   // still describe the existing relief; this is not an emissive overlay.
-  vec3 dryPigment=deposits*.68+coatHue*.19;
+  // Pigment absorbs the broad white substrate instead of adding another
+  // pastel light term. The retained metre-anchored strata select the hue.
+  vec3 dryPigment=deposits*(.32+coatHue*1.25)+coatHue*.065;
   vec3 frozenPigment=deposits*vec3(.57,.83,1.05)+coatHue*.075;
   deposits=mix(deposits,mix(dryPigment,frozenPigment,ice),.62);
   deposits=mix(deposits,deposits*.88+coatHue*.028,.20);
@@ -239,6 +242,14 @@ void main(){
   rough=mix(rough,.19,wet*.78);
  }
  if(planet && ice>.5)rough=mix(rough,mix(.20,.76,glacialFrost),.65);
+ // Dust and weathered sediment are rough dielectric coatings. The actual
+ // slopes expose the inherited bedrock; liquid and ice keep their own BRDF.
+ float regolith=0.;
+ if(planet && !gas){
+  float steep=1.-clamp(dot(N,radial),0.,1.);
+  regolith=(1.-ice)*(1.-wet)*(1.-smoothstep(.10,.38,steep));
+  rough=max(rough,mix(.52,.82,regolith)*(1.-wet)*(1.-ice));
+ }
  vec3 ndx=dFdx(N),ndy=dFdy(N);float variance=min(.25,max(dot(ndx,ndx),dot(ndy,ndy))*.5);
  rough=pow(min(1.,pow(rough,4.)+variance),.25);
  // Hyperion worldFragment's pixel-angle roughness floor suppresses distant
@@ -256,19 +267,37 @@ void main(){
  // stellar direction and pressure. Airless worlds keep their neutral sun.
  vec3 sunlight=mix(vec3(1.18,.40,.16),vec3(1.,.96,.88),smoothstep(-.02,.30,dot(up,L)));
  sunlight=mix(vec3(1.),sunlight,air*.80);
- vec3 lit=brdf(albedo,N,V,L,rough,atom?.32:u_hyperion[1].y)*cavity*visibility*sunlight;
+ float metallic=atom?.32:u_hyperion[1].y;
+ metallic*=1.-regolith*.90;
+ vec3 lit=brdf(albedo,N,V,L,rough,metallic)*cavity*visibility*sunlight;
  lit+=diffuseEnvironment(N,up,albedo,skyDay,air)*cavity;
  // Directional environment reflection makes rough rock, ice, polished ore and
  // atomic sites respond differently to the same sun and broad sky.
- vec3 reflected=reflectedEnvironment(reflect(-V,N),up,skyDay,phase,rough);
- vec3 f0=mix(vec3(.035),albedo,atom?.32:u_hyperion[1].y);
- vec3 reflectance=f0+(1.-f0)*fresnel;
+ vec3 reflected=reflectedEnvironment(reflect(-V,N),up,skyDay,phase,rough,planet?air:1.);
+ vec3 f0=mix(vec3(.035),albedo,metallic);
+ vec3 reflectance=environmentReflectance(f0,fresnel,rough);
  lit+=reflected*reflectance*(1.-rough*.65)*cavity*(1.+wet*1.4+ice*.38);
  if(planet){
   // Low-energy transmission tint at glacial grazing angles; the dark
   // fractures and opaque silhouettes continue to come from the material.
   lit+=albedo*vec3(.12,.36,.45)*ice*pow(1.-max(0.,dot(N,V)),2.)*day*.22;
   lit+=coatHue*fresnel*(ice*.055+wet*.07)*day;
+  // Hyperion worldFragment's filtered luminous shores. Coverage follows the
+  // existing wet-lowland elevation rule; this coats the retained triangles.
+  // No water plane, coastline geometry or collision surface is introduced.
+  float shoreWidth=max(fwidth(v_elevation)*1.5,.000012);
+  float shore=1.-smoothstep(shoreWidth,shoreWidth*3.,abs(v_elevation+.00080));
+  float shoreResolved=1.-smoothstep(.00010,.00060,fwidth(v_elevation));
+  vec3 foam=mix(vec3(.24,.34,.31),coatHue*.35+.08,.22);
+  lit+=foam*shore*shoreResolved*liquid*(1.-ice)*(.06+.36*day)*visibility;
+ }
+ // Hyperion worldFragment's gear contact shadow. The CPU supplies the actual
+ // retained terrain point and physical hull size; this changes colour only.
+ if(terrain && u_landingContact[1].w>0.){
+  vec3 delta=v_position-u_hyperion[2].xyz-u_landingContact[0].xyz;
+  delta-=u_landingContact[1].xyz*dot(delta,u_landingContact[1].xyz);
+  float contact=exp(-dot(delta,delta)/max(u_landingContact[0].w*u_landingContact[0].w,1e-24));
+  lit*=1.-contact*u_landingContact[1].w;
  }
  lit+=albedo*pow(max(0.,dot(V,L)),4.)*day*visibility*(terrain?.045:.012)*cavity;
  if(atom){

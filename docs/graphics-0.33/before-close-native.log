@@ -1,0 +1,8 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+TERRAIN_RENDER 0,0,0/1:0/2:9/3:0 type=Plains mode=ORIGINAL tiles=73 height_m=17458.3 shadow=0 terrain=15478872727004113333 geometry=13013521890454725648 range_m=0
+TERRAIN_RENDER 0,0,0/1:0/2:9/3:0 type=Plains mode=HYPERION tiles=73 height_m=17458.3 shadow=1 terrain=15478872727004113333 geometry=13013521890454725648 range_m=0
+TERRAIN_RENDER 0,0,0/1:0/2:9/3:0 type=Plains mode=HYBRID tiles=73 height_m=17458.3 shadow=1 terrain=15478872727004113333 geometry=13013521890454725648 range_m=0
+PASS: native solid terrain worlds=1 modes=3; height fields, positions and cameras retained
+FRAME median_ms=11.0768 p95_ms=22.3023 frames=651 cache_bytes=10151832
+peak_rss_bytes=145489920

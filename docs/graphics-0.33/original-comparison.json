@@ -1,0 +1,62 @@
+{
+  "0-0-Plains-ORIGINAL.ppm": {
+    "crop": [
+      360,
+      480,
+      1080,
+      720
+    ],
+    "sha256": "ed1ce369b9c008e9e253ad179ca45b7565e77d482d826d5681d2dc18094afb85",
+    "pixel_identical": true
+  },
+  "0-1-Plains-ORIGINAL.ppm": {
+    "crop": [
+      360,
+      480,
+      1080,
+      720
+    ],
+    "sha256": "d6035b8edb0ad64619cb37440616614fb7d5a45f5edf3c144e6fb8eba4783c9c",
+    "pixel_identical": true
+  },
+  "0-2-Plains-ORIGINAL.ppm": {
+    "crop": [
+      360,
+      480,
+      1080,
+      720
+    ],
+    "sha256": "5c3ee7f7f16caa74283d2124c5d97bbb314decc5752b884504e7a6e4f80eff62",
+    "pixel_identical": true
+  },
+  "1-0-Highlands-ORIGINAL.ppm": {
+    "crop": [
+      360,
+      480,
+      1080,
+      720
+    ],
+    "sha256": "ca52cd5358128faeae809251589c07688f75e76bef06f9d4eef4c152489c2a52",
+    "pixel_identical": true
+  },
+  "1-1-Highlands-ORIGINAL.ppm": {
+    "crop": [
+      360,
+      480,
+      1080,
+      720
+    ],
+    "sha256": "d11938fd602cca24306539b90d52a5e4e09c00112bf2ecc91b474b485546c027",
+    "pixel_identical": true
+  },
+  "1-2-Highlands-ORIGINAL.ppm": {
+    "crop": [
+      360,
+      480,
+      1080,
+      720
+    ],
+    "sha256": "6ec9bbb5ebf7e7a93c72d29215d7c93218bcae87eccd9db3fc39671d0427e41d",
+    "pixel_identical": true
+  }
+}

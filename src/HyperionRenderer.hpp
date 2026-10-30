@@ -16,6 +16,7 @@ class HyperionRenderer {
     void begin(RenderMode, int width, int height, bool opticalDepth = false, bool flight = false);
     void finish();
     void stellar(const StellarImage&, float aspect, float tanHalfFov);
+    void landingContact(const Address&, glm::vec3 pointFromEye, glm::vec3 up, float radius, float strength);
     void sky(const SpectralSky&, double visualTime, float aspect, float tanHalfFov);
     void atmosphere(glm::vec3 eye, glm::vec3 light, const glm::mat4& cameraToPlanet, float radiusRenderUnits,
                     float scaleHeightRatio, float strength, float aspect, float tanHalfFov, float phase,
@@ -71,6 +72,9 @@ class HyperionRenderer {
     }
 
   private:
+    bgfx::UniformHandle landingParams_ = BGFX_INVALID_HANDLE;
+    std::array<glm::vec4, 2> landingData_{};
+    std::optional<Address> landingPlanet_;
     bgfx::UniformHandle stellarParams_ = BGFX_INVALID_HANDLE;
     bgfx::ProgramHandle corona_ = BGFX_INVALID_HANDLE, solarBlur_ = BGFX_INVALID_HANDLE;
     std::array<bgfx::ProgramHandle, 2> stellarGeometry_{{BGFX_INVALID_HANDLE, BGFX_INVALID_HANDLE}};

@@ -125,6 +125,7 @@ struct Renderer::Impl {
     bool polarLights = true;
     bool cloudVolumes = true;
     bool stellarOptics = true;
+    bool landingShade = true;
     float stellarExposure = 1;
     std::shared_ptr<const Geometry> skyGeometry;
     std::vector<CelestialContact> contacts;
@@ -997,6 +998,26 @@ struct Renderer::Impl {
             pattern[i] = glm::dvec4(mapping.linear[i] * units, 0);
         pattern[3] = glm::dvec4(mapping(eye * units), 1);
         bool updateSun = false;
+        if (landingShade && mode != RenderMode::Original && instruments && !instruments->shrinking &&
+            nav.anchor.kind() < Kind::Rock && instruments->altitude >= 0 &&
+            instruments->altitude < instruments->hullMetres / 12. * 38.) {
+            const auto pose = poseFor(planet.address, nav);
+            const double radiusMetres = std::pow(10., planet.frame.logRadius);
+            const auto planetEye = glm::dvec3(pattern[3]) * radiusMetres;
+            const auto direction = glm::normalize(planetEye);
+            const double groundHeight = universe.terrainHeight(planet, direction);
+            const double altitude = glm::length(planetEye) - radiusMetres - groundHeight;
+            const double size = instruments->hullMetres / 12.;
+            const double shade = 1 - smoothstep(size, size * 38, std::max(0., altitude));
+            if (shade > 0 && size > 0) {
+                const double units = std::pow(10., nav.logDistance);
+                const auto point =
+                    pose.orientation * (direction * (radiusMetres + groundHeight) - planetEye) / units;
+                hyperion->landingContact(
+                    planet.address, glm::vec3(point), glm::vec3(pose.orientation * direction),
+                    float((3.2 * size + std::max(0., altitude) * .22) / units), float(shade * .35));
+            }
+        }
         SunShadowFrame sun;
         if (sunShadows && mode != RenderMode::Original && instruments && !instruments->shrinking &&
             nav.anchor.kind() < Kind::Rock && std::pow(10., nav.logDistance) > .01) {
@@ -1326,6 +1347,9 @@ void Renderer::setPolarLights(bool enabled) {
 }
 void Renderer::setStellarOptics(bool enabled) {
     impl_->stellarOptics = enabled;
+}
+void Renderer::setLandingShade(bool enabled) {
+    impl_->landingShade = enabled;
 }
 void Renderer::setCloudVolumes(bool enabled) {
     impl_->cloudVolumes = enabled;

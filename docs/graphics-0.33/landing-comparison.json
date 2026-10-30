@@ -1,0 +1,26 @@
+{
+  "near": {
+    "changed_pixels": 605399,
+    "change_threshold_255": 3,
+    "peak_delta_255": 29,
+    "rebase_rms_255": 0.34136165247106737
+  },
+  "distant": {
+    "changed_pixels": 0,
+    "change_threshold_255": 3,
+    "peak_delta_255": 0,
+    "rebase_rms_255": 0.10791228719842362
+  },
+  "original": {
+    "changed_pixels": 0,
+    "change_threshold_255": 3,
+    "peak_delta_255": 0,
+    "rebase_rms_255": 0.0
+  },
+  "hybrid": {
+    "changed_pixels": 14335,
+    "change_threshold_255": 2,
+    "peak_delta_255": 4,
+    "rebase_rms_255": 0.06719696495203807
+  }
+}

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Infinite VERSION 0.32.0 LANGUAGES C CXX)
+project(Infinite VERSION 0.33.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -153,6 +153,13 @@ if(INFINITE_VIEWER)
   endif()
   if(INFINITE_GPU_TESTS)
     find_package(Python3 3.9 COMPONENTS Interpreter REQUIRED)
+    add_test(NAME native_landing_light COMMAND "${CMAKE_COMMAND}"
+      "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/landing-light"
+      -P "${PROJECT_SOURCE_DIR}/cmake/RunLandingLight.cmake")
+    set_tests_properties(native_landing_light PROPERTIES FIXTURES_SETUP landing_light TIMEOUT 150)
+    add_test(NAME native_landing_light_images COMMAND "${Python3_EXECUTABLE}"
+      "${PROJECT_SOURCE_DIR}/tools/check_landing_light.py" "${CMAKE_BINARY_DIR}/landing-light")
+    set_tests_properties(native_landing_light_images PROPERTIES FIXTURES_REQUIRED landing_light)
     add_test(NAME native_celestial_optics COMMAND "${CMAKE_COMMAND}"
       "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/celestial-optics"
       -P "${PROJECT_SOURCE_DIR}/cmake/RunCelestialOptics.cmake")

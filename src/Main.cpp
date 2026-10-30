@@ -1,6 +1,7 @@
 #include "CelestialValidation.hpp"
 #include "CloudValidation.hpp"
 #include "FlightValidation.hpp"
+#include "LandingLightValidation.hpp"
 #include "PilotValidation.hpp"
 #include "PlanetValidation.hpp"
 #include "PolarValidation.hpp"
@@ -38,7 +39,7 @@ struct Options {
     double visualTime = -1;
     bool compareModes = false;
     bool flightTest = false, planetTest = false, uiFitTest = false, polarTest = false, cloudTest = false,
-         celestialTest = false, celestialSunOnly = false;
+         celestialTest = false, celestialSunOnly = false, landingLightTest = false;
     bool streamingTest = false;
     bool terrainQuality = false, terrainSurfaceFrame = false, sunShadows = true;
     bool pilotTest = false, terrainTest = false, surfaceTest = false, explicitMode = false;
@@ -60,7 +61,10 @@ static Options options(int argc, char** argv) {
             o.smoke = o.tour = o.fresh = true;
         else if (arg == "--benchmark-tour")
             o.benchmark = o.smoke = o.tour = o.fresh = true;
-        else if (arg == "--celestial-graphics-test" || arg == "--stellar-sun-test") {
+        else if (arg == "--landing-light-test") {
+            o.landingLightTest = o.benchmark = o.smoke = o.fresh = true;
+            o.visualTime = 12;
+        } else if (arg == "--celestial-graphics-test" || arg == "--stellar-sun-test") {
             o.celestialSunOnly = arg == "--stellar-sun-test";
             o.celestialTest = o.benchmark = o.smoke = o.fresh = true;
             o.visualTime = 12;
@@ -138,7 +142,7 @@ static Options options(int argc, char** argv) {
                    "--height N --seed N "
                    "--benchmark-tour --flight-test --streaming-test --pilot-test --planet-stability-test "
                    "--ui-fit-test --polar-optics-test --cloud-volume-test --celestial-graphics-test "
-                   "--stellar-sun-test "
+                   "--stellar-sun-test --landing-light-test "
                    "--terrain-test "
                    "--surface-test --terrain-quality-test --terrain-surface-frame-test "
                    "--terrain-saved-view-test FILE --no-sun-shadows "
@@ -160,7 +164,7 @@ static Options options(int argc, char** argv) {
     const unsigned validationModes =
         unsigned(o.flightTest) + unsigned(o.streamingTest) + unsigned(o.pilotTest) + unsigned(o.terrainTest) +
         unsigned(o.surfaceTest) + unsigned(o.planetTest) + unsigned(o.uiFitTest) + unsigned(o.polarTest) +
-        unsigned(o.cloudTest) + unsigned(o.celestialTest);
+        unsigned(o.cloudTest) + unsigned(o.celestialTest) + unsigned(o.landingLightTest);
     if (validationModes > 1 || (validationModes && o.tour))
         throw std::invalid_argument("Choose one automated validation mode");
     if (o.width < 320 || o.height < 240 || o.width > 7680 || o.height > 4320 || o.frames < 0)
@@ -201,7 +205,7 @@ int main(int argc, char** argv) {
         Pilot pilot(universe, nav, flight);
         bool pilotEnabled = (!opt.smoke && !opt.tour) || opt.pilotTest || opt.terrainTest ||
                             opt.surfaceTest || opt.planetTest || opt.uiFitTest || opt.polarTest ||
-                            opt.cloudTest || opt.celestialTest;
+                            opt.cloudTest || opt.celestialTest || opt.landingLightTest;
         std::unique_ptr<FlightValidation> flightProof;
         if (opt.flightTest)
             flightProof = std::make_unique<FlightValidation>(universe, nav);
@@ -271,6 +275,9 @@ int main(int argc, char** argv) {
             if (opt.celestialTest)
                 celestialProof =
                     std::make_unique<CelestialValidation>(universe, nav, pilot, opt.celestialSunOnly);
+            std::unique_ptr<LandingLightValidation> landingLightProof;
+            if (opt.landingLightTest)
+                landingLightProof = std::make_unique<LandingLightValidation>(universe, nav, pilot);
             bool shipRestored = false, legacyShip = false;
             if (!opt.fresh && !opt.smoke) {
                 std::ifstream saved(data / ("ship-" + std::to_string(universe.seed()) + ".txt"));
@@ -774,10 +781,14 @@ int main(int argc, char** argv) {
                     cloudProof->advance(renderer);
                 if (celestialProof)
                     celestialProof->advance(renderer);
+                if (landingLightProof)
+                    landingLightProof->advance(renderer);
                 renderer.setCockpit(pilotEnabled ? &pilot.instruments() : nullptr);
-                auto stats = renderer.render(
-                    nav, cache, overlay && !opt.polarTest && !opt.cloudTest && !opt.celestialTest, fps,
-                    persistence.markerCount(), noticeTime > 0 ? notice : "", looking);
+                auto stats =
+                    renderer.render(nav, cache,
+                                    overlay && !opt.polarTest && !opt.cloudTest && !opt.celestialTest &&
+                                        !opt.landingLightTest,
+                                    fps, persistence.markerCount(), noticeTime > 0 ? notice : "", looking);
                 if (flightProof) {
                     flightProof->observe(stats, renderer, opt.captures);
                     if (flightProof->finished())
@@ -811,6 +822,11 @@ int main(int argc, char** argv) {
                 if (celestialProof) {
                     celestialProof->observe(stats, cache, renderer, opt.captures);
                     if (celestialProof->finished())
+                        running = false;
+                }
+                if (landingLightProof) {
+                    landingLightProof->observe(stats, cache, renderer, opt.captures);
+                    if (landingLightProof->finished())
                         running = false;
                 }
                 if (cloudProof) {
@@ -1005,7 +1021,10 @@ int main(int argc, char** argv) {
             std::cout << "peak_rss_bytes=" << usage.ru_maxrss * 1024 << '\n';
 #endif
 #endif
-            if (opt.celestialTest) {
+            if (opt.landingLightTest) {
+                if (!landingLightProof->finished())
+                    throw std::runtime_error("Landing-light fixture incomplete");
+            } else if (opt.celestialTest) {
                 if (!celestialProof->finished())
                     throw std::runtime_error("Celestial graphics fixture incomplete");
             } else if (opt.cloudTest) {

@@ -44,6 +44,7 @@ class Renderer {
     void setSunShadows(bool enabled);
     void setPolarLights(bool enabled);   // Presentation switch for native negative-control captures.
     void setStellarOptics(bool enabled); // Native optics negative control.
+    void setLandingShade(bool enabled);  // Native contact-shading negative control.
     void setCloudVolumes(bool enabled);  // Native optical-volume negative control; weather is unchanged.
     void setTerrainCoverageDebug(bool enabled); // Native raster-coverage validation only.
     std::shared_ptr<const Geometry> submittedGeometry(const Address&) const;

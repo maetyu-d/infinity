@@ -1,0 +1,17 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+LANDING_LIGHT scene=near sample=0 geometry=13581507250006745020 terrain=14924006371097107978 frame=680 camera=unchanged
+LANDING_LIGHT scene=near sample=1 geometry=13581507250006745020 terrain=14924006371097107978 frame=711 camera=unchanged
+LANDING_LIGHT scene=near sample=2 geometry=13581507250006745020 terrain=14924006371097107978 frame=742 camera=unchanged
+LANDING_LIGHT scene=distant sample=0 geometry=13581507250006745020 terrain=14924006371097107978 frame=773 camera=unchanged
+LANDING_LIGHT scene=distant sample=1 geometry=13581507250006745020 terrain=14924006371097107978 frame=804 camera=unchanged
+LANDING_LIGHT scene=distant sample=2 geometry=13581507250006745020 terrain=14924006371097107978 frame=835 camera=unchanged
+LANDING_LIGHT scene=original sample=0 geometry=13581507250006745020 terrain=14924006371097107978 frame=866 camera=unchanged
+LANDING_LIGHT scene=original sample=1 geometry=13581507250006745020 terrain=14924006371097107978 frame=897 camera=unchanged
+LANDING_LIGHT scene=original sample=2 geometry=13581507250006745020 terrain=14924006371097107978 frame=928 camera=unchanged
+LANDING_LIGHT scene=hybrid sample=0 geometry=13581507250006745020 terrain=14924006371097107978 frame=959 camera=unchanged
+LANDING_LIGHT scene=hybrid sample=1 geometry=13581507250006745020 terrain=14924006371097107978 frame=990 camera=unchanged
+LANDING_LIGHT scene=hybrid sample=2 geometry=13581507250006745020 terrain=14924006371097107978 frame=1021 camera=unchanged
+PASS: landing contact / near, distant, Original and Hybrid / unchanged terrain, geometry and physical camera
+FRAME median_ms=37.4968 p95_ms=72.4809 frames=1028 cache_bytes=10084976
+peak_rss_bytes=134873088
