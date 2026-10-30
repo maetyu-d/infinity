@@ -1,0 +1,8 @@
+{
+  "frames": 364,
+  "median_wall_ms": 27.062800000000003,
+  "median_cpu_ms": 10.77215,
+  "peak_cpu_geometry_cache_bytes": 8395808,
+  "peak_gpu_mesh_bytes": 74916,
+  "note": "Native trading workload overlapped CPU regression tests; no controlled rendering speedup claim."
+}

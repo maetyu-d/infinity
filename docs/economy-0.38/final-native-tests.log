@@ -1,0 +1,23 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 37: native_economic_loop
+1/9 Test #37: native_economic_loop .............   Passed   11.26 sec
+    Start 38: native_economic_images
+2/9 Test #38: native_economic_images ...........   Passed    1.28 sec
+    Start 53: native_ui_fit
+3/9 Test #53: native_ui_fit ....................   Passed   12.07 sec
+    Start 54: native_ui_fit_images
+4/9 Test #54: native_ui_fit_images .............   Passed    0.18 sec
+    Start 69: native_piloting_loop
+5/9 Test #69: native_piloting_loop .............   Passed   35.78 sec
+    Start 70: native_cockpit_images
+6/9 Test #70: native_cockpit_images ............   Passed    3.67 sec
+    Start 73: native_seamless_scale_flight
+7/9 Test #73: native_seamless_scale_flight .....   Passed   32.08 sec
+    Start 74: native_cross_scale_round_trip
+8/9 Test #74: native_cross_scale_round_trip ....   Passed   31.00 sec
+    Start 75: native_atomic_visibility
+9/9 Test #75: native_atomic_visibility .........   Passed    1.05 sec
+
+100% tests passed, 0 tests failed out of 9
+
+Total Test time (real) = 128.39 sec

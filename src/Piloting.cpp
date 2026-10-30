@@ -132,7 +132,16 @@ void Pilot::adjustDrive(double steps) {
         nav_.adjustSpeed(steps);
     instrument();
 }
+void Pilot::setCargoMass(double kg) {
+    if (std::isfinite(kg) && kg >= 0 && kg <= 4000)
+        cargoMassKg_ = kg;
+}
 void Pilot::toggleShrink() {
+    if (cargoMassKg_ > 0 && !ship_.shrinking) {
+        phase_ = "UNLOAD BULK CARGO BEFORE SHRINKING";
+        instrument();
+        return;
+    }
     if (ship_.shrinking) {
         restoreFullSize();
         return;
@@ -147,6 +156,11 @@ void Pilot::toggleShrink() {
     instrument();
 }
 void Pilot::adjustSize(double decades) {
+    if (cargoMassKg_ > 0 && decades < 0) {
+        phase_ = "UNLOAD BULK CARGO BEFORE SHRINKING";
+        instrument();
+        return;
+    }
     if (!std::isfinite(decades))
         return;
     if (!ship_.shrinking && decades >= 0) {
@@ -173,6 +187,11 @@ void Pilot::restoreFullSize() {
     instrument();
 }
 void Pilot::fitToView() {
+    if (cargoMassKg_ > 0) {
+        phase_ = "UNLOAD BULK CARGO BEFORE SHRINKING";
+        instrument();
+        return;
+    }
     if (nav_.anchor.kind() < Kind::Rock)
         return;
     const auto n = universe_.describe(nav_.anchor);
@@ -337,7 +356,7 @@ double Pilot::speedLimit() const {
     if (auto g = ground())
         limit = std::min(limit, (350. + std::max(0., g->altitude - 100.) * .12));
     if (!ship_.cruise) {
-        const auto p = shipProperties(ratio);
+        const auto p = shipProperties(ratio, 0, cargoMassKg_);
         const double brake = p.reverseForce / p.massKg;
         limit =
             std::min(limit, std::sqrt(2 * brake * std::max(collisionRadius(), operatingClearance()) * .35));
@@ -648,7 +667,7 @@ void Pilot::step(const HelmInput& input, double dt) {
     const auto beforeGround = continuumContact() ? ground() : std::optional<Ground>{};
     const auto up = beforeGround ? beforeGround->normal : nav_.orientation * glm::dvec3(0, 1, 0);
     double limit = speedLimit() * (input.precision ? .18 : 1.);
-    const auto properties = shipProperties(sizeRatio(), ship_.boost);
+    const auto properties = shipProperties(sizeRatio(), ship_.boost, cargoMassKg_);
     if (!environment_.matches(nav_.anchor))
         environment_.refresh(universe_, nav_, spatial_);
     environmentSample_ = environment_.sample(oldEye * std::pow(10., nav_.logDistance), ship_.flightSeconds);
@@ -1027,7 +1046,7 @@ void Pilot::instrument() {
     t.rollRate = -ship_.angularVelocity.z;
     t.speed = glm::length(ship_.velocity);
     t.driveSpeed = speedLimit() * precisionScale_;
-    const auto properties = shipProperties(sizeRatio(), ship_.boost);
+    const auto properties = shipProperties(sizeRatio(), ship_.boost, cargoMassKg_);
     const auto g = ground();
     if (!environment_.matches(nav_.anchor))
         environment_.refresh(universe_, nav_, spatial_);

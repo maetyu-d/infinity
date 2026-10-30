@@ -9,6 +9,8 @@
 struct SDL_Window;
 namespace infinite {
 struct CockpitViewport;
+struct EconomySnapshot;
+struct MarketView;
 struct FrameStats {
     double cpuMs = 0, gpuMs = 0, submitMs = 0;
     uint32_t drawCalls = 0;
@@ -58,6 +60,7 @@ class Renderer {
     uint64_t terrainGeometryDigest() const;
     CockpitViewport cockpitViewport() const;
     void setActivity(const ActivityState*);
+    void setEconomy(std::shared_ptr<const EconomySnapshot>, const MarketView*);
     void setMode(RenderMode);
     RenderMode mode() const;
     void freezeVisualTime(double seconds);

@@ -12,7 +12,7 @@ struct ShipProperties {
     glm::dvec3 faceAreas{36, 48, 12};
     double dragCoefficient = .65;
 };
-ShipProperties shipProperties(double sizeRatio = 1, double boost = 0);
+ShipProperties shipProperties(double sizeRatio = 1, double boost = 0, double payloadKg = 0);
 struct ShipWrench {
     glm::dvec3 linear{}, angular{}; // normalized actuator demand
 };

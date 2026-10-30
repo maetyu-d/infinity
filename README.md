@@ -1,6 +1,8 @@
 # INFINITE
 
 
+**0.38:** persistent civilian production, local inventories and markets, paid cargo shipments, wages, household supplies and escrow-funded contracts attached to existing ports and settlements. **F2** market, **F3** accept/deliver, **F4** contract destination. Cargo adds ship mass and must be unloaded before shrinking. [Economy, controls and validation](docs/ECONOMY_0_38.md).
+
 **0.37:** finite-thrust ship physics, hull inertia and torque-driven roll, continuous stellar/planetary gravity, atmospheric wind and drag, target-relative rendezvous, braking-time and g-load instruments. Cruise and shrinking remain explicit field abilities. **X** toggles assist, **B** brakes, **U/O** rolls, **N** selects cruise. [Physics, controls and validation](docs/SHIP_PHYSICS_0_37.md).
 
 **0.36:** researched stellar families, O–M spectral types, cooling L/T/Y brown dwarfs, compact remnants and giants, with preserved existing systems. **Shift+N** cycles stellar destinations; **J** navigates. [Research and validation](docs/STELLAR_DIVERSITY_0_36.md).

@@ -3,6 +3,7 @@
 #include "Piloting.hpp"
 #include "Presentation.hpp"
 namespace infinite {
+struct MarketView;
 struct CockpitRect {
     double x, y, w, h;
     bool contains(glm::dvec2) const;
@@ -47,6 +48,6 @@ Mesh cockpitMesh(double aspect);
 CockpitOverlay cockpitOverlay(const FlightInstruments&, double aspect, std::string_view mode,
                               std::string_view notice = {}, std::span<const CelestialContact> contacts = {},
                               std::span<const ActivityContact> activity = {}, bool help = false,
-                              double projectionScale = 1);
+                              double projectionScale = 1, const MarketView* market = nullptr);
 std::string flightQuantity(double value, bool speed = false);
 } // namespace infinite

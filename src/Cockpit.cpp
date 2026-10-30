@@ -1,4 +1,5 @@
 #include "infinite/Cockpit.hpp"
+#include "infinite/Economy.hpp"
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -329,7 +330,8 @@ Mesh cockpitMesh(double aspect) {
 }
 CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::string_view mode,
                               std::string_view notice, std::span<const CelestialContact> contacts,
-                              std::span<const ActivityContact> activity, bool help, double projectionScale) {
+                              std::span<const ActivityContact> activity, bool help, double projectionScale,
+                              const MarketView* market) {
     CockpitOverlay h;
     const CockpitLayout l(aspect);
     const double w = l.width, center = w * .5;
@@ -412,7 +414,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             label(t.shrinking ? "SHRINK FIELD ACTIVE" : "ORBITAL FLIGHT", w - 296, 125, 258, muted);
         }
     }
-    if (!t.weather.empty() && !t.shrinking) {
+    if (!t.weather.empty() && !t.shrinking && !(market && market->open)) {
         const auto weatherColour = t.weatherSeverity > .5 ? amber : ice;
         card(h, {w - 310, 514, 286, 29}, weatherColour);
         h.hitRegions.push_back({w - 310, 514, 286, 29});
@@ -480,6 +482,11 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
         bar(h.panels, x, systems.y + 70, gaugeWidth, i ? t.hull / 100 : t.throttle,
             i ? (t.hull < 30 ? amber : mint) : ice);
     }
+    if (market)
+        fitted(h.lettering,
+               std::to_string(market->credits / 100) + " CR / " + std::to_string(market->cargoKg) +
+                   " KG / F2 MARKET",
+               systems.x + 14, systems.y + 88, systems.w - 28, 8.4, ice);
     label(t.gear ? "G  GEAR DOWN" : "G  GEAR UP", systems.x + 14, systems.y + 105, systems.w - 28,
           t.gear ? mint : muted);
     const double radarX = scope.x + scope.w * .5, radarY = scope.y + 72;
@@ -551,8 +558,38 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     quantity("FLIGHT " + duration(t.flightSeconds) + " / " + flightQuantity(t.travelMetres),
              std::max(178., center - 180), 887, std::max(180., w - 490), 9, muted);
     label("H RENDER / TAB HUD", w - 200, 887, 178, muted);
+    if (market && market->open) {
+        const auto& m = *market;
+        const CockpitRect panel{center - std::min(790., w - 60) * .5, 166, std::min(790., w - 60), 574};
+        card(h, panel, m.connected ? mint : amber);
+        h.hitRegions.push_back(panel);
+        label("F2 MARKET / ESC CLOSE / ECON " + std::to_string(m.tick * 5 / 60) + "H", panel.x + 18,
+              panel.y + 16, panel.w - 36, mint);
+        quantity(m.ready ? m.site : "LOCAL ECONOMY", panel.x + 18, panel.y + 39, panel.w - 36, 14, pearl);
+        label(m.role + " / " + (m.connected ? "TRADE LINK" : "REMOTE / APPROACH AND STOP"), panel.x + 18,
+              panel.y + 64, panel.w - 36, m.connected ? mint : amber);
+        quantity("CREDITS " + std::to_string(m.credits / 100) + " / CARGO " + std::to_string(m.cargoKg) +
+                     "/4000 KG / " + std::to_string(m.cargoLitres) + "/8000 L",
+                 panel.x + 18, panel.y + 86, panel.w - 36, 10.5, ice);
+        label("GOOD                 STOCK   HOLD     BUY CR     SELL CR", panel.x + 18, panel.y + 112,
+              panel.w - 36, muted);
+        for (size_t g = 0; g < goodCount; g++) {
+            const double y = panel.y + 125 + g * 17;
+            if (g == m.selected)
+                rect(h.panels, panel.x + 12, y - 3, panel.w - 24, 16, mint * .18f, .95f);
+            fitted(h.lettering, m.rows[g], panel.x + 18, y, panel.w - 36, 9.2, g == m.selected ? pearl : ice);
+        }
+        label("ORDER " + std::to_string(m.quantity) + " KG / UP-DOWN GOODS / LEFT-RIGHT SIZE", panel.x + 18,
+              panel.y + 472, panel.w - 36, mint);
+        label("ENTER BUY / BACKSPACE SELL / F3 CONTRACT / F4 TARGET", panel.x + 18, panel.y + 492,
+              panel.w - 36, pearl);
+        fitted(h.lettering, m.contract, panel.x + 18, panel.y + 512, panel.w - 36, 8.4, amber);
+        fitted(h.lettering, m.bottleneck, panel.x + 18, panel.y + 532, panel.w - 36, 8.4, muted);
+        fitted(h.lettering, m.message, panel.x + 18, panel.y + 551, panel.w - 36, 8.4, ice);
+        return h;
+    }
     if (help) {
-        const CockpitRect guide{center - std::min(700., w - 80) * .5, 205, std::min(700., w - 80), 418};
+        const CockpitRect guide{center - std::min(700., w - 80) * .5, 205, std::min(700., w - 80), 442};
         card(h, guide, mint);
         fitted(h.lettering, "FLIGHT CONTROLS", guide.x + 22, guide.y + 22, guide.w - 44, 17.5, pearl);
         const std::pair<const char*, const char*> controls[]{{"W / S", "THROTTLE"},
@@ -569,6 +606,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                                                              {"Z / , / .", "SHRINK / SMALLER / LARGER"},
                                                              {"SHIFT-Z / V", "FULL SIZE / EXPLORER"},
                                                              {"F6 / H / TAB", "TRAFFIC / RENDER / HUD"},
+                                                             {"F2 / F3 / F4", "MARKET / CONTRACT / TARGET"},
                                                              {"F1 / ESC", "CLOSE GUIDE / RELEASE HELM"}};
         for (size_t i = 0; i < std::size(controls); ++i) {
             label(controls[i].first, guide.x + 22, guide.y + 65 + i * 24, guide.w * .42, ice);

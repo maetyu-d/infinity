@@ -1,0 +1,6 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+ECONOMY_NATIVE sites=95 vessels=123 tick=60 player_credits_cents=249860 cargo_kg=0 worker_snapshot_bytes=434468
+PASS: native market purchase/resale, original/hyperion/hybrid identity, portrait fit and real freight
+FRAME median_ms=27.2803 p95_ms=73.0299 frames=364 cache_bytes=11319552
+peak_rss_bytes=133840896

@@ -1,5 +1,6 @@
 #include "CelestialValidation.hpp"
 #include "CloudValidation.hpp"
+#include "EconomyValidation.hpp"
 #include "FlightValidation.hpp"
 #include "LandingLightValidation.hpp"
 #include "PilotValidation.hpp"
@@ -15,6 +16,7 @@
 #include "WindowSizing.hpp"
 #include "infinite/Cockpit.hpp"
 #include "infinite/Continuity.hpp"
+#include "infinite/Economy.hpp"
 #include "infinite/Flight.hpp"
 #include "infinite/Piloting.hpp"
 #include "infinite/Renderer.hpp"
@@ -46,6 +48,7 @@ struct Options {
          diversityTest = false, stellarDiversityTest = false;
     bool streamingTest = false;
     bool terrainQuality = false, terrainSurfaceFrame = false, sunShadows = true;
+    bool economyTest = false;
     bool pilotTest = false, terrainTest = false, surfaceTest = false, explicitMode = false;
 };
 static Options options(int argc, char** argv) {
@@ -65,7 +68,10 @@ static Options options(int argc, char** argv) {
             o.smoke = o.tour = o.fresh = true;
         else if (arg == "--benchmark-tour")
             o.benchmark = o.smoke = o.tour = o.fresh = true;
-        else if (arg == "--stellar-diversity-test") {
+        else if (arg == "--economy-test") {
+            o.economyTest = o.benchmark = o.smoke = o.fresh = true;
+            o.visualTime = 12;
+        } else if (arg == "--stellar-diversity-test") {
             o.stellarDiversityTest = o.benchmark = o.smoke = o.fresh = true;
             o.visualTime = 12;
         } else if (arg == "--planet-diversity-test") {
@@ -154,7 +160,8 @@ static Options options(int argc, char** argv) {
                    "release mouse / quit.\nCLI: --fresh --tour --smoke-test --frames N --width N "
                    "--height N --seed N "
                    "--benchmark-tour --flight-test --streaming-test --pilot-test --planet-stability-test "
-                   "--ui-fit-test --polar-optics-test --cloud-volume-test --celestial-graphics-test "
+                   "--economy-test --ui-fit-test --polar-optics-test --cloud-volume-test "
+                   "--celestial-graphics-test "
                    "--stellar-diversity-test --stellar-sun-test --landing-light-test "
                    "--weather-visibility-test "
                    "--planet-diversity-test "
@@ -166,8 +173,10 @@ static Options options(int argc, char** argv) {
                    "--data DIR\n";
             std::cout << "H cycles ORIGINAL / HYPERION / HYBRID. --render-mode original|hyperion|hybrid "
                          "--compare-modes --visual-time SECONDS\n";
-            std::cout << "Local activity: K cycles traffic, I hails, J approaches/matches course, F6 "
-                         "hides/shows. Shift-K cycles surface ports; J approaches, L lands.\n";
+            std::cout
+                << "F2 market: arrows select goods/quantity, Enter buy, Backspace sell, F3 supply "
+                   "contract.\nLocal activity: K cycles traffic, I hails, J approaches/matches course, F6 "
+                   "hides/shows. Shift-K cycles surface ports; J approaches, L lands.\n";
             std::exit(0);
         } else
             throw std::invalid_argument("Unknown option " + arg);
@@ -177,10 +186,11 @@ static Options options(int argc, char** argv) {
         o.visualTime = 12;
     }
     const unsigned validationModes =
-        unsigned(o.flightTest) + unsigned(o.streamingTest) + unsigned(o.pilotTest) + unsigned(o.terrainTest) +
-        unsigned(o.surfaceTest) + unsigned(o.planetTest) + unsigned(o.uiFitTest) + unsigned(o.polarTest) +
-        unsigned(o.cloudTest) + unsigned(o.celestialTest) + unsigned(o.landingLightTest) +
-        unsigned(o.weatherTest) + unsigned(o.diversityTest) + unsigned(o.stellarDiversityTest);
+        unsigned(o.economyTest) + unsigned(o.flightTest) + unsigned(o.streamingTest) + unsigned(o.pilotTest) +
+        unsigned(o.terrainTest) + unsigned(o.surfaceTest) + unsigned(o.planetTest) + unsigned(o.uiFitTest) +
+        unsigned(o.polarTest) + unsigned(o.cloudTest) + unsigned(o.celestialTest) +
+        unsigned(o.landingLightTest) + unsigned(o.weatherTest) + unsigned(o.diversityTest) +
+        unsigned(o.stellarDiversityTest);
     if (validationModes > 1 || (validationModes && o.tour))
         throw std::invalid_argument("Choose one automated validation mode");
     if (o.width < 320 || o.height < 240 || o.width > 7680 || o.height > 4320 || o.frames < 0)
@@ -219,10 +229,10 @@ int main(int argc, char** argv) {
         RegionCache cache(universe);
         FlightController flight(universe, nav, cache);
         Pilot pilot(universe, nav, flight);
-        bool pilotEnabled = (!opt.smoke && !opt.tour) || opt.pilotTest || opt.terrainTest ||
-                            opt.surfaceTest || opt.planetTest || opt.uiFitTest || opt.polarTest ||
-                            opt.cloudTest || opt.celestialTest || opt.landingLightTest || opt.weatherTest ||
-                            opt.diversityTest || opt.stellarDiversityTest;
+        bool pilotEnabled = (!opt.smoke && !opt.tour) || opt.economyTest || opt.pilotTest ||
+                            opt.terrainTest || opt.surfaceTest || opt.planetTest || opt.uiFitTest ||
+                            opt.polarTest || opt.cloudTest || opt.celestialTest || opt.landingLightTest ||
+                            opt.weatherTest || opt.diversityTest || opt.stellarDiversityTest;
         std::unique_ptr<FlightValidation> flightProof;
         if (opt.flightTest)
             flightProof = std::make_unique<FlightValidation>(universe, nav);
@@ -324,6 +334,97 @@ int main(int argc, char** argv) {
             if (opt.smoke)
                 activity.seconds = opt.visualTime >= 0 ? opt.visualTime : 12;
             renderer.setActivity(&activity);
+            std::unique_ptr<EconomyRuntime> economy;
+            if (!opt.smoke || opt.economyTest)
+                economy = std::make_unique<EconomyRuntime>(universe, data);
+            std::shared_ptr<const EconomySnapshot> economicSnapshot;
+            MarketView marketView;
+            bool marketOpen = false;
+            std::optional<ActivityId> marketPort;
+            size_t marketGood = 1;
+            int64_t marketQuantity = 10;
+            uint64_t economicSequence = 0, pendingEconomicSequence = 0;
+            int64_t pendingCargoKg = 0;
+            std::string marketFeedback;
+            double marketFeedbackSeconds = 0;
+            auto marketSay = [&](std::string message) {
+                marketFeedback = std::move(message);
+                marketFeedbackSeconds = 4;
+            };
+            auto connectedMarket = [&] {
+                if (!pilotEnabled || !economicSnapshot || economicSnapshot->catchingUp || !marketPort)
+                    return false;
+                auto i = economicSnapshot->siteIndex(*marketPort);
+                return i && economicTradeAccess(universe, nav, pilot, economicSnapshot->network->sites[*i]);
+            };
+            auto selectMarket = [&] {
+                if (!economicSnapshot || !economicSnapshot->network)
+                    return;
+                if (activity.selected && economicSnapshot->siteIndex(*activity.selected))
+                    marketPort = activity.selected;
+                else {
+                    double best = 1e300;
+                    for (const auto& site : economicSnapshot->network->sites) {
+                        const auto home = universe.describe(site.id.home);
+                        auto point = universe.pointRelative(site.id.home,
+                                                            site.metres / std::pow(10., home.frame.logRadius),
+                                                            nav.anchor, nav.logDistance);
+                        double distance = glm::length(point - nav.cameraPosition());
+                        if (distance < best) {
+                            best = distance;
+                            marketPort = site.id;
+                        }
+                    }
+                }
+                if (marketPort)
+                    activity.selected = marketPort;
+            };
+            auto submitMarket = [&](EconomicAction action) {
+                if (!economy || !economicSnapshot || !marketPort || economicSnapshot->catchingUp)
+                    return;
+                auto i = economicSnapshot->siteIndex(*marketPort);
+                if (!i)
+                    return;
+                if (pendingEconomicSequence > economicSnapshot->player.lastCommand)
+                    return;
+                EconomicCommand command;
+                command.port = *marketPort;
+                command.action = action;
+                command.good = Good(marketGood);
+                command.kg = marketQuantity;
+                bool needsLink = true;
+                if (action == EconomicAction::Contract) {
+                    auto it = std::find_if(economicSnapshot->contracts.begin(),
+                                           economicSnapshot->contracts.end(), [&](const auto& c) {
+                                               return c.site == *i && (c.phase == ContractPhase::Open ||
+                                                                       c.phase == ContractPhase::Accepted);
+                                           });
+                    if (it == economicSnapshot->contracts.end())
+                        return;
+                    command.contract = it->id;
+                    command.good = it->good;
+                    needsLink = it->phase != ContractPhase::Open;
+                }
+                if (needsLink && !connectedMarket()) {
+                    marketSay("APPROACH PORT / STOP BELOW 3 M/S / LAND AT SURFACE PORTS");
+                    return;
+                }
+                auto q = economicSnapshot->quote(*i, command.good, marketQuantity);
+                command.limitCents = action == EconomicAction::Buy ? q.buyCents : q.sellCents;
+                economicSequence = std::max(economicSequence, economicSnapshot->player.lastCommand);
+                command.sequence = ++economicSequence;
+                if (economy->command(command)) {
+                    pendingEconomicSequence = command.sequence;
+                    pendingCargoKg = action == EconomicAction::Buy ? marketQuantity : 0;
+                    pilot.setCargoMass(
+                        std::min<int64_t>(4000, economicSnapshot->player.massKg() + pendingCargoKg));
+                    marketSay("ORDER SUBMITTED / AWAITING LEDGER");
+                }
+            };
+            std::unique_ptr<EconomyValidation> economyProof;
+            if (opt.economyTest)
+                economyProof =
+                    std::make_unique<EconomyValidation>(universe, nav, pilot, *economy, activity, window);
             std::unique_ptr<SurfaceValidation> surfaceProof;
             if (opt.surfaceTest)
                 surfaceProof = std::make_unique<SurfaceValidation>(universe, nav, pilot, activity);
@@ -340,6 +441,25 @@ int main(int argc, char** argv) {
             auto activityBody = [&]() -> std::optional<ActivityBody> {
                 if (!activity.selected)
                     return {};
+                if (economicSnapshot && economicSnapshot->network) {
+                    auto flight =
+                        std::find_if(economicSnapshot->flights.begin(), economicSnapshot->flights.end(),
+                                     [&](const auto& f) { return f.id == *activity.selected; });
+                    if (flight != economicSnapshot->flights.end())
+                        return sampleEconomicFreight(universe, *economicSnapshot->network, *flight,
+                                                     activity.seconds);
+                    if (auto i = economicSnapshot->siteIndex(*activity.selected)) {
+                        const auto& site = economicSnapshot->network->sites[*i];
+                        ActivityBody body;
+                        body.id = site.id;
+                        body.kind = site.orbital ? ActivityKind::Harbour : ActivityKind::SurfacePort;
+                        body.position = site.metres;
+                        body.radius = site.radius;
+                        body.name = site.name;
+                        body.status = site.role + " / F2 MARKET";
+                        return body;
+                    }
+                }
                 if (activity.selected->slot >= surfaceActivitySlot) {
                     const auto world = renderer.surfaceWorld(activity.selected->home);
                     if (!world) {
@@ -372,7 +492,8 @@ int main(int argc, char** argv) {
                 activity.selected = id;
                 pilot.brake();
                 pilot.clearWaypoint();
-                pilot.trackWaypoint(waypointFor(*activityBody()));
+                if (auto body = activityBody())
+                    pilot.trackWaypoint(waypointFor(*body));
             };
             auto navigateSelected = [&]() {
                 if (auto body = activityBody())
@@ -499,6 +620,10 @@ int main(int argc, char** argv) {
                             nav.rotate(event.motion.xrel, event.motion.yrel);
                         opt.tour = false;
                     }
+                    if (marketOpen && event.type == SDL_EVENT_MOUSE_WHEEL && event.wheel.y != 0) {
+                        marketGood = (marketGood + goodCount + (event.wheel.y > 0 ? -1 : 1)) % goodCount;
+                        continue;
+                    }
                     if (event.type == SDL_EVENT_MOUSE_WHEEL && event.wheel.y != 0) {
                         nav.zoom(event.wheel.y);
                         if (pilotEnabled) {
@@ -508,6 +633,47 @@ int main(int argc, char** argv) {
                         opt.tour = false;
                     }
                     if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat) {
+                        if (marketOpen) {
+                            switch (event.key.scancode) {
+                            case SDL_SCANCODE_ESCAPE:
+                            case SDL_SCANCODE_F2:
+                                marketOpen = false;
+                                break;
+                            case SDL_SCANCODE_UP:
+                                marketGood = (marketGood + goodCount - 1) % goodCount;
+                                break;
+                            case SDL_SCANCODE_DOWN:
+                                marketGood = (marketGood + 1) % goodCount;
+                                break;
+                            case SDL_SCANCODE_LEFT:
+                                marketQuantity = std::max<int64_t>(1, marketQuantity / 10);
+                                break;
+                            case SDL_SCANCODE_RIGHT:
+                                marketQuantity = std::min<int64_t>(1000, marketQuantity * 10);
+                                break;
+                            case SDL_SCANCODE_RETURN:
+                                submitMarket(EconomicAction::Buy);
+                                break;
+                            case SDL_SCANCODE_BACKSPACE:
+                                submitMarket(EconomicAction::Sell);
+                                break;
+                            case SDL_SCANCODE_F3:
+                                submitMarket(EconomicAction::Contract);
+                                break;
+                            case SDL_SCANCODE_F4:
+                                if (economicSnapshot)
+                                    if (auto id = economicSnapshot->contractDestination()) {
+                                        marketOpen = false;
+                                        chooseActivity(*id);
+                                        notice = "SUPPLY CONTRACT DESTINATION / J APPROACH / F2 MARKET";
+                                        noticeTime = 5;
+                                    }
+                                break;
+                            default:
+                                break;
+                            }
+                            continue;
+                        }
                         switch (event.key.scancode) {
                         case SDL_SCANCODE_ESCAPE:
                             if (looking) {
@@ -544,6 +710,22 @@ int main(int argc, char** argv) {
                             pilot.resetMotion();
                             nav.focus();
                             opt.tour = false;
+                            break;
+                        case SDL_SCANCODE_F4:
+                            if (economicSnapshot)
+                                if (auto id = economicSnapshot->contractDestination()) {
+                                    chooseActivity(*id);
+                                    notice = "SUPPLY CONTRACT DESTINATION / J APPROACH / F2 MARKET";
+                                    noticeTime = 5;
+                                }
+                            break;
+                        case SDL_SCANCODE_F2:
+                            if (pilotEnabled && economy) {
+                                selectMarket();
+                                marketOpen = true;
+                                pilot.brake();
+                                releaseLook();
+                            }
                             break;
                         case SDL_SCANCODE_F1:
                             if (pilotEnabled)
@@ -760,6 +942,42 @@ int main(int argc, char** argv) {
                     break;
                 if (!opt.smoke)
                     activity.advance(dt);
+                if (economy) {
+                    auto system = nav.anchor;
+                    while (system.kind() > Kind::System)
+                        system = system.parent();
+                    if (system.kind() == Kind::System)
+                        economy->request(system, activity.seconds);
+                    economicSnapshot = economy->snapshot();
+                    if (economicSnapshot) {
+                        if (pendingEconomicSequence &&
+                            economicSnapshot->player.lastCommand >= pendingEconomicSequence) {
+                            pendingCargoKg = 0;
+                            pendingEconomicSequence = 0;
+                            marketSay(economicSnapshot->message);
+                        }
+                        pilot.setCargoMass(
+                            std::min<int64_t>(4000, economicSnapshot->player.massKg() + pendingCargoKg));
+                    }
+                    if (marketOpen) {
+                        if (!marketPort || (economicSnapshot && !economicSnapshot->siteIndex(*marketPort)))
+                            selectMarket();
+                        marketView = economicMarketView(economicSnapshot.get(), marketPort, marketGood,
+                                                        marketQuantity, connectedMarket());
+                        marketFeedbackSeconds = std::max(0., marketFeedbackSeconds - dt);
+                        if (marketFeedbackSeconds > 0)
+                            marketView.message = marketFeedback;
+                    }
+                    if (!marketOpen) {
+                        marketView.open = false;
+                        if (economicSnapshot) {
+                            marketView.credits = economicSnapshot->player.credits;
+                            marketView.cargoKg = economicSnapshot->player.massKg();
+                            marketView.cargoLitres = economicSnapshot->player.volumeLitres();
+                        }
+                    }
+                    renderer.setEconomy(economicSnapshot, &marketView);
+                }
                 if (pilotEnabled && activity.selected)
                     if (auto body = activityBody())
                         pilot.trackWaypoint(waypointFor(*body));
@@ -787,8 +1005,10 @@ int main(int argc, char** argv) {
                         helm.boost = keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT];
                         helm.precision = keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL];
                         helm.brake = keys[SDL_SCANCODE_B];
-                        helm = resolveHelmInput(helm, {mouseX, mouseY}, dt,
-                                                keys[SDL_SCANCODE_LALT] || keys[SDL_SCANCODE_RALT]);
+                        if (marketOpen)
+                            helm = {};
+                        helm = resolveHelmInput(helm, marketOpen ? glm::dvec2(0) : glm::dvec2(mouseX, mouseY),
+                                                dt, keys[SDL_SCANCODE_LALT] || keys[SDL_SCANCODE_RALT]);
                         pilot.update(helm, dt, renderer.submittedGeometry(nav.anchor));
                     } else if (!opt.tour)
                         flight.update(axes, dt, keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT],
@@ -805,6 +1025,8 @@ int main(int argc, char** argv) {
                     streamingProof->advance(flight, renderer);
                 if (pilotProof)
                     pilotProof->advance(renderer);
+                if (economyProof)
+                    economyProof->advance(renderer);
                 if (uiProof)
                     uiProof->advance(renderer);
                 if (polarProof)
@@ -896,6 +1118,11 @@ int main(int argc, char** argv) {
                 ++frame;
                 if (frame > 10)
                     frameTimes.push_back(wall * 1000);
+                if (economyProof) {
+                    economyProof->observe(stats, renderer, opt.captures);
+                    if (economyProof->finished())
+                        running = false;
+                }
                 if (pilotProof) {
                     pilotProof->observe(stats, renderer, opt.captures);
                     if (pilotProof->finished())
@@ -1042,6 +1269,8 @@ int main(int argc, char** argv) {
                 if (!profile)
                     throw std::runtime_error("Could not finish profiling CSV (check free disk space)");
             }
+            if (economy)
+                economy->flush();
             if (!opt.smoke) {
                 persistence.saveState(nav.serialize());
                 auto saveText = [&](const char* name, const std::string& text) {
@@ -1112,6 +1341,9 @@ int main(int argc, char** argv) {
             } else if (opt.terrainTest) {
                 if (!terrainProof->finished())
                     throw std::runtime_error("Native terrain validation incomplete");
+            } else if (opt.economyTest) {
+                if (!economyProof->finished())
+                    throw std::runtime_error("Native economic validation incomplete");
             } else if (opt.pilotTest) {
                 if (!pilotProof->finished())
                     throw std::runtime_error("Native piloting test incomplete");

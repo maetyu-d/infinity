@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <cmath>
 namespace infinite {
-ShipProperties shipProperties(double size, double boost) {
+ShipProperties shipProperties(double size, double boost, double payloadKg) {
     ShipProperties p;
     const double s = std::clamp(size, 1e-12, 1.), m = s * s * s, i = m * s * s;
     p.massKg *= m;
@@ -12,6 +12,10 @@ ShipProperties shipProperties(double size, double boost) {
     p.forceCaps.z *= 1 + 1.4 * std::clamp(boost, 0., 1.);
     p.torqueCaps *= i;
     p.faceAreas *= s * s;
+    // Full-size cargo is secured in a central 4 x 3 x 6 m bay.
+    const double cargo = std::clamp(payloadKg, 0., 4000.);
+    p.massKg += cargo;
+    p.inertia += cargo * glm::dvec3(3.75, 52. / 12., 25. / 12.);
     return p;
 }
 namespace {

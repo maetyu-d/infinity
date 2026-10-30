@@ -72,6 +72,10 @@ class Pilot {
         if (!ship_.landed)
             ship_.gear = !ship_.gear;
     }
+    void setCargoMass(double kg);
+    double cargoMass() const {
+        return cargoMassKg_;
+    }
     void toggleShrink();
     void adjustSize(double decades);
     void restoreFullSize();
@@ -123,6 +127,7 @@ class Pilot {
     bool autopilot_ = false, landing_ = false;
     bool fieldBraking_ = false;
     bool growthBlocked_ = false;
+    double cargoMassKg_ = 0;
     double launchTime_ = 0, lastLog_ = 0, scaleRate_ = 0, precisionScale_ = 1;
     glm::dvec3 assistCapture_{};
     double assistCaptureTime_ = 0;

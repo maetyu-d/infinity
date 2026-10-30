@@ -1,6 +1,7 @@
 #include "infinite/Renderer.hpp"
 #include "HyperionRenderer.hpp"
 #include "infinite/Cockpit.hpp"
+#include "infinite/Economy.hpp"
 #include "infinite/StellarEvolution.hpp"
 #include "infinite/Streaming.hpp"
 #include "infinite/SurfaceShading.hpp"
@@ -135,6 +136,8 @@ struct Renderer::Impl {
     std::optional<Address> lifeSelection;
     std::vector<CelestialContact> skyOccluders;
     const ActivityState* activity = nullptr;
+    std::shared_ptr<const EconomySnapshot> economy;
+    const MarketView* market = nullptr;
     std::vector<ActivityContact> activityContacts;
     std::vector<std::pair<ActivityId, glm::dvec2>> activityPicks;
     std::array<std::array<GPUMesh, 3>, 6> craftMeshes;
@@ -828,6 +831,20 @@ struct Renderer::Impl {
                                   ? sampleActivity(planet, activity->seconds)
                                   : std::vector<ActivityBody>{sampleActivity(planet, 0, activity->seconds),
                                                               sampleActivity(planet, 1, activity->seconds)};
+                if (economy && economy->network && economy->network->system == system.address && !local &&
+                    !pinned)
+                    for (const auto& f : economy->flights)
+                        if (f.id.home == planet.address)
+                            bodies.push_back(sampleActivity(planet, f.id.slot, activity->seconds));
+                if (economy && economy->network && economy->network->system == system.address)
+                    for (auto& body : bodies)
+                        if (body.kind == ActivityKind::Freighter) {
+                            const auto it = std::find_if(economy->flights.begin(), economy->flights.end(),
+                                                         [&](const auto& f) { return f.id == body.id; });
+                            if (it != economy->flights.end())
+                                body = sampleEconomicFreight(universe, *economy->network, *it,
+                                                             activity->seconds);
+                        }
                 for (const auto& body : bodies) {
                     ++stats.activityBodies;
                     const auto deltaSI = pose.orientation * (body.position - planetEye);
@@ -1376,6 +1393,10 @@ uint64_t Renderer::terrainGeometryDigest() const {
 CockpitViewport Renderer::cockpitViewport() const {
     return impl_->hudViewport;
 }
+void Renderer::setEconomy(std::shared_ptr<const EconomySnapshot> economy, const MarketView* market) {
+    impl_->economy = std::move(economy);
+    impl_->market = market;
+}
 void Renderer::setActivity(const ActivityState* state) {
     impl_->activity = state;
 }
@@ -1921,8 +1942,9 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         cockpit.weather = p.weatherReport;
         cockpit.weatherDetail = p.weatherDetail;
         cockpit.weatherSeverity = p.weatherSeverity;
-        const auto hud = cockpitOverlay(cockpit, aspect, renderModeName(p.mode), notice, p.contacts,
-                                        p.activityContacts, p.cockpitHelp, viewport.projectionScale);
+        const auto hud =
+            cockpitOverlay(cockpit, aspect, renderModeName(p.mode), notice, p.contacts, p.activityContacts,
+                           p.cockpitHelp, viewport.projectionScale, p.market);
         p.cockpitHitRegions = hud.hitRegions;
         const auto projection = bgfx::getCaps()->homogeneousDepth
                                     ? glm::orthoRH_NO(0.f, float(900 * aspect), 900.f, 0.f, -1.f, 1.f)
