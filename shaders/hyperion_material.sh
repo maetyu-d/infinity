@@ -82,6 +82,11 @@ void main(){
   float slope=1.-clamp(dot(radial,N),0.,1.);
   if(primitive<.1 && primitive> -1.5)N=normalize(mix(radial,N,.08+.92*smoothstep(.004,.045,slope)));
  }
+ // Solid globe colours contain Geometry.cpp's fixed authoring light.
+ // Remove its broad spherical component before the live stellar BRDF. The
+ // retained geometry and albedo variation still supply relief and geology.
+ if(planet && !terrain && !gas)
+  base/=max(.25,.19+.81*max(0.,dot(n,normalize(vec3(-.5,.8,1.)))));
  float elevation=planet?.5+v_elevation*32.:dot(p,vec3(.31,.73,.19));
  float detail=sin(n.x*13.+sin(n.z*6.))*.13;
  vec3 mineral=pigment(elevation*3.7+phase+detail);
@@ -92,7 +97,7 @@ void main(){
  vec3 albedo=mix(base,spectral,u_hyperion[1].z);
  if(atom || craft)albedo=base;
  if(cockpit)albedo=base*.09;
- else albedo*=planet?.76:.62; // Non-terrain meshes retain their original baked colour.
+ else albedo*=planet?.46:.62; // Non-terrain meshes retain their original baked colour.
  if(terrain)albedo=base*.38+mineral*.018; // Streamed terrain supplies unlit reflectance.
  if(planet)albedo=mix(vec3(dot(albedo,vec3(.299,.587,.114)))*vec3(.86,.94,1.),albedo,.82);
  if(gas){
@@ -117,6 +122,18 @@ void main(){
  float ice=max(1.-step(.1,abs(u_surface.x-3.)),planet?1.-step(.1,abs(u_environment.w-2.)):0.);
  float liquid=planet?u_surface.y*smoothstep(235.,275.,u_surface.z)*(1.-smoothstep(340.,410.,u_surface.z)):0.;
  float wet=liquid*(1.-smoothstep(-.00088,-.00072,v_elevation));
+ // Hyperion glacial colour/roughness response, constrained by the actual
+ // exposed heights, slopes, temperature and ice identity of this world.
+ float glacialFrost=0.;
+ if(planet && ice>.5){
+  float slope=1.-clamp(dot(N,radial),0.,1.);
+  glacialFrost=smoothstep(-.0004,.0012,v_elevation)*(1.-smoothstep(.10,.40,slope))*(1.-smoothstep(250.,280.,u_surface.z));
+  float layers=v_elevation*18000.+n.y*7.;
+  float band=mix(.5,.5+.5*sin(layers),1.-smoothstep(.6,2.,fwidth(layers)));
+  vec3 denseIce=albedo*vec3(.32,.56,.72)+vec3(.004,.022,.046)+mineral*.022;
+  vec3 snow=albedo*.62+vec3(.16,.23,.27);
+  albedo=mix(denseIce*(.83+band*.22),snow,glacialFrost*.84);
+ }
  float rough=atom?.24:craft?u_hyperion[1].x:u_hyperion[1].x*.88,microVein=0.,cavity=1.;
  vec3 microGlow=vec3(0.),coatHue=mineral;
 #if INFINITE_FLIGHT_RELIEF
@@ -221,6 +238,7 @@ void main(){
   albedo=mix(albedo,albedo*.47+vec3(.003,.018,.025),wet*.72);
   rough=mix(rough,.19,wet*.78);
  }
+ if(planet && ice>.5)rough=mix(rough,mix(.20,.76,glacialFrost),.65);
  vec3 ndx=dFdx(N),ndy=dFdy(N);float variance=min(.25,max(dot(ndx,ndx),dot(ndy,ndy))*.5);
  rough=pow(min(1.,pow(rough,4.)+variance),.25);
  // Hyperion worldFragment's pixel-angle roughness floor suppresses distant

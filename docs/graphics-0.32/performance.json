@@ -1,0 +1,143 @@
+{
+  "platform": "Apple M1 / MacBookAir10,1 / 16 GiB / macOS 26.4.1 / Metal",
+  "resolution": [
+    1440,
+    900
+  ],
+  "vsync": "disabled in both benchmark executables; ordinary gameplay unchanged",
+  "sampling": "Last 20 settled frames immediately preceding sample 1 capture, per scene. Fixed visual time 12 seconds. Serial runs; asynchronous generation warm-up and screenshot stalls excluded from scene medians.",
+  "before": {
+    "scenes": {
+      "sun": {
+        "median_frame_ms": 20.041,
+        "p95_frame_ms": 30.375,
+        "median_cpu_ms": 8.611,
+        "frame_window": [
+          780,
+          799
+        ]
+      },
+      "eclipse": {
+        "median_frame_ms": 28.999,
+        "p95_frame_ms": 43.597,
+        "median_cpu_ms": 5.761,
+        "frame_window": [
+          1444,
+          1463
+        ]
+      },
+      "away": {
+        "median_frame_ms": 31.998,
+        "p95_frame_ms": 55.498,
+        "median_cpu_ms": 9.648,
+        "frame_window": [
+          1631,
+          1650
+        ]
+      },
+      "day": {
+        "median_frame_ms": 20.896,
+        "p95_frame_ms": 35.493,
+        "median_cpu_ms": 5.311,
+        "frame_window": [
+          1805,
+          1824
+        ]
+      },
+      "ice": {
+        "median_frame_ms": 31.121,
+        "p95_frame_ms": 46.675,
+        "median_cpu_ms": 15.409,
+        "frame_window": [
+          2474,
+          2493
+        ]
+      },
+      "partial": {
+        "median_frame_ms": 33.011,
+        "p95_frame_ms": 49.95,
+        "median_cpu_ms": 5.393,
+        "frame_window": [
+          2871,
+          2890
+        ]
+      }
+    },
+    "frame_count": 2928,
+    "tour_median_ms": 23.116,
+    "tour_p95_ms": 51.9234,
+    "peak_process_rss_bytes": 140181504,
+    "max_effect_plus_shadow_bytes": 21600000,
+    "max_material_bytes": 1660244,
+    "max_weather_gpu_bytes": 87384
+  },
+  "after": {
+    "scenes": {
+      "sun": {
+        "median_frame_ms": 23.574,
+        "p95_frame_ms": 39.685,
+        "median_cpu_ms": 7.526,
+        "frame_window": [
+          588,
+          607
+        ]
+      },
+      "eclipse": {
+        "median_frame_ms": 35.033,
+        "p95_frame_ms": 46.234,
+        "median_cpu_ms": 6.133,
+        "frame_window": [
+          1252,
+          1271
+        ]
+      },
+      "away": {
+        "median_frame_ms": 36.199,
+        "p95_frame_ms": 43.033,
+        "median_cpu_ms": 6.815,
+        "frame_window": [
+          1440,
+          1459
+        ]
+      },
+      "day": {
+        "median_frame_ms": 22.609,
+        "p95_frame_ms": 36.706,
+        "median_cpu_ms": 4.679,
+        "frame_window": [
+          1612,
+          1631
+        ]
+      },
+      "ice": {
+        "median_frame_ms": 30.696,
+        "p95_frame_ms": 37.415,
+        "median_cpu_ms": 13.427,
+        "frame_window": [
+          2644,
+          2663
+        ]
+      },
+      "partial": {
+        "median_frame_ms": 28.257,
+        "p95_frame_ms": 34.943,
+        "median_cpu_ms": 5.344,
+        "frame_window": [
+          3042,
+          3061
+        ]
+      }
+    },
+    "frame_count": 3099,
+    "tour_median_ms": 25.5974,
+    "tour_p95_ms": 42.9773,
+    "peak_process_rss_bytes": 149045248,
+    "max_effect_plus_shadow_bytes": 21600000,
+    "max_material_bytes": 1660244,
+    "max_weather_gpu_bytes": 87384
+  },
+  "executable_sha256": {
+    "before": "3ac8272702fdf538b0f89a4d9125921aa16e45c4fd676b97f58780be62f0602c",
+    "after": "8f635e47dfe39f7f5a2a2825361cfb153aab278380b01775cb959405780ca6a8"
+  }
+}

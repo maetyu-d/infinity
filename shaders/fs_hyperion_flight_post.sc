@@ -47,10 +47,12 @@ vec3 atmosphere(vec2 uv, vec2 cloudClip, out vec3 transmission) {
 #define INFINITE_POLAR_RESOLVE 1
 #include "hyperion_polar.sh"
 #include "hyperion_cloud_resolve.sh"
+#include "hyperion_stellar_optics.sh"
 void main() {
     vec2 uv=v_texcoord0;
     vec3 original=texture2D(s_scene,uv).rgb,c=resolveScene(uv);
     c+=texture2D(s_bloom,uv).rgb*.50;
+    c+=stellarDisc(uv);
     if(u_atmosphere[0].w>0.){
         vec2 cloudClip;vec4 clouds=resolveClouds(uv,cloudClip);c=(c+resolvePolar(uv))*clouds.a+clouds.rgb;
         vec3 transmission;vec3 air=atmosphere(uv,cloudClip,transmission);c=c*transmission+air;

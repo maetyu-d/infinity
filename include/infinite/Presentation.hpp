@@ -66,6 +66,19 @@ inline bool hasSurfaceLife(const CelestialContact& c) {
 }
 std::vector<CelestialContact> extractCelestialContacts(const Universe&, const Navigation&, const Node& system,
                                                        std::span<const Node> planets);
+// Read-only image of the existing parent star. Camera-relative direction and
+// physical angular size remain invariant when render units change.
+struct StellarImage {
+    Address address;
+    glm::dvec3 direction{0, 0, -1};
+    glm::vec3 color{};
+    double angularRadius = 0, distanceMetres = 0, nearDepthUnits = 0;
+    float visibility = 0;
+};
+StellarImage extractStellarImage(const Universe&, const Navigation&, std::span<const CelestialContact>);
+// Direction and contact bearings use the camera frame; distances are metres.
+double stellarDiscVisibility(glm::dvec3 direction, double angularRadius, double distanceMetres,
+                             std::span<const CelestialContact>);
 bool celestialOccluded(glm::dvec3 localDirection, double distanceMetres, std::span<const CelestialContact>,
                        const Address* except = nullptr, double targetAngularRadius = 0);
 double celestialCellWeight(glm::dvec3 cellCentre, glm::dvec3 eye);

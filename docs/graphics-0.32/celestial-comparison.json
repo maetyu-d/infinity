@@ -1,0 +1,32 @@
+{
+  "sun": {
+    "changed_pixels": 753618,
+    "rebase_rms_255": 0.05482857685100146,
+    "large_error_fraction": 0.0
+  },
+  "eclipse": {
+    "changed_pixels": 0,
+    "rebase_rms_255": 0.006085806194501846,
+    "large_error_fraction": 0.0
+  },
+  "away": {
+    "changed_pixels": 0,
+    "rebase_rms_255": 0.025337231668869732,
+    "large_error_fraction": 0.0
+  },
+  "day": {
+    "changed_pixels": 3635,
+    "rebase_rms_255": 0.003928371006591931,
+    "large_error_fraction": 0.0
+  },
+  "ice": {
+    "changed_pixels": 1295670,
+    "rebase_rms_255": 0.08230851327793919,
+    "large_error_fraction": 0.0
+  },
+  "partial": {
+    "changed_pixels": 1481,
+    "rebase_rms_255": 0.010092167846991639,
+    "large_error_fraction": 0.0
+  }
+}

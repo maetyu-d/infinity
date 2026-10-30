@@ -31,7 +31,7 @@ struct FrameStats {
 };
 class Renderer {
   public:
-    Renderer(SDL_Window*, const Universe&);
+    Renderer(SDL_Window*, const Universe&, bool benchmark = false);
     ~Renderer();
     Renderer(const Renderer&) = delete;
     Renderer& operator=(const Renderer&) = delete;
@@ -42,8 +42,9 @@ class Renderer {
     void screenshot(const std::string& path);
     std::string backend() const;
     void setSunShadows(bool enabled);
-    void setPolarLights(bool enabled);  // Presentation switch for native negative-control captures.
-    void setCloudVolumes(bool enabled); // Native optical-volume negative control; weather is unchanged.
+    void setPolarLights(bool enabled);   // Presentation switch for native negative-control captures.
+    void setStellarOptics(bool enabled); // Native optics negative control.
+    void setCloudVolumes(bool enabled);  // Native optical-volume negative control; weather is unchanged.
     void setTerrainCoverageDebug(bool enabled); // Native raster-coverage validation only.
     std::shared_ptr<const Geometry> submittedGeometry(const Address&) const;
     std::shared_ptr<const Geometry> galaxySamples() const;

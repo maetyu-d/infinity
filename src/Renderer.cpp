@@ -113,6 +113,7 @@ struct Renderer::Impl {
     std::atomic<unsigned> normalJobs{0};
     bgfx::ProgramHandle colorProgram = BGFX_INVALID_HANDLE, instanceProgram = BGFX_INVALID_HANDLE;
     bgfx::SwapChain swapChain;
+    uint32_t resetFlags = BGFX_RESET_VSYNC | BGFX_RESET_MAXANISOTROPY;
     std::array<GPUMesh, 4> atomSpheres;
     GPUMesh billboardMesh, hyperionBillboardMesh;
     GPUMesh cabin;
@@ -123,6 +124,7 @@ struct Renderer::Impl {
     CockpitViewport hudViewport;
     bool polarLights = true;
     bool cloudVolumes = true;
+    bool stellarOptics = true;
     float stellarExposure = 1;
     std::shared_ptr<const Geometry> skyGeometry;
     std::vector<CelestialContact> contacts;
@@ -145,6 +147,7 @@ struct Renderer::Impl {
     std::vector<Pick> picks;
     std::vector<Instance> billboards;
     std::vector<Instance> cosmicBillboards;
+    std::vector<Instance> stellarBillboards;
     std::vector<LocalFrame> anchorFrames;
     std::map<Address, std::vector<LocalFrame>> frameFrames;
     std::map<Address, Pose> framePoses;
@@ -292,7 +295,9 @@ struct Renderer::Impl {
         transform[0] = glm::vec4(glm::vec3(right), 0);
         transform[1] = glm::vec4(glm::vec3(up), 0);
         transform[3] = glm::vec4(glm::vec3(p), 1);
-        (cosmic ? cosmicBillboards : billboards)
+        (mode != RenderMode::Original && opticalMaterial >= 3 ? stellarBillboards
+         : cosmic                                             ? cosmicBillboards
+                                                              : billboards)
             .push_back(
                 {transform, glm::vec4(color, mode == RenderMode::Original ? 1.f : 1.f + opticalMaterial)});
     }
@@ -371,7 +376,7 @@ struct Renderer::Impl {
         }
     }
     void drawMesh(const GPUMesh& m, const glm::mat4& model, float opacity = 1, bool lines = false,
-                  bgfx::VertexBufferHandle normals = BGFX_INVALID_HANDLE) {
+                  bgfx::VertexBufferHandle normals = BGFX_INVALID_HANDLE, bool stellar = false) {
         if (!bgfx::isValid(m.vertices) || !bgfx::isValid(m.indices) ||
             bgfx::getAvailInstanceDataBuffer(1, 80) < 1)
             return;
@@ -394,8 +399,8 @@ struct Renderer::Impl {
         else
             state |= BGFX_STATE_BLEND_ALPHA;
         bgfx::setState(state);
-        bgfx::submit(worldView(),
-                     mode == RenderMode::Original ? instanceProgram : hyperion->geometryProgram(smooth));
+        bgfx::submit(worldView(), mode == RenderMode::Original ? instanceProgram
+                                                               : hyperion->geometryProgram(smooth, stellar));
     }
     void drawLines(const GPUMesh& m, const glm::mat4& model) {
         if (!bgfx::isValid(m.vertices))
@@ -457,8 +462,7 @@ struct Renderer::Impl {
         auto pattern = glm::mat4(mapping);
         if (primitive == 1) {
             auto localEye = glm::inverse(pose.orientation) * (eye - pose.position) / radius;
-            const auto light = instruments ? glm::inverse(pose.orientation) * lightAt(materialAddress, nav)
-                                           : glm::dvec3(.6, .7, -.4);
+            const auto light = glm::inverse(pose.orientation) * lightAt(materialAddress, nav);
             hyperion->bind(presentation, glm::vec3(localEye), glm::vec3(light), pattern, primitive,
                            visualTime);
         } else {
@@ -486,7 +490,8 @@ struct Renderer::Impl {
         }
     }
     glm::dvec3 lightAt(const Address& material, const Navigation& nav) {
-        if (instruments) {
+        if (instruments || (mode != RenderMode::Original && material.kind() >= Kind::Planet &&
+                            material.kind() <= Kind::Mountain)) {
             auto system = material;
             while (system.kind() > Kind::System)
                 system = system.parent();
@@ -519,7 +524,7 @@ struct Renderer::Impl {
                      glm::scale(glm::mat4(1), glm::vec3(static_cast<float>(r)));
         if (mode != RenderMode::Original && bgfx::isValid(item.solid.vertices))
             bindPresentation(*geometry, node, nav, model, pose, r, bgfx::isValid(item.normals) ? .25f : 0.f);
-        drawMesh(item.solid, model, opacity, false, item.normals);
+        drawMesh(item.solid, model, opacity, false, item.normals, node.address.kind() == Kind::System);
         if (mode != RenderMode::Original && bgfx::isValid(item.lines.vertices))
             bindPresentation(*geometry, node, nav, model, pose, r, 2);
         drawMesh(item.lines, model, opacity, true);
@@ -569,12 +574,16 @@ struct Renderer::Impl {
             auto p = cameraSpace(position);
             if (p.z >= 0)
                 continue;
+            const bool stellar = geometry->address.kind() == Kind::System &&
+                                 glm::dot(particle.position, particle.position) < 1e-24 &&
+                                 mode != RenderMode::Original;
             double size = std::clamp(static_cast<double>(particle.radius) * r * distanceScale, -p.z * .0005,
-                                     -p.z * .035);
+                                     -p.z * (stellar ? .8 : .035));
             if (LOD::visible(p, size, static_cast<double>(width) / height, fieldOfView))
                 addBillboard(position, size, particle.color * (opacity * attenuation),
                              geometry->address.kind() == Kind::Cosmic,
-                             geometry->address.kind() == Kind::Cosmic ? 2.f
+                             stellar ? 3.f + hyperionPhase(node.seed) * .25f
+                             : geometry->address.kind() == Kind::Cosmic ? 2.f
                              : geometry->address.kind() == Kind::Galaxy && particle.objectId == UINT64_MAX
                                  ? 1.f
                                  : 0.f,
@@ -905,7 +914,8 @@ struct Renderer::Impl {
             double radius = std::clamp(physical, -cp.z * .001, -cp.z * .035);
             float intensity = static_cast<float>(.35 + .65 * std::min(node.massSolar / 3, 1.0));
             if (LOD::visible(cp, radius, static_cast<double>(width) / height, fieldOfView))
-                addBillboard(pose.position, radius, stellarColor(node.temperatureK) * intensity);
+                addBillboard(pose.position, radius, stellarColor(node.temperatureK) * intensity, false,
+                             3.f + hyperionPhase(node.seed) * .25f);
         } else if (node.address == nav.anchor && pixels < 1.5 && cp.z < 0 && kind != Kind::Cosmic)
             addBillboard(pose.position, -cp.z * .0015, material(node.environment.mineral).color);
         if (kind != Kind::Cosmic &&
@@ -1142,7 +1152,7 @@ struct Renderer::Impl {
         }
     }
 };
-Renderer::Renderer(SDL_Window* window, const Universe& universe)
+Renderer::Renderer(SDL_Window* window, const Universe& universe, bool benchmark)
     : impl_(std::make_unique<Impl>(window, universe)) {
     auto& p = *impl_;
     bgfx::Init init;
@@ -1170,7 +1180,8 @@ Renderer::Renderer(SDL_Window* window, const Universe& universe)
     // Reversed-Z needs floating-point storage in Original mode too. A fixed
     // 24-bit default swap-chain depth buffer would retain the far-world bug.
     init.swapChain.formatDepthStencil = bgfx::TextureFormat::D32F;
-    init.reset = BGFX_RESET_VSYNC | BGFX_RESET_MAXANISOTROPY;
+    p.resetFlags = BGFX_RESET_MAXANISOTROPY | (benchmark ? 0 : BGFX_RESET_VSYNC);
+    init.reset = p.resetFlags;
     init.limits.maxTransientVbSize = 8 * 1024 * 1024;
     init.limits.maxTransientIbSize = 3 * 1024 * 1024;
     if (!init.swapChain.nwh)
@@ -1313,6 +1324,9 @@ void Renderer::setSunShadows(bool enabled) {
 void Renderer::setPolarLights(bool enabled) {
     impl_->polarLights = enabled;
 }
+void Renderer::setStellarOptics(bool enabled) {
+    impl_->stellarOptics = enabled;
+}
 void Renderer::setCloudVolumes(bool enabled) {
     impl_->cloudVolumes = enabled;
 }
@@ -1331,7 +1345,7 @@ void Renderer::resize(int w, int h) {
     p.height = h;
     p.swapChain.width = w;
     p.swapChain.height = h;
-    bgfx::reset(BGFX_RESET_VSYNC | BGFX_RESET_MAXANISOTROPY, &p.swapChain);
+    bgfx::reset(p.resetFlags, &p.swapChain);
 }
 FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool overlay, double fps,
                             size_t markers, std::string_view notice, bool looking) {
@@ -1351,6 +1365,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     p.picks.clear();
     p.billboards.clear();
     p.cosmicBillboards.clear();
+    p.stellarBillboards.clear();
     p.frameFrames.clear();
     p.framePoses.clear();
     p.cockpitVisible = p.instruments.has_value() && overlay;
@@ -1471,6 +1486,9 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     for (const auto& contact : p.contacts)
         if (contact.angularRadius > pixelAngle * .125)
             p.skyOccluders.push_back(contact);
+    if (p.mode != RenderMode::Original && p.instruments && !p.instruments->shrinking && p.stellarOptics)
+        p.hyperion->stellar(extractStellarImage(p.universe, nav, p.contacts), float(p.width) / p.height,
+                            float(std::tan(fov * .5)));
     p.stats.celestialContacts = p.contacts.size();
     p.stats.lifeWorlds = std::count_if(p.contacts.begin(), p.contacts.end(), hasSurfaceLife);
     p.stats.lifeScanning = std::count_if(p.contacts.begin(), p.contacts.end(),
@@ -1633,7 +1651,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     p.stats.surfaceBytes = surfaceStats.bytes;
     p.stats.surfacePending = surfaceStats.pending;
     p.stats.surfaceGpuBytes = p.surfaceMeshBytes;
-    auto drawBillboards = [&](const std::vector<Instance>& instances, bool cosmic) {
+    auto drawBillboards = [&](const std::vector<Instance>& instances, bool cosmic, bool stellar = false) {
         uint32_t count = bgfx::getAvailInstanceDataBuffer(static_cast<uint32_t>(instances.size()), 80);
         if (count) {
             bgfx::InstanceDataBuffer buffer;
@@ -1664,12 +1682,15 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                     p.hyperion->bindEmissions(node, glm::inverse(focusModel), p.visualTime);
                 }
             }
-            bgfx::submit(cosmic && p.instruments ? 0 : p.worldView(),
-                         p.mode == RenderMode::Original ? p.instanceProgram : p.hyperion->glowProgram());
+            bgfx::submit(cosmic && p.instruments ? 0 : p.worldView(), p.mode == RenderMode::Original
+                                                                          ? p.instanceProgram
+                                                                      : stellar ? p.hyperion->coronaProgram()
+                                                                                : p.hyperion->glowProgram());
         }
     };
     drawBillboards(p.cosmicBillboards, true);
     drawBillboards(p.billboards, false);
+    drawBillboards(p.stellarBillboards, false, true);
     if (p.instruments && p.mode != RenderMode::Original && !p.instruments->shrinking &&
         !p.instruments->landed && p.instruments->speed > 24) {
         // Hyperion drawMotion's bounded, world-grid-anchored navigation streaks.

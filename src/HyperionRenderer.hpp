@@ -15,6 +15,7 @@ class HyperionRenderer {
     ~HyperionRenderer();
     void begin(RenderMode, int width, int height, bool opticalDepth = false, bool flight = false);
     void finish();
+    void stellar(const StellarImage&, float aspect, float tanHalfFov);
     void sky(const SpectralSky&, double visualTime, float aspect, float tanHalfFov);
     void atmosphere(glm::vec3 eye, glm::vec3 light, const glm::mat4& cameraToPlanet, float radiusRenderUnits,
                     float scaleHeightRatio, float strength, float aspect, float tanHalfFov, float phase,
@@ -54,7 +55,8 @@ class HyperionRenderer {
         if (!complete)
             sunActive_ = false;
     }
-    bgfx::ProgramHandle geometryProgram(bool smooth = false);
+    bgfx::ProgramHandle geometryProgram(bool smooth = false, bool stellar = false);
+    bgfx::ProgramHandle coronaProgram();
     bgfx::ProgramHandle glowProgram() const {
         return glow_;
     }
@@ -69,6 +71,10 @@ class HyperionRenderer {
     }
 
   private:
+    bgfx::UniformHandle stellarParams_ = BGFX_INVALID_HANDLE;
+    bgfx::ProgramHandle corona_ = BGFX_INVALID_HANDLE, solarBlur_ = BGFX_INVALID_HANDLE;
+    std::array<bgfx::ProgramHandle, 2> stellarGeometry_{{BGFX_INVALID_HANDLE, BGFX_INVALID_HANDLE}};
+    std::array<glm::vec4, 3> stellarData_{};
     void init();
     void clearTargets();
     void publishDetail();

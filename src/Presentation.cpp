@@ -68,7 +68,8 @@ ScenePresentation extractPresentation(const Node& node, const Geometry& geometry
     else if (kind >= Kind::Rock)
         while (materialFrame.kind() != Kind::Rock)
             materialFrame = materialFrame.parent();
-    const float domain = kind == Kind::Lattice                            ? 2.f
+    const float domain = kind == Kind::System                             ? 6.f
+                         : kind == Kind::Lattice                          ? 2.f
                          : kind >= Kind::Planet && kind <= Kind::Mountain ? 1.f
                                                                           : 0.f;
     return {geometry,
@@ -76,8 +77,10 @@ ScenePresentation extractPresentation(const Node& node, const Geometry& geometry
             {roughness, metal, pigment, fibre},
             phase,
             strength,
-            {domain, float(node.environment.strain), float(node.geology ? node.geology->activity : .5),
-             float(node.environment.chemistry.ice)},
+            {domain,
+             kind == Kind::System ? float(node.stellarRadiusMetres / std::pow(10., node.frame.logRadius))
+                                  : float(node.environment.strain),
+             float(node.geology ? node.geology->activity : .5), float(node.environment.chemistry.ice)},
             {float(node.environment.mineral), float(node.environment.waterActivity),
              float(node.environment.temperature), geometry.section ? 1.f : 0.f},
             {kind == Kind::Planet ? float(planetClimate(node).pressureBar) : 0.f,

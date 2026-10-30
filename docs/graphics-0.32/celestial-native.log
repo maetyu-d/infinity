@@ -1,0 +1,23 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+CELESTIAL_OPTICS scene=sun sample=0 geometry=16899495381898477542 terrain=0 log=10.1973 frame=576 camera=unchanged
+CELESTIAL_OPTICS scene=sun sample=1 geometry=16899495381898477542 terrain=0 log=10.1973 frame=607 camera=unchanged
+CELESTIAL_OPTICS scene=sun sample=2 geometry=16899495381898477542 terrain=0 log=9.19733 frame=638 camera=unchanged
+CELESTIAL_OPTICS scene=eclipse sample=0 geometry=16232825950118402824 terrain=143044383568311737 log=6.85556 frame=1240 camera=unchanged
+CELESTIAL_OPTICS scene=eclipse sample=1 geometry=16232825950118402824 terrain=143044383568311737 log=6.85556 frame=1271 camera=unchanged
+CELESTIAL_OPTICS scene=eclipse sample=2 geometry=16232825950118402824 terrain=143044383568311737 log=5.85556 frame=1302 camera=unchanged
+CELESTIAL_OPTICS scene=away sample=0 geometry=5872988622288826751 terrain=14179285520572168870 log=6.85556 frame=1428 camera=unchanged
+CELESTIAL_OPTICS scene=away sample=1 geometry=5872988622288826751 terrain=14179285520572168870 log=6.85556 frame=1459 camera=unchanged
+CELESTIAL_OPTICS scene=away sample=2 geometry=5872988622288826751 terrain=14179285520572168870 log=5.85556 frame=1490 camera=unchanged
+CELESTIAL_OPTICS scene=day sample=0 geometry=0 terrain=16867216560251465295 log=6.85556 frame=1600 camera=unchanged
+CELESTIAL_OPTICS scene=day sample=1 geometry=0 terrain=16867216560251465295 log=6.85556 frame=1631 camera=unchanged
+CELESTIAL_OPTICS scene=day sample=2 geometry=0 terrain=16867216560251465295 log=5.85556 frame=1662 camera=unchanged
+CELESTIAL_OPTICS scene=ice sample=0 geometry=6454129599015832917 terrain=13852832857278311477 log=7.0141 frame=2632 camera=unchanged
+CELESTIAL_OPTICS scene=ice sample=1 geometry=6454129599015832917 terrain=13852832857278311477 log=7.0141 frame=2663 camera=unchanged
+CELESTIAL_OPTICS scene=ice sample=2 geometry=6454129599015832917 terrain=13852832857278311477 log=6.0141 frame=2694 camera=unchanged
+CELESTIAL_OPTICS scene=partial sample=0 geometry=2320613015860299047 terrain=15696107098522906065 log=6.85556 frame=3030 camera=unchanged
+CELESTIAL_OPTICS scene=partial sample=1 geometry=2320613015860299047 terrain=15696107098522906065 log=6.85556 frame=3061 camera=unchanged
+CELESTIAL_OPTICS scene=partial sample=2 geometry=2320613015860299047 terrain=15696107098522906065 log=5.85556 frame=3092 camera=unchanged
+PASS: celestial optics / sun, eclipse, away, day, ice and partial eclipse / opaque depth / magnification / unchanged geometry
+FRAME median_ms=25.5974 p95_ms=42.9773 frames=3099 cache_bytes=10937944
+peak_rss_bytes=149045248
