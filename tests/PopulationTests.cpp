@@ -1,4 +1,5 @@
 #include "infinite/Piloting.hpp"
+#include "infinite/Planetology.hpp"
 #include <algorithm>
 #include <iostream>
 #include <oneapi/tbb/global_control.h>
@@ -14,7 +15,7 @@ static void check(bool v, const char* m) {
         throw std::runtime_error(m);
 }
 static double mass(const Node& n) {
-    return 4.188790204786391 * material(n.environment.mineral).density * std::pow(10., 3 * n.frame.logRadius);
+    return 4.188790204786391 * planetDensity(n) * std::pow(10., 3 * n.frame.logRadius);
 }
 static void place(Navigation& n, Address a, double log, glm::dvec3 eye, glm::dquat q = {1, 0, 0, 0}) {
     const auto offset = eye - q * glm::dvec3(0, 0, 1);
@@ -34,7 +35,7 @@ int main() {
                 const auto system = u.describe(Address{}.child(Kind::Galaxy, 0).child(Kind::System, i));
                 const auto bodies = u.children(system);
                 const unsigned count = u.planetCount(system);
-                check(count >= 13 && count <= 21, "Planet count did not increase to 13..21");
+                check(count >= 17 && count <= 25, "Planet count did not increase to 17..25");
                 check(u.children(system, 1).front() == system.address.child(Kind::Planet, 0),
                       "Expansion replaced the legacy prefix");
                 std::set<uint64_t> identities;
@@ -50,7 +51,7 @@ int main() {
                     check(glm::length(body.frame.position) * units < extent,
                           "Body outside the physical system envelope");
                     check(body.geology && body.planetSeed == body.seed, "New world cannot refine to geology");
-                    check(body.environment.temperature <= 1391 &&
+                    check(body.environment.temperature > 0 &&
                               body.environment.peakTemperature >= body.environment.temperature,
                           "Body violates inherited irradiation constraints");
                     if (isMoon(a)) {
@@ -62,9 +63,9 @@ int main() {
                               "Moon does not orbit its actual primary");
                         const double hill = primary.orbit.semiMajorMetres * (1 - primary.orbit.eccentricity) *
                                             std::cbrt(mass(primary) / (3 * system.massSolar * 1.98847e30));
-                        const double roche = 2.44 * std::pow(10., primary.frame.logRadius) *
-                                             std::cbrt(material(primary.environment.mineral).density /
-                                                       material(body.environment.mineral).density);
+                        const double roche =
+                            2.44 * std::pow(10., primary.frame.logRadius) *
+                            std::cbrt(planetDensity(primary) / material(body.environment.mineral).density);
                         check(body.orbit.semiMajorMetres * (1 + body.orbit.eccentricity) < hill * .35,
                               "Moon outside stable Hill region");
                         check(body.orbit.semiMajorMetres * (1 - body.orbit.eccentricity) > roche,

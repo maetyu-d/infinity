@@ -3,6 +3,7 @@
 uniform vec4 u_hyperion[4];
 uniform vec4 u_cavity;
 uniform vec4 u_materialDomain;
+#include "hyperion_planets.sh"
 uniform mat4 u_pattern;
 uniform vec4 u_surface;
 uniform vec4 u_environment;
@@ -102,13 +103,13 @@ void main(){
  else albedo*=planet?.46:.62; // Non-terrain meshes retain their original baked colour.
  if(terrain)albedo=base*.38+mineral*.018; // Streamed terrain supplies unlit reflectance.
  if(planet)albedo=mix(vec3(dot(albedo,vec3(.299,.587,.114)))*vec3(.86,.94,1.),albedo,.82);
+ if(planet && !gas && u_planet[0].x>.5){
+  float elevationTone=clamp(.45+v_elevation*50.,0.,1.);
+  vec3 substrate=mix(u_planet[1].rgb,u_planet[2].rgb,elevationTone);
+  albedo=mix(albedo,substrate*.35,.46);
+ }
  if(gas){
-  // Hyperion worldFragment's latitude belts and continuous storm pigment.
-  float belt=n.y*44.+sin(n.z*6.+phase)*1.5+sin(n.x*9.+n.y*5.)*.65;
-  float resolved=1.-smoothstep(.6,2.,fwidth(belt));
-  float bands=mix(.5,.5+.5*sin(belt),resolved);
-  albedo=mix(base*.42,pigment(phase+bands*.28+n.y*.17)*.48+base*.24,.75);
-  albedo+=tapestry*.10;
+  albedo=giantClouds(n,seconds)*.48+tapestry*.025;
  }
  // Geological contrast follows the actual authored height and slopes at
  // every LOD. Reuse the inherited mineral pigment instead of evaluating a
@@ -121,8 +122,8 @@ void main(){
  }
  // Mineral identity and the existing geological lowland/temperature rule
  // control coating; no liquid plane, height field or new biome is generated.
- float ice=max(1.-step(.1,abs(u_surface.x-3.)),planet?1.-step(.1,abs(u_environment.w-2.)):0.);
- float liquid=planet?u_surface.y*smoothstep(235.,275.,u_surface.z)*(1.-smoothstep(340.,410.,u_surface.z)):0.;
+ float ice=gas?0.:max(1.-step(.1,abs(u_surface.x-3.)),planet?1.-step(.1,abs(u_environment.w-2.)):0.);
+ float liquid=planet && !gas?u_surface.y*smoothstep(235.,275.,u_surface.z)*(1.-smoothstep(340.,410.,u_surface.z)):0.;
  float wet=liquid*(1.-smoothstep(-.00088,-.00072,v_elevation));
  // The same forecast that draws the rain wets nearby retained terrain.
  // No stored water, geometry, roughness texture or procedural seed changes.
@@ -273,7 +274,11 @@ void main(){
  float skyDay=planet?smoothstep(-.16,.10,dot(radial,L)):1.;
  float air=planet?clamp(u_environment.x*.7,0.,1.):.15;
  float visibility=cockpit?1.:surfaceSun(v_position-u_hyperion[2].xyz,sunDot);
- if(planet)visibility*=weatherSun(v_position,u_hyperion[2].xyz,L);
+ if(planet){
+  visibility*=weatherSun(v_position,u_hyperion[2].xyz,L);
+  vec3 localLight=normalize(u_planet[4].xyz+vec3(1e-20));
+  visibility*=planetRingSun(n,localLight);
+ }
  // Atmospheric sunset light changes only illumination, with the retained
  // stellar direction and pressure. Airless worlds keep their neutral sun.
  vec3 sunlight=mix(vec3(1.18,.40,.16),vec3(1.,.96,.88),smoothstep(-.02,.30,dot(up,L)));
@@ -322,15 +327,25 @@ void main(){
   float ecPhase=elevation*176.+detail*2.+sin(n.x*29.+n.z*17.)*.24;
   float ecVeins=thread(ecPhase,.065),ecLace=thread(ecPhase*2.7+u_materialDomain.y*5.,.025);
   vec3 ecColour=pigment(elevation*6.3+phase+n.z*.18+seconds*.0008);
-  lit+=ecColour*(ecVeins*.58+ecLace*.19)*u_hyperion[1].w*(.045+.955*day)*(terrain?.025:1.);
-  lit+=(tapestry*(.016+.075*fresnel)*(.12+.88*day)+flow*.012*day)*(terrain?.12:1.);
-  lit+=mix(pigment(n.z*.9+phase+fresnel*.35),coatHue,terrain?.35:0.)*fresnel*(terrain?.025:.15)*(.18+.82*day);
+  lit+=ecColour*(ecVeins*.58+ecLace*.19)*u_hyperion[1].w*(.045+.955*day)*(terrain?.025:gas?.12:1.);
+  lit+=(tapestry*(.016+.075*fresnel)*(.12+.88*day)+flow*.012*day)*(terrain?.12:gas?.20:1.);
+  lit+=mix(pigment(n.z*.9+phase+fresnel*.35),coatHue,terrain?.35:0.)*fresnel*(terrain?.025:gas?.07:.15)*(.18+.82*day);
   if(planet && !terrain){
    float air=gas?1.:clamp(u_environment.x*.7,0.,1.);
    vec3 limb=mix(vec3(.10,.42,.85),pigment(phase+fresnel*.28)*.8,.32);
    lit+=limb*pow(fresnel,.8)*air*(.08+.45*smoothstep(-.15,.25,dot(radial,L)));
   }
   lit+=microGlow+pigment(phase+fresnel*.4)*microVein*(.018+fresnel*.16);
+ }
+ // Incandescence follows the retained surface temperature and geological
+ // height contours. It never changes the solid world's terrain or deposits.
+ if(planet && u_planet[0].x>5.5 && u_planet[0].x<6.5){
+  float contour=v_elevation*4000.+dot(n,vec3(3.,5.,2.));
+  float footprint=max(.025,fwidth(contour));
+  float fissures=1.-smoothstep(.06,.06+footprint,abs(sin(contour)));
+  float thermal=clamp(pow(max(0.,u_surface.z)/1400.,4.),0.,4.);
+  vec3 heat=mix(vec3(1.5,.055,.006),vec3(2.1,.65,.045),smoothstep(1150.,1800.,u_surface.z));
+  lit=lit*.12+heat*thermal*(.08+fissures*.40);
  }
  // The existing cutaway remains visible behind the specimen, with lower
  // reflected illumination so its facets do not overwhelm the inspected sites.

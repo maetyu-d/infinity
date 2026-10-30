@@ -1,0 +1,23 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+PLANET_VARIETY scene=gas-0 address=0,0,0/1:0/2:0/3:15 mode=ORIGINAL geometry=8208230608829149891 descriptor=1234422651828678852 radius_km=57413.3 temperature_k=56.6965 rings=1 frame=895 camera=unchanged
+PLANET_VARIETY scene=gas-1 address=0,0,0/1:0/2:0/3:15 mode=HYPERION geometry=8208230608829149891 descriptor=1234422651828678852 radius_km=57413.3 temperature_k=56.6965 rings=1 frame=919 camera=unchanged
+PLANET_VARIETY scene=gas-2 address=0,0,0/1:0/2:0/3:15 mode=HYBRID geometry=8208230608829149891 descriptor=1234422651828678852 radius_km=57413.3 temperature_k=56.6965 rings=1 frame=943 camera=unchanged
+PLANET_VARIETY scene=ice-giant-0 address=0,0,0/1:0/2:0/3:16 mode=ORIGINAL geometry=3914322016239318044 descriptor=15750271031024222497 radius_km=31406.7 temperature_k=39.6162 rings=1 frame=981 camera=unchanged
+PLANET_VARIETY scene=ice-giant-1 address=0,0,0/1:0/2:0/3:16 mode=HYPERION geometry=3914322016239318044 descriptor=15750271031024222497 radius_km=31406.7 temperature_k=39.6162 rings=1 frame=1005 camera=unchanged
+PLANET_VARIETY scene=ice-giant-2 address=0,0,0/1:0/2:0/3:16 mode=HYBRID geometry=3914322016239318044 descriptor=15750271031024222497 radius_km=31406.7 temperature_k=39.6162 rings=1 frame=1029 camera=unchanged
+PLANET_VARIETY scene=sub-neptune-0 address=0,0,0/1:0/2:0/3:18 mode=ORIGINAL geometry=9093999972996001749 descriptor=14841492945681074295 radius_km=16963 temperature_k=28.9657 rings=1 frame=1077 camera=unchanged
+PLANET_VARIETY scene=sub-neptune-1 address=0,0,0/1:0/2:0/3:18 mode=HYPERION geometry=9093999972996001749 descriptor=14841492945681074295 radius_km=16963 temperature_k=28.9657 rings=1 frame=1101 camera=unchanged
+PLANET_VARIETY scene=sub-neptune-2 address=0,0,0/1:0/2:0/3:18 mode=HYBRID geometry=9093999972996001749 descriptor=14841492945681074295 radius_km=16963 temperature_k=28.9657 rings=1 frame=1125 camera=unchanged
+PLANET_VARIETY scene=solid-0 address=0,0,0/1:0/2:1/3:13 mode=HYPERION geometry=16674514822000608109 descriptor=11465722303489871934 radius_km=789.647 temperature_k=215.665 rings=0 frame=1331 camera=unchanged
+PLANET_VARIETY scene=solid-1 address=0,0,0/1:0/2:15/3:7 mode=HYPERION geometry=2334552800438208466 descriptor=17646208273595959064 radius_km=1702.68 temperature_k=183.562 rings=0 frame=1732 camera=unchanged
+PLANET_VARIETY scene=solid-2 address=0,0,0/1:0/2:0/3:7 mode=HYPERION geometry=6739733952669065302 descriptor=18412089594104444351 radius_km=2250.67 temperature_k=379.674 rings=0 frame=2147 camera=unchanged
+PLANET_VARIETY scene=solid-3 address=0,0,0/1:0/2:18/3:9 mode=HYPERION geometry=14678476554575519870 descriptor=4825997181444813160 radius_km=1596.21 temperature_k=284.343 rings=0 frame=2534 camera=unchanged
+PLANET_VARIETY scene=solid-4 address=0,0,0/1:0/2:0/3:0 mode=HYPERION geometry=18323162104142898796 descriptor=11836071194178916530 radius_km=4657.69 temperature_k=95.3737 rings=0 frame=2974 camera=unchanged
+PLANET_VARIETY scene=solid-5 address=0,0,0/1:0/2:90/3:9 mode=HYPERION geometry=12645668533798607011 descriptor=13806753452455668625 radius_km=548.588 temperature_k=1100.93 rings=0 frame=3380 camera=unchanged
+PLANET_VARIETY scene=hot-giant address=0,0,0/1:0/2:1/3:21 mode=HYPERION geometry=3766645982647706626 descriptor=8080594672132041275 radius_km=78592.1 temperature_k=1320.77 rings=0 frame=3405 camera=unchanged
+PLANET_VARIETY scene=rings-off address=0,0,0/1:0/2:0/3:15 mode=HYPERION geometry=8208230608829149891 descriptor=1234422651828678852 radius_km=57413.3 temperature_k=56.6965 rings=0 frame=3445 camera=unchanged
+PLANET_VARIETY scene=rings-rebased address=0,0,0/1:0/2:0/3:15 mode=HYPERION geometry=8208230608829149891 descriptor=1234422651828678852 radius_km=57413.3 temperature_k=56.6965 rings=1 frame=3469 camera=unchanged
+PASS: real planet families, ring composition, three rendering modes, unchanged geometry and physical camera
+FRAME median_ms=23.9467 p95_ms=41.8718 frames=3475 cache_bytes=12001088
+peak_rss_bytes=148439040

@@ -1,5 +1,6 @@
 #pragma once
 #include "Geometry.hpp"
+#include "Planetology.hpp"
 #include <string_view>
 
 namespace infinite {
@@ -21,7 +22,10 @@ struct ScenePresentation {
     glm::vec4 surface{};          // mineral, water activity, temperature, inspection section
     glm::vec4 environment{};      // retained pressure, terrain regime, gas envelope, geology type
                                   // Architecture domain: frame-relative sky up.xyz, pressure.w.
+    std::array<glm::vec4, 5> planet{};
+    std::array<glm::vec4, 2> planetRings{};
 };
+void describePlanetPresentation(ScenePresentation&, const Node& planet);
 ScenePresentation extractPresentation(const Node&, const Geometry&, RenderMode);
 float hyperionPhase(uint64_t inheritedKey);
 glm::vec3 hyperionPigment(float phase);      // CPU reference for shader validation

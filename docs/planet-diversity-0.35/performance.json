@@ -1,0 +1,41 @@
+{
+  "before": {
+    "executable_sha256": "1c2c1825b25113ade470f6495d174e219d86f1fe33587d116a010689866d2c04",
+    "sample_start_frame": 103,
+    "sample_end_frame": 114,
+    "window_medians": {
+      "wall_ms": 15.6123,
+      "cpu_ms": 10.165815,
+      "submit_ms": 0.0278335,
+      "effect_bytes": 21600000.0,
+      "material_bytes": 1660244.0,
+      "weather_gpu_bytes": 87384.0,
+      "cpu_cache_bytes": 3582472.0
+    },
+    "full_loop_peak_rss_bytes": 164790272,
+    "full_loop_median_ms": 22.7635,
+    "maximum_wall_ms": 218.908,
+    "frames": 1957,
+    "full_loop_p95_ms": 44.1861
+  },
+  "after": {
+    "executable_sha256": "4623b6d865de72995357a29b6fcd6f9a6578f59ff492c35f0cb363787acd00e9",
+    "sample_start_frame": 103,
+    "sample_end_frame": 114,
+    "window_medians": {
+      "wall_ms": 12.50825,
+      "cpu_ms": 7.793125,
+      "submit_ms": 5.03402,
+      "effect_bytes": 21600000.0,
+      "material_bytes": 1660244.0,
+      "weather_gpu_bytes": 87384.0,
+      "cpu_cache_bytes": 4198248.0
+    },
+    "full_loop_peak_rss_bytes": 154157056,
+    "full_loop_median_ms": 27.283,
+    "maximum_wall_ms": 1483.23,
+    "frames": 1966,
+    "full_loop_p95_ms": 46.0484
+  },
+  "method": "Metal 1440x900, same default universe, original system 9 / planet 0, fixed visual time 12; twelve frames ending eight frames before the first Hyperion orbital interval ends, excluding mode switching and screenshot readbacks. Full-loop RSS includes later flight stages whose contents can differ with the additional population. Shared desktop; timings do not isolate shader cost or establish a general speedup."
+}

@@ -1,4 +1,5 @@
 #include "infinite/Universe.hpp"
+#include "infinite/Planetology.hpp"
 #include <algorithm>
 #include <bit>
 #include <cmath>
@@ -55,6 +56,11 @@ glm::vec3 stellarColor(double temperatureK) {
                     static_cast<float>(std::clamp((temperatureK - 3000) / 7000, 0.0, 1.0)));
 }
 std::string Node::label() const {
+    if (address.kind() == Kind::Planet && !hasSolidSurface(*this)) {
+        const auto t = planetTraits(*this);
+        return std::string(thermalTypeName(t.thermal)) + " " + std::string(planetTypeName(t.type)) + " " +
+               std::to_string(seed % 100000);
+    }
     if (address.kind() == Kind::Planet && hasSolidSurface(*this) &&
         geology->terrain.type != TerrainType::None)
         return std::string(terrainName(geology->terrain.type)) + " " + std::to_string(seed % 100000);
@@ -82,16 +88,18 @@ unsigned Universe::legacyPlanetCount(const Node& system) const {
         throw std::invalid_argument("Expected a system");
     return unsigned(5 + system.seed % 5);
 }
-unsigned Universe::planetCount(const Node& system) const {
+unsigned Universe::establishedPlanetCount(const Node& system) const {
     return legacyPlanetCount(system) + 8 + unsigned(mix64(system.seed ^ 0x504f50554c415445ULL) % 5);
+}
+unsigned Universe::planetCount(const Node& system) const {
+    return establishedPlanetCount(system) + giantPopulationCount;
 }
 namespace {
 double bodyMass(const Node& n) {
-    return 4.188790204786391 * material(n.environment.mineral).density * std::pow(10., 3 * n.frame.logRadius);
+    return 4.188790204786391 * planetDensity(n) * std::pow(10., 3 * n.frame.logRadius);
 }
 double moonInner(const Node& n) {
-    return std::pow(10., n.frame.logRadius) *
-           std::max(3.2, 3.05 * std::cbrt(material(n.environment.mineral).density / 917.));
+    return std::pow(10., n.frame.logRadius) * std::max(3.2, 3.05 * std::cbrt(planetDensity(n) / 917.));
 }
 } // namespace
 std::shared_ptr<const std::vector<Orbit>> Universe::planetOrbits(const Node& system) const {
@@ -102,7 +110,7 @@ std::shared_ptr<const std::vector<Orbit>> Universe::planetOrbits(const Node& sys
     }
     auto orbits = std::make_shared<std::vector<Orbit>>();
     std::vector<Node> old;
-    const unsigned legacy = legacyPlanetCount(system), total = planetCount(system);
+    const unsigned legacy = legacyPlanetCount(system), total = establishedPlanetCount(system);
     for (unsigned i = 0; i < legacy; i++) {
         old.push_back(makeChild(system, {Kind::Planet, i}));
         orbits->push_back(old.back().orbit);
@@ -140,6 +148,50 @@ std::shared_ptr<const std::vector<Orbit>> Universe::planetOrbits(const Node& sys
             e = .008 + r.unit(2) * .025;
         }
         orbits->push_back({a, e, r.unit(3) * 2 * pi, r.signedUnit(4) * .08, system.massSolar});
+    }
+    // Append envelopes without moving any established primary. The giant
+    // masses enter the mutual-Hill spacing rather than using terrestrial mass.
+    for (unsigned slot = 0; slot < giantPopulationCount; ++slot) {
+        const unsigned id = total + slot;
+        const uint64_t seed = childSeed(system.seed, Kind::Planet, id);
+        const Random r{featureSeed(seed, Feature::PlanetEnvelope, planetDiversityRecipeVersion)};
+        const auto formation = giantFormation(seed, slot);
+        const double mass = 4.188790204786391 * formation.density * std::pow(formation.radiusMetres, 3);
+        const double starMass = system.massSolar * 1.98847e30;
+        const double e = .004 + .016 * r.unit(3);
+        double outerEdge = 0, outerA = 0, outerMass = 0;
+        double innerEdge = 1e100, innerMass = 0, innerA = 0;
+        for (unsigned i = 0; i < orbits->size(); ++i) {
+            const auto& o = (*orbits)[i];
+            double m = i < legacy ? bodyMass(old[i])
+                       : i < total
+                           ? 4.188790204786391 * 7874. * std::pow(10., 3 * 6.45)
+                           : [&] {
+                                 const auto f =
+                                     giantFormation(childSeed(system.seed, Kind::Planet, i), i - total);
+                                 return 4.188790204786391 * f.density * std::pow(f.radiusMetres, 3);
+                             }();
+            if (o.semiMajorMetres * (1 - o.eccentricity) < innerEdge) {
+                innerEdge = o.semiMajorMetres * (1 - o.eccentricity);
+                innerMass = m;
+                innerA = o.semiMajorMetres;
+            }
+            if (o.semiMajorMetres * (1 + o.eccentricity) > outerEdge) {
+                outerEdge = o.semiMajorMetres * (1 + o.eccentricity);
+                outerA = o.semiMajorMetres;
+                outerMass = m;
+            }
+        }
+        const double margin = 2.5 * std::cbrt((mass + outerMass) / (3 * starMass));
+        double a = (outerEdge + margin * outerA) / (1 - e - margin) * 1.025;
+        if (slot == 2 && !system.companions) {
+            const double innerMargin = 2.5 * std::cbrt((mass + innerMass) / (3 * starMass));
+            const double hi = (innerEdge - innerMargin * innerA) / (1 + e + innerMargin);
+            const double lo = std::max(system.stellarRadiusMetres * 4., formation.radiusMetres * 5.);
+            if (hi > lo * 1.25)
+                a = std::sqrt(lo * hi);
+        }
+        orbits->push_back({a, e, r.unit(4) * 2 * pi, r.signedUnit(5) * .045, system.massSolar});
     }
     std::lock_guard lock(descriptors_->mutex);
     auto result = descriptors_->populations.emplace(system.address, orbits).first->second;
@@ -411,6 +463,14 @@ Node Universe::makeChild(const Node& p, Segment s) const {
             n.planetLogRadius = n.frame.logRadius;
             n.planetSeed = n.seed;
             env.temperature = std::max(2.725, primary.environment.temperature * (.97 + .06 * r.unit(7)));
+            if (primary.bulkDensity > 0) {
+                const double stellar = 278. * std::pow(p.luminositySolar, .25) /
+                                       std::sqrt(primary.orbit.semiMajorMetres / 1.495978707e11);
+                const double planetary =
+                    primary.environment.temperature * std::sqrt(radius / (2 * n.orbit.semiMajorMetres));
+                env.temperature =
+                    std::max(2.725, std::pow(std::pow(stellar, 4) + std::pow(planetary, 4), .25));
+            }
             env.pressureGPa = std::min(.08, env.pressureGPa * .15);
             env.peakTemperature = std::max(env.temperature, 650 + 1000 * r.unit(8));
             env.coolingRate = std::clamp(.55 + .4 * r.unit(14), .1, 1.);
@@ -418,8 +478,7 @@ Node Universe::makeChild(const Node& p, Segment s) const {
             env.impact = std::clamp(env.impact + .2 * r.unit(17), 0., 1.);
             env.mineral = selectMineral(n.seed, env);
             const double massLimitedRadius =
-                radius * std::cbrt(.004 * material(primary.environment.mineral).density /
-                                   material(env.mineral).density);
+                radius * std::cbrt(.004 * planetDensity(primary) / material(env.mineral).density);
             n.frame.logRadius =
                 std::log10(std::max(3000., std::min(std::pow(10., n.frame.logRadius), massLimitedRadius)));
             n.planetLogRadius = n.frame.logRadius;
@@ -443,11 +502,25 @@ Node Universe::makeChild(const Node& p, Segment s) const {
             n.frame.position = keplerPosition(n.orbit, 0) / std::pow(10., p.frame.logRadius);
             n.frame.logRadius = 5.4 + 1.05 * r.unit(5);
         }
+        const bool envelope = s.id >= establishedPlanetCount(p);
+        if (envelope) {
+            const auto formation = giantFormation(n.seed, unsigned(s.id - establishedPlanetCount(p)));
+            n.frame.logRadius = std::log10(formation.radiusMetres);
+            n.bulkDensity = formation.density;
+        }
         n.planetLogRadius = n.frame.logRadius;
         n.planetSeed = n.seed;
         env.temperature = 278.0 * std::pow(p.luminositySolar, .25) / std::sqrt(au);
         if (n.expandedPopulation)
             env.temperature = std::max(2.725, env.temperature);
+        if (envelope) {
+            // Secular cooling supplies an intrinsic flux, added to irradiation
+            // in T^4. Distant envelopes must not all collapse to the CMB floor.
+            const double jovianMass = bodyMass(n) / 1.89813e27;
+            const double intrinsic =
+                std::clamp(95. * std::pow(jovianMass, .22) / std::pow(1 + env.ageGyr / 4., .32), 18., 150.);
+            env.temperature = std::pow(std::pow(env.temperature, 4) + std::pow(intrinsic, 4), .25);
+        }
         env.pressureGPa = .015 + .35 * r.unit(7);
         env.peakTemperature = std::max(env.temperature, 850 + 1700 * std::exp(-env.ageGyr / 12) * r.unit(8));
         // Condensation beyond the irradiation-dependent snow line retains ice;
@@ -463,7 +536,7 @@ Node Universe::makeChild(const Node& p, Segment s) const {
         if (env.chemistry.ice > .25 && env.temperature < 250)
             env.pressureGPa = std::min(env.pressureGPa, .12);
         env.mineral = selectMineral(n.seed, env);
-        n.geology = planetProcess(n.seed, n.frame.logRadius, env, n.expandedPopulation);
+        n.geology = planetProcess(n.seed, n.frame.logRadius, env, n.expandedPopulation, envelope);
         if (n.expandedPopulation)
             n.massSolar = bodyMass(n) / 1.98847e30;
         break;
@@ -735,6 +808,10 @@ uint64_t descriptorFingerprint(const Node& n) {
         add(p.id);
     }
     add(n.seed);
+    if (n.bulkDensity > 0) {
+        add(planetDiversityRecipeVersion);
+        real(n.bulkDensity);
+    }
     if (n.expandedPopulation) {
         add(populationRecipeVersion);
         add(n.satelliteOf);

@@ -3,6 +3,7 @@
 #include "FlightValidation.hpp"
 #include "LandingLightValidation.hpp"
 #include "PilotValidation.hpp"
+#include "PlanetDiversityValidation.hpp"
 #include "PlanetValidation.hpp"
 #include "PolarValidation.hpp"
 #include "StreamingValidation.hpp"
@@ -40,7 +41,8 @@ struct Options {
     double visualTime = -1;
     bool compareModes = false;
     bool flightTest = false, planetTest = false, uiFitTest = false, polarTest = false, cloudTest = false,
-         celestialTest = false, celestialSunOnly = false, landingLightTest = false, weatherTest = false;
+         celestialTest = false, celestialSunOnly = false, landingLightTest = false, weatherTest = false,
+         diversityTest = false;
     bool streamingTest = false;
     bool terrainQuality = false, terrainSurfaceFrame = false, sunShadows = true;
     bool pilotTest = false, terrainTest = false, surfaceTest = false, explicitMode = false;
@@ -62,7 +64,10 @@ static Options options(int argc, char** argv) {
             o.smoke = o.tour = o.fresh = true;
         else if (arg == "--benchmark-tour")
             o.benchmark = o.smoke = o.tour = o.fresh = true;
-        else if (arg == "--weather-visibility-test") {
+        else if (arg == "--planet-diversity-test") {
+            o.diversityTest = o.benchmark = o.smoke = o.fresh = true;
+            o.visualTime = 12;
+        } else if (arg == "--weather-visibility-test") {
             o.weatherTest = o.benchmark = o.smoke = o.fresh = true;
             o.visualTime = 12;
         } else if (arg == "--landing-light-test") {
@@ -147,6 +152,7 @@ static Options options(int argc, char** argv) {
                    "--benchmark-tour --flight-test --streaming-test --pilot-test --planet-stability-test "
                    "--ui-fit-test --polar-optics-test --cloud-volume-test --celestial-graphics-test "
                    "--stellar-sun-test --landing-light-test --weather-visibility-test "
+                   "--planet-diversity-test "
                    "--terrain-test "
                    "--surface-test --terrain-quality-test --terrain-surface-frame-test "
                    "--terrain-saved-view-test FILE --no-sun-shadows "
@@ -169,7 +175,7 @@ static Options options(int argc, char** argv) {
         unsigned(o.flightTest) + unsigned(o.streamingTest) + unsigned(o.pilotTest) + unsigned(o.terrainTest) +
         unsigned(o.surfaceTest) + unsigned(o.planetTest) + unsigned(o.uiFitTest) + unsigned(o.polarTest) +
         unsigned(o.cloudTest) + unsigned(o.celestialTest) + unsigned(o.landingLightTest) +
-        unsigned(o.weatherTest);
+        unsigned(o.weatherTest) + unsigned(o.diversityTest);
     if (validationModes > 1 || (validationModes && o.tour))
         throw std::invalid_argument("Choose one automated validation mode");
     if (o.width < 320 || o.height < 240 || o.width > 7680 || o.height > 4320 || o.frames < 0)
@@ -210,7 +216,8 @@ int main(int argc, char** argv) {
         Pilot pilot(universe, nav, flight);
         bool pilotEnabled = (!opt.smoke && !opt.tour) || opt.pilotTest || opt.terrainTest ||
                             opt.surfaceTest || opt.planetTest || opt.uiFitTest || opt.polarTest ||
-                            opt.cloudTest || opt.celestialTest || opt.landingLightTest || opt.weatherTest;
+                            opt.cloudTest || opt.celestialTest || opt.landingLightTest || opt.weatherTest ||
+                            opt.diversityTest;
         std::unique_ptr<FlightValidation> flightProof;
         if (opt.flightTest)
             flightProof = std::make_unique<FlightValidation>(universe, nav);
@@ -317,6 +324,9 @@ int main(int argc, char** argv) {
             std::unique_ptr<WeatherValidation> weatherProof;
             if (opt.weatherTest)
                 weatherProof = std::make_unique<WeatherValidation>(universe, nav, pilot, activity);
+            std::unique_ptr<PlanetDiversityValidation> diversityProof;
+            if (opt.diversityTest)
+                diversityProof = std::make_unique<PlanetDiversityValidation>(universe, nav, pilot, activity);
             auto activityBody = [&]() -> std::optional<ActivityBody> {
                 if (!activity.selected)
                     return {};
@@ -793,11 +803,13 @@ int main(int argc, char** argv) {
                     landingLightProof->advance(renderer);
                 if (weatherProof)
                     weatherProof->advance(renderer);
+                if (diversityProof)
+                    diversityProof->advance(renderer);
                 renderer.setCockpit(pilotEnabled ? &pilot.instruments() : nullptr);
                 auto stats =
                     renderer.render(nav, cache,
                                     overlay && !opt.polarTest && !opt.cloudTest && !opt.celestialTest &&
-                                        !opt.landingLightTest && !opt.weatherTest,
+                                        !opt.landingLightTest && !opt.weatherTest && !opt.diversityTest,
                                     fps, persistence.markerCount(), noticeTime > 0 ? notice : "", looking);
                 if (flightProof) {
                     flightProof->observe(stats, renderer, opt.captures);
@@ -852,6 +864,11 @@ int main(int argc, char** argv) {
                 if (weatherProof) {
                     weatherProof->observe(stats, cache, renderer, opt.captures);
                     if (weatherProof->finished())
+                        running = false;
+                }
+                if (diversityProof) {
+                    diversityProof->observe(stats, cache, renderer, opt.captures);
+                    if (diversityProof->finished())
                         running = false;
                 }
                 noticeTime -= dt;
@@ -989,7 +1006,8 @@ int main(int argc, char** argv) {
                 if (opt.frames > 0 && frame >= opt.frames)
                     running = false;
                 if (opt.smoke && std::chrono::duration<double>(now - start).count() >
-                                     (opt.celestialTest || opt.weatherTest || opt.cloudTest ||
+                                     (opt.diversityTest ? 360
+                                      : opt.celestialTest || opt.weatherTest || opt.cloudTest ||
                                               opt.polarTest || opt.surfaceTest
                                           ? 210
                                           : 100))
@@ -1039,7 +1057,10 @@ int main(int argc, char** argv) {
             std::cout << "peak_rss_bytes=" << usage.ru_maxrss * 1024 << '\n';
 #endif
 #endif
-            if (opt.weatherTest) {
+            if (opt.diversityTest) {
+                if (!diversityProof->finished())
+                    throw std::runtime_error("Planet diversity fixture incomplete");
+            } else if (opt.weatherTest) {
                 if (!weatherProof->finished())
                     throw std::runtime_error("Weather visibility fixture incomplete");
             } else if (opt.landingLightTest) {

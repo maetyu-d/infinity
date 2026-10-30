@@ -1,0 +1,15 @@
+{
+  "gas": {
+    "mode_changed_pixels": 1295988
+  },
+  "ice-giant": {
+    "mode_changed_pixels": 1295883
+  },
+  "sub-neptune": {
+    "mode_changed_pixels": 1295923
+  },
+  "rings": {
+    "changed_pixels": 239606,
+    "rebase_rms_255": 0.06358623967921999
+  }
+}

@@ -79,7 +79,7 @@ GalaxyProcess galaxyProcess(uint64_t seed, const WebSample& web, double age) {
     return m;
 }
 std::shared_ptr<const PlanetProcess> planetProcess(uint64_t seed, double logRadius, const Environment& e,
-                                                   bool localTerrain) {
+                                                   bool localTerrain, bool gasEnvelope) {
     auto p = std::make_shared<PlanetProcess>();
     p->seed = seed;
     p->logRadius = logRadius;
@@ -91,9 +91,10 @@ std::shared_ptr<const PlanetProcess> planetProcess(uint64_t seed, double logRadi
     p->ice = e.chemistry.ice;
     p->liquidWater =
         e.waterActivity * smoothstep(235, 275, e.temperature) * (1 - smoothstep(340, 410, e.temperature));
-    p->type = e.chemistry.ice > .25 && e.temperature < 250 ? GeologyType::IceShell
-              : p->activity * (.12 + p->liquidWater) > .27 ? GeologyType::MobileLid
-                                                           : GeologyType::StagnantLid;
+    p->type = gasEnvelope                                    ? GeologyType::GasEnvelope
+              : e.chemistry.ice > .25 && e.temperature < 250 ? GeologyType::IceShell
+              : p->activity * (.12 + p->liquidWater) > .27   ? GeologyType::MobileLid
+                                                             : GeologyType::StagnantLid;
     Random r{featureSeed(seed, Feature::PlateMotion, 0)};
     for (size_t i = 0; i < p->plates.size(); ++i) {
         // Fibonacci centres avoid accidental tiny plates; keyed perturbations

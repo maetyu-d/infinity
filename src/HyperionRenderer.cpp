@@ -14,6 +14,8 @@ bgfx::ShaderHandle shader(const char* name) {
     if (std::strcmp(name, #NAME) == 0)                                                                       \
     return bgfx::createShader(bgfx::copy(NAME##_##BACKEND, sizeof(NAME##_##BACKEND)))
 #define LOAD_BACKEND(BACKEND)                                                                                \
+    LOAD_SHADER(vs_planet_rings, BACKEND);                                                                   \
+    LOAD_SHADER(fs_planet_rings, BACKEND);                                                                   \
     LOAD_SHADER(vs_hyperion, BACKEND);                                                                       \
     LOAD_SHADER(vs_hyperion_smooth, BACKEND);                                                                \
     LOAD_SHADER(vs_hyperion_shadow, BACKEND);                                                                \
@@ -107,6 +109,9 @@ void HyperionRenderer::init() {
     cloudSampler_ = bgfx::createUniform("s_cloudVolume", bgfx::UniformType::Sampler);
     detailUploadBytes_ += noiseBytes_;
     environment_ = bgfx::createUniform("u_environment", bgfx::UniformType::Vec4);
+    planetParams_ = bgfx::createUniform("u_planet", bgfx::UniformType::Vec4, 5);
+    planetRingsParams_ = bgfx::createUniform("u_planetRings", bgfx::UniformType::Vec4, 2);
+    ringParams_ = bgfx::createUniform("u_rings", bgfx::UniformType::Vec4, 4);
     surface_ = bgfx::createUniform("u_surface", bgfx::UniformType::Vec4);
     const uint8_t average[] = {128, 0, 128, 128};
     detail_ = bgfx::createTexture2D(1, 1, false, 1, bgfx::TextureFormat::RGBA8, 0,
@@ -181,43 +186,45 @@ HyperionRenderer::~HyperionRenderer() {
             bgfx::destroy(t);
     if (bgfx::isValid(sunTarget_))
         bgfx::destroy(sunTarget_);
-    for (auto p :
-         {geometry_, glow_, blur_, post_, flightGeometry_, flightPost_, sky_, smoothGeometry_[0],
-          smoothGeometry_[1], sunProgram_, cloudProgram_, coverageProgram_, polarProgram_,
-          cloudVolumeProgram_, corona_, solarBlur_, stellarGeometry_[0], stellarGeometry_[1], weatherPost_})
+    for (auto p : {geometry_,
+                   glow_,
+                   blur_,
+                   post_,
+                   flightGeometry_,
+                   flightPost_,
+                   sky_,
+                   smoothGeometry_[0],
+                   smoothGeometry_[1],
+                   sunProgram_,
+                   cloudProgram_,
+                   coverageProgram_,
+                   polarProgram_,
+                   cloudVolumeProgram_,
+                   corona_,
+                   solarBlur_,
+                   stellarGeometry_[0],
+                   stellarGeometry_[1],
+                   weatherPost_,
+                   rings_})
         if (bgfx::isValid(p))
             bgfx::destroy(p);
-    for (auto u : {weatherVisualParams_,
-                   landingParams_,
-                   stellarParams_,
-                   weatherParams_,
-                   weatherMatrix_,
-                   weatherSampler_,
-                   weatherNextSampler_,
-                   cloudSampler_,
-                   polarSampler_,
-                   polar_,
-                   environment_,
-                   noiseSampler_,
-                   detailSampler_,
-                   surface_,
-                   sceneSampler_,
-                   bloomSampler_,
-                   style_,
-                   pattern_,
-                   postParams_,
-                   cavity_,
-                   depthSampler_,
-                   atmosphere_,
-                   atmosphereRotation_,
-                   micro_,
-                   microParams_,
-                   meso_,
-                   domain_,
-                   skyParams_,
-                   skyRotation_,
-                   sunSampler_,
-                   sunMatrix_,
+    for (auto u : {planetParams_,   planetRingsParams_,
+                   ringParams_,     weatherVisualParams_,
+                   landingParams_,  stellarParams_,
+                   weatherParams_,  weatherMatrix_,
+                   weatherSampler_, weatherNextSampler_,
+                   cloudSampler_,   polarSampler_,
+                   polar_,          environment_,
+                   noiseSampler_,   detailSampler_,
+                   surface_,        sceneSampler_,
+                   bloomSampler_,   style_,
+                   pattern_,        postParams_,
+                   cavity_,         depthSampler_,
+                   atmosphere_,     atmosphereRotation_,
+                   micro_,          microParams_,
+                   meso_,           domain_,
+                   skyParams_,      skyRotation_,
+                   sunSampler_,     sunMatrix_,
                    sunParams_})
         if (bgfx::isValid(u))
             bgfx::destroy(u);
@@ -267,7 +274,7 @@ void HyperionRenderer::begin(RenderMode mode, int width, int height, bool optica
     if (mode == RenderMode::Original) {
         // Restore every world view, including the per-atom instance views.
         if (previousMode != RenderMode::Original)
-            for (bgfx::ViewId id = 0; id < 64; ++id)
+            for (bgfx::ViewId id = 0; id < 66; ++id)
                 bgfx::setViewFrameBuffer(id, BGFX_INVALID_HANDLE);
         if (previousMode != RenderMode::Original)
             bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x03060cff, 0.f, 0);
@@ -311,7 +318,7 @@ void HyperionRenderer::begin(RenderMode mode, int width, int height, bool optica
         }
     }
     if (replaceTarget || previousMode == RenderMode::Original)
-        for (bgfx::ViewId id = 0; id < 64; ++id)
+        for (bgfx::ViewId id = 0; id < 66; ++id)
             bgfx::setViewFrameBuffer(id, scene_);
     // Hyperion skyFragment's linear ink (.004,.007,.016), rounded to the
     // clear API's RGBA8 input; the HDR display transform is applied later.
@@ -497,6 +504,8 @@ void HyperionRenderer::bind(const ScenePresentation& p, const glm::vec3& eye, co
                             const glm::mat4& pattern, float primitive, double seconds, glm::vec4 cavity,
                             const glm::mat4& micro, float relief, const glm::mat4& meso, float mesoRelief) {
     init();
+    bgfx::setUniform(planetParams_, p.planet.data(), 5);
+    bgfx::setUniform(planetRingsParams_, p.planetRings.data(), 2);
     std::array<glm::vec4, 4> data = {glm::vec4(p.strength, float(seconds), p.phase, primitive), p.material,
                                      glm::vec4(eye, 1), glm::vec4(light, 0)};
     bgfx::setUniform(style_, data.data(), 4);
@@ -534,6 +543,20 @@ void HyperionRenderer::bind(const ScenePresentation& p, const glm::vec3& eye, co
         const glm::vec4 microParams{relief, detailBytes_ ? 1.f : 0.f, mesoRelief, 0};
         bgfx::setUniform(microParams_, glm::value_ptr(microParams));
     }
+}
+bgfx::ProgramHandle HyperionRenderer::ringProgram(const PlanetTraits& t, glm::vec3 light, glm::vec3 eye,
+                                                  float opacity) {
+    init();
+    if (!bgfx::isValid(rings_))
+        rings_ = program("vs_planet_rings", "fs_planet_rings");
+    const auto& r = t.rings;
+    const auto colour = glm::mix(glm::vec3(.25, .16, .10), glm::vec3(.80, .77, .65), float(r.iceFraction));
+    const std::array<glm::vec4, 4> data = {glm::vec4(float(r.innerRadius), float(r.outerRadius),
+                                                     float(r.opticalDepth), float(r.seed % 10000) / 10000.f),
+                                           glm::vec4(colour, opacity), glm::vec4(light, 0),
+                                           glm::vec4(eye, 0)};
+    bgfx::setUniform(ringParams_, data.data(), 4);
+    return rings_;
 }
 void HyperionRenderer::sky(const SpectralSky& sky, double seconds, float aspect, float tanHalfFov) {
     if (mode_ == RenderMode::Original || sky.strength <= .001f)

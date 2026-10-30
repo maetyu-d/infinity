@@ -59,6 +59,7 @@ class HyperionRenderer {
     }
     bgfx::ProgramHandle geometryProgram(bool smooth = false, bool stellar = false);
     bgfx::ProgramHandle coronaProgram();
+    bgfx::ProgramHandle ringProgram(const PlanetTraits&, glm::vec3 light, glm::vec3 eye, float opacity);
     bgfx::ProgramHandle glowProgram() const {
         return glow_;
     }
@@ -73,6 +74,9 @@ class HyperionRenderer {
     }
 
   private:
+    bgfx::UniformHandle planetParams_ = BGFX_INVALID_HANDLE, planetRingsParams_ = BGFX_INVALID_HANDLE,
+                        ringParams_ = BGFX_INVALID_HANDLE;
+    bgfx::ProgramHandle rings_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle weatherVisualParams_ = BGFX_INVALID_HANDLE;
     std::array<glm::vec4, 3> weatherVisualData_{};
     bgfx::UniformHandle landingParams_ = BGFX_INVALID_HANDLE;

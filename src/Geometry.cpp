@@ -1,4 +1,5 @@
 #include "infinite/Geometry.hpp"
+#include "infinite/Planetology.hpp"
 #include <FastNoise/FastNoise.h>
 #include <algorithm>
 #include <bit>
@@ -420,7 +421,15 @@ std::shared_ptr<Geometry> GeometryGenerator::generate(const Node& n, unsigned lo
                  .00014f});
         }
     } else if (kind == Kind::Planet && !hasSolidSurface(n)) {
-        appendSphere(g->solid, {}, 1, {.24f, .36f, .48f}, 24, 40);
+        const auto traits = planetTraits(n);
+        appendSphere(g->solid, {}, 1, {1, 1, 1}, 16u << std::min(2u, lod), 32u << std::min(2u, lod));
+        for (auto& vertex : g->solid.vertices) {
+            const glm::dvec3 direction(vertex.x, vertex.y, vertex.z);
+            const float light =
+                float(.19 + .81 * std::max(0., glm::dot(glm::normalize(direction),
+                                                        glm::normalize(glm::dvec3(-.5, .8, 1)))));
+            vertex.color = rgba(giantAlbedo(traits, direction) * light);
+        }
     } else if (kind == Kind::Planet) {
         glm::dvec3 direction = viewKey ? tileDirection({static_cast<int>(viewKey - 1), 0, 0, 0})
                                        : glm::normalize(glm::dvec3(.3, .2, 1));

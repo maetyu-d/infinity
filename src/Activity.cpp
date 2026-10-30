@@ -1,4 +1,5 @@
 #include "infinite/Activity.hpp"
+#include "infinite/Planetology.hpp"
 #include "infinite/SurfaceLife.hpp"
 #include <algorithm>
 #include <cmath>
@@ -152,8 +153,7 @@ ActivityBody sampleActivity(const Node& p, uint32_t slot, double seconds) {
         const bool debris = slot >= 1000;
         b.kind = debris ? ActivityKind::Debris : ActivityKind::Survey;
         const double orbit = radius * (debris ? 1.35 + r.unit(1) * .4 : 1.12 + r.unit(1) * .1);
-        const double gm = 4.188790204786391 * 6.67430e-11 * material(p.environment.mineral).density * radius *
-                          radius * radius;
+        const double gm = 4.188790204786391 * 6.67430e-11 * planetDensity(p) * radius * radius * radius;
         const double omega = std::sqrt(gm / (orbit * orbit * orbit));
         const double angle = std::fmod(seconds * omega + b.phase, 2 * pi);
         const auto plane = glm::angleAxis(r.signedUnit(2) * .65, along);

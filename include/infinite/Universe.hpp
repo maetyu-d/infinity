@@ -92,7 +92,7 @@ struct CrystalProcess {
 WebSample cosmicStructure(glm::dvec3, uint64_t seed);
 GalaxyProcess galaxyProcess(uint64_t, const WebSample&, double ageGyr);
 std::shared_ptr<const PlanetProcess> planetProcess(uint64_t, double logRadius, const Environment&,
-                                                   bool localTerrain = false);
+                                                   bool localTerrain = false, bool gasEnvelope = false);
 GeologySample geologySample(const PlanetProcess&, glm::dvec3 direction);
 TerrainProcess terrainProcess(const PlanetProcess&, const Environment&);
 double localTerrainHeight(const PlanetProcess&, glm::dvec3 direction, const GeologySample&);
@@ -143,6 +143,7 @@ struct Node {
     GalaxyProcess galaxy;
     Population population = Population::Disc;
     std::shared_ptr<const PlanetProcess> geology;
+    double bulkDensity = 0; // kg/m3; zero retains the established condensed-material mass rule.
     RockProcess rock;
     CrystalProcess crystal;
     std::string label() const;
@@ -165,6 +166,7 @@ class Universe {
     std::vector<LocalFrame> frames(const Address&) const;
     std::vector<Address> children(const Node&, size_t limit = 512) const;
     unsigned legacyPlanetCount(const Node& system) const;
+    unsigned establishedPlanetCount(const Node& system) const;
     unsigned planetCount(const Node& system) const;
     unsigned moonCount(const Node& planet) const;
     std::vector<Address> moons(const Node& planet) const;

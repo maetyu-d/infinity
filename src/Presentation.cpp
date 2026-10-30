@@ -49,6 +49,10 @@ ScenePresentation extractPresentation(const Node& node, const Geometry& geometry
         roughness = .80f;
         break;
     }
+    if (node.geology && node.geology->type == GeologyType::GasEnvelope) {
+        roughness = .94f;
+        metal = 0;
+    }
     auto kind = node.address.kind();
     float pigment = kind >= Kind::Rock ? .68f : .90f;
     float fibre = kind >= Kind::Rock ? .13f : .28f;
@@ -72,21 +76,34 @@ ScenePresentation extractPresentation(const Node& node, const Geometry& geometry
                          : kind == Kind::Lattice                          ? 2.f
                          : kind >= Kind::Planet && kind <= Kind::Mountain ? 1.f
                                                                           : 0.f;
-    return {geometry,
-            materialFrame,
-            {roughness, metal, pigment, fibre},
-            phase,
-            strength,
-            {domain,
-             kind == Kind::System ? float(node.stellarRadiusMetres / std::pow(10., node.frame.logRadius))
-                                  : float(node.environment.strain),
-             float(node.geology ? node.geology->activity : .5), float(node.environment.chemistry.ice)},
-            {float(node.environment.mineral), float(node.environment.waterActivity),
-             float(node.environment.temperature), geometry.section ? 1.f : 0.f},
-            {kind == Kind::Planet ? float(planetClimate(node).pressureBar) : 0.f,
-             float(node.geology ? node.geology->terrain.type : TerrainType::None),
-             node.geology && node.geology->type == GeologyType::GasEnvelope ? 1.f : 0.f,
-             float(node.geology ? node.geology->type : GeologyType::MobileLid)}};
+    ScenePresentation result{
+        geometry,
+        materialFrame,
+        {roughness, metal, pigment, fibre},
+        phase,
+        strength,
+        {domain,
+         kind == Kind::System ? float(node.stellarRadiusMetres / std::pow(10., node.frame.logRadius))
+                              : float(node.environment.strain),
+         float(node.geology ? node.geology->activity : .5), float(node.environment.chemistry.ice)},
+        {float(node.environment.mineral), float(node.environment.waterActivity),
+         float(node.environment.temperature), geometry.section ? 1.f : 0.f},
+        {kind == Kind::Planet ? float(planetClimate(node).pressureBar) : 0.f,
+         float(node.geology ? node.geology->terrain.type : TerrainType::None),
+         node.geology && node.geology->type == GeologyType::GasEnvelope ? 1.f : 0.f,
+         float(node.geology ? node.geology->type : GeologyType::MobileLid)}};
+    if (domain == 1.f)
+        describePlanetPresentation(result, node);
+    return result;
+}
+void describePlanetPresentation(ScenePresentation& result, const Node& node) {
+    const auto t = planetTraits(node);
+    result.planet = {glm::vec4(float(t.type) + 1, float(t.phase), float(t.jetBands), float(t.haze)),
+                     glm::vec4(t.low, float(t.thermal)), glm::vec4(t.high, float(t.iceCoverage)),
+                     glm::vec4(glm::vec3(t.axis), float(t.bandContrast))};
+    result.planetRings = {glm::vec4(float(t.rings.innerRadius), float(t.rings.outerRadius),
+                                    float(t.rings.opticalDepth), float(t.rings.seed % 10000) / 10000.f),
+                          glm::vec4(glm::vec3(t.rings.axis), float(t.rings.iceFraction))};
 }
 float hyperionPhase(uint64_t key) {
     const float phase = float(key % 10000) * .0371f;

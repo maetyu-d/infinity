@@ -1,5 +1,8 @@
 # INFINITE
 
+
+**0.35:** distinct rocky, ice, oceanic, desert and lava presentation, plus additive gas giants, ice giants, sub-Neptunes, hot giants and procedural rings. [Research, preservation and validation](docs/PLANET_DIVERSITY_0_35.md).
+
 A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.34 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
 
 Version 0.34 adds **evolving planetary circulation, fronts, rotating storm systems, gusts, snow and dust weather**. Moisture, temperature, pressure, gravity, body size and rotation constrain the deterministic forecasts. Lower cloud banks, motion-blurred rain, drifting flakes and dust, depth-aware weather haze, wet terrain and storm-local lightning make the weather visible from flight. The cockpit shows gusts and visibility in its existing weather panel. Established city planning keeps its original climate recipe, preserving sites, layouts and identities. [Weather generation, captures and validation](docs/WEATHER_0_34.md).

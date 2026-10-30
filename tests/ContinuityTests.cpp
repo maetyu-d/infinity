@@ -87,6 +87,8 @@ static std::vector<View> descend(Navigation& nav, const Universe& u) {
     std::vector<View> path;
     while (nav.anchor.kind() != Kind::Lattice) {
         auto children = u.children(u.describe(nav.anchor));
+        if (nav.anchor.kind() == Kind::System)
+            std::erase_if(children, [&](const Address& a) { return !hasSolidSurface(u.describe(a)); });
         check(!children.empty(), "missing refinement child");
         size_t index = children.size() == 1
                            ? 0

@@ -127,6 +127,7 @@ struct Renderer::Impl {
     bool stellarOptics = true;
     bool landingShade = true;
     bool weatherEffects = true;
+    bool planetRings = true;
     float stellarExposure = 1;
     std::shared_ptr<const Geometry> skyGeometry;
     std::vector<CelestialContact> contacts;
@@ -456,6 +457,15 @@ struct Renderer::Impl {
         // A patch and its enclosing section share the same authored material
         // frame. Sampling windows must never appear as coloured rectangles.
         const auto& materialAddress = presentation.materialFrame;
+        if (materialAddress.kind() == Kind::Planet && node.address != materialAddress)
+            describePlanetPresentation(presentation, universe.describe(materialAddress));
+        if (materialAddress.kind() == Kind::Planet && presentation.planetRings[0].z > 0)
+            presentation.planet[4] =
+                glm::vec4(glm::vec3(glm::inverse(poseFor(materialAddress, nav).orientation) *
+                                    lightAt(materialAddress, nav)),
+                          0);
+        if (!planetRings)
+            presentation.planetRings = {};
         const auto& materialFrames = framesFor(materialAddress);
         auto transform = pointTransform(sourceFrames, geometry.referenceFrame, materialFrames,
                                         materialAddress, materialFrames.back().logRadius);
@@ -629,6 +639,52 @@ struct Renderer::Impl {
             stats.atoms += count;
             stats.atomTriangles += count * rings * sectors * 2;
         }
+    }
+    void drawPlanetRings(const Node& planet, const Navigation& nav) {
+        if (!planetRings || planet.address.kind() != Kind::Planet || hasSolidSurface(planet))
+            return;
+        const auto t = planetTraits(planet);
+        if (!t.rings.present())
+            return;
+        auto detail = details.find(planet.address);
+        if (detail == details.end() || !detail->second.blend.current)
+            return;
+        const auto pose = poseFor(planet.address, nav);
+        const double radius = std::pow(10., planet.frame.logRadius - nav.logDistance);
+        const auto centre = pose.position - eye;
+        if (glm::length(centre) > worldFarPlane * .8 || radius > worldFarPlane ||
+            !LOD::visible(cameraInverse * centre, radius * t.rings.outerRadius, double(width) / height,
+                          fieldOfView))
+            return;
+        const auto frame = tangentFrame(t.rings.axis);
+        const auto rotation = pose.orientation * frame;
+        const glm::mat4 view = glm::mat4_cast(glm::quat(cameraInverse)), proj(projection);
+        bgfx::setViewTransform(65, glm::value_ptr(view), glm::value_ptr(proj));
+        bgfx::setViewRect(65, 0, 0, uint16_t(width), uint16_t(height));
+        const auto model = glm::translate(glm::mat4(1), glm::vec3(centre)) *
+                           glm::mat4_cast(glm::quat(rotation)) *
+                           glm::scale(glm::mat4(1), glm::vec3(float(radius * t.rings.outerRadius)));
+        const Vertex vertices[] = {
+            {-1, 0, -1, 0xffffffff}, {1, 0, -1, 0xffffffff}, {1, 0, 1, 0xffffffff}, {-1, 0, 1, 0xffffffff}};
+        const uint16_t indices[] = {0, 1, 2, 0, 2, 3};
+        if (bgfx::getAvailTransientVertexBuffer(4, layout) < 4 || bgfx::getAvailTransientIndexBuffer(6) < 6)
+            return;
+        bgfx::TransientVertexBuffer vb;
+        bgfx::TransientIndexBuffer ib;
+        bgfx::allocTransientVertexBuffer(&vb, 4, layout);
+        bgfx::allocTransientIndexBuffer(&ib, 6);
+        std::memcpy(vb.data, vertices, sizeof(vertices));
+        std::memcpy(ib.data, indices, sizeof(indices));
+        bgfx::setTransform(glm::value_ptr(model));
+        bgfx::setVertexBuffer(0, &vb);
+        bgfx::setIndexBuffer(&ib);
+        const auto light = glm::inverse(rotation) * lightAt(planet.address, nav);
+        const auto localEye = glm::inverse(rotation) * (-centre / radius);
+        const auto program = hyperion->ringProgram(t, glm::vec3(light), glm::vec3(localEye), 1);
+        bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_DEPTH_TEST_GEQUAL | BGFX_STATE_BLEND_ALPHA |
+                       BGFX_STATE_MSAA);
+        bgfx::submit(65, program);
+        ++stats.planetRings;
     }
     void drawBlend(DetailState& state, const Node& node, const Navigation& nav, float opacity) {
         if (state.blend.active())
@@ -1355,6 +1411,9 @@ void Renderer::setStellarOptics(bool enabled) {
 void Renderer::setLandingShade(bool enabled) {
     impl_->landingShade = enabled;
 }
+void Renderer::setPlanetRings(bool enabled) {
+    impl_->planetRings = enabled;
+}
 void Renderer::setWeatherEffects(bool enabled) {
     impl_->weatherEffects = enabled;
 }
@@ -1688,6 +1747,9 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     for (const auto& node : rootNodes)
         if (node.address != root)
             candidates(node);
+    for (const auto& a : rendered)
+        if (a.kind() == Kind::Planet)
+            p.drawPlanetRings(p.universe.describe(a), nav);
     p.renderActivity(nodes, nav, cache);
     // Nearby visible worlds claim the two existing workers first. Surveying
     // the remaining system never evicts a close city's geometry to keep a

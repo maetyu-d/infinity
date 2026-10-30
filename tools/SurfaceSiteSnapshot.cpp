@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
     unsigned count = 0;
     for (unsigned star : {0, 1, 9, 137}) {
         const auto system = u.describe(Address{}.child(Kind::Galaxy, 0).child(Kind::System, star));
-        for (unsigned planet = 0; planet < u.planetCount(system); planet++) {
+        for (unsigned planet = 0; planet < u.establishedPlanetCount(system); planet++) {
             const auto p = u.describe(system.address.child(Kind::Planet, planet));
             const auto world = generateSurfaceLife(u, p);
             records << "WORLD " << p.address.str() << ' ' << world->seed << ' ' << world->descriptor << '\n';

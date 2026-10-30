@@ -19,7 +19,7 @@ struct FrameStats {
     size_t effectBytes = 0, materialBytes = 0;
     size_t shadowBytes = 0, shadowUpdates = 0, shadowActive = 0;
     size_t terrainTiles = 0, rootCells = 0;
-    size_t atmospheres = 0;
+    size_t atmospheres = 0, planetRings = 0;
     size_t skyStars = 0;
     size_t celestialContacts = 0, celestialLights = 0, skyGas = 0, skyGalaxies = 0;
     size_t lifeWorlds = 0, lifeScanning = 0;
@@ -42,9 +42,10 @@ class Renderer {
     void screenshot(const std::string& path);
     std::string backend() const;
     void setSunShadows(bool enabled);
-    void setPolarLights(bool enabled);    // Presentation switch for native negative-control captures.
-    void setStellarOptics(bool enabled);  // Native optics negative control.
-    void setLandingShade(bool enabled);   // Native contact-shading negative control.
+    void setPolarLights(bool enabled);   // Presentation switch for native negative-control captures.
+    void setStellarOptics(bool enabled); // Native optics negative control.
+    void setLandingShade(bool enabled);  // Native contact-shading negative control.
+    void setPlanetRings(bool enabled);
     void setWeatherEffects(bool enabled); // Native precipitation, visibility and discharge control.
     void setCloudVolumes(bool enabled);   // Native optical-volume negative control; weather is unchanged.
     void setTerrainCoverageDebug(bool enabled); // Native raster-coverage validation only.
