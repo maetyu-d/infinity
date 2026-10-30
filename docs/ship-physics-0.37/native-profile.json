@@ -1,0 +1,8 @@
+{
+  "frames": 2063,
+  "wall_ms_median": 26.1163,
+  "cpu_ms_median": 12.0563,
+  "gpu_ms_median": 48.0867,
+  "peak_cpu_cache_bytes": 11936728,
+  "peak_gpu_mesh_bytes": 1655208
+}

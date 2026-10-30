@@ -94,7 +94,9 @@ int main(int argc, char**) {
         check(r.rate > 1.7 && r.rate < 1.81, "Roll did not reach the assisted barrel-roll rate");
         check(r.settle <= .45 && r.overshoot < .25, "Released roll feels loose or overshoots excessively");
         check(r.reverse < .3, "Roll reversal is too slow");
-        check(assistKick < .2 && residual < 65, "Flight-assist capture kicks or fails to settle");
+        const double initialDrift = glm::length(glm::dvec2(initial));
+        check(assistKick < .2 && residual < initialDrift && residual > initialDrift - 100,
+              "Assist capture kicked, failed to counter drift, or exceeded finite RCS authority");
         for (double dt : {1. / 30, 1. / 144}) {
             const auto other = response(u, dt);
             check(std::abs(other.rate - r.rate) < .01 && std::abs(other.settle - r.settle) < .04 &&
@@ -107,7 +109,7 @@ int main(int argc, char**) {
         const auto fine = response(u, 1. / 60, 1, true);
         check(fine.rate < r.rate * .36 && fine.rate > r.rate * .34,
               "Precision handling does not reduce roll authority");
-        check(slip < .65, "High-throttle steering has excessive lateral slide");
+        check(slip > .4 && slip < 1.2, "Turn lost finite-thrust inertia or failed to redirect momentum");
         // The actual SDL input path calls this same resolver. Roll remains
         // available without mouse capture, and its modifier cannot fire strafe.
         HelmInput keys;
@@ -221,7 +223,8 @@ int main(int argc, char**) {
         braking.pilot.toggleAssist();
         braking.pilot.brake();
         braking.pilot.update({}, 1. / 60);
-        check(glm::length(braking.pilot.ship().velocity - initial) > .2,
+        check(glm::length(braking.pilot.ship().velocity - initial) > 1e-4 &&
+                  glm::length(braking.pilot.ship().velocity - initial) < 1,
               "Assist capture delayed the explicit brake command");
         std::cout << "PASS: " << checks << " handling, roll and assist checks\n";
     } catch (const std::exception& e) {

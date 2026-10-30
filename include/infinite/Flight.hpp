@@ -20,6 +20,9 @@ class FlightController {
     double clearanceMetres() const {
         return clearanceMetres_;
     }
+    std::shared_ptr<const std::vector<Node>> catalogue(const Node& node) {
+        return cache_.catalog(node);
+    }
     void resume() {
         holdForFlight_ = false;
     }

@@ -300,7 +300,8 @@ int main(int argc, char** argv) {
                 std::ifstream saved(data / ("ship-" + std::to_string(universe.seed()) + ".txt"));
                 std::string state;
                 if (std::getline(saved, state)) {
-                    legacyShip = state.rfind("INFINITE_SHIP 3 ", 0) != 0;
+                    legacyShip =
+                        state.rfind("INFINITE_SHIP 3 ", 0) != 0 && state.rfind("INFINITE_SHIP 4 ", 0) != 0;
                     shipRestored = pilot.restore(state);
                 }
             }

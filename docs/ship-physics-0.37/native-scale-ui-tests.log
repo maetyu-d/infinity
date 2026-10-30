@@ -1,0 +1,15 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 50: native_ui_fit
+1/5 Test #50: native_ui_fit ....................   Passed   13.91 sec
+    Start 51: native_ui_fit_images
+2/5 Test #51: native_ui_fit_images .............   Passed    0.29 sec
+    Start 70: native_seamless_scale_flight
+3/5 Test #70: native_seamless_scale_flight .....   Passed   59.71 sec
+    Start 71: native_cross_scale_round_trip
+4/5 Test #71: native_cross_scale_round_trip ....   Passed   35.94 sec
+    Start 72: native_atomic_visibility
+5/5 Test #72: native_atomic_visibility .........   Passed    2.21 sec
+
+100% tests passed, 0 tests failed out of 5
+
+Total Test time (real) = 112.08 sec

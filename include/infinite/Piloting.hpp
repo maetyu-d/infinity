@@ -1,5 +1,7 @@
 #pragma once
 #include "Flight.hpp"
+#include "FlightEnvironment.hpp"
+#include "ShipDynamics.hpp"
 #include <cmath>
 
 namespace infinite {
@@ -23,7 +25,8 @@ struct FlightWaypoint {
 // Neither is multiplied by the renderer's current magnification.
 struct ShipState {
     Address frame;
-    glm::dvec3 velocity{}, angularVelocity{}, thrusters{}, positionResidual{};
+    glm::dvec3 velocity{}, angularVelocity{}, thrusters{}, positionResidual{}, angularThrusters{};
+    bool driveBraking = false;
     double throttle = 0, boost = 0, hull = 100;
     bool assist = true, cruise = false, shrinking = false, gear = false, landed = false;
     bool autoShrink = true;
@@ -44,6 +47,11 @@ struct FlightInstruments {
     std::string weather;
     std::string weatherDetail;
     double weatherSeverity = 0;
+    glm::dvec3 localRelativeVelocity{};
+    bool relativeMotion = false;
+    double massKg = 12000, properG = 0, airDensity = 0, brakingSeconds = 0, relativeSpeed = 0,
+           corridorError = 0;
+    bool fieldActive = false, thrustLimited = false;
 };
 class Pilot {
   public:
@@ -104,6 +112,10 @@ class Pilot {
     Navigation& nav_;
     FlightController& spatial_;
     ShipState ship_;
+    FlightEnvironment environment_;
+    ShipEnvironmentSample environmentSample_;
+    glm::dvec3 properAcceleration_{};
+    glm::dvec3 approachAxis_{0, 0, 1};
     FlightInstruments instruments_;
     std::optional<Address> destination_, landingPlanet_;
     std::optional<FlightWaypoint> waypoint_;
@@ -120,7 +132,7 @@ class Pilot {
     }
     std::string phase_ = "MANUAL";
     std::optional<Ground> ground() const;
-    glm::dvec3 gravityAt(const Ground&) const;
+    glm::dvec3 targetVelocity() const;
     glm::dvec3 destinationPoint() const;
     double speedLimit() const;
     double operatingClearance() const;

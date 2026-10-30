@@ -1,0 +1,24 @@
+{
+  "checkpoint": "checkpoint/infinite-0.36-before-flight-physics",
+  "unchanged_sources": {
+    "src/Core.cpp": "8b6e0854d8e8dfdfde2cc78494a31907cedab63d1512020d66c94f6d1d690cb9",
+    "src/Universe.cpp": "bd3e3bff5292637763e59edc734be90b92f89075687c28a8b59efc9fd68dde97",
+    "src/Processes.cpp": "0c57a71c3e7c31928c8b777abf4abb777a3e53fb86c0cddb58238a39a1ccfb8e",
+    "src/Planetology.cpp": "f5c862a7bb652adc5c43f98c2bf99fa1bed1bc4c9157eb9c7b868569408ef014",
+    "src/StellarEvolution.cpp": "3b99aef93167545a452f49508da1b8c358c53d62b615441bc3103e2b83a74045",
+    "src/Terrain.cpp": "a9fbba49d7deef7e1c5eead2cc8c8ab20f20a8756775bd5aab3c8abe2bb438c3",
+    "src/Crystallography.cpp": "1d135fa1218cea466673723063267fcacdb5c6c56d4240ab5ca00eb0eb042dab",
+    "src/Geometry.cpp": "ee2e10876440287d69ad039d002fbe2dabe869f58d46ae9b4c738891c693ab78",
+    "src/Navigation.cpp": "c3ad57a8d158e5f70b251697953f8515ba59be5f0a3ef2ba2bed15b823bfa713",
+    "src/Flight.cpp": "310f2089c2704b1a506eca9499db54d02e6762935e6664874947f372c2158783",
+    "src/Streaming.cpp": "73064638f21264848cc9273e58f61c1557ce6ce7eaefa47ee6cb495964681a2a",
+    "src/Continuity.cpp": "c09a15bdb8c237eb59dc66f88ad9efef7863e93db3e957b20d120d49e152d4a8",
+    "src/Presentation.cpp": "692d70c7c1d338acc3b00dd3a898777658b194775a9e64ee6df54b18d0abf4b7",
+    "src/SurfaceLife.cpp": "2e43b919df66e77d39930fcc0bcdf2571186a17cd49733ca42f14da51d8c77dc",
+    "src/City.cpp": "f4c5f1c4ccd6ff54bec592dc53d024de3bb5796dd3d47d7dd88f3f05f8a41601",
+    "src/Weather.cpp": "d1cd08524047a345132cba0bc60fae4b26c14f8e421075a103df73516380a719",
+    "src/WeatherField.cpp": "7b127e91a0896df36e0a1b9ef990f6017fb7642ca6a89c0e7e35932dfa4de0ce",
+    "src/Renderer.cpp": "d005855c404c4433cdb06dda0d8159b98b3158a4aacbc85fd6b843458b4ce69f",
+    "src/HyperionRenderer.cpp": "6e3215e1b99b5c3d22f9dc72086a229781144f568fbf8eb1902b7b8c07cd719d"
+  }
+}

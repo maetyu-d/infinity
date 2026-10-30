@@ -1,0 +1,20 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+PILOT_FIXTURE 0,0,0/1:0/2:9/3:0 temperature=247.702
+Infinite / Metal / seed 5282236693612155973
+PILOT_MODE_PROOF identical camera and planet geometry in all three cockpit modes / sky stars=0 background_galaxies=63 atmosphere=1
+PILOT_ACTIVITY population=84 visible=0 template_bytes=0
+PILOT_SYSTEM_CONTACTS count=76 lights=17 distant_planet_pick=PASS
+PILOT_STELLAR_SKY addressed stars=4625 sky_pick=PASS
+PILOT_HARBOUR visible=10 triangles=1650 picking=PASS
+PILOT_TOUCHDOWN agl=0.00059212 hull=100
+PILOT_DEPARTURE agl=30.1274
+PILOT_MICRO_SHIP hull_m=1.02924e-05
+PASS: native cockpit mode identity, geological touchdown, persisted ship, thrust launch and nano-size ship; atoms=1631
+PILOT_BUSY_START visible=15 triangles=1206
+PILOT_MOON_FAMILY worlds=1 planets=17 contacts=76 moon_id=0,0,0/1:0/2:9/3:9223372036854775808
+PILOT_COCKPIT_GUIDE unchanged camera, blocked click-through, guide capture=PASS
+PILOT_ROLL side=1 rate_rad_s=1.79999 bank=0.999987 forward=retained
+PILOT_ROLL side=-1 rate_rad_s=-1.8 bank=-0.940751 forward=retained
+PILOT_ROLL_RELEASE rate_rad_s=-2.55105e-08 PASS
+FRAME median_ms=26.1163 p95_ms=151.141 frames=2063 cache_bytes=10742840
+peak_rss_bytes=144801792

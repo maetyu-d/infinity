@@ -451,16 +451,26 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                             : "K  TRAFFIC",
           nav.x + nav.w * .59, nav.y + 105, nav.w * .37, ice);
 
-    label("VELOCITY", flight.x + 14, flight.y + 12, flight.w - 28);
-    quantity(flightQuantity(t.speed, true), flight.x + 14, flight.y + 36, flight.w - 28,
-             flight.w < 210 ? 17.5 : 21, pearl);
-    quantity("STOP " + flightQuantity(t.stoppingDistance), flight.x + 14, flight.y + 70, flight.w - 28, 10.5,
-             ice);
+    label(t.relativeMotion ? "RELATIVE VELOCITY" : "VELOCITY", flight.x + 14, flight.y + 12, flight.w - 28);
+    quantity(flightQuantity(t.relativeMotion ? t.relativeSpeed : t.speed, true), flight.x + 14, flight.y + 36,
+             flight.w - 28, flight.w < 210 ? 17.5 : 21, pearl);
+    const std::string brakeTime =
+        t.brakingSeconds < 10000 ? std::to_string(int(std::ceil(t.brakingSeconds))) + "S" : "--";
+    quantity("STOP " + flightQuantity(t.stoppingDistance) + " / " + brakeTime, flight.x + 14, flight.y + 70,
+             flight.w - 28, 10.5, ice);
     std::snprintf(value, sizeof(value), "ROLL %+.0f DEG/S / U-O", t.rollRate * 57.2957795);
     fitted(h.lettering, value, flight.x + 14, flight.y + 88, flight.w - 28, 8.4,
            std::abs(t.rollRate) > .02 ? ice : muted);
-    label(t.assist ? "X  ASSIST ON" : "X  INERTIAL", flight.x + 14, flight.y + 105, flight.w - 28,
-          t.assist ? mint : amber);
+    std::snprintf(value, sizeof(value), "%s / %.1fG",
+                  t.fieldActive     ? "FIELD DRIVE"
+                  : t.thrustLimited ? "THRUST LIMIT"
+                  : t.assist        ? "X ASSIST"
+                                    : "X INERTIAL",
+                  std::min(999., t.properG));
+    label(value, flight.x + 14, flight.y + 105, flight.w - 28,
+          t.thrustLimited ? amber
+          : t.assist      ? mint
+                          : amber);
     const double gaugeWidth = (systems.w - 42) * .5;
     for (int i = 0; i < 2; ++i) {
         const double x = systems.x + 14 + i * (gaugeWidth + 14);
@@ -699,17 +709,27 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
         line(h.strokes, center + side * 23, 450, center + side * 23, 454, ice);
     }
     rect(h.panels, center - 1, 449, 2, 2, pearl);
-    if (t.speed > 1e-15 && -t.localVelocity.z > t.speed * .12) {
-        const glm::dvec2 p{center + t.localVelocity.x / -t.localVelocity.z * 450 / .7002075 * projectionScale,
-                           450 - t.localVelocity.y / -t.localVelocity.z * 450 / .7002075 * projectionScale};
-        if (l.windscreen.contains(p)) {
-            for (int i = 0; i < 24; ++i) {
-                const double a = i * 6.283185307 / 24, b = (i + 1) * 6.283185307 / 24;
-                line(h.strokes, p.x + std::cos(a) * 7, p.y + std::sin(a) * 7, p.x + std::cos(b) * 7,
-                     p.y + std::sin(b) * 7, mint);
-            }
-            line(h.strokes, p.x - 16, p.y, p.x - 9, p.y, mint);
-            line(h.strokes, p.x + 9, p.y, p.x + 16, p.y, mint);
+    const auto motion = t.relativeMotion ? t.localRelativeVelocity : t.localVelocity;
+    for (int sign : {1, -1}) {
+        const auto d = motion * double(sign);
+        if (glm::length(d) < 1e-15 || -d.z < glm::length(d) * .12)
+            continue;
+        const glm::dvec2 p{center + d.x / -d.z * 450 / .7002075 * projectionScale,
+                           450 - d.y / -d.z * 450 / .7002075 * projectionScale};
+        if (!l.windscreen.contains(p))
+            continue;
+        const auto colour = sign > 0 ? mint : amber;
+        for (int i = 0; i < 24; i++) {
+            const double a = i * 6.283185307 / 24, b = (i + 1) * 6.283185307 / 24;
+            line(h.strokes, p.x + std::cos(a) * 7, p.y + std::sin(a) * 7, p.x + std::cos(b) * 7,
+                 p.y + std::sin(b) * 7, colour);
+        }
+        if (sign > 0) {
+            line(h.strokes, p.x - 16, p.y, p.x - 9, p.y, colour);
+            line(h.strokes, p.x + 9, p.y, p.x + 16, p.y, colour);
+        } else {
+            line(h.strokes, p.x - 5, p.y - 5, p.x + 5, p.y + 5, colour);
+            line(h.strokes, p.x - 5, p.y + 5, p.x + 5, p.y - 5, colour);
         }
     }
     size_t secondary = 0;
