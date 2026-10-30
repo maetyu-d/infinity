@@ -1,0 +1,20 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+CLOUD_VOLUME scene=orbit sample=0 geometry=6427509061963947619 terrain=15965415289337319017 log=6.70309 frame=832 camera=unchanged
+CLOUD_VOLUME scene=orbit sample=1 geometry=6427509061963947619 terrain=15965415289337319017 log=6.70309 frame=863 camera=unchanged
+CLOUD_VOLUME scene=orbit sample=2 geometry=6427509061963947619 terrain=15965415289337319017 log=5.70309 frame=894 camera=unchanged
+CLOUD_VOLUME scene=below sample=0 geometry=6427509061963947619 terrain=6619339705016886331 log=4 frame=1327 camera=unchanged
+CLOUD_VOLUME scene=below sample=1 geometry=6427509061963947619 terrain=6619339705016886331 log=4 frame=1358 camera=unchanged
+CLOUD_VOLUME scene=below sample=2 geometry=6427509061963947619 terrain=6619339705016886331 log=3 frame=1389 camera=unchanged
+CLOUD_VOLUME scene=inside sample=0 geometry=6427509061963947619 terrain=15672721569309390159 log=5 frame=1435 camera=unchanged
+CLOUD_VOLUME scene=inside sample=1 geometry=6427509061963947619 terrain=15672721569309390159 log=5 frame=1466 camera=unchanged
+CLOUD_VOLUME scene=inside sample=2 geometry=6427509061963947619 terrain=15672721569309390159 log=6 frame=1497 camera=unchanged
+CLOUD_VOLUME scene=blocked sample=0 geometry=6427509061963947619 terrain=14404695129125812301 log=4 frame=1541 camera=unchanged
+CLOUD_VOLUME scene=blocked sample=1 geometry=6427509061963947619 terrain=14404695129125812301 log=4 frame=1572 camera=unchanged
+CLOUD_VOLUME scene=blocked sample=2 geometry=6427509061963947619 terrain=14404695129125812301 log=5 frame=1603 camera=unchanged
+CLOUD_VOLUME scene=airless sample=0 geometry=13678190922086678432 terrain=3564228885319615020 log=7.0141 frame=2184 camera=unchanged
+CLOUD_VOLUME scene=airless sample=1 geometry=13678190922086678432 terrain=3564228885319615020 log=7.0141 frame=2215 camera=unchanged
+CLOUD_VOLUME scene=airless sample=2 geometry=13678190922086678432 terrain=3564228885319615020 log=6.0141 frame=2246 camera=unchanged
+PASS: cloud volumes / orbit, below, inside, blocked and airless / opaque depth / magnification / unchanged geometry
+FRAME median_ms=33.7383 p95_ms=76.8484 frames=2253 cache_bytes=10626424
+peak_rss_bytes=128991232

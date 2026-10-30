@@ -7,6 +7,7 @@ uniform mat4 u_pattern;
 uniform vec4 u_surface;
 uniform vec4 u_environment;
 uniform vec4 u_landingContact[2]; // ground point/radius and tangent up/strength, camera-relative
+uniform vec4 u_weatherVisual[3];
 #if INFINITE_FLIGHT_RELIEF
 uniform mat4 u_micro;
 uniform mat4 u_meso;
@@ -123,6 +124,16 @@ void main(){
  float ice=max(1.-step(.1,abs(u_surface.x-3.)),planet?1.-step(.1,abs(u_environment.w-2.)):0.);
  float liquid=planet?u_surface.y*smoothstep(235.,275.,u_surface.z)*(1.-smoothstep(340.,410.,u_surface.z)):0.;
  float wet=liquid*(1.-smoothstep(-.00088,-.00072,v_elevation));
+ // The same forecast that draws the rain wets nearby retained terrain.
+ // No stored water, geometry, roughness texture or procedural seed changes.
+#if INFINITE_FLIGHT_RELIEF
+ if(terrain && u_weatherVisual[0].w>.5 && u_weatherVisual[2].z>u_weatherVisual[2].w+.01 && u_microParams.x>0.){
+  float rangeMetres=length(v_position-u_hyperion[2].xyz)*.36/u_microParams.x;
+  float rain=max(0.,u_weatherVisual[2].z-u_weatherVisual[2].w);
+  rain*=smoothstep(271.,280.,u_surface.z)*(1.-smoothstep(365.,390.,u_surface.z));
+  wet=max(wet,rain*.85*(1.-smoothstep(5000.,15000.,rangeMetres)));
+ }
+#endif
  // Hyperion glacial colour/roughness response, constrained by the actual
  // exposed heights, slopes, temperature and ice identity of this world.
  float glacialFrost=0.;

@@ -30,6 +30,7 @@ class CelestialValidation {
         renderer.setMode(stage_ == 4 && sample_ == 0 ? RenderMode::Original : RenderMode::Hyperion);
         renderer.setPolarLights(false);
         renderer.setCloudVolumes(false);
+        renderer.setWeatherEffects(false);
         renderer.setStellarOptics(sample_ != 0);
     }
     void observe(const FrameStats& stats, RegionCache& cache, Renderer& renderer, const std::string& dir) {

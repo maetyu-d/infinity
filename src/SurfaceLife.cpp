@@ -96,7 +96,7 @@ std::shared_ptr<SurfaceWorld> generateSurfaceLife(const Universe& u, const Node&
             }
             const auto normal = u.terrainNormal(p, d);
             const double h = u.terrainHeight(p, d);
-            const auto localClimate = sampleWeather(climate, d, h, 0);
+            const auto localClimate = samplePlanningClimate(climate, d, h);
             const double localT = localClimate.temperatureK;
             if (!dry(p, h) || glm::dot(normal, d) < .994 ||
                 (climate.temperate && (localT < 265 || localT > 315 || localClimate.pressureBar < .5)))

@@ -1,0 +1,375 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+      Start  1: planetary_weather_processes
+ 1/65 Test  #1: planetary_weather_processes ..............   Passed    0.70 sec
+      Start  2: addressed_stellar_optics
+ 2/65 Test  #2: addressed_stellar_optics .................   Passed    0.87 sec
+      Start  3: read_only_weather_optics
+ 3/65 Test  #3: read_only_weather_optics .................   Passed    0.99 sec
+      Start  4: window_fits_display_work_area
+ 4/65 Test  #4: window_fits_display_work_area ............   Passed    0.62 sec
+      Start  5: multiscale_depth_precision
+ 5/65 Test  #5: multiscale_depth_precision ...............   Passed    0.52 sec
+      Start  6: surface_site_preservation
+ 6/65 Test  #6: surface_site_preservation ................   Passed    3.06 sec
+      Start  7: procedural_city_structure
+ 7/65 Test  #7: procedural_city_structure ................   Passed    2.61 sec
+      Start  8: planetary_weather_and_surface_life
+ 8/65 Test  #8: planetary_weather_and_surface_life .......   Passed   12.68 sec
+      Start  9: solid_planet_local_terrain
+ 9/65 Test  #9: solid_planet_local_terrain ...............   Passed    1.30 sec
+      Start 10: cockpit_layout_and_targeting
+10/65 Test #10: cockpit_layout_and_targeting .............   Passed    0.87 sec
+      Start 11: planetary_population_and_moons
+11/65 Test #11: planetary_population_and_moons ...........   Passed    1.10 sec
+      Start 12: legacy_population_preservation
+12/65 Test #12: legacy_population_preservation ...........   Passed    0.97 sec
+      Start 13: persistent_orbital_activity
+13/65 Test #13: persistent_orbital_activity ..............   Passed    5.11 sec
+      Start 14: operating_regimes_and_shrinking
+14/65 Test #14: operating_regimes_and_shrinking ..........   Passed    3.58 sec
+      Start 15: ship_dynamics_and_landing
+15/65 Test #15: ship_dynamics_and_landing ................   Passed    1.69 sec
+      Start 16: ship_handling_and_roll
+16/65 Test #16: ship_handling_and_roll ...................   Passed    0.93 sec
+      Start 17: unbounded_spatial_streaming
+17/65 Test #17: unbounded_spatial_streaming ..............   Passed   11.67 sec
+      Start 18: seamless_scale_flight
+18/65 Test #18: seamless_scale_flight ....................   Passed   10.47 sec
+      Start 19: free_flight_navigation
+19/65 Test #19: free_flight_navigation ...................   Passed    0.61 sec
+      Start 20: filtered_material_texture
+20/65 Test #20: filtered_material_texture ................   Passed    0.93 sec
+      Start 21: surface_shading_preserves_mesh
+21/65 Test #21: surface_shading_preserves_mesh ...........   Passed    0.55 sec
+      Start 22: rendering_preserves_universe
+22/65 Test #22: rendering_preserves_universe .............   Passed    3.17 sec
+      Start 23: performance_invariants
+23/65 Test #23: performance_invariants ...................   Passed    1.28 sec
+      Start 24: structural_processes
+24/65 Test #24: structural_processes .....................   Passed    2.38 sec
+      Start 25: universe_regressions
+25/65 Test #25: universe_regressions .....................   Passed    1.16 sec
+      Start 26: persistence_process_write
+26/65 Test #26: persistence_process_write ................   Passed    0.02 sec
+      Start 27: persistence_process_read
+27/65 Test #27: persistence_process_read .................   Passed    0.02 sec
+      Start 28: cross_scale_round_trip
+28/65 Test #28: cross_scale_round_trip ...................   Passed   22.63 sec
+      Start 29: continuity_restart_write
+29/65 Test #29: continuity_restart_write .................   Passed    1.37 sec
+      Start 30: continuity_restart_read
+30/65 Test #30: continuity_restart_read ..................   Passed    1.25 sec
+      Start 31: native_weather_visibility
+31/65 Test #31: native_weather_visibility ................   Passed  124.79 sec
+      Start 32: native_weather_visibility_images
+32/65 Test #32: native_weather_visibility_images .........   Passed   13.09 sec
+      Start 33: native_landing_light
+33/65 Test #33: native_landing_light .....................   Passed   31.55 sec
+      Start 34: native_landing_light_images
+34/65 Test #34: native_landing_light_images ..............   Passed   15.42 sec
+      Start 35: native_celestial_optics
+35/65 Test #35: native_celestial_optics ..................   Passed   75.34 sec
+      Start 36: native_celestial_optics_images
+36/65 Test #36: native_celestial_optics_images ...........   Passed   16.12 sec
+      Start 37: native_cloud_volumes
+37/65 Test #37: native_cloud_volumes .....................***Failed  101.53 sec
+CMake Error at /Users/user/Documents/SC tutorial/Infinite/cmake/RunCloudVolume.cmake:11 (message):
+  Native cloud volume failed (1):
+
+  BACKBUFFER 1440x900 (requested 1440x900)
+
+  Infinite / Metal / seed 5282236693612155973
+
+  CLOUD_VOLUME scene=orbit sample=0 geometry=6427509061963947619
+  terrain=15965415289337319017 log=6.70309 frame=744 camera=unchanged
+
+  CLOUD_VOLUME scene=orbit sample=1 geometry=6427509061963947619
+  terrain=15965415289337319017 log=6.70309 frame=775 camera=unchanged
+
+  CLOUD_VOLUME scene=orbit sample=2 geometry=6427509061963947619
+  terrain=15965415289337319017 log=5.70309 frame=806 camera=unchanged
+
+  CLOUD_VOLUME scene=below sample=0 geometry=6427509061963947619
+  terrain=6619339705016886331 log=4 frame=1173 camera=unchanged
+
+  CLOUD_VOLUME scene=below sample=1 geometry=6427509061963947619
+  terrain=6619339705016886331 log=4 frame=1204 camera=unchanged
+
+  CLOUD_VOLUME scene=below sample=2 geometry=6427509061963947619
+  terrain=6619339705016886331 log=3 frame=1235 camera=unchanged
+
+  CLOUD_VOLUME scene=inside sample=0 geometry=6427509061963947619
+  terrain=15672721569309390159 log=5 frame=1277 camera=unchanged
+
+  CLOUD_VOLUME scene=inside sample=1 geometry=6427509061963947619
+  terrain=15672721569309390159 log=5 frame=1308 camera=unchanged
+
+  CLOUD_VOLUME scene=inside sample=2 geometry=6427509061963947619
+  terrain=15672721569309390159 log=6 frame=1339 camera=unchanged
+
+  CLOUD_VOLUME scene=blocked sample=0 geometry=6427509061963947619
+  terrain=14404695129125812301 log=4 frame=1377 camera=unchanged
+
+  CLOUD_VOLUME scene=blocked sample=1 geometry=6427509061963947619
+  terrain=14404695129125812301 log=4 frame=1408 camera=unchanged
+
+  CLOUD_VOLUME scene=blocked sample=2 geometry=6427509061963947619
+  terrain=14404695129125812301 log=5 frame=1439 camera=unchanged
+
+  Infinite: Native GPU tour timed out before completion
+
+
+
+
+      Start 38: native_cloud_volume_images
+Failed test dependencies: native_cloud_volumes
+38/65 Test #38: native_cloud_volume_images ...............***Not Run   0.00 sec
+      Start 39: native_polar_optics
+39/65 Test #39: native_polar_optics ......................***Failed  104.46 sec
+CMake Error at /Users/user/Documents/SC tutorial/Infinite/cmake/RunPolarOptics.cmake:11 (message):
+  Native polar optics failed (1):
+
+  BACKBUFFER 1440x900 (requested 1440x900)
+
+  Infinite / Metal / seed 5282236693612155973
+
+  POLAR_OPTICS scene=night sample=0 geometry=9011686554674910669
+  terrain=18284667101513644803 log=6.66817 frame=544 camera=unchanged
+
+  POLAR_OPTICS scene=night sample=1 geometry=9011686554674910669
+  terrain=18284667101513644803 log=6.66817 frame=575 camera=unchanged
+
+  POLAR_OPTICS scene=night sample=2 geometry=9011686554674910669
+  terrain=18284667101513644803 log=5.66817 frame=606 camera=unchanged
+
+  POLAR_OPTICS scene=day sample=0 geometry=18323162104142898796
+  terrain=13787883267152996020 log=6.66817 frame=727 camera=unchanged
+
+  POLAR_OPTICS scene=day sample=1 geometry=18323162104142898796
+  terrain=13787883267152996020 log=6.66817 frame=758 camera=unchanged
+
+  POLAR_OPTICS scene=day sample=2 geometry=18323162104142898796
+  terrain=13787883267152996020 log=5.66817 frame=789 camera=unchanged
+
+  POLAR_OPTICS scene=ground sample=0 geometry=9011686554674910669
+  terrain=18212284844961485497 log=3 frame=1116 camera=unchanged
+
+  POLAR_OPTICS scene=ground sample=1 geometry=9011686554674910669
+  terrain=18212284844961485497 log=3 frame=1147 camera=unchanged
+
+  POLAR_OPTICS scene=ground sample=2 geometry=9011686554674910669
+  terrain=18212284844961485497 log=4 frame=1178 camera=unchanged
+
+  POLAR_OPTICS scene=blocked sample=0 geometry=9011686554674910669
+  terrain=18212284844961485497 log=3 frame=1209 camera=unchanged
+
+  POLAR_OPTICS scene=blocked sample=1 geometry=9011686554674910669
+  terrain=18212284844961485497 log=3 frame=1240 camera=unchanged
+
+  POLAR_OPTICS scene=blocked sample=2 geometry=9011686554674910669
+  terrain=18212284844961485497 log=4 frame=1271 camera=unchanged
+
+  Infinite: Native GPU tour timed out before completion
+
+
+
+
+      Start 40: native_polar_optics_images
+Failed test dependencies: native_polar_optics
+40/65 Test #40: native_polar_optics_images ...............***Not Run   0.00 sec
+      Start 41: native_ui_fit
+41/65 Test #41: native_ui_fit ............................   Passed   25.48 sec
+      Start 42: native_ui_fit_images
+42/65 Test #42: native_ui_fit_images .....................   Passed    0.23 sec
+      Start 43: native_planet_stability
+43/65 Test #43: native_planet_stability ..................   Passed   65.95 sec
+      Start 44: native_planet_stability_images
+44/65 Test #44: native_planet_stability_images ...........   Passed    1.56 sec
+      Start 45: native_weather_and_surface_life
+45/65 Test #45: native_weather_and_surface_life ..........***Failed  103.85 sec
+CMake Error at /Users/user/Documents/SC tutorial/Infinite/cmake/RunSurfaceLife.cmake:11 (message):
+  Native surface life failed (1):
+
+  BACKBUFFER 1440x900 (requested 1440x900)
+
+  SURFACE_CITY 0,0,0/1:0/2:137/3:0 colony=0,0,0/1:0/2:0/3:8
+
+  SURFACE_FIXTURE 0 0,0,0/1:0/2:137/3:0 CITY 97221 population=26801
+
+  Infinite / Metal / seed 5282236693612155973
+
+  SURFACE_RENDER weather-orbit mode=ORIGINAL sites=8 buildings=0 residents=0
+  triangles=0 cloud_cells=92 cpu_bytes=1622032 gpu_bytes=0 precipitation=0
+  frame=1424 shadow_bytes=0 shadow_active=0 shadow_updates=0 life_worlds=23
+  life_scanning=0
+
+  SURFACE_RENDER weather-orbit mode=HYPERION sites=8 buildings=0 residents=0
+  triangles=0 cloud_cells=92 cpu_bytes=1622032 gpu_bytes=0 precipitation=0
+  frame=1441 shadow_bytes=0 shadow_active=0 shadow_updates=0 life_worlds=23
+  life_scanning=0
+
+  SURFACE_RENDER weather-orbit mode=HYBRID sites=8 buildings=0 residents=0
+  triangles=0 cloud_cells=92 cpu_bytes=1622032 gpu_bytes=0 precipitation=0
+  frame=1456 shadow_bytes=0 shadow_active=0 shadow_updates=0 life_worlds=23
+  life_scanning=0
+
+  SURFACE_FIXTURE 1 0,0,0/1:0/2:137/3:0 CITY 97221 population=26801
+
+  SURFACE_RENDER city-approach mode=ORIGINAL sites=8 buildings=166
+  residents=74 triangles=135925 cloud_cells=124 cpu_bytes=1622032
+  gpu_bytes=410478 precipitation=0 frame=2302 shadow_bytes=0 shadow_active=0
+  shadow_updates=0 life_worlds=23 life_scanning=0
+
+  CITY_LAYOUT CITY 97221 pattern=RADIAL buildings=166 streets=116 parcels=166
+  population=26801 recipe=1
+
+  CITY_LAYOUT CITY 79698 pattern=PLANNED buildings=240 streets=224
+  parcels=240 population=54375 recipe=1
+
+  CITY_LAYOUT CITY 15771 pattern=RADIAL buildings=158 streets=116 parcels=158
+  population=28686 recipe=1
+
+  CITY_LAYOUT CITY 84597 pattern=ORGANIC buildings=240 streets=238
+  parcels=240 population=40935 recipe=1
+
+  CITY_LAYOUT CITY 72673 pattern=ORGANIC buildings=240 streets=238
+  parcels=240 population=39791 recipe=1
+
+  CITY_LAYOUT CITY 41531 pattern=ORGANIC buildings=240 streets=218
+  parcels=240 population=40388 recipe=1
+
+  CITY_LAYOUT CITY 13494 pattern=RADIAL buildings=153 streets=116 parcels=153
+  population=27657 recipe=1
+
+  CITY_LAYOUT CITY 51843 pattern=PLANNED buildings=240 streets=224
+  parcels=240 population=47269 recipe=1
+
+  SURFACE_RENDER city-approach mode=HYPERION sites=8 buildings=166
+  residents=74 triangles=135925 cloud_cells=124 cpu_bytes=1622032
+  gpu_bytes=413070 precipitation=0 frame=2319 shadow_bytes=8388608
+  shadow_active=1 shadow_updates=0 life_worlds=23 life_scanning=0
+
+  SURFACE_RENDER city-approach mode=HYBRID sites=8 buildings=166 residents=74
+  triangles=135925 cloud_cells=124 cpu_bytes=1622032 gpu_bytes=413070
+  precipitation=0 frame=2334 shadow_bytes=8388608 shadow_active=1
+  shadow_updates=0 life_worlds=23 life_scanning=0
+
+  SURFACE_FIXTURE 2 0,0,0/1:0/2:137/3:0 CITY 97221 population=26801
+
+  SURFACE_RENDER inhabitants mode=ORIGINAL sites=8 buildings=39 residents=21
+  triangles=70033 cloud_cells=133 cpu_bytes=1622032 gpu_bytes=430096
+  precipitation=0 frame=2349 shadow_bytes=8388608 shadow_active=0
+  shadow_updates=0 life_worlds=23 life_scanning=0
+
+  SURFACE_RENDER inhabitants mode=HYPERION sites=8 buildings=39 residents=21
+  triangles=70033 cloud_cells=133 cpu_bytes=1622032 gpu_bytes=430096
+  precipitation=0 frame=2364 shadow_bytes=8388608 shadow_active=1
+  shadow_updates=0 life_worlds=23 life_scanning=0
+
+  SURFACE_RENDER inhabitants mode=HYBRID sites=8 buildings=39 residents=21
+  triangles=70033 cloud_cells=133 cpu_bytes=1622032 gpu_bytes=430096
+  precipitation=0 frame=2379 shadow_bytes=8388608 shadow_active=1
+  shadow_updates=0 life_worlds=23 life_scanning=0
+
+  SURFACE_FIXTURE 3 0,0,0/1:0/2:0/3:8 COLONY 80584 population=4833
+
+  SURFACE_RENDER sealed-colony mode=ORIGINAL sites=6 buildings=241
+  residents=55 triangles=77004 cloud_cells=0 cpu_bytes=592688
+  gpu_bytes=544492 precipitation=0 frame=3347 shadow_bytes=8388608
+  shadow_active=0 shadow_updates=0 life_worlds=7 life_scanning=0
+
+  SURFACE_RENDER sealed-colony mode=HYPERION sites=6 buildings=241
+  residents=55 triangles=77004 cloud_cells=0 cpu_bytes=592688
+  gpu_bytes=562636 precipitation=0 frame=3362 shadow_bytes=8388608
+  shadow_active=1 shadow_updates=0 life_worlds=7 life_scanning=0
+
+  SURFACE_RENDER sealed-colony mode=HYBRID sites=6 buildings=241 residents=55
+  triangles=77004 cloud_cells=0 cpu_bytes=592688 gpu_bytes=562636
+  precipitation=0 frame=3377 shadow_bytes=8388608 shadow_active=1
+  shadow_updates=0 life_worlds=7 life_scanning=0
+
+  SURFACE_FIXTURE 4 0,0,0/1:0/2:137/3:0 CITY 97221 population=26801
+
+  Infinite: Native GPU tour timed out before completion
+
+
+
+
+      Start 46: native_weather_and_surface_images
+Failed test dependencies: native_weather_and_surface_life
+46/65 Test #46: native_weather_and_surface_images ........***Not Run   0.00 sec
+      Start 47: native_solid_terrain
+47/65 Test #47: native_solid_terrain .....................   Passed   65.06 sec
+      Start 48: native_solid_terrain_images
+48/65 Test #48: native_solid_terrain_images ..............   Passed    0.91 sec
+      Start 49: native_surface_quality
+49/65 Test #49: native_surface_quality ...................   Passed   62.23 sec
+      Start 50: native_surface_quality_images
+50/65 Test #50: native_surface_quality_images ............   Passed    1.51 sec
+      Start 51: native_surface_frame_and_retina
+51/65 Test #51: native_surface_frame_and_retina ..........   Passed   89.52 sec
+      Start 52: native_surface_frame_and_retina_images
+52/65 Test #52: native_surface_frame_and_retina_images ...   Passed    4.51 sec
+      Start 53: native_grazing_sun_receivers
+53/65 Test #53: native_grazing_sun_receivers .............   Passed   45.69 sec
+      Start 54: native_grazing_sun_images
+54/65 Test #54: native_grazing_sun_images ................   Passed    2.09 sec
+      Start 55: native_terrain_cast_shadows
+55/65 Test #55: native_terrain_cast_shadows ..............   Passed   61.21 sec
+      Start 56: native_terrain_cast_shadow_images
+56/65 Test #56: native_terrain_cast_shadow_images ........   Passed    1.35 sec
+      Start 57: native_piloting_loop
+57/65 Test #57: native_piloting_loop .....................***Failed    9.23 sec
+CMake Error at /Users/user/Documents/SC tutorial/Infinite/cmake/RunPilot.cmake:11 (message):
+  Native piloting failed (1):
+
+  BACKBUFFER 1440x900 (requested 1440x900)
+
+  PILOT_FIXTURE 0,0,0/1:0/2:9/3:0 temperature=247.702
+
+  Infinite / Metal / seed 5282236693612155973
+
+  PILOT_MODE_PROOF identical camera and planet geometry in all three cockpit
+  modes / sky stars=0 background_galaxies=63 atmosphere=1
+
+  PILOT_ACTIVITY population=76 visible=0 template_bytes=0
+
+  PILOT_SYSTEM_CONTACTS count=58 lights=11 distant_planet_pick=PASS
+
+  Infinite: Addressed galactic stars disappeared from the cockpit sky
+
+
+
+
+      Start 58: native_cockpit_images
+Failed test dependencies: native_piloting_loop
+58/65 Test #58: native_cockpit_images ....................***Not Run   0.00 sec
+      Start 59: native_boundary_streaming
+59/65 Test #59: native_boundary_streaming ................   Passed   39.45 sec
+      Start 60: native_boundary_pixels
+60/65 Test #60: native_boundary_pixels ...................   Passed    7.60 sec
+      Start 61: native_seamless_scale_flight
+61/65 Test #61: native_seamless_scale_flight .............   Passed   90.32 sec
+      Start 62: native_cross_scale_round_trip
+62/65 Test #62: native_cross_scale_round_trip ............   Passed   95.67 sec
+      Start 63: native_atomic_visibility
+63/65 Test #63: native_atomic_visibility .................   Passed    3.03 sec
+      Start 64: native_render_mode_round_trip
+64/65 Test #64: native_render_mode_round_trip ............   Passed   70.02 sec
+      Start 65: native_render_mode_images
+65/65 Test #65: native_render_mode_images ................   Passed   24.42 sec
+
+88% tests passed, 8 tests failed out of 65
+
+Total Test time (real) = 1448.44 sec
+
+The following tests FAILED:
+	 37 - native_cloud_volumes (Failed)
+	 38 - native_cloud_volume_images (Not Run)
+	 39 - native_polar_optics (Failed)
+	 40 - native_polar_optics_images (Not Run)
+	 45 - native_weather_and_surface_life (Failed)
+	 46 - native_weather_and_surface_images (Not Run)
+	 57 - native_piloting_loop (Failed)
+	 58 - native_cockpit_images (Not Run)
+Errors while running CTest

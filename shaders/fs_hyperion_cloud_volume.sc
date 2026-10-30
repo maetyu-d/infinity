@@ -5,6 +5,7 @@ $input v_texcoord0
 #include "hyperion_weather.sh"
 SAMPLER2D(s_opaqueDepth,2);
 SAMPLER2D(s_materialNoise,5);
+uniform vec4 u_weatherVisual[3];
 #include "hyperion_cloud_ray.sh"
 // Hyperion cloudFragment's 3-D billow and erosion, with explicit physical
 // footprints. Derivatives inside an early-exiting ray loop would be undefined.
@@ -48,8 +49,9 @@ void main(){
   vec3 q=n*(radiusKm*.018)+u_weather[2].xyz+n*(h*thickness*.12)+u_weather[1].y*vec3(31.,17.,47.);
   float billow=resolved>.005?mix(.5,volumeNoise(q),resolved):.5;
   float detail=resolved>.05?mix(.5,volumeNoise(q*2.07+19.),resolved):.5;
-  float profile=smoothstep(0.,.13,h)*(1.-smoothstep(.48,1.,h/(.62+cover*.3+billow*.12)));
-  float density=max(0.,cover-(1.-billow)*.78-(1.-detail)*.18)*1.9*profile;
+  float topHeight=min(.98,.60+cover*.18+weather.g*.16+billow*.10);
+  float profile=smoothstep(0.,.13,h)*(1.-smoothstep(.48,1.,h/topHeight));
+  float density=max(0.,cover-(1.-billow)*.39-(1.-detail)*.12)*1.9*profile;
   // Thin, high ice filaments use the same wet weather, not an extra climate.
   float cirrus=smoothstep(.77,.90,h)*(1.-smoothstep(.94,1.,h))*smoothstep(.45,.70,weather.r)*detail*.07;
   density=(density+cirrus)*clamp(u_weather[0].z*.8,0.,1.);
@@ -65,6 +67,9 @@ void main(){
   colour+=sunlight*day*silver*.19*(.3+.7*selfShadow);colour*=1.-weather.g*.22;
   float shade=clamp(h*.17+billow*.13,0.,.36);
   vec3 opal=shade<.18?mix(opalLow,opalMid,shade/.18):mix(opalMid,opalHigh,(shade-.18)/.18);
+  // Hyperion cloudFragment's deterministic, storm-local discharge. There
+  // are no invented bolts or screen-wide flashes outside the cloud volume.
+  colour+=(vec3(.30,.48,.85)+opalHigh*.35)*u_weatherVisual[2].x*pow(weather.g,4.)*2.2;
   colour*=mix(vec3(1.),.22+opal*1.45,.40);
   colour+=opal*(.018+day*(silver*.09+pow(max(0.,1.-abs(sun)*3.),3.)*.09));
   float opacity=1.-exp(-density*kmStep*.24);

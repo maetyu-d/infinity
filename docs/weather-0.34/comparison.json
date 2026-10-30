@@ -1,0 +1,22 @@
+{
+  "rain": {
+    "changed_pixels": 1198544,
+    "rebase_rms_255": 1.49448161870328
+  },
+  "snow": {
+    "changed_pixels": 1282437,
+    "rebase_rms_255": 0.25623701412443795
+  },
+  "dust": {
+    "changed_pixels": 1296000,
+    "rebase_rms_255": 0.4405348881238817
+  },
+  "storm": {
+    "changed_pixels": 522,
+    "rebase_rms_255": 0.04547418206595805
+  },
+  "vacuum": {
+    "changed_pixels": 0,
+    "rebase_rms_255": 0.11257370699312003
+  }
+}

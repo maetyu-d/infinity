@@ -157,6 +157,12 @@ class PilotValidation {
             stage_ = 5;
             age_ = 0;
         } else if (stage_ == 5 && age_ == 30) {
+            // The galaxy refines asynchronously. Wait for the addressed sample
+            // before testing visibility; a fixed frame count is not a load barrier.
+            if (!renderer.galaxySamples()) {
+                --age_;
+                return;
+            }
             if (stats.skyStars < 10)
                 throw std::runtime_error("Addressed galactic stars disappeared from the cockpit sky");
             bool picked = false;

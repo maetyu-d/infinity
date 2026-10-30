@@ -466,7 +466,7 @@ struct Planner {
     }
     void districts() {
         const auto climate = planetClimate(planet);
-        const auto wind = glm::inverse(s.orientation) * sampleWeather(climate, s.direction, 0, 0).wind;
+        const auto wind = glm::inverse(s.orientation) * samplePlanningClimate(climate, s.direction, 0).wind;
         V downwind{wind.x, wind.z};
         if (glm::length(downwind) < .1)
             downwind = {1, .3};

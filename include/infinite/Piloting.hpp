@@ -42,6 +42,8 @@ struct FlightInstruments {
     bool targetVisible = false, safe = false;
     std::string phase = "MANUAL", drive = "CRUISE", destination = "SELECT A DESTINATION / J NAVIGATE";
     std::string weather;
+    std::string weatherDetail;
+    double weatherSeverity = 0;
 };
 class Pilot {
   public:

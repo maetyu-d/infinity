@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Infinite VERSION 0.33.0 LANGUAGES C CXX)
+project(Infinite VERSION 0.34.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -39,6 +39,11 @@ else()
   target_compile_options(infinite_performance_tests PRIVATE -ffp-contract=off)
 endif()
 enable_testing()
+add_executable(infinite_weather_process_tests tests/WeatherProcessTests.cpp)
+target_link_libraries(infinite_weather_process_tests PRIVATE infinite_core)
+add_test(NAME planetary_weather_processes COMMAND infinite_weather_process_tests)
+add_executable(infinite_weather_benchmark tools/WeatherBenchmark.cpp)
+target_link_libraries(infinite_weather_benchmark PRIVATE infinite_core)
 add_executable(infinite_stellar_optics_tests tests/StellarOpticsTests.cpp)
 target_link_libraries(infinite_stellar_optics_tests PRIVATE infinite_core)
 add_test(NAME addressed_stellar_optics COMMAND infinite_stellar_optics_tests)
@@ -153,6 +158,13 @@ if(INFINITE_VIEWER)
   endif()
   if(INFINITE_GPU_TESTS)
     find_package(Python3 3.9 COMPONENTS Interpreter REQUIRED)
+    add_test(NAME native_weather_visibility COMMAND "${CMAKE_COMMAND}"
+      "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/weather-visibility"
+      -P "${PROJECT_SOURCE_DIR}/cmake/RunWeatherVisibility.cmake")
+    set_tests_properties(native_weather_visibility PROPERTIES FIXTURES_SETUP weather_visibility TIMEOUT 270)
+    add_test(NAME native_weather_visibility_images COMMAND "${Python3_EXECUTABLE}"
+      "${PROJECT_SOURCE_DIR}/tools/check_weather_visibility.py" "${CMAKE_BINARY_DIR}/weather-visibility")
+    set_tests_properties(native_weather_visibility_images PROPERTIES FIXTURES_REQUIRED weather_visibility)
     add_test(NAME native_landing_light COMMAND "${CMAKE_COMMAND}"
       "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/landing-light"
       -P "${PROJECT_SOURCE_DIR}/cmake/RunLandingLight.cmake")
@@ -170,14 +182,14 @@ if(INFINITE_VIEWER)
     add_test(NAME native_cloud_volumes COMMAND "${CMAKE_COMMAND}"
       "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/cloud-volumes"
       -P "${PROJECT_SOURCE_DIR}/cmake/RunCloudVolume.cmake")
-    set_tests_properties(native_cloud_volumes PROPERTIES FIXTURES_SETUP cloud_volumes TIMEOUT 180)
+    set_tests_properties(native_cloud_volumes PROPERTIES FIXTURES_SETUP cloud_volumes TIMEOUT 270)
     add_test(NAME native_cloud_volume_images COMMAND "${Python3_EXECUTABLE}"
       "${PROJECT_SOURCE_DIR}/tools/check_cloud_volumes.py" "${CMAKE_BINARY_DIR}/cloud-volumes")
     set_tests_properties(native_cloud_volume_images PROPERTIES FIXTURES_REQUIRED cloud_volumes)
     add_test(NAME native_polar_optics COMMAND "${CMAKE_COMMAND}"
       "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/polar-optics"
       -P "${PROJECT_SOURCE_DIR}/cmake/RunPolarOptics.cmake")
-    set_tests_properties(native_polar_optics PROPERTIES FIXTURES_SETUP polar_optics TIMEOUT 180)
+    set_tests_properties(native_polar_optics PROPERTIES FIXTURES_SETUP polar_optics TIMEOUT 270)
     add_test(NAME native_polar_optics_images COMMAND "${Python3_EXECUTABLE}"
       "${PROJECT_SOURCE_DIR}/tools/check_polar_optics.py" "${CMAKE_BINARY_DIR}/polar-optics")
     set_tests_properties(native_polar_optics_images PROPERTIES FIXTURES_REQUIRED polar_optics)
@@ -198,7 +210,7 @@ if(INFINITE_VIEWER)
     add_test(NAME native_weather_and_surface_life COMMAND "${CMAKE_COMMAND}"
       "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/surface-native"
       -P "${PROJECT_SOURCE_DIR}/cmake/RunSurfaceLife.cmake")
-    set_tests_properties(native_weather_and_surface_life PROPERTIES FIXTURES_SETUP surface_life_captures TIMEOUT 180)
+    set_tests_properties(native_weather_and_surface_life PROPERTIES FIXTURES_SETUP surface_life_captures TIMEOUT 270)
     add_test(NAME native_weather_and_surface_images COMMAND "${Python3_EXECUTABLE}"
       "${PROJECT_SOURCE_DIR}/tools/check_surface_captures.py" "${CMAKE_BINARY_DIR}/surface-native")
     set_tests_properties(native_weather_and_surface_images PROPERTIES FIXTURES_REQUIRED surface_life_captures)

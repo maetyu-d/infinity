@@ -15,8 +15,25 @@ class CloudValidation {
                 if (!hasSolidSurface(p) || isMoon(a))
                     continue;
                 const auto climate = planetClimate(p);
-                if (!air_ && climate.pressureBar > .5 && climate.pressureBar < 1.5 && climate.moisture > .3)
-                    air_ = p;
+                if (!air_ && climate.pressureBar > .3 && climate.pressureBar < 1.8 &&
+                    climate.moisture > .25) {
+                    const WeatherSampler sampler(climate, 12);
+                    const auto sun =
+                        glm::normalize(u_.relative(system.address, p.address, p.frame.logRadius).position);
+                    double cover = .60;
+                    for (unsigned i = 0; i < 256; ++i) {
+                        const double y = 1 - 2 * (i + .5) / 256., angle = i * 2.399963229728653;
+                        const glm::dvec3 d(std::sqrt(1 - y * y) * std::cos(angle), y,
+                                           std::sqrt(1 - y * y) * std::sin(angle));
+                        const double cloud = sampler.sample(d, 0).cloud;
+                        if (glm::dot(d, sun) > .3 && cloud > cover &&
+                            u_.terrainHeight(p, d) < weatherLayers(climate).cloudBaseMetres * .6) {
+                            air_ = p;
+                            airDirection_ = d;
+                            cover = cloud;
+                        }
+                    }
+                }
                 if (!vacuum_ && climate.pressureBar == 0)
                     vacuum_ = p;
             }
@@ -29,6 +46,7 @@ class CloudValidation {
         renderer.setMode(RenderMode::Hyperion);
         renderer.setPolarLights(false);
         renderer.setCloudVolumes(sample_ != 0);
+        renderer.setWeatherEffects(false); // Isolate the cloud banks from local precipitation haze.
     }
     void observe(const FrameStats& stats, RegionCache& cache, Renderer& renderer, const std::string& dir) {
         ++frames_;
@@ -91,6 +109,7 @@ class CloudValidation {
     Navigation& nav_;
     Pilot& pilot_;
     std::optional<Node> air_, vacuum_;
+    glm::dvec3 airDirection_{};
     unsigned stage_ = 0, sample_ = 0, stable_ = 0, hold_ = 0;
     unsigned frames_ = 0;
     bool captured_ = false;
@@ -110,12 +129,14 @@ class CloudValidation {
             const double y = 1 - 2 * (i + .5) / 256., angle = i * 2.399963229728653;
             const glm::dvec3 d(std::sqrt(1 - y * y) * std::cos(angle), y,
                                std::sqrt(1 - y * y) * std::sin(angle));
-            const double cloud = sampleWeather(climate, d, 0, 12).cloud;
+            const double cloud = samplePlanningClimate(climate, d, 0, 12).cloud;
             if (glm::dot(d, sun) > .3 && cloud > cover) {
                 direction = d;
                 cover = cloud;
             }
         }
+        if (stage_ != 4)
+            direction = airDirection_;
         double log = p.frame.logRadius;
         eye_ = direction * 1.55;
         glm::dvec3 aim(0);
@@ -123,9 +144,10 @@ class CloudValidation {
             const double ground = u_.terrainHeight(p, direction);
             double height = ground + (stage_ == 3 ? 50 : 1000);
             if (stage_ == 2)
-                height = std::max(ground + 500.,
-                                  climate.cloudHeightMetres * .72 +
-                                      std::clamp(climate.scaleHeightMetres * 1.6, 1500., 32000.) * .4);
+                height = std::max(ground + 500., weatherLayers(climate).cloudBaseMetres +
+                                                     (weatherLayers(climate).cloudTopMetres -
+                                                      weatherLayers(climate).cloudBaseMetres) *
+                                                         .4);
             eye_ = direction * (1 + height / radius);
             const auto east = glm::normalize(glm::cross(direction, glm::dvec3(0, 1, 0)));
             if (stage_ != 3)

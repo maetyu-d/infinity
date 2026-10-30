@@ -42,7 +42,7 @@ int main() {
                 const auto weather = sampleWeather(climate, d, 0, 12);
                 const size_t i = (y * WeatherField::width + x) * 4;
                 unsigned channel = 0;
-                for (double value : {weather.cloud, weather.storm, weather.precipitation})
+                for (double value : {weather.cloud, weather.storm, weather.precipitation, weather.dust})
                     check(std::abs(a.pixels[i + channel++] / 255. - std::clamp(value, 0., 1.)) <=
                               .5 / 255. + 1e-12,
                           "Optical field replaced the existing weather");

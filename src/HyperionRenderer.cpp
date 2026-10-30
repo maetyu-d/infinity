@@ -27,6 +27,7 @@ bgfx::ShaderHandle shader(const char* name) {
     LOAD_SHADER(fs_hyperion, BACKEND);                                                                       \
     LOAD_SHADER(fs_hyperion_flight, BACKEND);                                                                \
     LOAD_SHADER(fs_hyperion_flight_post, BACKEND);                                                           \
+    LOAD_SHADER(fs_hyperion_weather_post, BACKEND);                                                          \
     LOAD_SHADER(fs_hyperion_polar, BACKEND);                                                                 \
     LOAD_SHADER(fs_hyperion_sky, BACKEND);                                                                   \
     LOAD_SHADER(fs_hyperion_glow, BACKEND);                                                                  \
@@ -98,6 +99,7 @@ void HyperionRenderer::init() {
     noiseBytes_ = noise.size();
     stellarParams_ = bgfx::createUniform("u_stellar", bgfx::UniformType::Vec4, 3);
     landingParams_ = bgfx::createUniform("u_landingContact", bgfx::UniformType::Vec4, 2);
+    weatherVisualParams_ = bgfx::createUniform("u_weatherVisual", bgfx::UniformType::Vec4, 3);
     weatherParams_ = bgfx::createUniform("u_weather", bgfx::UniformType::Vec4, 4);
     weatherMatrix_ = bgfx::createUniform("u_weatherFromEye", bgfx::UniformType::Mat4);
     weatherSampler_ = bgfx::createUniform("s_weatherField", bgfx::UniformType::Sampler);
@@ -179,26 +181,43 @@ HyperionRenderer::~HyperionRenderer() {
             bgfx::destroy(t);
     if (bgfx::isValid(sunTarget_))
         bgfx::destroy(sunTarget_);
-    for (auto p : {geometry_, glow_, blur_, post_, flightGeometry_, flightPost_, sky_, smoothGeometry_[0],
-                   smoothGeometry_[1], sunProgram_, cloudProgram_, coverageProgram_, polarProgram_,
-                   cloudVolumeProgram_, corona_, solarBlur_, stellarGeometry_[0], stellarGeometry_[1]})
+    for (auto p :
+         {geometry_, glow_, blur_, post_, flightGeometry_, flightPost_, sky_, smoothGeometry_[0],
+          smoothGeometry_[1], sunProgram_, cloudProgram_, coverageProgram_, polarProgram_,
+          cloudVolumeProgram_, corona_, solarBlur_, stellarGeometry_[0], stellarGeometry_[1], weatherPost_})
         if (bgfx::isValid(p))
             bgfx::destroy(p);
-    for (auto u : {landingParams_,  stellarParams_,
-                   weatherParams_,  weatherMatrix_,
-                   weatherSampler_, weatherNextSampler_,
-                   cloudSampler_,   polarSampler_,
-                   polar_,          environment_,
-                   noiseSampler_,   detailSampler_,
-                   surface_,        sceneSampler_,
-                   bloomSampler_,   style_,
-                   pattern_,        postParams_,
-                   cavity_,         depthSampler_,
-                   atmosphere_,     atmosphereRotation_,
-                   micro_,          microParams_,
-                   meso_,           domain_,
-                   skyParams_,      skyRotation_,
-                   sunSampler_,     sunMatrix_,
+    for (auto u : {weatherVisualParams_,
+                   landingParams_,
+                   stellarParams_,
+                   weatherParams_,
+                   weatherMatrix_,
+                   weatherSampler_,
+                   weatherNextSampler_,
+                   cloudSampler_,
+                   polarSampler_,
+                   polar_,
+                   environment_,
+                   noiseSampler_,
+                   detailSampler_,
+                   surface_,
+                   sceneSampler_,
+                   bloomSampler_,
+                   style_,
+                   pattern_,
+                   postParams_,
+                   cavity_,
+                   depthSampler_,
+                   atmosphere_,
+                   atmosphereRotation_,
+                   micro_,
+                   microParams_,
+                   meso_,
+                   domain_,
+                   skyParams_,
+                   skyRotation_,
+                   sunSampler_,
+                   sunMatrix_,
                    sunParams_})
         if (bgfx::isValid(u))
             bgfx::destroy(u);
@@ -232,6 +251,7 @@ bgfx::ProgramHandle HyperionRenderer::geometryProgram(bool smooth, bool stellar)
 void HyperionRenderer::begin(RenderMode mode, int width, int height, bool opticalDepth, bool flight) {
     detailUploadBytes_ = 0;
     flight_ = flight;
+    weatherVisualData_ = {};
     landingData_ = {};
     landingPlanet_.reset();
     stellarData_ = {};
@@ -364,6 +384,26 @@ void HyperionRenderer::landingContact(const Address& planet, glm::vec3 point, gl
     landingData_[0] = glm::vec4(point, radius);
     landingData_[1] = glm::vec4(up, strength);
 }
+void HyperionRenderer::localWeather(const PlanetClimate& c, const WeatherSample& sample, double seconds,
+                                    bool enabled) {
+    weatherVisualData_ = {};
+    if (!enabled || c.pressureBar == 0)
+        return;
+    const float discharge = float(weatherDischarge(c, seconds));
+    const bool dust = sample.type == WeatherType::Dust;
+    const float frozen = float(1 - smoothstep(268., 278., sample.temperatureK));
+    const auto tint = dust ? glm::vec3(.24, .115, .045)
+                           : glm::mix(glm::vec3(.055, .09, .14), glm::vec3(.24, .32, .40), frozen);
+    // Crossing the cloud base or a weak shower must not switch a finite
+    // optical depth on in one frame. Phase tint also blends across freezing.
+    const float obscured = float(smoothstep(.02, .12, sample.precipitation));
+    const auto layers = weatherLayers(c);
+    weatherVisualData_[0] = {obscured * float(2.4 * c.radiusMetres / sample.visibilityMetres),
+                             float(layers.hazeHeightMetres / c.radiusMetres), dust ? 1.f : 0.f, 1};
+    weatherVisualData_[1] = glm::vec4(tint, discharge * float(std::pow(sample.storm, 4)));
+    weatherVisualData_[2] = {discharge, float(sample.storm), float(sample.precipitation),
+                             dust ? float(sample.dust) : 0.f};
+}
 void HyperionRenderer::stellar(const StellarImage& image, float aspect, float tanHalfFov) {
     if (!readableDepth_ || image.visibility <= 0 || image.direction.z >= -.0001)
         return;
@@ -438,8 +478,8 @@ void HyperionRenderer::prepareWeather(const Node& planet, const glm::dmat4& mapp
     weatherRamp_ = frozen ? 1.f : std::min(1.f, weatherRamp_ + float(std::max(0., delta) / .35));
     weatherPending_ = !ready || weatherRamp_ < 1;
     const double radius = std::pow(10., planet.frame.logRadius);
-    const double base = climate.cloudHeightMetres * .72,
-                 thickness = std::clamp(climate.scaleHeightMetres * 1.6, 1500., 32000.);
+    const auto layers = weatherLayers(climate);
+    const double base = layers.cloudBaseMetres, thickness = layers.cloudTopMetres - layers.cloudBaseMetres;
     weatherData_[0] = {float(1 + base / radius), float(1 + (base + thickness) / radius),
                        float(climate.pressureBar), volumes ? weatherRamp_ : 0.f};
     weatherData_[1] = {float(std::clamp((seconds - fields[0]->seconds) / 8., 0., 1.)),
@@ -473,6 +513,9 @@ void HyperionRenderer::bind(const ScenePresentation& p, const glm::vec3& eye, co
         weather[3].w > .5f && weatherPlanet_ && *weatherPlanet_ == p.materialFrame ? weatherRamp_ : 0.f;
     bgfx::setUniform(weatherParams_, weather.data(), 4);
     bgfx::setUniform(weatherMatrix_, glm::value_ptr(weatherFromEye_));
+    const auto visual = weatherPlanet_ && *weatherPlanet_ == p.materialFrame ? weatherVisualData_
+                                                                             : std::array<glm::vec4, 3>{};
+    bgfx::setUniform(weatherVisualParams_, visual.data(), 3);
     bgfx::setTexture(7, weatherSampler_, bgfx::isValid(weatherTextures_[0]) ? weatherTextures_[0] : noise_,
                      BGFX_SAMPLER_V_CLAMP);
     bgfx::setTexture(8, weatherNextSampler_,
@@ -552,6 +595,7 @@ void HyperionRenderer::finish() {
             bgfx::setTexture(7, weatherSampler_, weatherTextures_[0], BGFX_SAMPLER_V_CLAMP);
             bgfx::setTexture(8, weatherNextSampler_, weatherTextures_[1], BGFX_SAMPLER_V_CLAMP);
             bgfx::setUniform(weatherParams_, weatherData_.data(), 4);
+            bgfx::setUniform(weatherVisualParams_, weatherVisualData_.data(), 3);
             bgfx::setUniform(atmosphere_, atmosphereData_.data(), 4);
             bgfx::setUniform(atmosphereRotation_, glm::value_ptr(atmosphereMatrix_));
             screen(78, cloudVolumeProgram_);
@@ -603,15 +647,29 @@ void HyperionRenderer::finish() {
     bgfx::setTexture(0, sceneSampler_, bgfx::getTexture(scene_), sampling);
     bgfx::setTexture(1, bloomSampler_, bgfx::getTexture(bloom_[1]), sampling);
     const bool optical = readableDepth_;
+    auto finalProgram = post_;
     if (optical) {
         stellarData_[2].w = weatherData_[0].w > 0 ? 1.f : 0.f;
         bgfx::setUniform(stellarParams_, stellarData_.data(), 3);
         if (!bgfx::isValid(flightPost_))
             flightPost_ = program("vs_hyperion_screen", "fs_hyperion_flight_post");
+        finalProgram = flightPost_;
+        if (weatherVisualData_[0].x > 0) {
+            if (!bgfx::isValid(weatherPost_))
+                weatherPost_ = program("vs_hyperion_screen", "fs_hyperion_weather_post");
+            finalProgram = weatherPost_;
+            bgfx::setTexture(7, weatherSampler_,
+                             bgfx::isValid(weatherTextures_[0]) ? weatherTextures_[0] : noise_,
+                             BGFX_SAMPLER_V_CLAMP);
+            bgfx::setTexture(8, weatherNextSampler_,
+                             bgfx::isValid(weatherTextures_[1]) ? weatherTextures_[1] : noise_,
+                             BGFX_SAMPLER_V_CLAMP);
+        }
         bgfx::setTexture(2, depthSampler_, bgfx::getTexture(scene_, 1),
                          sampling | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT);
         bgfx::setUniform(atmosphere_, atmosphereData_.data(), 4);
         bgfx::setUniform(weatherParams_, weatherData_.data(), 4);
+        bgfx::setUniform(weatherVisualParams_, weatherVisualData_.data(), 3);
         bgfx::setTexture(9, cloudSampler_, bgfx::getTexture(cloudTarget_),
                          sampling | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT);
         bgfx::setUniform(polar_, polarData_.data(), 2);
@@ -619,6 +677,6 @@ void HyperionRenderer::finish() {
                          sampling | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT);
         bgfx::setUniform(atmosphereRotation_, glm::value_ptr(atmosphereMatrix_));
     }
-    screen(83, optical ? flightPost_ : post_);
+    screen(83, finalProgram);
 }
 } // namespace infinite

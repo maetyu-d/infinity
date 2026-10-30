@@ -1,0 +1,27 @@
+{
+  "orbit": {
+    "changed_pixels": 749300,
+    "rebase_rms_255": 0.028920922410711935,
+    "large_error_fraction": 0.0
+  },
+  "below": {
+    "changed_pixels": 977659,
+    "rebase_rms_255": 0.016573815433529218,
+    "large_error_fraction": 0.0
+  },
+  "inside": {
+    "changed_pixels": 1293169,
+    "rebase_rms_255": 0.0017568209223157662,
+    "large_error_fraction": 0.0
+  },
+  "blocked": {
+    "changed_pixels": 0,
+    "rebase_rms_255": 0.21106724690498377,
+    "large_error_fraction": 3.0864197530864196e-06
+  },
+  "airless": {
+    "changed_pixels": 0,
+    "rebase_rms_255": 0.03162277660168379,
+    "large_error_fraction": 0.0
+  }
+}

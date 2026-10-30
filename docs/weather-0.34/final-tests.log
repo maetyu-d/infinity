@@ -1,0 +1,29 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+      Start  1: planetary_weather_processes
+ 1/12 Test  #1: planetary_weather_processes .........   Passed    0.05 sec
+      Start  3: read_only_weather_optics
+ 2/12 Test  #3: read_only_weather_optics ............   Passed    0.75 sec
+      Start 31: native_weather_visibility
+ 3/12 Test #31: native_weather_visibility ...........   Passed  133.64 sec
+      Start 32: native_weather_visibility_images
+ 4/12 Test #32: native_weather_visibility_images ....   Passed   16.31 sec
+      Start 37: native_cloud_volumes
+ 5/12 Test #37: native_cloud_volumes ................   Passed   85.97 sec
+      Start 38: native_cloud_volume_images
+ 6/12 Test #38: native_cloud_volume_images ..........   Passed   21.65 sec
+      Start 39: native_polar_optics
+ 7/12 Test #39: native_polar_optics .................   Passed   81.22 sec
+      Start 40: native_polar_optics_images
+ 8/12 Test #40: native_polar_optics_images ..........   Passed   14.82 sec
+      Start 45: native_weather_and_surface_life
+ 9/12 Test #45: native_weather_and_surface_life .....   Passed  113.41 sec
+      Start 46: native_weather_and_surface_images
+10/12 Test #46: native_weather_and_surface_images ...   Passed    1.96 sec
+      Start 57: native_piloting_loop
+11/12 Test #57: native_piloting_loop ................   Passed   67.27 sec
+      Start 58: native_cockpit_images
+12/12 Test #58: native_cockpit_images ...............   Passed    7.97 sec
+
+100% tests passed, 0 tests failed out of 12
+
+Total Test time (real) = 545.07 sec

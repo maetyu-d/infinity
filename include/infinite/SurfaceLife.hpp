@@ -6,23 +6,51 @@
 
 namespace infinite {
 inline constexpr uint32_t climateRecipeVersion = 1, societyRecipeVersion = 1;
+inline constexpr uint32_t weatherRecipeVersion = 2;
 inline constexpr uint32_t cityRecipeVersion = 1;
 inline constexpr uint32_t surfaceActivitySlot = 2000;
-enum class WeatherType : uint8_t { Vacuum, Clear, Cloud, Rain, Snow, Dust };
+enum class WeatherType : uint8_t { Vacuum, Clear, Cloud, Rain, Snow, Dust, Thunderstorm };
 struct PlanetClimate {
     uint64_t seed = 0;
     bool solid = false, temperate = false;
     double temperatureK = 0, pressureBar = 0, gravity = 0, moisture = 0;
     double daySeconds = 86400, scaleHeightMetres = 0, cloudHeightMetres = 0, windMetresPerSecond = 0;
     glm::dvec3 axis{0, 1, 0};
+    double radiusMetres = 6.371e6;
 };
 struct WeatherSample {
     WeatherType type = WeatherType::Vacuum;
     double temperatureK = 0, pressureBar = 0, cloud = 0, precipitation = 0, storm = 0;
     double visibilityMetres = 1e9;
     glm::dvec3 wind{}; // SI, in the existing planet's axes; tangent to its surface.
+    double gustMetresPerSecond = 0, front = 0, convection = 0, dust = 0;
+};
+struct WeatherLayers {
+    double cloudBaseMetres = 0, cloudTopMetres = 0, hazeHeightMetres = 0;
+};
+WeatherLayers weatherLayers(const PlanetClimate&);
+double weatherDischarge(const PlanetClimate&, double seconds);
+// Time-dependent circulation is prepared once for an atlas or cloud mesh.
+// Sampling is pure, independent of camera, request order and worker scheduling.
+class WeatherSampler {
+  public:
+    WeatherSampler(const PlanetClimate&, double seconds);
+    WeatherSample sample(glm::dvec3 direction, double altitudeMetres) const;
+
+  private:
+    struct Cyclone {
+        glm::dvec3 centre{}, east{}, north{};
+        double radius = .1, strength = 0, hemisphere = 1;
+    };
+    PlanetClimate climate_;
+    double seconds_ = 0, evolution_ = 0;
+    std::array<Cyclone, 4> cyclones_;
 };
 PlanetClimate planetClimate(const Node&);
+// Frozen version-1 planning climate. Existing city sites, districts and layouts
+// must not be selected again by the changing live-weather recipe.
+WeatherSample samplePlanningClimate(const PlanetClimate&, glm::dvec3 direction, double altitudeMetres,
+                                    double seconds = 0);
 WeatherSample sampleWeather(const PlanetClimate&, glm::dvec3 direction, double altitudeMetres,
                             double seconds);
 std::string_view weatherName(WeatherType);

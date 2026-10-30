@@ -1,0 +1,90 @@
+{
+  "window": "24 settled frames ending at each capture; effects off/on in one executable",
+  "platform": "Apple M1, 16 GiB, macOS 26.4.1, Metal, 1440 x 900",
+  "host_load": "Shared desktop; timings include contention and are not an isolated GPU effect benchmark",
+  "executable_sha256": "1c2c1825b25113ade470f6495d174e219d86f1fe33587d116a010689866d2c04",
+  "measurements": {
+    "rain": {
+      "off": {
+        "wall_ms": 13.4957,
+        "cpu_ms": 6.14575,
+        "submit_ms": 6.53598,
+        "effect_bytes": 29988608.0,
+        "weather_gpu_bytes": 87384.0
+      },
+      "on": {
+        "wall_ms": 15.70725,
+        "cpu_ms": 6.35204,
+        "submit_ms": 9.406105,
+        "effect_bytes": 29988608.0,
+        "weather_gpu_bytes": 87384.0
+      }
+    },
+    "snow": {
+      "off": {
+        "wall_ms": 11.14135,
+        "cpu_ms": 4.6701250000000005,
+        "submit_ms": 6.312685,
+        "effect_bytes": 29988608.0,
+        "weather_gpu_bytes": 87384.0
+      },
+      "on": {
+        "wall_ms": 10.83425,
+        "cpu_ms": 4.93017,
+        "submit_ms": 6.056044999999999,
+        "effect_bytes": 29988608.0,
+        "weather_gpu_bytes": 87384.0
+      }
+    },
+    "dust": {
+      "off": {
+        "wall_ms": 26.13425,
+        "cpu_ms": 11.47785,
+        "submit_ms": 15.9664,
+        "effect_bytes": 29988608.0,
+        "weather_gpu_bytes": 87384.0
+      },
+      "on": {
+        "wall_ms": 17.890349999999998,
+        "cpu_ms": 7.256605,
+        "submit_ms": 11.38065,
+        "effect_bytes": 29988608.0,
+        "weather_gpu_bytes": 87384.0
+      }
+    },
+    "storm": {
+      "off": {
+        "wall_ms": 16.9768,
+        "cpu_ms": 5.23633,
+        "submit_ms": 11.70035,
+        "effect_bytes": 29988608.0,
+        "weather_gpu_bytes": 87384.0
+      },
+      "on": {
+        "wall_ms": 18.69765,
+        "cpu_ms": 5.266605,
+        "submit_ms": 13.4578,
+        "effect_bytes": 29988608.0,
+        "weather_gpu_bytes": 87384.0
+      }
+    },
+    "vacuum": {
+      "off": {
+        "wall_ms": 8.879635,
+        "cpu_ms": 5.157685,
+        "submit_ms": 3.660605,
+        "effect_bytes": 29988608.0,
+        "weather_gpu_bytes": 87384.0
+      },
+      "on": {
+        "wall_ms": 8.717665,
+        "cpu_ms": 4.60358,
+        "submit_ms": 4.762065,
+        "effect_bytes": 29988608.0,
+        "weather_gpu_bytes": 87384.0
+      }
+    }
+  },
+  "frames": 3356,
+  "maximum_wall_ms": 144.47
+}

@@ -30,6 +30,7 @@ class PolarValidation {
         renderer.setPolarLights(sample_ != 0);
         // Isolate emission: an actual overcast sky may correctly hide aurora.
         renderer.setCloudVolumes(false);
+        renderer.setWeatherEffects(false);
     }
     void observe(const FrameStats& stats, RegionCache& cache, Renderer& renderer, const std::string& dir) {
         ++frames_;

@@ -4,11 +4,12 @@ uniform vec4 u_weather[4];
 uniform mat4 u_weatherFromEye;
 // Read-only snapshots of Infinite's sampleWeather. The pole rows share a
 // single physical direction; longitude wraps without a seam.
-vec3 opticalWeather(vec3 n,float lod){
+vec4 opticalWeatherField(vec3 n,float lod){
  vec2 uv=vec2(atan2(n.z,n.x)/6.283185+.5,acos(clamp(n.y,-1.,1.))/3.14159265);
  uv.y=uv.y*(63./64.)+.5/64.;
- return mix(texture2DLod(s_weatherField,uv,lod).rgb,texture2DLod(s_weatherNext,uv,lod).rgb,u_weather[1].x);
+ return mix(texture2DLod(s_weatherField,uv,lod),texture2DLod(s_weatherNext,uv,lod),u_weather[1].x);
 }
+vec3 opticalWeather(vec3 n,float lod){return opticalWeatherField(n,lod).rgb;}
 // Hyperion worldFragment's projected weather shadow, on the retained terrain
 // and buildings. Opaque structure shadows are still resolved independently.
 float weatherSun(vec3 position,vec3 eye,vec3 light){

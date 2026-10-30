@@ -413,9 +413,12 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
         }
     }
     if (!t.weather.empty() && !t.shrinking) {
-        card(h, {w - 310, 514, 286, 29}, ice);
+        const auto weatherColour = t.weatherSeverity > .5 ? amber : ice;
+        card(h, {w - 310, 514, 286, 29}, weatherColour);
         h.hitRegions.push_back({w - 310, 514, 286, 29});
-        fitted(h.lettering, t.weather, w - 296, 524, 258, 8.4, ice);
+        fitted(h.lettering, t.weather, w - 296, t.weatherDetail.empty() ? 524 : 519, 258, 8.4, weatherColour);
+        if (!t.weatherDetail.empty())
+            fitted(h.lettering, t.weatherDetail, w - 296, 533, 258, 7.5, weatherColour);
     }
 
     // Hyperion's separated navigation, instrument, scope and systems rails.

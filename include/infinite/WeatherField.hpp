@@ -4,7 +4,7 @@
 
 namespace infinite {
 // Read-only sampling of the existing weather, for GPU optical presentation.
-// R=cloud, G=storm, B=precipitation; no new procedural random stream.
+// R=cloud, G=storm, B=precipitation, A=dust; derived from the live weather recipe.
 struct WeatherField {
     static constexpr unsigned width = 128, height = 64;
     static constexpr size_t byteBudget = 43692;

@@ -17,6 +17,7 @@ class HyperionRenderer {
     void finish();
     void stellar(const StellarImage&, float aspect, float tanHalfFov);
     void landingContact(const Address&, glm::vec3 pointFromEye, glm::vec3 up, float radius, float strength);
+    void localWeather(const PlanetClimate&, const WeatherSample&, double seconds, bool enabled);
     void sky(const SpectralSky&, double visualTime, float aspect, float tanHalfFov);
     void atmosphere(glm::vec3 eye, glm::vec3 light, const glm::mat4& cameraToPlanet, float radiusRenderUnits,
                     float scaleHeightRatio, float strength, float aspect, float tanHalfFov, float phase,
@@ -72,6 +73,8 @@ class HyperionRenderer {
     }
 
   private:
+    bgfx::UniformHandle weatherVisualParams_ = BGFX_INVALID_HANDLE;
+    std::array<glm::vec4, 3> weatherVisualData_{};
     bgfx::UniformHandle landingParams_ = BGFX_INVALID_HANDLE;
     std::array<glm::vec4, 2> landingData_{};
     std::optional<Address> landingPlanet_;
@@ -117,7 +120,8 @@ class HyperionRenderer {
     glm::mat4 atmosphereMatrix_{1};
     bool readableDepth_ = false;
     bool flight_ = false;
-    bgfx::ProgramHandle flightGeometry_ = BGFX_INVALID_HANDLE, flightPost_ = BGFX_INVALID_HANDLE;
+    bgfx::ProgramHandle flightGeometry_ = BGFX_INVALID_HANDLE, flightPost_ = BGFX_INVALID_HANDLE,
+                        weatherPost_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle meso_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle micro_ = BGFX_INVALID_HANDLE, microParams_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle domain_ = BGFX_INVALID_HANDLE, skyParams_ = BGFX_INVALID_HANDLE,

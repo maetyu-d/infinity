@@ -19,6 +19,7 @@ WeatherField bakeWeatherField(const Node& planet, double seconds, const std::ato
     const auto climate = planetClimate(planet);
     if (!climate.solid || climate.pressureBar == 0)
         return field;
+    const WeatherSampler sampler(climate, seconds);
     field.pixels.reserve(WeatherField::byteBudget);
     for (unsigned y = 0; y < WeatherField::height; ++y) {
         if (cancel && cancel->load()) {
@@ -34,10 +35,9 @@ WeatherField bakeWeatherField(const Node& planet, double seconds, const std::ato
                     ? glm::dvec3(0, -1, 0)
                     : glm::dvec3(std::cos(latitude) * std::cos(longitude), std::sin(latitude),
                                  std::cos(latitude) * std::sin(longitude));
-            const auto sample = sampleWeather(climate, d, 0, seconds);
-            for (double value : {sample.cloud, sample.storm, sample.precipitation})
+            const auto sample = sampler.sample(d, 0);
+            for (double value : {sample.cloud, sample.storm, sample.precipitation, sample.dust})
                 field.pixels.push_back(uint8_t(std::lround(std::clamp(value, 0., 1.) * 255)));
-            field.pixels.push_back(255);
         }
     }
     size_t previous = 0;

@@ -10,12 +10,25 @@ void renderWeather(const Node& planet, glm::dvec3 localEye, const Navigation& na
     const double altitude = glm::length(localEye) - radius;
     if (glm::length(localEye) < 1 || glm::length(localEye) > radius * 8)
         return;
-    const auto weather = sampleWeather(climate, localEye, altitude, seconds);
-    char report[120];
-    std::snprintf(report, sizeof(report), "%s  %.0fK  %.2fBAR  WIND %.0fM/S",
-                  std::string(weatherName(weather.type)).c_str(), weather.temperatureK, weather.pressureBar,
-                  glm::length(weather.wind));
-    weatherReport = report;
+    const WeatherSampler sampler(climate, seconds);
+    const auto weather = sampler.sample(localEye, altitude);
+    if (altitude < weatherPriority) {
+        weatherPriority = altitude;
+        char report[120], detail[120];
+        std::snprintf(report, sizeof(report), "%s  %.0fK  %.2fBAR",
+                      std::string(weatherName(weather.type)).c_str(), weather.temperatureK,
+                      weather.pressureBar);
+        std::snprintf(detail, sizeof(detail), "WIND %.0f  GUST %.0fM/S  VIS %.1fKM",
+                      glm::length(weather.wind), weather.gustMetresPerSecond,
+                      weather.visibilityMetres / 1000.);
+        weatherReport = report;
+        weatherDetail = climate.pressureBar == 0     ? "NO ATMOSPHERE"
+                        : weather.pressureBar < 1e-5 ? "ABOVE WEATHER / LOCAL VACUUM"
+                                                     : detail;
+        weatherSeverity = std::max({weather.storm, 1 - weather.visibilityMetres / 5000.,
+                                    smoothstep(20., 50., weather.gustMetresPerSecond)});
+        hyperion->localWeather(climate, weather, seconds, weatherEffects);
+    }
     if (climate.pressureBar == 0)
         return;
     const auto pose = poseFor(planet.address, nav);
@@ -29,7 +42,8 @@ void renderWeather(const Node& planet, glm::dvec3 localEye, const Navigation& na
     // Latitude/longitude cells are evaluated in one continuous spherical field.
     // The poles share positions; camera proximity never changes a cell's seed.
     constexpr unsigned rings = 16, sectors = 32;
-    const double shellRadius = radius + climate.cloudHeightMetres;
+    const auto layers = weatherLayers(climate);
+    const double shellRadius = radius + layers.cloudBaseMetres;
     const auto direction = [](double latitude, double longitude) {
         return glm::dvec3(std::cos(latitude) * std::cos(longitude), std::sin(latitude),
                           std::cos(latitude) * std::sin(longitude));
@@ -57,7 +71,7 @@ void renderWeather(const Node& planet, glm::dvec3 localEye, const Navigation& na
                 continue;
             const auto first = uint32_t(clouds.vertices.size());
             for (auto q : {direction(a, x), direction(b, x), direction(b, z), direction(a, z)}) {
-                const auto sample = sampleWeather(climate, q, 0, seconds);
+                const auto sample = sampler.sample(q, 0);
                 const float alpha =
                     float(sample.cloud * .54 * std::min(1., climate.pressureBar * 2)) * legacyWeight;
                 const auto delta = pose.orientation * (q * shellRadius - localEye) / units;
@@ -106,17 +120,32 @@ void renderWeather(const Node& planet, glm::dvec3 localEye, const Navigation& na
             bgfx::submit(63, hyperion->cloudProgram());
         }
     }
-    if (!instruments || instruments->shrinking || altitude > climate.cloudHeightMetres || units < .1 ||
-        weather.precipitation < .06)
+    if (!weatherEffects || !instruments || instruments->shrinking || altitude > layers.cloudBaseMetres ||
+        units < .1 || weather.precipitation < .06)
         return;
-    Mesh precipitation, flakes;
-    const double cellSize = weather.type == WeatherType::Dust ? 18 : 9;
+    auto& precipitation = weatherRain;
+    auto& flakes = weatherFlakes;
+    precipitation.vertices.clear();
+    precipitation.indices.clear();
+    flakes.vertices.clear();
+    flakes.indices.clear();
+    // Reuse a bounded optical mesh; dense precipitation does not repeatedly
+    // grow temporary vertex/index vectors on the rendering thread.
+    flakes.vertices.reserve(384 * 9);
+    flakes.indices.reserve(384 * 24);
+    const bool originalWeather = mode == RenderMode::Original;
+    const double cellSize = weather.type == WeatherType::Dust   ? 12
+                            : weather.type == WeatherType::Snow ? 8
+                                                                : 6;
     const auto cell = glm::floor(localEye / cellSize);
     const glm::dvec3 down = -glm::normalize(localEye);
-    for (unsigned i = 0; i < 343 && stats.weatherParticles < 96; i++) {
-        const auto grid = cell + glm::dvec3(int(i % 7) - 3, int(i / 7 % 7) - 3, int(i / 49) - 3);
-        const auto hash = mix64(climate.seed ^ uint64_t(int64_t(grid.x)) ^ mix64(uint64_t(int64_t(grid.y))) ^
-                                mix64(uint64_t(int64_t(grid.z))));
+    const auto flutterFrame = tangentFrame(-down);
+    const unsigned limit = originalWeather ? 96 : unsigned(160 + std::min(1., weather.precipitation) * 224);
+    for (unsigned i = 0; i < 1331 && stats.weatherParticles < limit; i++) {
+        const auto grid = cell + glm::dvec3(int(i % 11) - 5, int(i / 11 % 11) - 5, int(i / 121) - 5);
+        const auto hash =
+            mix64(mix64(mix64(climate.seed ^ uint64_t(int64_t(grid.x))) ^ uint64_t(int64_t(grid.y))) ^
+                  uint64_t(int64_t(grid.z)));
         const Random local{hash};
         auto point = (grid + glm::dvec3(local.unit(0), local.unit(1), local.unit(2))) * cellSize;
         const double fallSpeed = weather.type == WeatherType::Snow   ? 1.4
@@ -124,25 +153,41 @@ void renderWeather(const Node& planet, glm::dvec3 localEye, const Navigation& na
                                                                      : 18;
         const double phase = std::fmod(seconds * fallSpeed + local.unit(3) * cellSize, cellSize);
         point += down * phase + weather.wind * (phase / std::max(1., fallSpeed) * .1);
+        if (weather.type == WeatherType::Snow || weather.type == WeatherType::Dust) {
+            const double sway = weather.type == WeatherType::Snow ? .4 : 1.8;
+            point += flutterFrame * glm::dvec3(std::sin(seconds * .8 + local.unit(5) * 6.28) * sway, 0,
+                                               std::cos(seconds * .57 + local.unit(6) * 6.28) * sway);
+        }
+        const double distance = glm::length(point - localEye);
+        const float fade = float(1 - smoothstep(cellSize * 4, cellSize * 5, distance));
+        if (fade < .01f)
+            continue;
         const auto delta = pose.orientation * (point - localEye) / units;
         if ((cameraInverse * delta).z >= -.00005 || glm::length(delta) > 10000 ||
             !LOD::visible(cameraInverse * delta, .2 / units, double(width) / height, fieldOfView))
             continue;
         const auto tint =
             weather.type == WeatherType::Dust ? glm::vec3(.72, .43, .25) : glm::vec3(.54, .75, .86);
-        const auto tail = pose.orientation *
-                          (down * (weather.type == WeatherType::Snow ? .2 : 2.) + weather.wind * .04) / units;
+        auto tail = pose.orientation *
+                    (down * (weather.type == WeatherType::Snow ? .2 : 2.) + weather.wind * .04) / units;
+        if (!originalWeather && weather.type != WeatherType::Snow && weather.type != WeatherType::Dust) {
+            auto motion = (pose.orientation * (down * fallSpeed + weather.wind) -
+                           cameraQ * instruments->localVelocity) *
+                          .065;
+            motion *= std::min(1., 12. / std::max(1e-9, glm::length(motion)));
+            tail = motion / units;
+        }
         if (weather.type == WeatherType::Snow || weather.type == WeatherType::Dust) {
             const double physicalRadius =
-                weather.type == WeatherType::Snow ? .035 + local.unit(4) * .055 : .12 + local.unit(4) * .18;
-            const double pixelRadius = weather.type == WeatherType::Snow ? 2.5 : 7.;
+                weather.type == WeatherType::Snow ? .05 + local.unit(4) * .075 : .25 + local.unit(4) * .55;
+            const double pixelRadius = weather.type == WeatherType::Snow ? 3.5 : 10.;
             const double r =
                 std::min(physicalRadius, glm::length(point - localEye) *
                                              (2 * std::tan(fieldOfView * .5) / height) * pixelRadius);
             const auto right = cameraQ * glm::dvec3(r, 0, 0) / units,
                        up = cameraQ * glm::dvec3(0, r, 0) / units;
             const auto color = weather.type == WeatherType::Snow ? glm::vec3(.9, .96, 1) : tint;
-            const float alpha = weather.type == WeatherType::Snow ? .8f : .18f;
+            const float alpha = (weather.type == WeatherType::Snow ? .85f : .22f) * fade;
             const auto first = uint32_t(flakes.vertices.size());
             flakes.vertices.push_back({float(delta.x), float(delta.y), float(delta.z), rgba(color, alpha)});
             for (unsigned vertex = 0; vertex < 8; vertex++) {
@@ -153,9 +198,26 @@ void renderWeather(const Node& planet, glm::dvec3 localEye, const Navigation& na
             for (unsigned vertex = 0; vertex < 8; vertex++)
                 flakes.indices.insert(flakes.indices.end(),
                                       {first, first + 1 + vertex, first + 1 + (vertex + 1) % 8});
-        } else
-            addLine(precipitation, delta, delta + tail,
-                    tint * float(.6 + std::min(1., weather.precipitation) * .4));
+        } else if (originalWeather)
+            addLine(precipitation, delta, delta + tail, tint * fade);
+        else {
+            // Motion-blurred rain ribbons stay legible on Retina displays.
+            // Their endpoints remain in the same physical, wind-driven cells.
+            const double pixel = distance * 2 * std::tan(fieldOfView * .5) / height;
+            const double widthMetres = std::clamp(.008, pixel * .50, pixel * 1.15);
+            const auto sideways = glm::cross(tail, cameraQ * glm::dvec3(0, 0, 1));
+            const auto across =
+                (glm::length(sideways) > 1e-15 ? glm::normalize(sideways) : cameraQ * glm::dvec3(1, 0, 0)) *
+                (widthMetres / units);
+            const uint32_t first = uint32_t(flakes.vertices.size());
+            const auto colour =
+                rgba(glm::vec3(.56, .78, .94), fade * float(.42 + weather.precipitation * .25));
+            for (const auto p :
+                 {delta - across, delta + across, delta + tail + across, delta + tail - across})
+                flakes.vertices.push_back({float(p.x), float(p.y), float(p.z), colour});
+            flakes.indices.insert(flakes.indices.end(),
+                                  {first, first + 1, first + 2, first, first + 2, first + 3});
+        }
         ++stats.weatherParticles;
     }
     transient(precipitation, 63, true, false, true, false, true);

@@ -1,0 +1,17 @@
+{
+  "metal": {
+    "identical": true,
+    "baseline_sha256": "a0125e74622bd4cf968585e37d70f61cf1714163f46664acc40758d7ba047a82",
+    "final_sha256": "a0125e74622bd4cf968585e37d70f61cf1714163f46664acc40758d7ba047a82"
+  },
+  "glsl": {
+    "identical": true,
+    "baseline_sha256": "3a7a76cef74d763be41398a3b0b0158e574e1dd4e3f6975a656005ae37bb209f",
+    "final_sha256": "3a7a76cef74d763be41398a3b0b0158e574e1dd4e3f6975a656005ae37bb209f"
+  },
+  "spirv": {
+    "identical": true,
+    "baseline_sha256": "977097347c7fe2b7a02486ca2d4b5422d96204ee3e7648a0c658139ebf910f27",
+    "final_sha256": "977097347c7fe2b7a02486ca2d4b5422d96204ee3e7648a0c658139ebf910f27"
+  }
+}

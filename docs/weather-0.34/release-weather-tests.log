@@ -1,0 +1,9 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 31: native_weather_visibility
+1/2 Test #31: native_weather_visibility ..........   Passed   56.54 sec
+    Start 32: native_weather_visibility_images
+2/2 Test #32: native_weather_visibility_images ...   Passed    6.80 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =  63.34 sec

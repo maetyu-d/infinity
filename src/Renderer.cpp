@@ -126,6 +126,7 @@ struct Renderer::Impl {
     bool cloudVolumes = true;
     bool stellarOptics = true;
     bool landingShade = true;
+    bool weatherEffects = true;
     float stellarExposure = 1;
     std::shared_ptr<const Geometry> skyGeometry;
     std::vector<CelestialContact> contacts;
@@ -140,6 +141,9 @@ struct Renderer::Impl {
     std::array<std::array<GPUMesh, 3>, size_t(SurfaceMesh::Count)> surfaceMeshes;
     size_t surfaceMeshBytes = 0;
     std::string weatherReport;
+    std::string weatherDetail;
+    Mesh weatherRain, weatherFlakes;
+    double weatherSeverity = 0, weatherPriority = 1e100;
     std::unique_ptr<HyperionRenderer> hyperion;
     RenderMode mode = RenderMode::Original;
     double visualTime = 0, fixedVisualTime = -1;
@@ -1351,6 +1355,9 @@ void Renderer::setStellarOptics(bool enabled) {
 void Renderer::setLandingShade(bool enabled) {
     impl_->landingShade = enabled;
 }
+void Renderer::setWeatherEffects(bool enabled) {
+    impl_->weatherEffects = enabled;
+}
 void Renderer::setCloudVolumes(bool enabled) {
     impl_->cloudVolumes = enabled;
 }
@@ -1385,6 +1392,9 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     p.stats = {};
     p.surfaceLife.beginFrame();
     p.weatherReport.clear();
+    p.weatherDetail.clear();
+    p.weatherSeverity = 0;
+    p.weatherPriority = 1e100;
     p.staticUploadBytes = 0;
     p.picks.clear();
     p.billboards.clear();
@@ -1423,26 +1433,42 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                 return n.address.kind() == Kind::Planet && planetClimate(n).pressureBar > .015;
             });
     p.hyperion->begin(p.mode, p.width, p.height, bool(p.instruments) || opticalDepth, bool(p.instruments));
+    const Node* opticalPlanet = nullptr;
+    double opticalDistance = 1e100;
     if (p.mode != RenderMode::Original && nav.anchor.kind() < Kind::Rock &&
-        (!p.instruments || !p.instruments->shrinking))
-        for (const auto& planet : nodes)
-            if (planet.address.kind() == Kind::Planet && hasSolidSurface(planet)) {
-                const auto climate = planetClimate(planet);
-                const auto pose = p.poseFor(planet.address, nav);
-                const double physicalRadius = std::pow(10., planet.frame.logRadius),
-                             units = std::pow(10., nav.logDistance);
-                const auto localEye =
-                    glm::inverse(pose.orientation) * (p.eye - pose.position) * units / physicalRadius;
-                if (glm::length(localEye) > .99 && glm::length(localEye) < 8 &&
-                    climate.pressureBar * 288 / std::max(60., climate.temperatureK) > .01) {
-                    glm::dmat4 mapping(glm::mat3_cast(glm::inverse(pose.orientation)) *
-                                       (units / physicalRadius));
-                    mapping[3] = glm::dvec4(localEye, 1);
-                    p.hyperion->prepareWeather(planet, mapping,
-                                               p.activity ? p.activity->seconds : p.visualTime,
-                                               p.frameSeconds, p.cloudVolumes, p.fixedVisualTime >= 0);
-                }
+        (!p.instruments || !p.instruments->shrinking)) {
+        for (const auto& planet : nodes) {
+            if (planet.address.kind() != Kind::Planet || !hasSolidSurface(planet))
+                continue;
+            const auto climate = planetClimate(planet);
+            const auto pose = p.poseFor(planet.address, nav);
+            const double radius = std::pow(10., planet.frame.logRadius),
+                         units = std::pow(10., nav.logDistance);
+            const auto localEye = glm::inverse(pose.orientation) * (p.eye - pose.position) * units / radius;
+            const double distance = (glm::length(localEye) - 1) * radius;
+            if (glm::length(localEye) > .99 && glm::length(localEye) < 8 && distance < opticalDistance &&
+                climate.pressureBar * 288 / std::max(60., climate.temperatureK) > .01) {
+                opticalPlanet = &planet;
+                opticalDistance = distance;
             }
+        }
+        if (opticalPlanet) {
+            const auto pose = p.poseFor(opticalPlanet->address, nav);
+            const double radius = std::pow(10., opticalPlanet->frame.logRadius),
+                         units = std::pow(10., nav.logDistance);
+            const auto localEye = glm::inverse(pose.orientation) * (p.eye - pose.position) * units / radius;
+            glm::dmat4 mapping(glm::mat3_cast(glm::inverse(pose.orientation)) * (units / radius));
+            mapping[3] = glm::dvec4(localEye, 1);
+            p.hyperion->prepareWeather(*opticalPlanet, mapping,
+                                       p.activity ? p.activity->seconds : p.visualTime, p.frameSeconds,
+                                       p.cloudVolumes, p.fixedVisualTime >= 0);
+            const double seconds = p.activity ? p.activity->seconds : p.visualTime;
+            const auto climate = planetClimate(*opticalPlanet);
+            p.hyperion->localWeather(
+                climate, sampleWeather(climate, localEye, (glm::length(localEye) - 1) * radius, seconds),
+                seconds, p.weatherEffects);
+        }
+    }
     p.staticUploadBytes += p.hyperion->materialUploadBytes();
     p.stats.uploadBytes += p.hyperion->materialUploadBytes();
     bgfx::setViewMode(0,
@@ -1751,7 +1777,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     }
     if (opticalDepth && p.mode != RenderMode::Original) {
         for (const auto& planet : nodes)
-            if (planet.address.kind() == Kind::Planet) {
+            if (opticalPlanet && planet.address == opticalPlanet->address) {
                 const auto pose = p.poseFor(planet.address, nav);
                 const double radius = std::pow(10., planet.frame.logRadius - nav.logDistance);
                 const auto localEye = glm::inverse(pose.orientation) * (p.eye - pose.position) / radius;
@@ -1824,6 +1850,8 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         const double aspect = viewport.aspect();
         auto cockpit = *p.instruments;
         cockpit.weather = p.weatherReport;
+        cockpit.weatherDetail = p.weatherDetail;
+        cockpit.weatherSeverity = p.weatherSeverity;
         const auto hud = cockpitOverlay(cockpit, aspect, renderModeName(p.mode), notice, p.contacts,
                                         p.activityContacts, p.cockpitHelp, viewport.projectionScale);
         p.cockpitHitRegions = hud.hitRegions;

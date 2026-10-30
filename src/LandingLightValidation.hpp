@@ -34,6 +34,7 @@ class LandingLightValidation {
         renderer.setStellarOptics(false);
         renderer.setPolarLights(false);
         renderer.setCloudVolumes(false);
+        renderer.setWeatherEffects(false);
     }
     void observe(const FrameStats& stats, RegionCache& cache, Renderer& renderer, const std::string& dir) {
         ++frames_;

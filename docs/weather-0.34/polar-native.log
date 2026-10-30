@@ -1,0 +1,20 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+POLAR_OPTICS scene=night sample=0 geometry=9011686554674910669 terrain=18284667101513644803 log=6.66817 frame=576 camera=unchanged
+POLAR_OPTICS scene=night sample=1 geometry=9011686554674910669 terrain=18284667101513644803 log=6.66817 frame=607 camera=unchanged
+POLAR_OPTICS scene=night sample=2 geometry=9011686554674910669 terrain=18284667101513644803 log=5.66817 frame=638 camera=unchanged
+POLAR_OPTICS scene=day sample=0 geometry=18323162104142898796 terrain=13787883267152996020 log=6.66817 frame=763 camera=unchanged
+POLAR_OPTICS scene=day sample=1 geometry=18323162104142898796 terrain=13787883267152996020 log=6.66817 frame=794 camera=unchanged
+POLAR_OPTICS scene=day sample=2 geometry=18323162104142898796 terrain=13787883267152996020 log=5.66817 frame=825 camera=unchanged
+POLAR_OPTICS scene=ground sample=0 geometry=9011686554674910669 terrain=18212284844961485497 log=3 frame=1266 camera=unchanged
+POLAR_OPTICS scene=ground sample=1 geometry=9011686554674910669 terrain=18212284844961485497 log=3 frame=1297 camera=unchanged
+POLAR_OPTICS scene=ground sample=2 geometry=9011686554674910669 terrain=18212284844961485497 log=4 frame=1328 camera=unchanged
+POLAR_OPTICS scene=blocked sample=0 geometry=9011686554674910669 terrain=18212284844961485497 log=3 frame=1359 camera=unchanged
+POLAR_OPTICS scene=blocked sample=1 geometry=9011686554674910669 terrain=18212284844961485497 log=3 frame=1390 camera=unchanged
+POLAR_OPTICS scene=blocked sample=2 geometry=9011686554674910669 terrain=18212284844961485497 log=4 frame=1421 camera=unchanged
+POLAR_OPTICS scene=airless sample=0 geometry=5687690906250954712 terrain=2410301408068931032 log=7.0141 frame=1852 camera=unchanged
+POLAR_OPTICS scene=airless sample=1 geometry=5687690906250954712 terrain=2410301408068931032 log=7.0141 frame=1883 camera=unchanged
+POLAR_OPTICS scene=airless sample=2 geometry=5687690906250954712 terrain=2410301408068931032 log=6.0141 frame=1914 camera=unchanged
+PASS: polar optics / night, day, ground, blocked and airless / opaque depth / magnification / unchanged geometry
+FRAME median_ms=37.196 p95_ms=77.6462 frames=1921 cache_bytes=10516832
+peak_rss_bytes=130727936
