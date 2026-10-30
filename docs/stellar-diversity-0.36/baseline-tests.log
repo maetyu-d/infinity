@@ -1,0 +1,69 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+      Start 31: continuity_restart_write
+      Start 28: persistence_process_write
+ 1/32 Test #28: persistence_process_write ............   Passed    0.04 sec
+      Start  9: planetary_weather_and_surface_life
+ 2/32 Test #31: continuity_restart_write .............   Passed    1.09 sec
+      Start 30: cross_scale_round_trip
+ 3/32 Test #30: cross_scale_round_trip ...............   Passed    7.72 sec
+      Start 15: persistent_orbital_activity
+ 4/32 Test  #9: planetary_weather_and_surface_life ...   Passed    8.82 sec
+      Start 20: seamless_scale_flight
+ 5/32 Test #20: seamless_scale_flight ................   Passed    3.48 sec
+      Start 19: unbounded_spatial_streaming
+ 6/32 Test #15: persistent_orbital_activity ..........   Passed    3.92 sec
+      Start  8: procedural_city_structure
+ 7/32 Test  #8: procedural_city_structure ............   Passed    1.33 sec
+      Start 14: established_world_preservation
+ 8/32 Test #14: established_world_preservation .......   Passed    0.21 sec
+      Start 16: operating_regimes_and_shrinking
+ 9/32 Test #19: unbounded_spatial_streaming ..........   Passed    2.43 sec
+      Start  7: surface_site_preservation
+10/32 Test #16: operating_regimes_and_shrinking ......   Passed    1.84 sec
+      Start 24: rendering_preserves_universe
+11/32 Test  #7: surface_site_preservation ............   Passed    1.78 sec
+      Start  2: planetary_weather_processes
+12/32 Test  #2: planetary_weather_processes ..........   Passed    0.04 sec
+      Start 12: planetary_population_and_moons
+13/32 Test #12: planetary_population_and_moons .......   Passed    0.50 sec
+      Start  1: planetary_type_diversity
+14/32 Test  #1: planetary_type_diversity .............   Passed    0.22 sec
+      Start 17: ship_dynamics_and_landing
+15/32 Test #17: ship_dynamics_and_landing ............   Passed    0.76 sec
+      Start 26: structural_processes
+16/32 Test #24: rendering_preserves_universe .........   Passed    1.98 sec
+      Start  4: read_only_weather_optics
+17/32 Test  #4: read_only_weather_optics .............   Passed    0.08 sec
+      Start  3: addressed_stellar_optics
+18/32 Test  #3: addressed_stellar_optics .............   Passed    0.10 sec
+      Start 32: continuity_restart_read
+19/32 Test #26: structural_processes .................   Passed    0.65 sec
+      Start 10: solid_planet_local_terrain
+20/32 Test #32: continuity_restart_read ..............   Passed    0.78 sec
+      Start 25: performance_invariants
+21/32 Test #10: solid_planet_local_terrain ...........   Passed    0.39 sec
+      Start 22: filtered_material_texture
+22/32 Test #25: performance_invariants ...............   Passed    0.22 sec
+      Start  5: window_fits_display_work_area
+23/32 Test  #5: window_fits_display_work_area ........   Passed    0.00 sec
+      Start 18: ship_handling_and_roll
+24/32 Test #22: filtered_material_texture ............   Passed    0.21 sec
+      Start  6: multiscale_depth_precision
+25/32 Test  #6: multiscale_depth_precision ...........   Passed    0.01 sec
+      Start 11: cockpit_layout_and_targeting
+26/32 Test #11: cockpit_layout_and_targeting .........   Passed    0.10 sec
+      Start 13: legacy_population_preservation
+27/32 Test #18: ship_handling_and_roll ...............   Passed    0.21 sec
+      Start 23: surface_shading_preserves_mesh
+28/32 Test #23: surface_shading_preserves_mesh .......   Passed    0.01 sec
+      Start 21: free_flight_navigation
+29/32 Test #21: free_flight_navigation ...............   Passed    0.02 sec
+      Start 27: universe_regressions
+30/32 Test #13: legacy_population_preservation .......   Passed    0.22 sec
+      Start 29: persistence_process_read
+31/32 Test #29: persistence_process_read .............   Passed    0.02 sec
+32/32 Test #27: universe_regressions .................   Passed    0.25 sec
+
+100% tests passed, 0 tests failed out of 32
+
+Total Test time (real) =  19.80 sec

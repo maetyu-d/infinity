@@ -6,6 +6,7 @@
 #include "PlanetDiversityValidation.hpp"
 #include "PlanetValidation.hpp"
 #include "PolarValidation.hpp"
+#include "StellarDiversityValidation.hpp"
 #include "StreamingValidation.hpp"
 #include "SurfaceValidation.hpp"
 #include "TerrainValidation.hpp"
@@ -42,7 +43,7 @@ struct Options {
     bool compareModes = false;
     bool flightTest = false, planetTest = false, uiFitTest = false, polarTest = false, cloudTest = false,
          celestialTest = false, celestialSunOnly = false, landingLightTest = false, weatherTest = false,
-         diversityTest = false;
+         diversityTest = false, stellarDiversityTest = false;
     bool streamingTest = false;
     bool terrainQuality = false, terrainSurfaceFrame = false, sunShadows = true;
     bool pilotTest = false, terrainTest = false, surfaceTest = false, explicitMode = false;
@@ -64,7 +65,10 @@ static Options options(int argc, char** argv) {
             o.smoke = o.tour = o.fresh = true;
         else if (arg == "--benchmark-tour")
             o.benchmark = o.smoke = o.tour = o.fresh = true;
-        else if (arg == "--planet-diversity-test") {
+        else if (arg == "--stellar-diversity-test") {
+            o.stellarDiversityTest = o.benchmark = o.smoke = o.fresh = true;
+            o.visualTime = 12;
+        } else if (arg == "--planet-diversity-test") {
             o.diversityTest = o.benchmark = o.smoke = o.fresh = true;
             o.visualTime = 12;
         } else if (arg == "--weather-visibility-test") {
@@ -151,7 +155,8 @@ static Options options(int argc, char** argv) {
                    "--height N --seed N "
                    "--benchmark-tour --flight-test --streaming-test --pilot-test --planet-stability-test "
                    "--ui-fit-test --polar-optics-test --cloud-volume-test --celestial-graphics-test "
-                   "--stellar-sun-test --landing-light-test --weather-visibility-test "
+                   "--stellar-diversity-test --stellar-sun-test --landing-light-test "
+                   "--weather-visibility-test "
                    "--planet-diversity-test "
                    "--terrain-test "
                    "--surface-test --terrain-quality-test --terrain-surface-frame-test "
@@ -175,7 +180,7 @@ static Options options(int argc, char** argv) {
         unsigned(o.flightTest) + unsigned(o.streamingTest) + unsigned(o.pilotTest) + unsigned(o.terrainTest) +
         unsigned(o.surfaceTest) + unsigned(o.planetTest) + unsigned(o.uiFitTest) + unsigned(o.polarTest) +
         unsigned(o.cloudTest) + unsigned(o.celestialTest) + unsigned(o.landingLightTest) +
-        unsigned(o.weatherTest) + unsigned(o.diversityTest);
+        unsigned(o.weatherTest) + unsigned(o.diversityTest) + unsigned(o.stellarDiversityTest);
     if (validationModes > 1 || (validationModes && o.tour))
         throw std::invalid_argument("Choose one automated validation mode");
     if (o.width < 320 || o.height < 240 || o.width > 7680 || o.height > 4320 || o.frames < 0)
@@ -217,7 +222,7 @@ int main(int argc, char** argv) {
         bool pilotEnabled = (!opt.smoke && !opt.tour) || opt.pilotTest || opt.terrainTest ||
                             opt.surfaceTest || opt.planetTest || opt.uiFitTest || opt.polarTest ||
                             opt.cloudTest || opt.celestialTest || opt.landingLightTest || opt.weatherTest ||
-                            opt.diversityTest;
+                            opt.diversityTest || opt.stellarDiversityTest;
         std::unique_ptr<FlightValidation> flightProof;
         if (opt.flightTest)
             flightProof = std::make_unique<FlightValidation>(universe, nav);
@@ -324,6 +329,10 @@ int main(int argc, char** argv) {
             std::unique_ptr<WeatherValidation> weatherProof;
             if (opt.weatherTest)
                 weatherProof = std::make_unique<WeatherValidation>(universe, nav, pilot, activity);
+            std::unique_ptr<StellarDiversityValidation> stellarDiversityProof;
+            if (opt.stellarDiversityTest)
+                stellarDiversityProof =
+                    std::make_unique<StellarDiversityValidation>(universe, nav, pilot, activity);
             std::unique_ptr<PlanetDiversityValidation> diversityProof;
             if (opt.diversityTest)
                 diversityProof = std::make_unique<PlanetDiversityValidation>(universe, nav, pilot, activity);
@@ -566,8 +575,12 @@ int main(int argc, char** argv) {
                                 pilot.toggleAssist();
                             break;
                         case SDL_SCANCODE_N:
-                            if (pilotEnabled)
-                                pilot.toggleCruise();
+                            if (pilotEnabled) {
+                                if (event.key.mod & SDL_KMOD_SHIFT)
+                                    pilot.selectNextStar();
+                                else
+                                    pilot.toggleCruise();
+                            }
                             break;
                         case SDL_SCANCODE_G:
                             if (pilotEnabled)
@@ -803,6 +816,8 @@ int main(int argc, char** argv) {
                     landingLightProof->advance(renderer);
                 if (weatherProof)
                     weatherProof->advance(renderer);
+                if (stellarDiversityProof)
+                    stellarDiversityProof->advance(renderer);
                 if (diversityProof)
                     diversityProof->advance(renderer);
                 renderer.setCockpit(pilotEnabled ? &pilot.instruments() : nullptr);
@@ -864,6 +879,11 @@ int main(int argc, char** argv) {
                 if (weatherProof) {
                     weatherProof->observe(stats, cache, renderer, opt.captures);
                     if (weatherProof->finished())
+                        running = false;
+                }
+                if (stellarDiversityProof) {
+                    stellarDiversityProof->observe(stats, cache, renderer, opt.captures);
+                    if (stellarDiversityProof->finished())
                         running = false;
                 }
                 if (diversityProof) {
@@ -1006,11 +1026,12 @@ int main(int argc, char** argv) {
                 if (opt.frames > 0 && frame >= opt.frames)
                     running = false;
                 if (opt.smoke && std::chrono::duration<double>(now - start).count() >
-                                     (opt.diversityTest ? 360
+                                     (opt.diversityTest || opt.stellarDiversityTest ? 360
                                       : opt.celestialTest || opt.weatherTest || opt.cloudTest ||
                                               opt.polarTest || opt.surfaceTest
                                           ? 210
-                                          : 100))
+                                      : opt.pilotTest ? 180
+                                                      : 100))
                     throw std::runtime_error("Native GPU tour timed out before completion");
                 if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED)
                     std::this_thread::sleep_for(std::chrono::milliseconds(25));
@@ -1057,7 +1078,10 @@ int main(int argc, char** argv) {
             std::cout << "peak_rss_bytes=" << usage.ru_maxrss * 1024 << '\n';
 #endif
 #endif
-            if (opt.diversityTest) {
+            if (opt.stellarDiversityTest) {
+                if (!stellarDiversityProof->finished())
+                    throw std::runtime_error("Stellar diversity gallery incomplete");
+            } else if (opt.diversityTest) {
                 if (!diversityProof->finished())
                     throw std::runtime_error("Planet diversity fixture incomplete");
             } else if (opt.weatherTest) {

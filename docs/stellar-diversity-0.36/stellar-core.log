@@ -1,0 +1,14 @@
+BROWN_SPECTRAL L
+BROWN_SPECTRAL T
+BROWN_SPECTRAL Y
+Main sequence=1200
+Protostar=80
+Red giant=120
+Red supergiant=72
+Blue supergiant=72
+Wolf-Rayet=72
+White dwarf=364
+Neutron star=108
+Brown dwarf=108
+Carbon giant=108
+PASS: 57099 stellar evolution, spectral, population, planetary inheritance and identity checks

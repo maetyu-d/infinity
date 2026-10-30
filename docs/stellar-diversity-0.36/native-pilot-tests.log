@@ -1,0 +1,9 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 65: native_piloting_loop
+1/2 Test #65: native_piloting_loop .............   Passed  103.14 sec
+    Start 66: native_cockpit_images
+2/2 Test #66: native_cockpit_images ............   Passed   17.58 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) = 120.86 sec

@@ -1,5 +1,6 @@
 #include "infinite/Navigation.hpp"
 #include "infinite/Presentation.hpp"
+#include "infinite/StellarEvolution.hpp"
 #include <algorithm>
 #include <cmath>
 #include <numbers>
@@ -55,7 +56,11 @@ StellarImage extractStellarImage(const Universe& universe, const Navigation& nav
     image.direction = glm::inverse(nav.orientation) * localDirection;
     image.distanceMetres = distance * units;
     image.angularRadius = std::asin(std::clamp(radius / distance, 0., 1.));
-    image.color = stellarColor(star->temperatureK);
+    image.color = stellarRadiance(*star);
+    image.starType = stellarPresentation(*star);
+    image.cameraToStar =
+        glm::inverse(universe.relative(star->address, nav.anchor, nav.logDistance).orientation) *
+        nav.orientation;
     image.nearDepthUnits = std::max(0., -image.direction.z) * (distance - radius);
     image.visibility =
         image.direction.z < 0

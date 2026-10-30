@@ -122,6 +122,7 @@ struct Orbit {
     double semiMajorMetres = 1, eccentricity = 0, phase = 0, inclination = 0, centralMassSolar = 1;
 };
 glm::dvec3 keplerPosition(const Orbit&, double seconds);
+struct StellarProcess;
 struct Node {
     Address address;
     uint64_t seed = 0;
@@ -130,6 +131,7 @@ struct Node {
     std::array<Event, 6> history{};
     // Physical descriptors, rather than visual-only random parameters.
     double massSolar = 1, temperatureK = 5772, luminositySolar = 1, stellarRadiusMetres = 6.957e8;
+    std::shared_ptr<const StellarProcess> stellar;
     Orbit orbit;
     unsigned companions = 0;
     bool expandedPopulation = false;

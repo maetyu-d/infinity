@@ -1,5 +1,6 @@
 #include "infinite/Universe.hpp"
 #include "infinite/Planetology.hpp"
+#include "infinite/StellarEvolution.hpp"
 #include <algorithm>
 #include <bit>
 #include <cmath>
@@ -56,6 +57,12 @@ glm::vec3 stellarColor(double temperatureK) {
                     static_cast<float>(std::clamp((temperatureK - 3000) / 7000, 0.0, 1.0)));
 }
 std::string Node::label() const {
+    if (address.kind() == Kind::System && stellar)
+        return std::string(stellarKindName(stellar->kind)) + " " +
+               (stellar->kind == StellarKind::MainSequence || stellar->kind == StellarKind::BrownDwarf
+                    ? spectralClass(temperatureK, stellar->kind == StellarKind::BrownDwarf) + " "
+                    : "") +
+               std::to_string(seed % 100000);
     if (address.kind() == Kind::Planet && !hasSolidSurface(*this)) {
         const auto t = planetTraits(*this);
         return std::string(thermalTypeName(t.thermal)) + " " + std::string(planetTypeName(t.type)) + " " +
@@ -86,12 +93,18 @@ uint64_t moonPrimary(uint64_t id) {
 unsigned Universe::legacyPlanetCount(const Node& system) const {
     if (system.address.kind() != Kind::System)
         throw std::invalid_argument("Expected a system");
+    if (system.stellar && !system.stellar->maturePlanets)
+        return 0;
     return unsigned(5 + system.seed % 5);
 }
 unsigned Universe::establishedPlanetCount(const Node& system) const {
+    if (system.stellar && !system.stellar->maturePlanets)
+        return 0;
     return legacyPlanetCount(system) + 8 + unsigned(mix64(system.seed ^ 0x504f50554c415445ULL) % 5);
 }
 unsigned Universe::planetCount(const Node& system) const {
+    if (system.stellar && !system.stellar->maturePlanets)
+        return 0;
     return establishedPlanetCount(system) + giantPopulationCount;
 }
 namespace {
@@ -109,6 +122,8 @@ std::shared_ptr<const std::vector<Orbit>> Universe::planetOrbits(const Node& sys
             return it->second;
     }
     auto orbits = std::make_shared<std::vector<Orbit>>();
+    if (!planetCount(system))
+        return orbits;
     std::vector<Node> old;
     const unsigned legacy = legacyPlanetCount(system), total = establishedPlanetCount(system);
     for (unsigned i = 0; i < legacy; i++) {
@@ -126,8 +141,10 @@ std::shared_ptr<const std::vector<Orbit>> Universe::planetOrbits(const Node& sys
         Random r{childSeed(system.seed, Kind::Planet, id)};
         double a = 0, e = .004 + r.unit(2) * .012;
         if (slot < 3) {
-            const double lo = std::max(system.stellarRadiusMetres * (system.companions ? 32 : 8),
-                                       .04 * std::sqrt(system.luminositySolar) * 1.495978707e11);
+            const double lo = system.stellar
+                                  ? stellarDiscInnerAu(system) * 1.495978707e11
+                                  : std::max(system.stellarRadiusMetres * (system.companions ? 32 : 8),
+                                             .04 * std::sqrt(system.luminositySolar) * 1.495978707e11);
             const double hi = old.front().orbit.semiMajorMetres * (1 - old.front().orbit.eccentricity) -
                               5 * hill(old.front());
             if (hi > lo * 2)
@@ -155,7 +172,7 @@ std::shared_ptr<const std::vector<Orbit>> Universe::planetOrbits(const Node& sys
         const unsigned id = total + slot;
         const uint64_t seed = childSeed(system.seed, Kind::Planet, id);
         const Random r{featureSeed(seed, Feature::PlanetEnvelope, planetDiversityRecipeVersion)};
-        const auto formation = giantFormation(seed, slot);
+        const auto formation = giantFormation(seed, slot, system.massSolar);
         const double mass = 4.188790204786391 * formation.density * std::pow(formation.radiusMetres, 3);
         const double starMass = system.massSolar * 1.98847e30;
         const double e = .004 + .016 * r.unit(3);
@@ -167,8 +184,8 @@ std::shared_ptr<const std::vector<Orbit>> Universe::planetOrbits(const Node& sys
                        : i < total
                            ? 4.188790204786391 * 7874. * std::pow(10., 3 * 6.45)
                            : [&] {
-                                 const auto f =
-                                     giantFormation(childSeed(system.seed, Kind::Planet, i), i - total);
+                                 const auto f = giantFormation(childSeed(system.seed, Kind::Planet, i),
+                                                               i - total, system.massSolar);
                                  return 4.188790204786391 * f.density * std::pow(f.radiusMetres, 3);
                              }();
             if (o.semiMajorMetres * (1 - o.eccentricity) < innerEdge) {
@@ -187,7 +204,10 @@ std::shared_ptr<const std::vector<Orbit>> Universe::planetOrbits(const Node& sys
         if (slot == 2 && !system.companions) {
             const double innerMargin = 2.5 * std::cbrt((mass + innerMass) / (3 * starMass));
             const double hi = (innerEdge - innerMargin * innerA) / (1 + e + innerMargin);
-            const double lo = std::max(system.stellarRadiusMetres * 4., formation.radiusMetres * 5.);
+            const double lo =
+                system.stellar
+                    ? std::max(stellarDiscInnerAu(system) * 1.495978707e11, formation.radiusMetres * 5.)
+                    : std::max(system.stellarRadiusMetres * 4., formation.radiusMetres * 5.);
             if (hi > lo * 1.25)
                 a = std::sqrt(lo * hi);
         }
@@ -289,6 +309,20 @@ glm::dvec3 galacticPosition(const GalaxyProcess& g, const Random& r, Population 
 } // namespace
 StarSample Universe::starSample(const Node& g, uint64_t id) const {
     Random r{childSeed(g.seed, Kind::System, id)};
+    if (isDiverseStar(id)) {
+        const auto star =
+            stellarEvolution(r.key, unsigned(id & ~stellarIdFlag), g.environment.ageGyr,
+                             g.galaxy.gasFraction > .12 && g.galaxy.type != GalaxyType::Elliptical);
+        const auto population = star.ageGyr < .06                         ? Population::Arm
+                                : star.ageGyr > g.environment.ageGyr * .7 ? Population::Bulge
+                                                                          : Population::Disc;
+        const auto p = galacticPosition(g.galaxy, r, population, star.ageGyr);
+        Node light;
+        light.temperatureK = star.temperatureK;
+        light.stellar = std::make_shared<const StellarProcess>(star);
+        const double metal = .022 * std::exp(-glm::length(p) * 1.4) * (.5 + .5 * (1 - star.ageGyr / 14));
+        return {p, stellarRadiance(light), star.massSolar, star.ageGyr, metal, population};
+    }
     Random pop{featureSeed(r.key, Feature::StellarPopulation, 0)};
     const auto& model = g.galaxy;
     double choice = pop.unit(0);
@@ -398,6 +432,7 @@ Node Universe::makeChild(const Node& p, Segment s) const {
     n.galaxy = p.galaxy;
     n.population = p.population;
     n.geology = p.geology;
+    n.stellar = p.stellar;
     n.rock = p.rock;
     n.crystal = p.crystal;
     Random r{n.seed};
@@ -434,6 +469,20 @@ Node Universe::makeChild(const Node& p, Segment s) const {
         n.temperatureK = 5772 * std::pow(n.massSolar, .48);
         n.stellarRadiusMetres = 6.957e8 * std::pow(n.massSolar, .8);
         n.companions = r.unit(22) < .24 ? 1 : 0;
+        if (isDiverseStar(s.id)) {
+            n.stellar = std::make_shared<const StellarProcess>(
+                stellarEvolution(n.seed, unsigned(s.id & ~stellarIdFlag), p.environment.ageGyr,
+                                 p.galaxy.gasFraction > .12 && p.galaxy.type != GalaxyType::Elliptical));
+            n.massSolar = n.stellar->massSolar;
+            n.temperatureK = n.stellar->temperatureK;
+            n.luminositySolar = n.stellar->luminositySolar;
+            n.stellarRadiusMetres = n.stellar->radiusMetres;
+            n.companions = 0;
+            n.frame.logRadius =
+                std::log10(std::max(n.stellarRadiusMetres * 80,
+                                    1.6 * stellarDiscInnerAu(n) *
+                                        std::pow(1.85, 4 + static_cast<int>(n.seed % 5)) * 1.495978707e11));
+        }
         env.ageGyr = sample.ageGyr;
         n.population = sample.population;
         // These are condensed-solid reservoirs, not bulk stellar H/He fractions.
@@ -489,7 +538,7 @@ Node Universe::makeChild(const Node& p, Segment s) const {
         }
         if (s.id >= planetCount(p))
             throw std::invalid_argument("Planet index is outside this system's catalogue");
-        double innerAu = std::max(.25, .04 * std::sqrt(p.luminositySolar));
+        double innerAu = stellarDiscInnerAu(p);
         double au = innerAu * (1 + .4 * r.unit(1)) * std::pow(1.85, static_cast<double>(s.id));
         n.orbit = {au * 1.495978707e11, .01 + .12 * r.unit(2), r.unit(3) * 2 * pi, r.signedUnit(4) * .06,
                    p.massSolar};
@@ -504,14 +553,15 @@ Node Universe::makeChild(const Node& p, Segment s) const {
         }
         const bool envelope = s.id >= establishedPlanetCount(p);
         if (envelope) {
-            const auto formation = giantFormation(n.seed, unsigned(s.id - establishedPlanetCount(p)));
+            const auto formation =
+                giantFormation(n.seed, unsigned(s.id - establishedPlanetCount(p)), p.massSolar);
             n.frame.logRadius = std::log10(formation.radiusMetres);
             n.bulkDensity = formation.density;
         }
         n.planetLogRadius = n.frame.logRadius;
         n.planetSeed = n.seed;
         env.temperature = 278.0 * std::pow(p.luminositySolar, .25) / std::sqrt(au);
-        if (n.expandedPopulation)
+        if (n.expandedPopulation || p.stellar)
             env.temperature = std::max(2.725, env.temperature);
         if (envelope) {
             // Secular cooling supplies an intrinsic flux, added to irradiation
@@ -525,6 +575,8 @@ Node Universe::makeChild(const Node& p, Segment s) const {
         env.peakTemperature = std::max(env.temperature, 850 + 1700 * std::exp(-env.ageGyr / 12) * r.unit(8));
         // Condensation beyond the irradiation-dependent snow line retains ice;
         // differentiation partitions Fe and silicates without adding a new element.
+        if (p.stellar && p.stellar->kind == StellarKind::WhiteDwarf)
+            env.chemistry.ice *= .01;
         env.chemistry.ice *= env.temperature < 180 ? 15 + 10 * r.unit(9) : .04;
         env.chemistry.metal *= .35 + 2.8 * r.unit(10);
         env.chemistry.carbon *= .4 + 2.0 * r.unit(11);
@@ -537,7 +589,7 @@ Node Universe::makeChild(const Node& p, Segment s) const {
             env.pressureGPa = std::min(env.pressureGPa, .12);
         env.mineral = selectMineral(n.seed, env);
         n.geology = planetProcess(n.seed, n.frame.logRadius, env, n.expandedPopulation, envelope);
-        if (n.expandedPopulation)
+        if (n.expandedPopulation || p.stellar)
             n.massSolar = bodyMass(n) / 1.98847e30;
         break;
     }
@@ -677,7 +729,7 @@ std::vector<Address> Universe::children(const Node& n, size_t limit) const {
         count = 128;
         break;
     case Kind::Galaxy:
-        count = 192;
+        count = 192 + stellarPopulationCount;
         break;
     case Kind::System:
         count = 5 + n.seed % 5;
@@ -704,7 +756,7 @@ std::vector<Address> Universe::children(const Node& n, size_t limit) const {
     out.reserve(std::min(count, limit));
     Random r{n.seed};
     for (size_t i = 0; i < std::min(count, limit); ++i) {
-        uint64_t id = i;
+        uint64_t id = kind == Kind::Galaxy && i >= 192 ? stellarIdFlag | (i - 192) : i;
         if (kind == Kind::Planet) {
             id = encodeTile({static_cast<int>(i % 6), 8, static_cast<uint32_t>(r.bits(i * 2) % 256),
                              static_cast<uint32_t>(r.bits(i * 2 + 1) % 256)});
@@ -808,6 +860,16 @@ uint64_t descriptorFingerprint(const Node& n) {
         add(p.id);
     }
     add(n.seed);
+    if (n.stellar) {
+        add(stellarRecipeVersion);
+        const auto& s = *n.stellar;
+        add(unsigned(s.kind));
+        add(s.maturePlanets);
+        for (double v : {s.initialMassSolar, s.massSolar, s.ageGyr, s.mainSequenceGyr, s.radiusMetres,
+                         s.temperatureK, s.luminositySolar, s.coolingAgeGyr, s.rotationSeconds,
+                         s.convectionScale, s.spots, s.wind, s.survivorInnerAu})
+            real(v);
+    }
     if (n.bulkDensity > 0) {
         add(planetDiversityRecipeVersion);
         real(n.bulkDensity);

@@ -58,7 +58,8 @@ enum class Feature : uint64_t {
     SurfaceSociety = 0x736f6369657479,
     PlanetAppearance = 0x706c616e657473,
     PlanetEnvelope = 0x656e76656c6f7065,
-    PlanetRings = 0x72696e6773
+    PlanetRings = 0x72696e6773,
+    StellarEvolution = 0x7374656c6c6172
 };
 uint64_t featureSeed(uint64_t objectSeed, Feature, uint64_t featureId);
 uint64_t seedOf(const Address&, uint64_t universeSeed = 0x494e46494e495445ULL);

@@ -3,7 +3,7 @@ $input v_color0, v_position, v_pattern, v_sphere, v_elevation
 uniform vec4 u_hyperion[4];
 uniform vec4 u_materialDomain;
 uniform mat4 u_pattern;
-#include "hyperion_noise.sh"
+#include "hyperion_star_types.sh"
 // Hyperion solar-disc energy and filtered material noise, adapted to the
 // existing stellar sphere. Temperature colours and the stellar radius are
 // scene inputs; this is optical convection, not a new stellar simulation.
@@ -13,6 +13,7 @@ vec3 photosphere(vec3 starPoint,vec3 V,vec3 stellarColour,float phase,float seco
  vec3 n=normalize(starPoint-centre);
  vec3 N=normalize(mul(transpose(mat3(u_pattern)),n));
  float mu=clamp(dot(N,V),0.,1.);
+ if(u_starType[0].x>.5)return typedPhotosphere(n,stellarColour,mu,seconds);
  vec3 drift=mod(vec3(seconds*.009,seconds*.005,0.),vec3(256.));
  vec3 q=n*58.+phase*vec3(13.,17.,23.)+drift;
  float cells=strataNoise(q,vec3(0.)),fine=strataNoise(q*2.+17.,vec3(0.));

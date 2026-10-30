@@ -24,6 +24,7 @@ struct ScenePresentation {
                                   // Architecture domain: frame-relative sky up.xyz, pressure.w.
     std::array<glm::vec4, 5> planet{};
     std::array<glm::vec4, 2> planetRings{};
+    std::array<glm::vec4, 2> starType{};
 };
 void describePlanetPresentation(ScenePresentation&, const Node& planet);
 ScenePresentation extractPresentation(const Node&, const Geometry&, RenderMode);
@@ -78,6 +79,8 @@ struct StellarImage {
     glm::vec3 color{};
     double angularRadius = 0, distanceMetres = 0, nearDepthUnits = 0;
     float visibility = 0;
+    std::array<glm::vec4, 2> starType{};
+    glm::dquat cameraToStar{1, 0, 0, 0};
 };
 StellarImage extractStellarImage(const Universe&, const Navigation&, std::span<const CelestialContact>);
 // Direction and contact bearings use the camera frame; distances are metres.

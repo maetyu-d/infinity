@@ -1,0 +1,37 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+      Start 35: native_stellar_diversity
+ 1/16 Test #35: native_stellar_diversity ...........   Passed   46.49 sec
+      Start 36: native_stellar_diversity_images
+ 2/16 Test #36: native_stellar_diversity_images ....   Passed    2.13 sec
+      Start 37: native_planet_diversity
+ 3/16 Test #37: native_planet_diversity ............   Passed  133.60 sec
+      Start 38: native_planet_diversity_images
+ 4/16 Test #38: native_planet_diversity_images .....   Passed   11.99 sec
+      Start 39: native_weather_visibility
+ 5/16 Test #39: native_weather_visibility ..........   Passed  150.42 sec
+      Start 40: native_weather_visibility_images
+ 6/16 Test #40: native_weather_visibility_images ...   Passed   18.41 sec
+      Start 41: native_landing_light
+ 7/16 Test #41: native_landing_light ...............   Passed   46.83 sec
+      Start 42: native_landing_light_images
+ 8/16 Test #42: native_landing_light_images ........   Passed   17.51 sec
+      Start 43: native_celestial_optics
+ 9/16 Test #43: native_celestial_optics ............   Passed  108.44 sec
+      Start 44: native_celestial_optics_images
+10/16 Test #44: native_celestial_optics_images .....   Passed   25.67 sec
+      Start 45: native_cloud_volumes
+11/16 Test #45: native_cloud_volumes ...............   Passed   81.54 sec
+      Start 46: native_cloud_volume_images
+12/16 Test #46: native_cloud_volume_images .........   Passed   16.97 sec
+      Start 47: native_polar_optics
+13/16 Test #47: native_polar_optics ................   Passed   79.76 sec
+      Start 48: native_polar_optics_images
+14/16 Test #48: native_polar_optics_images .........   Passed   21.06 sec
+      Start 49: native_ui_fit
+15/16 Test #49: native_ui_fit ......................   Passed   21.06 sec
+      Start 50: native_ui_fit_images
+16/16 Test #50: native_ui_fit_images ...............   Passed    0.57 sec
+
+100% tests passed, 0 tests failed out of 16
+
+Total Test time (real) = 782.53 sec

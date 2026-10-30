@@ -1,0 +1,121 @@
+{
+  "method": "Six serial native Metal runs in B,A,A,B,B,A order; normal flight with 300 frames, fixed visual time 12, reset copies of one saved 12 m orbital flight, activity disabled in the benchmark save, 1280x720 actual backbuffer. Frames 121\u2013280 measured. Medians across three runs per version. Shared desktop; this controls scene/viewport/save, not external GPU load.",
+  "runs": [
+    {
+      "run": 0,
+      "side": "before",
+      "executable_sha256": "4623b6d865de72995357a29b6fcd6f9a6578f59ff492c35f0cb363787acd00e9",
+      "samples": 160,
+      "median": {
+        "wall_ms": 28.03095,
+        "cpu_ms": 7.74804,
+        "submit_ms": 16.61465,
+        "effect_bytes": 15356160.0,
+        "material_bytes": 1660244.0,
+        "weather_gpu_bytes": 87384.0,
+        "cpu_cache_bytes": 4896872.0
+      },
+      "p95_wall_ms": 58.3133
+    },
+    {
+      "run": 1,
+      "side": "after",
+      "executable_sha256": "8d5db89c45d6ad483e5706afc11b704765780f86bf4d7fc9af1a80f4f94b0f1b",
+      "samples": 160,
+      "median": {
+        "wall_ms": 32.46985,
+        "cpu_ms": 8.06904,
+        "submit_ms": 22.429949999999998,
+        "effect_bytes": 15356160.0,
+        "material_bytes": 1660244.0,
+        "weather_gpu_bytes": 87384.0,
+        "cpu_cache_bytes": 7072008.0
+      },
+      "p95_wall_ms": 48.1675
+    },
+    {
+      "run": 2,
+      "side": "after",
+      "executable_sha256": "8d5db89c45d6ad483e5706afc11b704765780f86bf4d7fc9af1a80f4f94b0f1b",
+      "samples": 160,
+      "median": {
+        "wall_ms": 19.4038,
+        "cpu_ms": 7.8824749999999995,
+        "submit_ms": 11.17265,
+        "effect_bytes": 15356160.0,
+        "material_bytes": 1660244.0,
+        "weather_gpu_bytes": 87384.0,
+        "cpu_cache_bytes": 7072008.0
+      },
+      "p95_wall_ms": 41.2758
+    },
+    {
+      "run": 3,
+      "side": "before",
+      "executable_sha256": "4623b6d865de72995357a29b6fcd6f9a6578f59ff492c35f0cb363787acd00e9",
+      "samples": 160,
+      "median": {
+        "wall_ms": 19.700049999999997,
+        "cpu_ms": 7.82333,
+        "submit_ms": 10.157900000000001,
+        "effect_bytes": 15356160.0,
+        "material_bytes": 1660244.0,
+        "weather_gpu_bytes": 87384.0,
+        "cpu_cache_bytes": 7408712.0
+      },
+      "p95_wall_ms": 39.161
+    },
+    {
+      "run": 4,
+      "side": "before",
+      "executable_sha256": "4623b6d865de72995357a29b6fcd6f9a6578f59ff492c35f0cb363787acd00e9",
+      "samples": 160,
+      "median": {
+        "wall_ms": 17.05095,
+        "cpu_ms": 7.746085,
+        "submit_ms": 10.14935,
+        "effect_bytes": 15356160.0,
+        "material_bytes": 1660244.0,
+        "weather_gpu_bytes": 87384.0,
+        "cpu_cache_bytes": 7309048.0
+      },
+      "p95_wall_ms": 38.9973
+    },
+    {
+      "run": 5,
+      "side": "after",
+      "executable_sha256": "8d5db89c45d6ad483e5706afc11b704765780f86bf4d7fc9af1a80f4f94b0f1b",
+      "samples": 160,
+      "median": {
+        "wall_ms": 19.762349999999998,
+        "cpu_ms": 7.955705,
+        "submit_ms": 11.059,
+        "effect_bytes": 15356160.0,
+        "material_bytes": 1660244.0,
+        "weather_gpu_bytes": 87384.0,
+        "cpu_cache_bytes": 7271880.0
+      },
+      "p95_wall_ms": 38.6115
+    }
+  ],
+  "median_of_run_medians": {
+    "before": {
+      "wall_ms": 19.700049999999997,
+      "cpu_ms": 7.74804,
+      "submit_ms": 10.157900000000001,
+      "effect_bytes": 15356160.0,
+      "material_bytes": 1660244.0,
+      "weather_gpu_bytes": 87384.0,
+      "cpu_cache_bytes": 7309048.0
+    },
+    "after": {
+      "wall_ms": 19.762349999999998,
+      "cpu_ms": 7.955705,
+      "submit_ms": 11.17265,
+      "effect_bytes": 15356160.0,
+      "material_bytes": 1660244.0,
+      "weather_gpu_bytes": 87384.0,
+      "cpu_cache_bytes": 7072008.0
+    }
+  }
+}

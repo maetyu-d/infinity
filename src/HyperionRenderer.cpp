@@ -1,5 +1,6 @@
 #include "HyperionRenderer.hpp"
 #include "infinite/MaterialTexture.hpp"
+#include "infinite/StellarEvolution.hpp"
 #include "infinite/WorldDepth.hpp"
 #include <HyperionShaders.hpp>
 #include <algorithm>
@@ -99,6 +100,8 @@ void HyperionRenderer::init() {
     noise_ = bgfx::createTexture2D(256, 256, false, 1, bgfx::TextureFormat::RGBA8, 0,
                                    bgfx::copy(noise.data(), uint32_t(noise.size())));
     noiseBytes_ = noise.size();
+    starTypeParams_ = bgfx::createUniform("u_starType", bgfx::UniformType::Vec4, 2);
+    starMatrix_ = bgfx::createUniform("u_starFromEye", bgfx::UniformType::Mat4);
     stellarParams_ = bgfx::createUniform("u_stellar", bgfx::UniformType::Vec4, 3);
     landingParams_ = bgfx::createUniform("u_landingContact", bgfx::UniformType::Vec4, 2);
     weatherVisualParams_ = bgfx::createUniform("u_weatherVisual", bgfx::UniformType::Vec4, 3);
@@ -211,6 +214,7 @@ HyperionRenderer::~HyperionRenderer() {
     for (auto u : {planetParams_,   planetRingsParams_,
                    ringParams_,     weatherVisualParams_,
                    landingParams_,  stellarParams_,
+                   starTypeParams_, starMatrix_,
                    weatherParams_,  weatherMatrix_,
                    weatherSampler_, weatherNextSampler_,
                    cloudSampler_,   polarSampler_,
@@ -262,6 +266,8 @@ void HyperionRenderer::begin(RenderMode mode, int width, int height, bool optica
     landingData_ = {};
     landingPlanet_.reset();
     stellarData_ = {};
+    starTypeData_ = {};
+    starFromEye_ = glm::mat4(1);
     atmosphereData_ = {};
     polarData_ = {};
     weatherData_ = {};
@@ -411,7 +417,7 @@ void HyperionRenderer::localWeather(const PlanetClimate& c, const WeatherSample&
     weatherVisualData_[2] = {discharge, float(sample.storm), float(sample.precipitation),
                              dust ? float(sample.dust) : 0.f};
 }
-void HyperionRenderer::stellar(const StellarImage& image, float aspect, float tanHalfFov) {
+void HyperionRenderer::stellar(const StellarImage& image, float aspect, float tanHalfFov, double seconds) {
     if (!readableDepth_ || image.visibility <= 0 || image.direction.z >= -.0001)
         return;
     const auto d = image.direction;
@@ -428,6 +434,10 @@ void HyperionRenderer::stellar(const StellarImage& image, float aspect, float ta
     stellarData_[0] = {x, y, float(std::tan(image.angularRadius) / (2 * tanHalfFov)),
                        image.visibility * fade};
     stellarData_[1] = glm::vec4(image.color, depth);
+    starTypeData_ = image.starType;
+    starTypeData_[1].w = float(seconds);
+    starFromEye_ = glm::mat4_cast(glm::quat(image.cameraToStar));
+    starFromEye_[3][3] = bgfx::getCaps()->originBottomLeft ? 1.f : -1.f;
     const float flux = std::clamp(float(image.angularRadius / .0015), 0.f, 1.f);
     stellarData_[2] = {aspect, flux * flux, 1.f / height_, 0};
 }
@@ -504,6 +514,7 @@ void HyperionRenderer::bind(const ScenePresentation& p, const glm::vec3& eye, co
                             const glm::mat4& pattern, float primitive, double seconds, glm::vec4 cavity,
                             const glm::mat4& micro, float relief, const glm::mat4& meso, float mesoRelief) {
     init();
+    bgfx::setUniform(starTypeParams_, p.starType.data(), 2);
     bgfx::setUniform(planetParams_, p.planet.data(), 5);
     bgfx::setUniform(planetRingsParams_, p.planetRings.data(), 2);
     std::array<glm::vec4, 4> data = {glm::vec4(p.strength, float(seconds), p.phase, primitive), p.material,
@@ -576,6 +587,8 @@ void HyperionRenderer::sky(const SpectralSky& sky, double seconds, float aspect,
     screen(0, sky_);
 }
 void HyperionRenderer::bindEmissions(const Node& node, const glm::mat4& pattern, double seconds) {
+    const auto stellar = stellarPresentation(node);
+    bgfx::setUniform(starTypeParams_, stellar.data(), 2);
     const float phase = hyperionPhase(node.seed);
     std::array<glm::vec4, 4> data{};
     data[0] = {mode_ == RenderMode::Hybrid ? .24f : 1.f, float(seconds), phase, 3};
@@ -654,6 +667,9 @@ void HyperionRenderer::finish() {
                 solarBlur_ = program("vs_hyperion_screen", "fs_hyperion_blur_solar");
             stellarData_[2].w = weatherData_[0].w > 0 ? 1.f : 0.f;
             bgfx::setUniform(stellarParams_, stellarData_.data(), 3);
+            bgfx::setUniform(starTypeParams_, starTypeData_.data(), 2);
+            bgfx::setUniform(starMatrix_, glm::value_ptr(starFromEye_));
+            bgfx::setTexture(5, noiseSampler_, noise_);
             bgfx::setTexture(2, depthSampler_, bgfx::getTexture(scene_, 1),
                              sampling | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT);
             bgfx::setTexture(9, cloudSampler_, bgfx::getTexture(cloudTarget_), sampling);
@@ -674,6 +690,9 @@ void HyperionRenderer::finish() {
     if (optical) {
         stellarData_[2].w = weatherData_[0].w > 0 ? 1.f : 0.f;
         bgfx::setUniform(stellarParams_, stellarData_.data(), 3);
+        bgfx::setUniform(starTypeParams_, starTypeData_.data(), 2);
+        bgfx::setUniform(starMatrix_, glm::value_ptr(starFromEye_));
+        bgfx::setTexture(5, noiseSampler_, noise_);
         if (!bgfx::isValid(flightPost_))
             flightPost_ = program("vs_hyperion_screen", "fs_hyperion_flight_post");
         finalProgram = flightPost_;

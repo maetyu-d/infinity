@@ -1,8 +1,18 @@
 #include "infinite/Geometry.hpp"
+#include "infinite/StellarEvolution.hpp"
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
 using namespace infinite;
+static uint64_t legacyGeometryFingerprint(const Node& node, const std::shared_ptr<Geometry>& geometry) {
+    if (!geometry)
+        return 0;
+    if (node.address.kind() == Kind::Galaxy)
+        std::erase_if(geometry->particles,
+                      [](const auto& p) { return p.objectId != UINT64_MAX && isDiverseStar(p.objectId); });
+    return geometryFingerprint(*geometry);
+}
 int main(int argc, char** argv) {
     try {
         if (argc != 3)
@@ -15,7 +25,7 @@ int main(int argc, char** argv) {
                 auto record = [&](Address address, bool mesh) {
                     const auto n = u.describe(address);
                     out << seed << ' ' << address.str() << ' ' << descriptorFingerprint(n) << ' '
-                        << (mesh ? geometryFingerprint(*generator.generate(n, 0)) : 0) << '\n';
+                        << (mesh ? legacyGeometryFingerprint(n, generator.generate(n, 0)) : 0) << '\n';
                 };
                 const auto galaxy = Address{}.child(Kind::Galaxy, 0);
                 record(galaxy, true);
@@ -44,8 +54,9 @@ int main(int argc, char** argv) {
         while (in >> seed >> address >> descriptor >> geometry) {
             Universe u(seed);
             const auto node = u.describe(Address::parse(address));
+            auto generated = geometry ? GeometryGenerator(u).generate(node, 0) : nullptr;
             if (descriptorFingerprint(node) != descriptor ||
-                (geometry && geometryFingerprint(*GeometryGenerator(u).generate(node, 0)) != geometry))
+                (geometry && legacyGeometryFingerprint(node, generated) != geometry))
                 throw std::runtime_error("Legacy world changed: " + address + " seed " +
                                          std::to_string(seed));
             ++count;

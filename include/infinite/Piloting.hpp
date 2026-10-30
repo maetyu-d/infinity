@@ -69,6 +69,7 @@ class Pilot {
     void restoreFullSize();
     void startInSystem();
     void selectNextPlanet();
+    void selectNextStar();
     void selectPlanet(const Address&);
     void selectNextMoon();
     void fitToView(); // Explicit deployment from the legacy inspector, not a flight rebase.

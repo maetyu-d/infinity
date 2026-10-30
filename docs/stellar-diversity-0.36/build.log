@@ -1,0 +1,35 @@
+[0/2] Re-checking globbed directories...
+[1/35] Building CXX object CMakeFiles/infinite_core.dir/src/StellarEvolution.cpp.o
+[2/35] Linking CXX static library libinfinite_core.a
+[3/35] Linking CXX executable infinite_benchmark
+[4/35] Linking CXX executable infinite_tests
+[5/35] Linking CXX executable infinite_continuity_tests
+[6/35] Linking CXX executable infinite_process_tests
+[7/35] Linking CXX executable infinite_planet_diversity_tests
+[8/35] Linking CXX executable infinite_performance_tests
+[9/35] Linking CXX executable infinite_weather_process_tests
+[10/35] Linking CXX executable infinite_weather_benchmark
+[11/35] Linking CXX executable infinite_stellar_optics_tests
+[12/35] Linking CXX executable infinite_weather_field_tests
+[13/35] Linking CXX executable infinite_window_tests
+[14/35] Linking CXX executable infinite_depth_tests
+[15/35] Linking CXX executable infinite_surface_site_snapshot
+[16/35] Linking CXX executable infinite_city_tests
+[17/35] Linking CXX executable infinite_surface_life_tests
+[18/35] Linking CXX executable infinite_cockpit_tests
+[19/35] Linking CXX executable infinite_terrain_tests
+[20/35] Linking CXX executable infinite_population_tests
+[21/35] Linking CXX executable infinite_population_snapshot
+[22/35] Linking CXX executable infinite_activity_tests
+[23/35] Linking CXX executable infinite_operating_tests
+[24/35] Linking CXX executable infinite_piloting_tests
+[25/35] Linking CXX executable infinite_handling_tests
+[26/35] Linking CXX executable infinite_streaming_tests
+[27/35] Linking CXX executable infinite_flight_tests
+[28/35] Linking CXX executable infinite_navigation_tests
+[29/35] Linking CXX executable infinite_presentation_tests
+[30/35] Linking CXX executable infinite_material_tests
+[31/35] Linking CXX executable infinite_shading_tests
+[32/35] Linking CXX executable infinite
+[33/35] Building CXX object CMakeFiles/infinite_stellar_evolution_tests.dir/tests/StellarEvolutionTests.cpp.o
+[34/35] Linking CXX executable infinite_stellar_evolution_tests

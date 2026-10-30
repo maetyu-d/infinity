@@ -1,0 +1,25 @@
+{
+  "baseline_commit": "1b8004b",
+  "checkpoint": "checkpoint/infinite-0.35-before-stellar-diversity",
+  "frozen_records": 2258,
+  "snapshot_sha256": "9c88227dc9983646e78370adf9ebafb54237b467f0bf67f76e861f0009533f8b",
+  "unchanged_sources": {
+    "src/Core.cpp": "8b6e0854d8e8dfdfde2cc78494a31907cedab63d1512020d66c94f6d1d690cb9",
+    "src/Processes.cpp": "0c57a71c3e7c31928c8b777abf4abb777a3e53fb86c0cddb58238a39a1ccfb8e",
+    "src/Terrain.cpp": "a9fbba49d7deef7e1c5eead2cc8c8ab20f20a8756775bd5aab3c8abe2bb438c3",
+    "src/Crystallography.cpp": "1d135fa1218cea466673723063267fcacdb5c6c56d4240ab5ca00eb0eb042dab",
+    "src/Navigation.cpp": "c3ad57a8d158e5f70b251697953f8515ba59be5f0a3ef2ba2bed15b823bfa713",
+    "src/Flight.cpp": "310f2089c2704b1a506eca9499db54d02e6762935e6664874947f372c2158783",
+    "src/Continuity.cpp": "c09a15bdb8c237eb59dc66f88ad9efef7863e93db3e957b20d120d49e152d4a8",
+    "src/Weather.cpp": "d1cd08524047a345132cba0bc60fae4b26c14f8e421075a103df73516380a719",
+    "src/WeatherField.cpp": "7b127e91a0896df36e0a1b9ef990f6017fb7642ca6a89c0e7e35932dfa4de0ce",
+    "src/SurfaceLife.cpp": "2e43b919df66e77d39930fcc0bcdf2571186a17cd49733ca42f14da51d8c77dc",
+    "src/SurfaceLifeCache.cpp": "b62708aa72a4529584cd7c0301e5f2409e7119253a881db29649a950421b6b31",
+    "src/City.cpp": "f4c5f1c4ccd6ff54bec592dc53d024de3bb5796dd3d47d7dd88f3f05f8a41601",
+    "src/CityMeshes.cpp": "94e95870dc24ebf433de592ef6ba1fc6b2d01b50909aa2d2b3bcd8b916049b31",
+    "src/Activity.cpp": "23ebe4bb3b5f86b5326cc4d99fac81937fcaa1bc7455e60a3387c35e4dc8375d",
+    "src/Streaming.cpp": "73064638f21264848cc9273e58f61c1557ce6ce7eaefa47ee6cb495964681a2a",
+    "src/SurfaceMeshes.cpp": "3c674d43f6eb4aadbdfa9b0eb0c63edec4d712a6248489e81b8091c8f75e88b4",
+    "src/ActivityMeshes.cpp": "f0aa893729a22ad90845f2d1d15887ae64f20b138f3d3960b759733e1a30e4cd"
+  }
+}

@@ -19,7 +19,7 @@ enum class ThermalType : uint8_t { Frozen, Cold, Temperate, Warm, Hot, Molten };
 struct GiantFormation {
     double radiusMetres = 0, density = 0;
 };
-GiantFormation giantFormation(uint64_t seed, unsigned slot);
+GiantFormation giantFormation(uint64_t seed, unsigned slot, double hostMassSolar = 1);
 double planetDensity(const Node&);
 struct RingProcess {
     uint64_t seed = 0;

@@ -6,7 +6,7 @@
 #include <stdexcept>
 
 namespace infinite {
-GiantFormation giantFormation(uint64_t seed, unsigned slot) {
+GiantFormation giantFormation(uint64_t seed, unsigned slot, double hostMassSolar) {
     if (slot >= giantPopulationCount)
         throw std::invalid_argument("Invalid giant formation slot");
     const Random r{featureSeed(seed, Feature::PlanetEnvelope, planetDiversityRecipeVersion)};
@@ -16,7 +16,8 @@ GiantFormation giantFormation(uint64_t seed, unsigned slot) {
     const double density = slot == 1   ? 1200 + 750 * r.unit(1)
                            : slot == 3 ? 1700 + 800 * r.unit(1)
                                        : 550 + 700 * r.unit(1);
-    return {std::pow(10., logRadius), density};
+    const double radius = std::pow(10., logRadius);
+    return {hostMassSolar < .08 ? radius * std::cbrt(hostMassSolar / .08) : radius, density};
 }
 double planetDensity(const Node& p) {
     return p.bulkDensity > 0 ? p.bulkDensity : material(p.environment.mineral).density;

@@ -1,6 +1,7 @@
 #include "infinite/Renderer.hpp"
 #include "HyperionRenderer.hpp"
 #include "infinite/Cockpit.hpp"
+#include "infinite/StellarEvolution.hpp"
 #include "infinite/Streaming.hpp"
 #include "infinite/SurfaceShading.hpp"
 #include "infinite/WorldDepth.hpp"
@@ -963,7 +964,13 @@ struct Renderer::Impl {
         auto cp = cameraSpace(pose.position);
         double r = pose.scale;
         auto kind = node.address.kind();
-        const double bounds = kind == Kind::System && r > 1e-6 && r < 1e4
+        // A compact remnant can subtend a large disc while its enclosing
+        // system exceeds the normal cell-size guard. Cull that immutable mesh
+        // using its physical photosphere, retaining the original model scale.
+        const bool compactStellar =
+            node.stellar && kind == Kind::System && node.address == nav.anchor && r > 1e4;
+        const double bounds = compactStellar ? node.stellarRadiusMetres / std::pow(10., nav.logDistance)
+                              : kind == Kind::System && r > 1e-6 && r < 1e4
                                   ? universe.systemRadiusMetres(node) / std::pow(10., nav.logDistance)
                                   : r;
         double pixels = LOD::pixels(bounds, glm::length(cp), height, 1.0);
@@ -975,12 +982,12 @@ struct Renderer::Impl {
             double radius = std::clamp(physical, -cp.z * .001, -cp.z * .035);
             float intensity = static_cast<float>(.35 + .65 * std::min(node.massSolar / 3, 1.0));
             if (LOD::visible(cp, radius, static_cast<double>(width) / height, fieldOfView))
-                addBillboard(pose.position, radius, stellarColor(node.temperatureK) * intensity, false,
+                addBillboard(pose.position, radius, stellarRadiance(node) * intensity, false,
                              3.f + hyperionPhase(node.seed) * .25f);
         } else if (node.address == nav.anchor && pixels < 1.5 && cp.z < 0 && kind != Kind::Cosmic)
             addBillboard(pose.position, -cp.z * .0015, material(node.environment.mineral).color);
         if (kind != Kind::Cosmic &&
-            (r < 1e-8 || r > 1e4 || pixels < .7 ||
+            (r < 1e-8 || (r > 1e4 && !compactStellar) || pixels < .7 ||
              !LOD::visible(cp, bounds, static_cast<double>(width) / height, fieldOfView)))
             return;
         float opacity = node.address.ancestorOf(nav.anchor) && node.address != nav.anchor
@@ -1597,7 +1604,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
             p.skyOccluders.push_back(contact);
     if (p.mode != RenderMode::Original && p.instruments && !p.instruments->shrinking && p.stellarOptics)
         p.hyperion->stellar(extractStellarImage(p.universe, nav, p.contacts), float(p.width) / p.height,
-                            float(std::tan(fov * .5)));
+                            float(std::tan(fov * .5)), p.visualTime);
     p.stats.celestialContacts = p.contacts.size();
     p.stats.lifeWorlds = std::count_if(p.contacts.begin(), p.contacts.end(), hasSurfaceLife);
     p.stats.lifeScanning = std::count_if(p.contacts.begin(), p.contacts.end(),
@@ -1712,7 +1719,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
             if (isSelected || n.address.kind() == Kind::Planet || n.address.kind() >= Kind::Surface) {
                 double rr = -cp.z * .0025;
                 p.addBillboard(pose.position, rr,
-                               n.address.kind() == Kind::System ? stellarColor(n.temperatureK)
+                               n.address.kind() == Kind::System ? stellarRadiance(n)
                                                                 : material(n.environment.mineral).color);
             }
             if (isSelected) {

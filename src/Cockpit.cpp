@@ -555,7 +555,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                                                              {"K / I / J", "TRAFFIC / HAIL / APPROACH"},
                                                              {"SHIFT-K", "SURFACE PORTS"},
                                                              {"L / G / ENTER", "LAND / GEAR / LAUNCH"},
-                                                             {"N / - / +", "LONG CRUISE / DRIVE SPEED"},
+                                                             {"N / SHIFT-N", "CRUISE / STAR TYPES"},
                                                              {"Z / , / .", "SHRINK / SMALLER / LARGER"},
                                                              {"SHIFT-Z / V", "FULL SIZE / EXPLORER"},
                                                              {"F6 / H / TAB", "TRAFFIC / RENDER / HUD"},

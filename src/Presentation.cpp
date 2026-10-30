@@ -1,5 +1,6 @@
 #include "infinite/Presentation.hpp"
 #include "infinite/Navigation.hpp"
+#include "infinite/StellarEvolution.hpp"
 #include "infinite/SurfaceLife.hpp"
 #include <algorithm>
 #include <cmath>
@@ -92,6 +93,8 @@ ScenePresentation extractPresentation(const Node& node, const Geometry& geometry
          float(node.geology ? node.geology->terrain.type : TerrainType::None),
          node.geology && node.geology->type == GeologyType::GasEnvelope ? 1.f : 0.f,
          float(node.geology ? node.geology->type : GeologyType::MobileLid)}};
+    if (kind == Kind::System)
+        result.starType = stellarPresentation(node);
     if (domain == 1.f)
         describePlanetPresentation(result, node);
     return result;
@@ -215,7 +218,7 @@ std::vector<CelestialContact> extractCelestialContacts(const Universe& universe,
         // sphere, supplies local occlusion. Do not mask the entire instrument.
         const double angular = distance > radius ? std::asin(std::min(1., radius / distance)) : 0;
         contacts.push_back({node.address, inverse * glm::normalize(delta), distance, angular,
-                            star ? stellarColor(node.temperatureK) : material(node.environment.mineral).color,
+                            star ? stellarRadiance(node) : material(node.environment.mineral).color,
                             star ? "STAR " + std::to_string(node.seed % 100000) : node.label(), false,
                             nav.selected && *nav.selected == node.address, isMoon(node.address)});
     };

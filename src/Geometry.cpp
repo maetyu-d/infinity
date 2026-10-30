@@ -1,5 +1,6 @@
 #include "infinite/Geometry.hpp"
 #include "infinite/Planetology.hpp"
+#include "infinite/StellarEvolution.hpp"
 #include <FastNoise/FastNoise.h>
 #include <algorithm>
 #include <bit>
@@ -391,9 +392,19 @@ std::shared_ptr<Geometry> GeometryGenerator::generate(const Node& n, unsigned lo
         for (size_t i = 0; i < static_cast<size_t>(3000 * n.galaxy.gasFraction); ++i) {
             g->particles.push_back({universe_.gasSample(n, i), {.11f, .16f, .22f}, .003f});
         }
+        for (unsigned i = 0; i < stellarPopulationCount; ++i) {
+            if (cancel && cancel->load())
+                return {};
+            const uint64_t id = stellarIdFlag | i;
+            const auto star = universe_.starSample(n, id);
+            const auto object = universe_.describe(n.address.child(Kind::System, id));
+            const float energy = float(std::clamp(.3 + .1 * std::log1p(object.luminositySolar), .3, 1.4));
+            g->particles.push_back({star.position, star.color * energy,
+                                    float(.0007 + .0002 * std::log1p(object.luminositySolar)), id});
+        }
     } else if (kind == Kind::System) {
         double radius = n.stellarRadiusMetres / std::pow(10.0, n.frame.logRadius);
-        auto starColor = stellarColor(n.temperatureK);
+        auto starColor = stellarRadiance(n);
         appendSphere(g->solid, {}, radius, starColor, 24, 32, true);
         g->particles.push_back({{}, starColor, static_cast<float>(radius * 2.5)});
         if (n.companions)
@@ -413,7 +424,7 @@ std::shared_ptr<Geometry> GeometryGenerator::generate(const Node& n, unsigned lo
                         {.11f, .19f, .24f});
             }
         }
-        for (int i = 0; i < 2800; ++i) {
+        for (int i = 0; i < (n.stellar && !n.stellar->maturePlanets ? 0 : 2800); ++i) {
             double a = r.unit(100 + i * 2) * 2 * pi, rad = .16 + .035 * r.signedUnit(101 + i * 2);
             g->particles.push_back(
                 {glm::dvec3(std::cos(a) * rad, r.signedUnit(i + 5000) * .002, std::sin(a) * rad),

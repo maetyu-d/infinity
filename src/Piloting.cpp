@@ -1,4 +1,5 @@
 #include "infinite/Piloting.hpp"
+#include "infinite/StellarEvolution.hpp"
 #include "infinite/SurfaceLife.hpp"
 #include <algorithm>
 #include <cmath>
@@ -246,6 +247,27 @@ void Pilot::selectPlanet(const Address& planet) {
     landingPlanet_.reset();
     autopilot_ = landing_ = false;
     phase_ = "DESTINATION SELECTED / J NAVIGATE";
+    instrument();
+}
+void Pilot::selectNextStar() {
+    clearWaypoint();
+    auto galaxy = nav_.anchor;
+    while (galaxy.kind() > Kind::Galaxy)
+        galaxy = galaxy.parent();
+    if (galaxy.kind() != Kind::Galaxy)
+        galaxy = galaxy.child(Kind::Galaxy, 0);
+    unsigned next = 0;
+    if (nav_.selected && galaxy.ancestorOf(*nav_.selected) &&
+        nav_.selected->path.size() > galaxy.path.size()) {
+        const auto id = nav_.selected->path[galaxy.path.size()].id;
+        if (isDiverseStar(id))
+            next = unsigned((id & ~stellarIdFlag) + 1) % stellarPopulationCount;
+    }
+    nav_.select(galaxy.child(Kind::System, stellarIdFlag | next));
+    destination_.reset();
+    landingPlanet_.reset();
+    autopilot_ = landing_ = false;
+    phase_ = "STELLAR DESTINATION / J NAVIGATE";
     instrument();
 }
 void Pilot::selectNextPlanet() {

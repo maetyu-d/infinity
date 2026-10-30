@@ -1,0 +1,19 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 67: native_boundary_streaming
+1/7 Test #67: native_boundary_streaming ........   Passed   35.43 sec
+    Start 68: native_boundary_pixels
+2/7 Test #68: native_boundary_pixels ...........   Passed    8.82 sec
+    Start 69: native_seamless_scale_flight
+3/7 Test #69: native_seamless_scale_flight .....   Passed   66.17 sec
+    Start 70: native_cross_scale_round_trip
+4/7 Test #70: native_cross_scale_round_trip ....   Passed   53.63 sec
+    Start 71: native_atomic_visibility
+5/7 Test #71: native_atomic_visibility .........   Passed    5.53 sec
+    Start 72: native_render_mode_round_trip
+6/7 Test #72: native_render_mode_round_trip ....   Passed   79.25 sec
+    Start 73: native_render_mode_images
+7/7 Test #73: native_render_mode_images ........   Passed   18.25 sec
+
+100% tests passed, 0 tests failed out of 7
+
+Total Test time (real) = 267.13 sec

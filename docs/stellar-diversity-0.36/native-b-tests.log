@@ -1,0 +1,33 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+      Start 51: native_planet_stability
+ 1/14 Test #51: native_planet_stability ..................   Passed   41.02 sec
+      Start 52: native_planet_stability_images
+ 2/14 Test #52: native_planet_stability_images ...........   Passed    2.11 sec
+      Start 53: native_weather_and_surface_life
+ 3/14 Test #53: native_weather_and_surface_life ..........   Passed  102.10 sec
+      Start 54: native_weather_and_surface_images
+ 4/14 Test #54: native_weather_and_surface_images ........   Passed    2.91 sec
+      Start 55: native_solid_terrain
+ 5/14 Test #55: native_solid_terrain .....................   Passed   37.67 sec
+      Start 56: native_solid_terrain_images
+ 6/14 Test #56: native_solid_terrain_images ..............   Passed    1.22 sec
+      Start 57: native_surface_quality
+ 7/14 Test #57: native_surface_quality ...................   Passed   32.53 sec
+      Start 58: native_surface_quality_images
+ 8/14 Test #58: native_surface_quality_images ............   Passed    1.71 sec
+      Start 59: native_surface_frame_and_retina
+ 9/14 Test #59: native_surface_frame_and_retina ..........   Passed   58.57 sec
+      Start 60: native_surface_frame_and_retina_images
+10/14 Test #60: native_surface_frame_and_retina_images ...   Passed    6.55 sec
+      Start 61: native_grazing_sun_receivers
+11/14 Test #61: native_grazing_sun_receivers .............   Passed   38.79 sec
+      Start 62: native_grazing_sun_images
+12/14 Test #62: native_grazing_sun_images ................   Passed    1.26 sec
+      Start 63: native_terrain_cast_shadows
+13/14 Test #63: native_terrain_cast_shadows ..............   Passed   31.97 sec
+      Start 64: native_terrain_cast_shadow_images
+14/14 Test #64: native_terrain_cast_shadow_images ........   Passed    0.91 sec
+
+100% tests passed, 0 tests failed out of 14
+
+Total Test time (real) = 359.39 sec

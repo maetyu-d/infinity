@@ -1,0 +1,9 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 35: native_stellar_diversity
+1/2 Test #35: native_stellar_diversity ..........   Passed   57.33 sec
+    Start 36: native_stellar_diversity_images
+2/2 Test #36: native_stellar_diversity_images ...   Passed    4.81 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =  62.42 sec

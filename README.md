@@ -1,6 +1,8 @@
 # INFINITE
 
 
+**0.36:** researched stellar families, O–M spectral types, cooling L/T/Y brown dwarfs, compact remnants and giants, with preserved existing systems. **Shift+N** cycles stellar destinations; **J** navigates. [Research and validation](docs/STELLAR_DIVERSITY_0_36.md).
+
 **0.35:** distinct rocky, ice, oceanic, desert and lava presentation, plus additive gas giants, ice giants, sub-Neptunes, hot giants and procedural rings. [Research, preservation and validation](docs/PLANET_DIVERSITY_0_35.md).
 
 A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.34 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
@@ -123,6 +125,7 @@ The cockpit shows planet/moon totals and the nearest eight celestial contacts wi
 | F6 | Hide/show orbital and surface activity; its clock continues |
 | L / G / Enter | Assisted landing / gear / lift off when landed |
 | N | Toggle long-range cruise |
+| Shift+N | Cycle real stellar destinations; J navigates |
 | - / + or [ / ] | Normal speed multiplier, or cruise speed ceiling |
 | Z | Activate automatic shrinking / request full-size return |
 | Comma / period | Manually request smaller / larger hull |

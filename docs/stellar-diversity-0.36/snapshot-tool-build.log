@@ -1,0 +1,3 @@
+[0/2] Re-checking globbed directories...
+[1/3] Building CXX object CMakeFiles/infinite_population_snapshot.dir/tools/PopulationSnapshot.cpp.o
+[2/3] Linking CXX executable infinite_population_snapshot
