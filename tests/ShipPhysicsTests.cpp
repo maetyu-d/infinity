@@ -1,6 +1,8 @@
 #include "infinite/Piloting.hpp"
 #include "infinite/Planetology.hpp"
+#include <fstream>
 #include <iostream>
+#include <limits>
 #include <oneapi/tbb/global_control.h>
 #include <sstream>
 #include <stdexcept>
@@ -38,9 +40,26 @@ struct Rig {
     }
 };
 } // namespace
-int main() {
+int main(int argc, char** argv) {
     try {
         oneapi::tbb::global_control workers(oneapi::tbb::global_control::max_allowed_parallelism, 3);
+        if (argc == 3) {
+            Universe u;
+            Rig replay(u);
+            auto read = [](const char* path) {
+                std::ifstream in(path);
+                return std::string(std::istreambuf_iterator<char>(in), {});
+            };
+            check(replay.nav.restore(read(argv[1])), "Saved navigation failed replay");
+            check(replay.pilot.restore(read(argv[2])), "Saved physical state failed replay");
+            const auto serialized = replay.pilot.serialize();
+            check(replay.pilot.restore(serialized) && replay.pilot.serialize() == serialized,
+                  "Recovered physical state did not round trip");
+            std::cout << "PASS: saved flight replay, anchor=" << replay.nav.anchor.str()
+                      << " flight_seconds=" << replay.pilot.ship().flightSeconds
+                      << " view_log_m=" << replay.nav.logDistance << '\n';
+            return 0;
+        }
         const auto p = shipProperties();
         check(p.massKg > 0, "Missing physical hull mass");
         glm::dquat q(1, 0, 0, 0);
@@ -213,6 +232,17 @@ int main() {
         excess[35] = excess[36] = "0";
         check(!dock.pilot.restore(joined(excess)) && dock.pilot.serialize() == save,
               "Corrupt shared actuator budget was accepted or mutated the live ship");
+        auto tiny = fields(save);
+        for (unsigned i : {3u, 6u, 9u, 12u, 16u, 32u, 34u})
+            tiny[i] = "4.9406564584124654e-324";
+        check(dock.pilot.restore(joined(tiny)) &&
+                  dock.pilot.ship().angularVelocity.x == std::numeric_limits<double>::denorm_min() &&
+                  dock.pilot.ship().boost == std::numeric_limits<double>::denorm_min() &&
+                  dock.pilot.ship().angularThrusters.x == std::numeric_limits<double>::denorm_min(),
+              "Long-decayed subnormal control state could not be restored");
+        const auto tinySave = dock.pilot.serialize();
+        check(dock.pilot.restore(tinySave) && dock.pilot.serialize() == tinySave,
+              "Subnormal state failed exact persistence round trip");
         std::cout << "rotation_max_relative_energy_error=" << maxEnergy
                   << " burn_mean_accel_m_s2=" << acceleration << '\n';
         std::cout << "PASS: " << checks

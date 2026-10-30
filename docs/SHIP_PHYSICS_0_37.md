@@ -56,6 +56,8 @@ For physical hull ratio `s`, the field prescribes mass ∝ `s³`, inertia ∝ `s
 
 Ship save format 4 adds filtered angular actuators and the drive-braking handover. Versions 1–3 remain readable. Modern version-3 saved flights retain position, velocity, attitude, hull scale and throttle. An assisted legacy overspeed can use a field handover to the normal-flight envelope. The historical main-program migration for versions 1–2 remains intact. Invalid restores are transactional, and a saved actuator combination cannot exceed the shared budget. Finite inertial spin is preserved above the old 100 rad/s save threshold.
 
+An actual app restart exposed a libc++ stream-parser failure on finite subnormal numbers left by long-decayed rates and actuator filters. Floating-point save fields now use locale-independent `from_chars`; subnormal state is retained exactly. The physics suite tests the smallest positive double through serialization and restoration. A [replay of the preserved saved flight](ship-physics-0.37/saved-flight-replay.log) also verifies the original anchor, elapsed flight time and view scale before reopening it.
+
 ![Unrestricted assisted roll](ship-physics-0.37/roll-right.png)
 
 ![Physically shrunken ship in the existing atomic lattice](ship-physics-0.37/atomic-shrink.png)
@@ -76,7 +78,7 @@ Measured on Apple M1, 16 GiB, macOS 26.4.1, Release build. [Before](ship-physics
 
 The drift fixture starts at 1,264.91 m/s lateral speed. The new controller removes about 82.43 m/s over the probe instead of almost erasing the entire drift. That longer braking response and greater turn slip are intentional consequences of finite thrust, not a claim that every response time improves. Earlier handling assertions requiring effectively unlimited capture thrust were replaced with bounded-authority checks.
 
-The new physics suite checks angular momentum for 10,000 torque-free steps, energy drift, torque/inertia response, 2,000 actuator combinations, shrink scaling, vacuum and atmospheric drag, equal engine impulse at different starting velocities, inertial overspeed, gravity continuity at 3R and on gas bodies, render-scale invariance, moving-target rendezvous, and versioned persistence. Rotational relative energy error was **1.51 × 10⁻⁸** over the conservation probe. A three-second ramped throttle burn averaged **26.0084 m/s²**, below the 52 m/s² engine limit, independently of initial velocity. The moving 3 m/s contact settled at **4.293 m** stand-off error with approximately **1.3 × 10⁻⁹ m/s** relative speed.
+The new physics suite contains **12,053 checks**: angular momentum for 10,000 torque-free steps, energy drift, torque/inertia response, 2,000 actuator combinations, shrink scaling, vacuum and atmospheric drag, equal engine impulse at different starting velocities, inertial overspeed, gravity continuity at 3R and on gas bodies, render-scale invariance, moving-target rendezvous, versioned persistence and subnormal save values. Rotational relative energy error was **1.51 × 10⁻⁸** over the conservation probe. A three-second ramped throttle burn averaged **26.0084 m/s²**, below the 52 m/s² engine limit, independently of initial velocity. The moving 3 m/s contact settled at **4.293 m** stand-off error with approximately **1.3 × 10⁻⁹ m/s** relative speed.
 
 Validation records:
 
@@ -84,6 +86,7 @@ Validation records:
 - [Native piloting and image checks](ship-physics-0.37/native-pilot-tests.log): identical camera and geometry in all three rendering modes; safe touchdown at 0.592 mm AGL with 100% hull; thrust launch to 30.127 m AGL; micro/nano resizing; 1,631 visible atoms; real moons and traffic; both roll directions and release.
 - [Native scale and UI checks](ship-physics-0.37/native-scale-ui-tests.log): screen-fit capture checks, seamless flight through nine scales with eight inward/eight outward frame changes, and the galaxy-to-atomic return with matching descriptor/material/site proof digest `18021890525663604607`.
 - [Physical dynamics checks](ship-physics-0.37/physics-tests.log), [package verification](ship-physics-0.37/package.json), and [unchanged source hashes](ship-physics-0.37/preservation.json).
+- [Final native piloting rerun](ship-physics-0.37/native-pilot-final-tests.log) after the subnormal parser fix: the complete landing, restore, launch, nano-flight and roll loop passed again. [Detailed final log](ship-physics-0.37/native-pilot-final.log).
 
 The native cockpit workload rendered 2,063 frames: median wall time **26.12 ms**, p95 **151.14 ms**, peak RSS **144.8 MB**, and peak CPU geometry cache **11.94 MB**. This run overlapped CPU regression tests and includes streaming and resizing, so these are workload observations, not a controlled rendering speedup comparison. Shaders, renderer passes and GPU representations are unchanged. The new force-source cache is bounded by three system catalogues.
 

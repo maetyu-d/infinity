@@ -1,3 +1,3 @@
 moving_error=4.29263 relative_speed=1.29838e-09 phase=HOLDING / MATCHING TARGET VELOCITY
 rotation_max_relative_energy_error=1.51324e-08 burn_mean_accel_m_s2=26.0084
-PASS: 12051 physical force, torque, gravity, atmosphere, coasting, moving-target and persistence checks
+PASS: 12053 physical force, torque, gravity, atmosphere, coasting, moving-target and persistence checks

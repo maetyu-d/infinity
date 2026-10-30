@@ -2,6 +2,7 @@
 #include "infinite/StellarEvolution.hpp"
 #include "infinite/SurfaceLife.hpp"
 #include <algorithm>
+#include <charconv>
 #include <cmath>
 #include <iomanip>
 #include <locale>
@@ -1154,6 +1155,17 @@ bool Pilot::restore(std::string_view text) {
     try {
         std::istringstream in{std::string(text)};
         in.imbue(std::locale::classic());
+        // Formatted stream extraction can reject finite subnormal numbers on
+        // libc++. Long-decayed actuator/rate states must still round-trip.
+        auto real = [&](double& value) {
+            std::string token;
+            if (!(in >> token))
+                return false;
+            const auto result = std::from_chars(token.data(), token.data() + token.size(), value);
+            return result.ec == std::errc{} && result.ptr == token.data() + token.size() &&
+                   std::isfinite(value);
+        };
+        auto vector = [&](glm::dvec3& v) { return real(v.x) && real(v.y) && real(v.z); };
         std::string header, frame, destination, planet;
         int version;
         ShipState candidate;
@@ -1162,17 +1174,17 @@ bool Pilot::restore(std::string_view text) {
             return false;
         candidate.frame = Address::parse(frame);
         for (auto* v : {&candidate.velocity, &candidate.angularVelocity, &candidate.thrusters})
-            if (!(in >> v->x >> v->y >> v->z) || !std::isfinite(glm::length(*v)) || glm::length(*v) > 1e30)
+            if (!vector(*v) || !std::isfinite(glm::length(*v)) || glm::length(*v) > 1e30)
                 return false;
         if (version >= 2)
-            if (!(in >> candidate.positionResidual.x >> candidate.positionResidual.y >>
-                  candidate.positionResidual.z) ||
+            if (!vector(candidate.positionResidual) ||
                 !std::isfinite(glm::length(candidate.positionResidual)) ||
                 glm::length(candidate.positionResidual) > 1e30)
                 return false;
-        if (!(in >> candidate.throttle >> candidate.boost >> candidate.hull >> candidate.assist >>
-              candidate.cruise >> candidate.shrinking >> candidate.gear >> candidate.landed >> destination >>
-              planet >> direction.x >> direction.y >> direction.z))
+        if (!real(candidate.throttle) || !real(candidate.boost) || !real(candidate.hull) ||
+            !(in >> candidate.assist >> candidate.cruise >> candidate.shrinking >> candidate.gear >>
+              candidate.landed >> destination >> planet) ||
+            !vector(direction))
             return false;
         if (!(candidate.throttle >= 0 && candidate.throttle <= 1 && candidate.boost >= 0 &&
               candidate.boost <= 1 && candidate.hull >= 0 && candidate.hull <= 100) ||
@@ -1181,8 +1193,9 @@ bool Pilot::restore(std::string_view text) {
         auto dest = destination == "-" ? std::optional<Address>{} : Address::parse(destination);
         auto body = planet == "-" ? std::optional<Address>{} : Address::parse(planet);
         if (version >= 3) {
-            if (!(in >> candidate.autoShrink >> candidate.logSize >> candidate.targetLogSize >>
-                  candidate.cruiseSpeed >> candidate.flightSeconds >> candidate.travelMetres))
+            if (!(in >> candidate.autoShrink) || !real(candidate.logSize) || !real(candidate.targetLogSize) ||
+                !real(candidate.cruiseSpeed) || !real(candidate.flightSeconds) ||
+                !real(candidate.travelMetres))
                 return false;
             if (!(candidate.logSize >= -12 && candidate.logSize <= 0 && candidate.targetLogSize >= -12 &&
                   candidate.targetLogSize <= 0 && candidate.cruiseSpeed >= 1e6 &&
@@ -1202,8 +1215,7 @@ bool Pilot::restore(std::string_view text) {
             }
         }
         if (version >= 4) {
-            if (!(in >> candidate.angularThrusters.x >> candidate.angularThrusters.y >>
-                  candidate.angularThrusters.z >> candidate.driveBraking) ||
+            if (!vector(candidate.angularThrusters) || !(in >> candidate.driveBraking) ||
                 !std::isfinite(glm::length(candidate.angularThrusters)) ||
                 glm::length(candidate.angularThrusters) > 1.000001)
                 return false;
