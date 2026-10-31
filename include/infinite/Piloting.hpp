@@ -36,6 +36,8 @@ struct ShipState {
 };
 struct FlightInstruments {
     glm::dvec3 localVelocity{}, localTarget{}, localUp{0, 1, 0};
+    glm::dvec3 localAcceleration{}, localAngularVelocity{}, contactImpulse{};
+    uint64_t contactSequence = 0; // transient read-only presentation events, not a saved simulation rule
     double speed = 0, stoppingDistance = 0, altitude = -1, descent = 0, drift = 0;
     double range = 0, approachError = 0, throttle = 0, engine = 0, hull = 100, logMetres = 0, scaleRate = 0;
     double roll = 0, pitch = 0, driveSpeed = 0, rollRate = 0;
@@ -119,6 +121,8 @@ class Pilot {
     FlightEnvironment environment_;
     ShipEnvironmentSample environmentSample_;
     glm::dvec3 properAcceleration_{};
+    glm::dvec3 contactImpulse_{};
+    uint64_t contactSequence_ = 0;
     glm::dvec3 approachAxis_{0, 0, 1};
     FlightInstruments instruments_;
     std::optional<Address> destination_, landingPlanet_;
@@ -147,6 +151,7 @@ class Pilot {
     bool fits(double logSize) const;
     bool continuumContact() const;
     void matterContact(const std::shared_ptr<const Geometry>&, glm::dvec3 previousEye);
+    void contactFeedback(glm::dvec3 previousVelocity);
     std::shared_ptr<const Geometry> collisionGeometry_;
     std::shared_ptr<const SurfaceWorld> surfaceWorld_;
 };

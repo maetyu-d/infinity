@@ -48,6 +48,7 @@ Mesh cockpitMesh(double aspect);
 CockpitOverlay cockpitOverlay(const FlightInstruments&, double aspect, std::string_view mode,
                               std::string_view notice = {}, std::span<const CelestialContact> contacts = {},
                               std::span<const ActivityContact> activity = {}, bool help = false,
-                              double projectionScale = 1, const MarketView* market = nullptr);
+                              double projectionScale = 1, const MarketView* market = nullptr,
+                              glm::dquat headInShip = {1, 0, 0, 0});
 std::string flightQuantity(double value, bool speed = false);
 } // namespace infinite

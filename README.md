@@ -1,5 +1,6 @@
 # INFINITE
 
+**0.38.2:** restrained cockpit inertia, high-G vibration, collision/landing jolts and hull-damage feedback. **F7** toggles motion and saves the preference. The physical ship, aim and easier controls remain unchanged; firing recoil hooks are available for a future weapon system. [Motion and controls](docs/SHIP_HANDLING.md).
 **0.38.1:** calmer ship controls, fine mouse response, a shared three-axis turn envelope and faster rotational arrest. **Hold B** to recover even while other controls are held. Returning to the cockpit with **V** enables assist; **X** explicitly selects inertial flight. [Handling measurements and validation](docs/SHIP_HANDLING.md).
 
 **0.38:** persistent civilian production, local inventories and markets, paid cargo shipments, wages, household supplies and escrow-funded contracts attached to existing ports and settlements. **F2** market, **F3** accept/deliver, **F4** contract destination. Cargo adds ship mass and must be unloaded before shrinking. [Economy, controls and validation](docs/ECONOMY_0_38.md).

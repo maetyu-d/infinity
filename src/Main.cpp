@@ -1,5 +1,6 @@
 #include "CelestialValidation.hpp"
 #include "CloudValidation.hpp"
+#include "CockpitMotionValidation.hpp"
 #include "EconomyValidation.hpp"
 #include "FlightValidation.hpp"
 #include "LandingLightValidation.hpp"
@@ -48,7 +49,7 @@ struct Options {
          diversityTest = false, stellarDiversityTest = false;
     bool streamingTest = false;
     bool terrainQuality = false, terrainSurfaceFrame = false, sunShadows = true;
-    bool economyTest = false;
+    bool economyTest = false, cockpitMotionTest = false;
     bool pilotTest = false, terrainTest = false, surfaceTest = false, explicitMode = false;
 };
 static Options options(int argc, char** argv) {
@@ -70,6 +71,9 @@ static Options options(int argc, char** argv) {
             o.benchmark = o.smoke = o.tour = o.fresh = true;
         else if (arg == "--economy-test") {
             o.economyTest = o.benchmark = o.smoke = o.fresh = true;
+            o.visualTime = 12;
+        } else if (arg == "--cockpit-motion-test") {
+            o.cockpitMotionTest = o.benchmark = o.smoke = o.fresh = true;
             o.visualTime = 12;
         } else if (arg == "--stellar-diversity-test") {
             o.stellarDiversityTest = o.benchmark = o.smoke = o.fresh = true;
@@ -156,11 +160,13 @@ static Options options(int argc, char** argv) {
                    "size, Y planets, Shift-Y moons, V explorer. "
                    "C mouse helm, arrows pitch/yaw, right-drag look, "
                    "-/+ speed, Shift boost, Ctrl fine, scroll scale, click select, F focus, "
-                   "Backspace parent, F1 controls, Tab overlay, R reset, M marker, P screenshot, T tour, Esc "
+                   "Backspace parent, F1 controls, F7 cockpit motion, Tab overlay, R reset, M marker, P "
+                   "screenshot, T tour, Esc "
                    "release mouse / quit.\nCLI: --fresh --tour --smoke-test --frames N --width N "
                    "--height N --seed N "
                    "--benchmark-tour --flight-test --streaming-test --pilot-test --planet-stability-test "
-                   "--economy-test --ui-fit-test --polar-optics-test --cloud-volume-test "
+                   "--economy-test --cockpit-motion-test --ui-fit-test --polar-optics-test "
+                   "--cloud-volume-test "
                    "--celestial-graphics-test "
                    "--stellar-diversity-test --stellar-sun-test --landing-light-test "
                    "--weather-visibility-test "
@@ -232,7 +238,8 @@ int main(int argc, char** argv) {
         bool pilotEnabled = (!opt.smoke && !opt.tour) || opt.economyTest || opt.pilotTest ||
                             opt.terrainTest || opt.surfaceTest || opt.planetTest || opt.uiFitTest ||
                             opt.polarTest || opt.cloudTest || opt.celestialTest || opt.landingLightTest ||
-                            opt.weatherTest || opt.diversityTest || opt.stellarDiversityTest;
+                            opt.weatherTest || opt.diversityTest || opt.stellarDiversityTest ||
+                            opt.cockpitMotionTest;
         std::unique_ptr<FlightValidation> flightProof;
         if (opt.flightTest)
             flightProof = std::make_unique<FlightValidation>(universe, nav);
@@ -270,6 +277,12 @@ int main(int argc, char** argv) {
                 }
             }
             renderer.setMode(opt.renderMode);
+            if (!opt.smoke) {
+                std::ifstream motionSettings(data / "cockpit-motion.txt");
+                int enabled = 1;
+                if (motionSettings >> enabled && (enabled == 0 || enabled == 1))
+                    renderer.setCockpitMotionEnabled(enabled != 0);
+            }
             std::unique_ptr<TerrainValidation> terrainProof;
             std::string terrainView;
             if (!opt.terrainView.empty()) {
@@ -286,6 +299,9 @@ int main(int argc, char** argv) {
             std::unique_ptr<PilotValidation> pilotProof;
             if (opt.pilotTest)
                 pilotProof = std::make_unique<PilotValidation>(universe, nav, pilot);
+            std::unique_ptr<CockpitMotionValidation> motionProof;
+            if (opt.cockpitMotionTest)
+                motionProof = std::make_unique<CockpitMotionValidation>(universe, nav, pilot);
             std::unique_ptr<PlanetValidation> planetProof;
             if (opt.planetTest)
                 planetProof = std::make_unique<PlanetValidation>(universe, nav, pilot);
@@ -731,6 +747,12 @@ int main(int argc, char** argv) {
                             if (pilotEnabled)
                                 renderer.toggleCockpitHelp();
                             break;
+                        case SDL_SCANCODE_F7:
+                            renderer.setCockpitMotionEnabled(!renderer.cockpitMotionEnabled());
+                            notice = renderer.cockpitMotionEnabled() ? "Cockpit motion ON / F7 toggles"
+                                                                     : "Cockpit motion OFF / F7 toggles";
+                            noticeTime = 4;
+                            break;
                         case SDL_SCANCODE_BACKSPACE:
                             activity.selected.reset();
                             pilotEnabled = false;
@@ -1051,6 +1073,8 @@ int main(int argc, char** argv) {
                 if (diversityProof)
                     diversityProof->advance(renderer);
                 renderer.setCockpit(pilotEnabled ? &pilot.instruments() : nullptr);
+                if (motionProof)
+                    motionProof->apply(renderer);
                 auto stats =
                     renderer.render(nav, cache,
                                     overlay && !opt.polarTest && !opt.cloudTest && !opt.celestialTest &&
@@ -1133,6 +1157,11 @@ int main(int argc, char** argv) {
                 if (pilotProof) {
                     pilotProof->observe(stats, renderer, opt.captures);
                     if (pilotProof->finished())
+                        running = false;
+                }
+                if (motionProof) {
+                    motionProof->observe(stats, cache, renderer, opt.captures);
+                    if (motionProof->finished())
                         running = false;
                 }
                 auto gen = cache.stats();
@@ -1296,6 +1325,7 @@ int main(int argc, char** argv) {
                 saveText(("activity-" + std::to_string(universe.seed()) + ".txt").c_str(),
                          activity.serialize());
                 saveText("display.txt", std::string(renderModeName(renderer.mode())));
+                saveText("cockpit-motion.txt", renderer.cockpitMotionEnabled() ? "1" : "0");
             }
             cache.wait();
             if (proof)
@@ -1315,7 +1345,10 @@ int main(int argc, char** argv) {
             std::cout << "peak_rss_bytes=" << usage.ru_maxrss * 1024 << '\n';
 #endif
 #endif
-            if (opt.stellarDiversityTest) {
+            if (opt.cockpitMotionTest) {
+                if (!motionProof->finished())
+                    throw std::runtime_error("Native cockpit motion validation incomplete");
+            } else if (opt.stellarDiversityTest) {
                 if (!stellarDiversityProof->finished())
                     throw std::runtime_error("Stellar diversity gallery incomplete");
             } else if (opt.diversityTest) {

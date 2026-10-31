@@ -1,0 +1,23 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+COCKPIT_MOTION case=original-neutral degrees=0 translation_mm=0 physical_camera=unchanged ship=unchanged instrument_pick=PASS
+COCKPIT_MOTION case=original-turn degrees=0.324343 translation_mm=6.09711 physical_camera=unchanged ship=unchanged instrument_pick=PASS
+COCKPIT_MOTION case=original-recoil degrees=0.0609775 translation_mm=0.813566 physical_camera=unchanged ship=unchanged instrument_pick=PASS
+COCKPIT_MOTION case=original-impact degrees=0.110531 translation_mm=0.897549 physical_camera=unchanged ship=unchanged instrument_pick=PASS
+COCKPIT_MOTION case=original-damage degrees=0.0846934 translation_mm=0.8473 physical_camera=unchanged ship=unchanged instrument_pick=PASS
+COCKPIT_MOTION case=original-recovery degrees=2.74485e-14 translation_mm=1.98723e-15 physical_camera=unchanged ship=unchanged instrument_pick=PASS
+COCKPIT_MOTION case=hyperion-neutral degrees=0 translation_mm=0 physical_camera=unchanged ship=unchanged instrument_pick=PASS
+COCKPIT_MOTION case=hyperion-turn degrees=0.324343 translation_mm=6.09711 physical_camera=unchanged ship=unchanged instrument_pick=PASS
+COCKPIT_MOTION case=hyperion-recoil degrees=0.0609775 translation_mm=0.813566 physical_camera=unchanged ship=unchanged instrument_pick=PASS
+COCKPIT_MOTION case=hyperion-impact degrees=0.110531 translation_mm=0.897549 physical_camera=unchanged ship=unchanged instrument_pick=PASS
+COCKPIT_MOTION case=hyperion-damage degrees=0.0846934 translation_mm=0.8473 physical_camera=unchanged ship=unchanged instrument_pick=PASS
+COCKPIT_MOTION case=hyperion-recovery degrees=2.74485e-14 translation_mm=1.98723e-15 physical_camera=unchanged ship=unchanged instrument_pick=PASS
+COCKPIT_MOTION case=hybrid-neutral degrees=0 translation_mm=0 physical_camera=unchanged ship=unchanged instrument_pick=PASS
+COCKPIT_MOTION case=hybrid-turn degrees=0.324343 translation_mm=6.09711 physical_camera=unchanged ship=unchanged instrument_pick=PASS
+COCKPIT_MOTION case=hybrid-recoil degrees=0.0609775 translation_mm=0.813566 physical_camera=unchanged ship=unchanged instrument_pick=PASS
+COCKPIT_MOTION case=hybrid-impact degrees=0.110531 translation_mm=0.897549 physical_camera=unchanged ship=unchanged instrument_pick=PASS
+COCKPIT_MOTION case=hybrid-damage degrees=0.0846934 translation_mm=0.8473 physical_camera=unchanged ship=unchanged instrument_pick=PASS
+COCKPIT_MOTION case=hybrid-recovery degrees=2.74485e-14 translation_mm=1.98723e-15 physical_camera=unchanged ship=unchanged instrument_pick=PASS
+PASS: native cockpit inertia / recoil hook / impact / damage / recovery in all three rendering modes; unchanged physical flight and picking
+FRAME median_ms=11.732 p95_ms=44.8508 frames=1414 cache_bytes=11319552
+peak_rss_bytes=149307392

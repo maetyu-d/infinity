@@ -1,5 +1,6 @@
 #pragma once
 #include "Activity.hpp"
+#include "CockpitMotion.hpp"
 #include "Navigation.hpp"
 #include "Piloting.hpp"
 #include "Presentation.hpp"
@@ -13,6 +14,7 @@ struct EconomySnapshot;
 struct MarketView;
 struct FrameStats {
     double cpuMs = 0, gpuMs = 0, submitMs = 0;
+    double cockpitMotionDegrees = 0, cockpitMotionMetres = 0;
     uint32_t drawCalls = 0;
     size_t gpuBytes = 0, visibleObjects = 0, atoms = 0;
     size_t lodTransitions = 0, sections = 0;
@@ -65,6 +67,10 @@ class Renderer {
     RenderMode mode() const;
     void freezeVisualTime(double seconds);
     void setCockpit(const FlightInstruments*);
+    void setCockpitMotionEnabled(bool);
+    bool cockpitMotionEnabled() const;
+    CockpitMotionPose cockpitMotionPose() const;
+    void cockpitImpulse(CockpitImpulse, double strength = 1, glm::dvec3 direction = {});
     void toggleCockpitHelp();
 
   private:

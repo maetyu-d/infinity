@@ -331,10 +331,13 @@ Mesh cockpitMesh(double aspect) {
 CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::string_view mode,
                               std::string_view notice, std::span<const CelestialContact> contacts,
                               std::span<const ActivityContact> activity, bool help, double projectionScale,
-                              const MarketView* market) {
+                              const MarketView* market, glm::dquat headInShip) {
     CockpitOverlay h;
     const CockpitLayout l(aspect);
     const double w = l.width, center = w * .5;
+    const auto eyeFromShip = glm::inverse(headInShip);
+    const auto aimPoint =
+        cockpitTargetMarker(eyeFromShip * glm::dvec3(0, 0, -1), aspect, projectionScale).point;
     const double ratio = std::max(1e-12, t.hullMetres / 12);
     const bool surface = t.altitude >= 0 && (t.gear || t.altitude < 5000 * ratio);
     const bool catalogues = !t.shrinking || t.hullMetres >= .001;
@@ -588,7 +591,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
         return h;
     }
     if (help) {
-        const CockpitRect guide{center - std::min(700., w - 80) * .5, 205, std::min(700., w - 80), 442};
+        const CockpitRect guide{center - std::min(700., w - 80) * .5, 193, std::min(700., w - 80), 466};
         card(h, guide, mint);
         fitted(h.lettering, "FLIGHT CONTROLS", guide.x + 22, guide.y + 22, guide.w - 44, 17.5, pearl);
         const std::pair<const char*, const char*> controls[]{{"W / S", "THROTTLE"},
@@ -605,6 +608,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                                                              {"Z / , / .", "SHRINK / SMALLER / LARGER"},
                                                              {"SHIFT-Z / V", "FULL SIZE / EXPLORER"},
                                                              {"F6 / H / TAB", "TRAFFIC / RENDER / HUD"},
+                                                             {"F7", "COCKPIT MOTION"},
                                                              {"F2 / F3 / F4", "MARKET / CONTRACT / TARGET"},
                                                              {"F1 / ESC", "CLOSE GUIDE / RELEASE HELM"}};
         for (size_t i = 0; i < std::size(controls); ++i) {
@@ -695,7 +699,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
 
     // Readable world labels reserve rectangles, avoid all fixed panels and the
     // reticle, and cap at three secondary labels. Geometry and picking stay full.
-    const CockpitRect aim{center - 42, 423, 84, 54};
+    const CockpitRect aim{aimPoint.x - 42, aimPoint.y - 27, 84, 54};
     auto worldLabel = [&](glm::dvec2 anchor, std::string_view name, std::string_view range, glm::vec3 color) {
         const double width = std::min(184., l.windscreen.w - 12);
         for (int placement : {0, 1, 2, 3}) {
@@ -720,7 +724,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
         return false;
     };
     if (t.targetVisible) {
-        const auto marker = cockpitTargetMarker(t.localTarget, aspect, projectionScale);
+        const auto marker = cockpitTargetMarker(eyeFromShip * t.localTarget, aspect, projectionScale);
         const auto p = marker.point;
         if (marker.offscreen) {
             const auto d = marker.direction, across = glm::dvec2(-d.y, d.x);
@@ -742,11 +746,11 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                    flightQuantity(t.range), lifeTarget != contacts.end() ? mint : amber);
     }
     for (int side : {-1, 1}) {
-        line(h.strokes, center + side * 9, 450, center + side * 23, 450, ice);
-        line(h.strokes, center + side * 23, 450, center + side * 23, 454, ice);
+        line(h.strokes, aimPoint.x + side * 9, aimPoint.y, aimPoint.x + side * 23, aimPoint.y, ice);
+        line(h.strokes, aimPoint.x + side * 23, aimPoint.y, aimPoint.x + side * 23, aimPoint.y + 4, ice);
     }
-    rect(h.panels, center - 1, 449, 2, 2, pearl);
-    const auto motion = t.relativeMotion ? t.localRelativeVelocity : t.localVelocity;
+    rect(h.panels, aimPoint.x - 1, aimPoint.y - 1, 2, 2, pearl);
+    const auto motion = eyeFromShip * (t.relativeMotion ? t.localRelativeVelocity : t.localVelocity);
     for (int sign : {1, -1}) {
         const auto d = motion * double(sign);
         if (glm::length(d) < 1e-15 || -d.z < glm::length(d) * .12)
@@ -795,9 +799,14 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     }
     if (surface) {
         // Local terrain normal drives the horizon; it is unrelated to galaxy up.
-        const double cs = std::cos(t.roll), sn = std::sin(t.roll);
+        const auto headUp = eyeFromShip * t.localUp;
+        const double viewRoll =
+            t.roll + std::atan2(headUp.x, headUp.y) - std::atan2(t.localUp.x, t.localUp.y);
+        const double viewPitch = t.pitch + std::asin(std::clamp(-headUp.z, -1., 1.)) -
+                                 std::asin(std::clamp(-t.localUp.z, -1., 1.));
+        const double cs = std::cos(viewRoll), sn = std::sin(viewRoll);
         for (int pitch : {-20, -10, 0, 10, 20}) {
-            const double y = (t.pitch - pitch * .01745329252) * 220;
+            const double y = (viewPitch - pitch * .01745329252) * 220;
             if (std::abs(y) > 140)
                 continue;
             for (int side : {-1, 1}) {

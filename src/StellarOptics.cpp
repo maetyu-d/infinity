@@ -36,7 +36,7 @@ double stellarDiscVisibility(glm::dvec3 direction, double radius, double distanc
     return visible;
 }
 StellarImage extractStellarImage(const Universe& universe, const Navigation& nav,
-                                 std::span<const CelestialContact> bodies) {
+                                 std::span<const CelestialContact> bodies, glm::dquat headInShip) {
     StellarImage image;
     if (nav.anchor.kind() > Kind::Mountain)
         return image;
@@ -53,14 +53,14 @@ StellarImage extractStellarImage(const Universe& universe, const Navigation& nav
         return image;
     const auto localDirection = delta / distance;
     image.address = star->address;
-    image.direction = glm::inverse(nav.orientation) * localDirection;
+    const auto orientation = nav.orientation * headInShip;
+    image.direction = glm::inverse(orientation) * localDirection;
     image.distanceMetres = distance * units;
     image.angularRadius = std::asin(std::clamp(radius / distance, 0., 1.));
     image.color = stellarRadiance(*star);
     image.starType = stellarPresentation(*star);
     image.cameraToStar =
-        glm::inverse(universe.relative(star->address, nav.anchor, nav.logDistance).orientation) *
-        nav.orientation;
+        glm::inverse(universe.relative(star->address, nav.anchor, nav.logDistance).orientation) * orientation;
     image.nearDepthUnits = std::max(0., -image.direction.z) * (distance - radius);
     image.visibility =
         image.direction.z < 0

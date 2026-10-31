@@ -80,6 +80,8 @@ void Pilot::setVelocity(glm::dvec3 v) {
     }
 }
 void Pilot::resetMotion() {
+    contactImpulse_ = {};
+    properAcceleration_ = {};
     clearAssistCapture();
     waypoint_.reset();
     ship_.frame = nav_.anchor;
@@ -889,6 +891,7 @@ void Pilot::step(const HelmInput& input, double dt) {
         };
         const auto from = toSI(oldEye), to = toSI(nav_.cameraPosition());
         if (const auto hit = surfaceCollision(*surfaceWorld_, from, to, collisionRadius())) {
+            const auto contactVelocity = ship_.velocity;
             const double length = glm::length(to - from);
             const double safe = std::max(0., *hit - .02 / std::max(.02, length));
             nav_.offset =
@@ -898,6 +901,7 @@ void Pilot::step(const HelmInput& input, double dt) {
             ship_.throttle = 0;
             autopilot_ = landing_ = false;
             phase_ = "STRUCTURE CONTACT / BRAKED";
+            contactFeedback(contactVelocity);
         }
     }
     ship_.flightSeconds += dt;
@@ -911,6 +915,7 @@ void Pilot::step(const HelmInput& input, double dt) {
             const bool safe = ship_.gear && std::abs(sink) < 2. * sizeRatio() && drift < 2. * sizeRatio() &&
                               tilt < .26 && g->slope < .61;
             if (launchTime_ <= 0 && (g->altitude < collisionRadius() || (landing_ && safe))) {
+                const auto contactVelocity = ship_.velocity;
                 nav_.offset = g->point + g->normal * (collisionRadius() / std::pow(10., nav_.logDistance)) -
                               nav_.orientation * glm::dvec3(0, 0, 1);
                 ship_.positionResidual = {};
@@ -928,6 +933,7 @@ void Pilot::step(const HelmInput& input, double dt) {
                     ship_.hull = std::max(0., ship_.hull - std::max(0., sink / sizeRatio() - 2.) * .3);
                     phase_ = "SURFACE CONTACT / GEAR / LEVEL / SLOW";
                 }
+                contactFeedback(contactVelocity);
             }
         }
     }
@@ -937,6 +943,7 @@ void Pilot::matterContact(const std::shared_ptr<const Geometry>& geometry, glm::
     if (nav_.anchor.kind() < Kind::Rock)
         return;
     auto apply = [&](glm::dvec3 normal, double penetration) {
+        const auto contactVelocity = ship_.velocity;
         const double inward = std::max(0., -glm::dot(ship_.velocity, normal));
         const auto eye = nav_.cameraPosition();
         nav_.offset = eye + normal * (penetration / std::pow(10., nav_.logDistance)) -
@@ -945,6 +952,7 @@ void Pilot::matterContact(const std::shared_ptr<const Geometry>& geometry, glm::
         ship_.positionResidual = {};
         ship_.hull = std::max(0., ship_.hull - std::max(0., inward / sizeRatio() - 2) * .1);
         phase_ = "MATERIAL CONTACT / SHRINK OR STEER CLEAR";
+        contactFeedback(contactVelocity);
     };
     if (continuumContact()) {
         auto address = nav_.anchor;
@@ -1016,6 +1024,13 @@ void Pilot::matterContact(const std::shared_ptr<const Geometry>& geometry, glm::
             apply(normal, deepest * units);
     }
 }
+void Pilot::contactFeedback(glm::dvec3 previousVelocity) {
+    const auto impulse = glm::inverse(nav_.orientation) * (ship_.velocity - previousVelocity) / sizeRatio();
+    if (glm::length(impulse) > 1e-8) {
+        contactImpulse_ = limited(contactImpulse_ + impulse, 200.);
+        ++contactSequence_;
+    }
+}
 void Pilot::update(const HelmInput& input, double dt, const std::shared_ptr<const Geometry>& visible) {
     if (!std::isfinite(dt) || dt <= 0)
         return;
@@ -1032,6 +1047,7 @@ void Pilot::update(const HelmInput& input, double dt, const std::shared_ptr<cons
         bounded = {};
         bounded.brake = true;
     }
+    contactImpulse_ = {};
     synchronizeFrame();
     if (visible && visible->address == nav_.anchor)
         collisionGeometry_ = visible;
@@ -1064,6 +1080,10 @@ void Pilot::instrument() {
     instruments_ = {};
     auto& t = instruments_;
     t.localVelocity = glm::inverse(nav_.orientation) * ship_.velocity;
+    t.localAcceleration = glm::inverse(nav_.orientation) * properAcceleration_;
+    t.localAngularVelocity = ship_.angularVelocity;
+    t.contactImpulse = contactImpulse_;
+    t.contactSequence = contactSequence_;
     t.rollRate = -ship_.angularVelocity.z;
     t.speed = glm::length(ship_.velocity);
     t.driveSpeed = speedLimit() * precisionScale_;

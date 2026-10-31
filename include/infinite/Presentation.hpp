@@ -70,7 +70,8 @@ inline bool hasSurfaceLife(const CelestialContact& c) {
     return c.address.kind() == Kind::Planet && c.life == LifeDetection::Detected && c.population > 0;
 }
 std::vector<CelestialContact> extractCelestialContacts(const Universe&, const Navigation&, const Node& system,
-                                                       std::span<const Node> planets);
+                                                       std::span<const Node> planets,
+                                                       glm::dquat headInShip = {1, 0, 0, 0});
 // Read-only image of the existing parent star. Camera-relative direction and
 // physical angular size remain invariant when render units change.
 struct StellarImage {
@@ -82,7 +83,8 @@ struct StellarImage {
     std::array<glm::vec4, 2> starType{};
     glm::dquat cameraToStar{1, 0, 0, 0};
 };
-StellarImage extractStellarImage(const Universe&, const Navigation&, std::span<const CelestialContact>);
+StellarImage extractStellarImage(const Universe&, const Navigation&, std::span<const CelestialContact>,
+                                 glm::dquat headInShip = {1, 0, 0, 0});
 // Direction and contact bearings use the camera frame; distances are metres.
 double stellarDiscVisibility(glm::dvec3 direction, double angularRadius, double distanceMetres,
                              std::span<const CelestialContact>);

@@ -164,6 +164,12 @@ int main() {
         check(std::abs(pilot.instruments().altitude) < .12,
               "landing gear did not contact the real geological surface");
         check(pilot.ship().hull == 100, "safe landing damaged hull");
+        check(pilot.instruments().contactSequence > 0 && glm::length(pilot.instruments().contactImpulse) > 0,
+              "Actual terrain touchdown did not publish a contact feedback event");
+        check(glm::length(pilot.instruments().localAngularVelocity - pilot.ship().angularVelocity) < 1e-12 &&
+                  std::abs(glm::length(pilot.instruments().localAcceleration) / 9.80665 -
+                           pilot.instruments().properG) < 1e-12,
+              "Cockpit motion telemetry disagrees with the physical ship");
         check(descriptorFingerprint(u.describe(planet)) == before, "landing modified procedural planet");
         auto landed = pilot.serialize();
         check(pilot.restore(landed) && pilot.ship().landed, "landed save did not restore");

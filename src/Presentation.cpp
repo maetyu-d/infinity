@@ -199,12 +199,13 @@ double celestialCellWeight(glm::dvec3 centre, glm::dvec3 eye) {
     return weight;
 }
 std::vector<CelestialContact> extractCelestialContacts(const Universe& universe, const Navigation& nav,
-                                                       const Node& system, std::span<const Node> planets) {
+                                                       const Node& system, std::span<const Node> planets,
+                                                       glm::dquat headInShip) {
     if (system.address.kind() != Kind::System)
         throw std::invalid_argument("Celestial contacts require an existing system");
     std::vector<CelestialContact> contacts;
     contacts.reserve(planets.size() + 1);
-    const auto inverse = glm::inverse(nav.orientation);
+    const auto inverse = glm::inverse(nav.orientation * headInShip);
     const auto eye = nav.cameraPosition();
     const double units = std::pow(10., nav.logDistance);
     auto add = [&](const Node& node) {
