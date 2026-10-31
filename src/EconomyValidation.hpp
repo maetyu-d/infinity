@@ -26,6 +26,9 @@ class EconomyValidation {
     int64_t beforeCredits_ = 0;
     std::string camera_;
     uint64_t geometry_ = 0;
+    size_t serviceRow_ = 0;
+    int64_t serviceCredits_ = 0;
+    uint64_t repairUnits_ = 0;
     void place() {
         const auto planet = u_.describe(system_.child(Kind::Planet, 0));
         const auto harbour = sampleActivity(planet, 0, 0);
@@ -87,9 +90,19 @@ class EconomyValidation {
         auto i = s->siteIndex(*port_);
         if (!i)
             throw std::runtime_error("Existing harbour has no economic account");
+        MarketContext context;
+        context.hull = pilot_.ship().hull;
+        context.cruiseSpeed = pilot_.ship().cruiseSpeed;
+        const auto home = u_.describe(nav_.anchor);
+        context.systemPosition = u_.pointRelative(
+            nav_.anchor, nav_.cameraPosition() * std::pow(10., nav_.logDistance - home.frame.logRadius),
+            system_, 0);
         view_ = economicMarketView(s.get(), port_,
-                                   page_ == MarketPage::Industry || page_ == MarketPage::Jobs ? 0 : 1, 10,
-                                   economicTradeAccess(u_, nav_, pilot_, s->network->sites[*i]), page_);
+                                   page_ == MarketPage::Services                                ? serviceRow_
+                                   : page_ == MarketPage::Industry || page_ == MarketPage::Jobs ? 0
+                                                                                                : 1,
+                                   10, economicTradeAccess(u_, nav_, pilot_, s->network->sites[*i]), page_,
+                                   context);
         if (!requireLink_) {
             pilot_.update({}, 1. / 30, renderer.submittedGeometry(nav_.anchor));
             if (age_ % 180 == 0)
@@ -235,12 +248,15 @@ class EconomyValidation {
                          "freight\n";
             next(70);
         } else if (stage_ == 70 && age_ > 10) {
+            auto fits = [&](const auto& h) {
+                return h.phase == HaulPhase::Open && h.kg <= s->player.capacityKg &&
+                       h.kg * goodInfo(h.good).litresPerKg <= s->player.capacityLitres;
+            };
             auto available = std::find_if(s->hauls.begin(), s->hauls.end(), [&](const auto& h) {
-                return h.phase == HaulPhase::Open && s->network->sites[h.source].orbital;
+                return fits(h) && s->network->sites[h.source].orbital;
             });
             if (available == s->hauls.end())
-                available = std::find_if(s->hauls.begin(), s->hauls.end(),
-                                         [](const auto& h) { return h.phase == HaulPhase::Open; });
+                available = std::find_if(s->hauls.begin(), s->hauls.end(), fits);
             if (available == s->hauls.end())
                 throw std::runtime_error("Native job board has no funded haul");
             haul_ = *available;
@@ -296,7 +312,75 @@ class EconomyValidation {
         } else if (stage_ == 80 && age_ > 30) {
             capture("jobs-portrait");
             next(81);
-        } else if (stage_ == 81 && age_ > 10)
+        } else if (stage_ == 81 && age_ > 10) {
+            auto provider = s->sites.size();
+            for (size_t index = 0; index < s->sites.size(); ++index)
+                if (s->network->sites[index].orbital &&
+                    economicServiceQuote(*s, index, ShipService::Repair, 10).available &&
+                    economicServiceQuote(*s, index, ShipService::CargoHold, 1).available) {
+                    provider = index;
+                    break;
+                }
+            if (provider == s->sites.size())
+                throw std::runtime_error("Native universe has no stocked service port");
+            placePort(s->network->sites[provider]);
+            std::istringstream before(pilot_.serialize());
+            std::string damaged, word;
+            for (unsigned field = 0; before >> word; ++field)
+                damaged += (field == 17 ? "83" : word) + " ";
+            if (!pilot_.restore(damaged))
+                throw std::runtime_error("Native damaged ship fixture failed");
+            page_ = MarketPage::Services;
+            const double density = std::max(1., double(SDL_GetWindowPixelDensity(window_)));
+            SDL_SetWindowSize(window_, int(1440 / density), int(900 / density));
+            next(82);
+        } else if (stage_ == 82 && age_ > 30 &&
+                   economicTradeAccess(u_, nav_, pilot_, s->network->sites[*i])) {
+            requireLink_ = true;
+            capture("services-before");
+            auto q = economicServiceQuote(*s, *i, ShipService::Repair, 10);
+            serviceCredits_ = s->player.credits - q.totalCents();
+            repairUnits_ = s->player.repairPoints + 10;
+            EconomicCommand c;
+            c.sequence = ++sequence_;
+            c.port = *port_;
+            c.action = EconomicAction::RepairHull;
+            c.serviceUnits = 10;
+            c.limitCents = q.totalCents();
+            runtime_.command(c);
+            next(83);
+        } else if (stage_ == 83 && s->player.lastCommand >= sequence_ && age_ > 12) {
+            if (s->player.credits != serviceCredits_ || s->player.repairPoints != repairUnits_ ||
+                pilot_.ship().hull != 93 || pilot_.ship().appliedRepairPoints != repairUnits_)
+                throw std::runtime_error("Native paid repair did not reconcile with the physical ship");
+            capture("services-repaired");
+            serviceRow_ = 1;
+            auto q = economicServiceQuote(*s, *i, ShipService::CargoHold, 1);
+            serviceCredits_ -= q.totalCents();
+            EconomicCommand c;
+            c.sequence = ++sequence_;
+            c.port = *port_;
+            c.action = EconomicAction::UpgradeCargo;
+            c.serviceUnits = 1;
+            c.limitCents = q.totalCents();
+            runtime_.command(c);
+            next(84);
+        } else if (stage_ == 84 && s->player.lastCommand >= sequence_ && age_ > 12) {
+            if (s->player.cargoLevel != 1 || s->player.capacityKg != 6000 ||
+                s->player.capacityLitres != 16000 || s->player.credits != serviceCredits_)
+                throw std::runtime_error("Native cargo refit failed its funded capacity update");
+            capture("services-upgraded");
+            next(87);
+        } else if (stage_ == 87 && age_ > 10) {
+            // Let the GPU finish the wide capture before changing its backbuffer.
+            SDL_SetWindowSize(window_, 480, 640);
+            next(85);
+        } else if (stage_ == 85 && age_ > 30) {
+            capture("services-portrait");
+            std::cout << "PASS: native funded repair, physical hull receipt, cargo upgrade and service "
+                         "portrait fit\n";
+            next(86);
+        } else if (stage_ == 86 && age_ > 10)
             finished_ = true;
     }
     bool finished() const {

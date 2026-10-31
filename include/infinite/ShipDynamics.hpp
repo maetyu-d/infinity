@@ -1,6 +1,7 @@
 #pragma once
 #include "Core.hpp"
 namespace infinite {
+inline constexpr int64_t maxShipPayloadKg = 10000;
 // SI properties of the existing 12 m hull. Shrinking is an explicit field:
 // m~s^3, I~s^5, F~s^4 and torque~s^5; render magnification is not an input.
 struct ShipProperties {

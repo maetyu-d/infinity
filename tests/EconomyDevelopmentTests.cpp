@@ -188,9 +188,17 @@ int main(int argc, char** argv) {
         audit(e, p, initialMoney);
         save = e.serialize();
         auto bad = save;
-        size_t tail = bad.size() - 1;
-        for (size_t i = 0; i < e.sites().size(); i++)
-            tail = bad.rfind('\n', tail - 1);
+        // Hauling records follow the facility section; find the actual facility
+        // header instead of corrupting an unrelated record counted from EOF.
+        const auto& state = e.sites().front();
+        std::ostringstream record;
+        record << '\n';
+        for (auto level : state.modules)
+            record << level << ' ';
+        record << state.dividends << ' ' << state.dividendsPaid << ' ' << state.operatingBaseline << ' '
+               << bool(state.project);
+        const auto tail = bad.find(record.str());
+        check(tail != std::string::npos, "Missing facility corruption boundary");
         bad[tail + 1] = '4';
         check(!e.restore(bad) && e.serialize() == save, "Invalid refit level mutated the live ledger");
         Economy batched(fixture());
@@ -294,7 +302,9 @@ int main(int argc, char** argv) {
             std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
         check(!s.routes.empty() && s.routes.size() <= 12, "No bounded profitable trade intelligence");
         for (const auto& r : s.routes) {
-            check(r.source != r.destination && r.kg > 0 && r.kg <= 1000 &&
+            check(r.source != r.destination && r.kg > 0 && r.kg <= s.player.capacityKg - s.player.massKg() &&
+                      r.kg * goodInfo(r.good).litresPerKg <=
+                          s.player.capacityLitres - s.player.volumeLitres() &&
                       r.costCents == s.quote(r.source, r.good, r.kg).buyCents &&
                       r.revenueCents == s.quote(r.destination, r.good, r.kg).sellCents &&
                       r.revenueCents > r.costCents && r.costCents <= s.player.credits &&

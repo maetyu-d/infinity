@@ -33,6 +33,7 @@ struct ShipState {
     double logSize = 0, targetLogSize = 0;
     double cruiseSpeed = 9.4607304725808e17; // 100 light years per second, optional drive.
     double flightSeconds = 0, travelMetres = 0;
+    uint64_t appliedRepairPoints = 0;
 };
 struct FlightInstruments {
     glm::dvec3 localVelocity{}, localTarget{}, localUp{0, 1, 0};
@@ -75,6 +76,7 @@ class Pilot {
             ship_.gear = !ship_.gear;
     }
     void setCargoMass(double kg);
+    void applyPortRepairs(uint64_t purchasedPoints);
     double cargoMass() const {
         return cargoMassKg_;
     }

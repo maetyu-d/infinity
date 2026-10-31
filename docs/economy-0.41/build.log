@@ -1,0 +1,148 @@
+ninja: warning: premature end of file; recovering
+[0/2] Re-checking globbed directories...
+[1/69] Building CXX object CMakeFiles/infinite_core.dir/src/ShipDynamics.cpp.o
+[2/69] Building CXX object CMakeFiles/infinite_core.dir/src/Piloting.cpp.o
+[3/69] Building CXX object CMakeFiles/infinite_core.dir/src/FlightEnvironment.cpp.o
+[4/69] Building CXX object CMakeFiles/infinite_core.dir/src/EconomyDevelopment.cpp.o
+[5/69] Building CXX object CMakeFiles/infinite_core.dir/src/Economy.cpp.o
+[6/69] Building CXX object CMakeFiles/infinite_core.dir/src/EconomyHauling.cpp.o
+[7/69] Building CXX object CMakeFiles/infinite_core.dir/src/EconomyServices.cpp.o
+[8/69] Building CXX object CMakeFiles/infinite_core.dir/src/EconomyPlanning.cpp.o
+[9/69] Building CXX object CMakeFiles/infinite_core.dir/src/EconomicNetwork.cpp.o
+[10/69] Building CXX object CMakeFiles/infinite_core.dir/src/EconomyRuntime.cpp.o
+[11/69] Building C object external/SDL/CMakeFiles/SDL3-static.dir/src/SDL.c.o
+[12/69] Building CXX object CMakeFiles/infinite_core.dir/src/Cockpit.cpp.o
+[13/69] Linking CXX static library libinfinite_core.a
+[14/69] Building CXX object CMakeFiles/infinite_economy_services_tests.dir/tests/EconomyServicesTests.cpp.o
+[15/69] Building CXX object CMakeFiles/infinite_cockpit_motion_tests.dir/tests/CockpitMotionTests.cpp.o
+[16/69] Building CXX object CMakeFiles/infinite_economy_hauling_tests.dir/tests/EconomyHaulingTests.cpp.o
+[17/69] Building CXX object CMakeFiles/infinite_economy_development_tests.dir/tests/EconomyDevelopmentTests.cpp.o
+[18/69] Building CXX object CMakeFiles/infinite_economy_tests.dir/tests/EconomyTests.cpp.o
+[19/69] Building CXX object CMakeFiles/infinite_ship_physics_tests.dir/tests/ShipPhysicsTests.cpp.o
+[20/69] Building CXX object CMakeFiles/infinite_stellar_evolution_tests.dir/tests/StellarEvolutionTests.cpp.o
+[21/69] Building CXX object CMakeFiles/infinite_surface_life_tests.dir/tests/SurfaceLifeTests.cpp.o
+[22/69] Building CXX object CMakeFiles/infinite_terrain_tests.dir/tests/TerrainTests.cpp.o
+[23/69] Building CXX object CMakeFiles/infinite_cockpit_tests.dir/tests/CockpitTests.cpp.o
+[24/69] Building CXX object CMakeFiles/infinite_population_tests.dir/tests/PopulationTests.cpp.o
+[25/69] Building CXX object CMakeFiles/infinite_activity_tests.dir/tests/ActivityTests.cpp.o
+[26/69] Building CXX object CMakeFiles/infinite_operating_tests.dir/tests/OperatingScaleTests.cpp.o
+[27/69] Building CXX object CMakeFiles/infinite_piloting_tests.dir/tests/PilotingTests.cpp.o
+[28/69] Building CXX object CMakeFiles/infinite_handling_tests.dir/tests/HandlingTests.cpp.o
+[29/69] Building CXX object CMakeFiles/infinite.dir/src/Renderer.cpp.o
+[30/69] Building CXX object CMakeFiles/infinite.dir/src/Main.cpp.o
+[31/69] Linking CXX executable infinite_tests
+[32/69] Linking C static library external/SDL/libSDL3.a
+ranlib: warning: 'libSDL3.a(SDL_audiodev.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_keysym_to_keycode.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_keysym_to_scancode.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_scancode_tables.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(imKStoUCS.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_d3dmath.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_unsupported.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_d3d.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_d3d.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_d3d11.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_d3d11.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_d3d12.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_d3d12.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_pipeline_gpu.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_gpu.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_gpu.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_gl.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_gl.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_gles2.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_gles2.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_ps2.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_psp.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_blendfillrect.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_blendline.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_blendpoint.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_drawline.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_drawpoint.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_sw.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_rotate.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_triangle.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_vita_gxm.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_vita_gxm_memory.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_vita_gxm_tools.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_vulkan.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_vulkan.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_mslibc.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(yuv_rgb_lsx.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(yuv_rgb_sse.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_camera_dummy.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_audiodev.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_keysym_to_keycode.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_keysym_to_scancode.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_scancode_tables.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(imKStoUCS.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_d3dmath.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_unsupported.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_d3d.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_d3d.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_d3d11.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_d3d11.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_d3d12.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_d3d12.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_pipeline_gpu.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_gpu.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_gpu.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_gl.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_gl.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_gles2.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_gles2.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_ps2.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_psp.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_blendfillrect.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_blendline.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_blendpoint.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_drawline.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_drawpoint.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_sw.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_rotate.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_triangle.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_vita_gxm.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_vita_gxm_memory.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_vita_gxm_tools.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_vulkan.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_vulkan.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_mslibc.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(yuv_rgb_lsx.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(yuv_rgb_sse.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_camera_dummy.c.o)' has no symbols
+[33/69] Linking CXX executable infinite_benchmark
+[34/69] Linking CXX executable infinite_continuity_tests
+[35/69] Linking CXX executable infinite_process_tests
+[36/69] Linking CXX executable infinite_performance_tests
+[37/69] Linking CXX executable infinite_economy_services_tests
+[38/69] Linking CXX executable infinite_cockpit_motion_tests
+[39/69] Linking CXX executable infinite_economy_hauling_tests
+[40/69] Linking CXX executable infinite_economy_development_tests
+[41/69] Linking CXX executable infinite_economy_tests
+[42/69] Linking CXX executable infinite_ship_physics_tests
+[43/69] Linking CXX executable infinite_planet_diversity_tests
+[44/69] Linking CXX executable infinite_stellar_evolution_tests
+[45/69] Linking CXX executable infinite_weather_process_tests
+[46/69] Linking CXX executable infinite_weather_benchmark
+[47/69] Linking CXX executable infinite_weather_field_tests
+[48/69] Linking CXX executable infinite_stellar_optics_tests
+[49/69] Linking CXX executable infinite_window_tests
+[50/69] Linking CXX executable infinite_depth_tests
+[51/69] Linking CXX executable infinite_city_tests
+[52/69] Linking CXX executable infinite_surface_site_snapshot
+[53/69] Linking CXX executable infinite_terrain_tests
+[54/69] Linking CXX executable infinite_surface_life_tests
+[55/69] Linking CXX executable infinite_cockpit_tests
+[56/69] Linking CXX executable infinite_population_tests
+[57/69] Linking CXX executable infinite_population_snapshot
+[58/69] Linking CXX executable infinite_activity_tests
+[59/69] Linking CXX executable infinite_piloting_tests
+[60/69] Linking CXX executable infinite_operating_tests
+[61/69] Linking CXX executable infinite_handling_tests
+[62/69] Linking CXX executable infinite_streaming_tests
+[63/69] Linking CXX executable infinite_navigation_tests
+[64/69] Linking CXX executable infinite_flight_tests
+[65/69] Linking CXX executable infinite_presentation_tests
+[66/69] Linking CXX executable infinite_shading_tests
+[67/69] Linking CXX executable infinite_material_tests
+[68/69] Linking CXX executable infinite

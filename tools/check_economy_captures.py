@@ -10,6 +10,7 @@ for name in (
     'market-routes', 'market-industry', 'market-refit-complete',
     'market-industry-portrait', 'market-routes-portrait',
     'jobs-board', 'jobs-sealed-cargo', 'jobs-paid', 'jobs-portrait',
+    'services-before', 'services-repaired', 'services-upgraded', 'services-portrait',
 ):
     with (root / 'captures' / (name + '.ppm')).open('rb') as f:
         assert f.readline().strip() == b'P6'
@@ -32,6 +33,7 @@ for name, page in (
     ('market-routes', 1), ('market-routes-portrait', 1), ('market-industry', 2),
     ('market-industry-portrait', 2), ('market-refit-complete', 2),
     ('jobs-board',3), ('jobs-sealed-cargo',3), ('jobs-paid',3), ('jobs-portrait',3),
+    ('services-before',4), ('services-repaired',4), ('services-upgraded',4), ('services-portrait',4),
 ):
     assert f'ECONOMY_CAPTURE {name} page={page} ' in log, name + ': incorrect page'
 for a, b in (
@@ -41,4 +43,7 @@ for a, b in (
     assert images[a] != images[b], f'{a}/{b}: duplicate capture'
 assert 'PASS: native job board, reserved acceptance, physical pickup, sealed cargo, landed delivery and paid carrier history' in log
 assert images['jobs-sealed-cargo'] != images['jobs-paid']
-print('PASS: thirteen native goods, routes, industry, hauling, paid career and portrait images')
+assert 'PASS: native funded repair, physical hull receipt, cargo upgrade and service portrait fit' in log
+assert images['services-before'] != images['services-repaired']
+assert images['services-repaired'] != images['services-upgraded']
+print('PASS: seventeen native trading, hauling, services, upgrades, planning and portrait images')

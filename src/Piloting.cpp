@@ -185,8 +185,15 @@ void Pilot::adjustDrive(double steps) {
     instrument();
 }
 void Pilot::setCargoMass(double kg) {
-    if (std::isfinite(kg) && kg >= 0 && kg <= 4000)
+    if (std::isfinite(kg) && kg >= 0 && kg <= maxShipPayloadKg)
         cargoMassKg_ = kg;
+}
+void Pilot::applyPortRepairs(uint64_t purchasedPoints) {
+    if (purchasedPoints <= ship_.appliedRepairPoints || purchasedPoints > 1000000000000ULL)
+        return;
+    ship_.hull = std::min(100., ship_.hull + double(purchasedPoints - ship_.appliedRepairPoints));
+    ship_.appliedRepairPoints = purchasedPoints;
+    instrument();
 }
 void Pilot::toggleShrink() {
     if (cargoMassKg_ > 0 && !ship_.shrinking) {
@@ -1283,7 +1290,7 @@ std::string Pilot::serialize() const {
     std::ostringstream out;
     out.imbue(std::locale::classic());
     out << std::setprecision(17);
-    out << "INFINITE_SHIP 4 " << ship_.frame.str();
+    out << "INFINITE_SHIP 5 " << ship_.frame.str();
     for (auto v : {ship_.velocity, ship_.angularVelocity, ship_.thrusters, ship_.positionResidual})
         out << ' ' << v.x << ' ' << v.y << ' ' << v.z;
     out << ' ' << ship_.throttle << ' ' << ship_.boost << ' ' << ship_.hull << ' ' << ship_.assist << ' '
@@ -1294,7 +1301,7 @@ std::string Pilot::serialize() const {
     out << ' ' << ship_.autoShrink << ' ' << ship_.logSize << ' ' << ship_.targetLogSize << ' '
         << ship_.cruiseSpeed << ' ' << ship_.flightSeconds << ' ' << ship_.travelMetres;
     out << ' ' << ship_.angularThrusters.x << ' ' << ship_.angularThrusters.y << ' '
-        << ship_.angularThrusters.z << ' ' << ship_.driveBraking;
+        << ship_.angularThrusters.z << ' ' << ship_.driveBraking << ' ' << ship_.appliedRepairPoints;
     return out.str();
 }
 bool Pilot::restore(std::string_view text) {
@@ -1316,7 +1323,7 @@ bool Pilot::restore(std::string_view text) {
         int version;
         ShipState candidate;
         glm::dvec3 direction;
-        if (!(in >> header >> version >> frame) || header != "INFINITE_SHIP" || (version < 1 || version > 4))
+        if (!(in >> header >> version >> frame) || header != "INFINITE_SHIP" || (version < 1 || version > 5))
             return false;
         candidate.frame = Address::parse(frame);
         for (auto* v : {&candidate.velocity, &candidate.angularVelocity, &candidate.thrusters})
@@ -1367,6 +1374,9 @@ bool Pilot::restore(std::string_view text) {
                 return false;
         } else if (!candidate.cruise && candidate.assist && glm::length(candidate.velocity) > 85000)
             candidate.driveBraking = true;
+        if (version >= 5 &&
+            (!(in >> candidate.appliedRepairPoints) || candidate.appliedRepairPoints > 1000000000000ULL))
+            return false;
         universe_.describe(candidate.frame);
         if (dest)
             universe_.describe(*dest);

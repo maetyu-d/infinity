@@ -76,7 +76,7 @@ Stock facilityMaterials(const EconomicSiteState& s) {
 }
 int64_t economicPendingPayload(const EconomicCommand& c, const EconomicSiteState& s) {
     if (c.action == EconomicAction::Buy || c.action == EconomicAction::PickupHaul)
-        return std::clamp<int64_t>(c.kg, 0, 4000);
+        return std::clamp<int64_t>(c.kg, 0, maxShipPayloadKg);
     if (c.action == EconomicAction::CancelProject && s.project)
         return total(s.project->delivered);
     return 0;
@@ -217,7 +217,7 @@ std::vector<EconomySnapshot::TradeRoute> economicTradeRoutes(const EconomySnapsh
                 if (a == b || spots[a].buyCents >= spots[b].sellCents)
                     continue;
                 int64_t high = std::min(
-                    {int64_t(1000), roomKg, roomLitres / goodInfo(Good(g)).litresPerKg, spots[a].available,
+                    {maxShipPayloadKg, roomKg, roomLitres / goodInfo(Good(g)).litresPerKg, spots[a].available,
                      economicCapacity(s.network->sites[b], s.sites[b]) - total(s.sites[b].stock)});
                 // Find the largest affordable order with positive marginal gain. Integrated
                 // quotes are then used for the displayed total, never spot-price multiplication.

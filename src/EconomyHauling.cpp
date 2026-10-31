@@ -106,7 +106,7 @@ void Economy::haulOffers() {
                     const auto unit = unitPrice(a, Good(g), sites_[a].stock[g] - sites_[a].reserved[g], true);
                     const int64_t fee = 30 + int64_t(travelTicks(a, b)) * 2;
                     auto kg =
-                        std::min({int64_t(300), surplus, need,
+                        std::min({maxShipPayloadKg, surplus, need,
                                   economicCapacity(network_->sites[b], sites_[b]) - total(sites_[b].stock),
                                   sites_[b].cash / (unit * 2 + fee)});
                     if (kg < 10)
@@ -261,6 +261,9 @@ std::vector<EconomySnapshot::Job> economicJobs(const EconomySnapshot& s) {
         job.id = h.id;
         job.good = h.good;
         job.kg = h.kg;
+        job.source = h.source;
+        job.destination = h.destination;
+        job.deadline = h.deadline;
         job.action = h.phase == HaulPhase::Open       ? EconomicAction::AcceptHaul
                      : h.phase == HaulPhase::Reserved ? EconomicAction::PickupHaul
                                                       : EconomicAction::DeliverHaul;
@@ -280,6 +283,8 @@ std::vector<EconomySnapshot::Job> economicJobs(const EconomySnapshot& s) {
         job.id = c.id;
         job.good = c.good;
         job.kg = c.requested - c.delivered;
+        job.source = job.destination = c.site;
+        job.deadline = c.deadline;
         job.target = s.network->sites[c.site].id;
         job.title = std::string(c.phase == ContractPhase::Accepted ? "SUPPLY ACTIVE " : "SUPPLY ") +
                     std::to_string(job.kg) + "KG " + std::string(goodInfo(c.good).name) + " / " +

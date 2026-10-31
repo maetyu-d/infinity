@@ -13,7 +13,7 @@ ShipProperties shipProperties(double size, double boost, double payloadKg) {
     p.torqueCaps *= i;
     p.faceAreas *= s * s;
     // Full-size cargo is secured in a central 4 x 3 x 6 m bay.
-    const double cargo = std::clamp(payloadKg, 0., 4000.);
+    const double cargo = std::clamp(payloadKg, 0., double(maxShipPayloadKg));
     p.massKg += cargo;
     p.inertia += cargo * glm::dvec3(3.75, 52. / 12., 25. / 12.);
     return p;

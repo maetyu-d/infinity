@@ -1,4 +1,5 @@
 #pragma once
+#include "ShipDynamics.hpp"
 #include "SurfaceLife.hpp"
 #include <array>
 #include <filesystem>
@@ -142,6 +143,8 @@ struct EconomyPlayer {
     std::optional<PlayerHaul> haul;
     uint64_t deliveries = 0, lateDeliveries = 0, returnedHauls = 0;
     int64_t freightEarnings = 0;
+    unsigned cargoLevel = 0;
+    uint64_t repairPoints = 0; // durable cumulative receipt; the ship applies each point once
     int64_t massKg() const;
     int64_t volumeLitres() const;
     int64_t availableCargo(Good) const;
@@ -163,7 +166,9 @@ enum class EconomicAction : uint8_t {
     AcceptHaul,
     PickupHaul,
     DeliverHaul,
-    CancelHaul
+    CancelHaul,
+    RepairHull,
+    UpgradeCargo
 };
 struct EconomicCommand {
     uint64_t sequence = 0;
@@ -173,6 +178,25 @@ struct EconomicCommand {
     int64_t kg = 10, limitCents = 0;
     uint64_t contract = 0;
     FacilityModule module = FacilityModule::Storage;
+    unsigned serviceUnits = 0; // repair hull points, or expected next cargo level
+};
+inline constexpr unsigned maxCargoLevel = 3;
+inline int64_t holdCapacityKg(unsigned level) {
+    return 4000 + 2000 * int64_t(level);
+}
+inline int64_t holdCapacityLitres(unsigned level) {
+    return 8000 + 8000 * int64_t(level);
+}
+enum class ShipService : uint8_t { Repair, CargoHold };
+struct ShipServiceQuote {
+    Stock materials{};
+    int64_t partsCents = 0, labourCents = 0;
+    unsigned units = 0;
+    bool available = false;
+    std::string status;
+    int64_t totalCents() const {
+        return partsCents + labourCents;
+    }
 };
 int64_t economicPendingPayload(const EconomicCommand&, const EconomicSiteState&);
 class Economy {
@@ -233,6 +257,7 @@ class Economy {
     std::string invest(const EconomicCommand&, EconomyPlayer&, size_t);
     void haulOffers();
     std::string haulCommand(const EconomicCommand&, EconomyPlayer&);
+    std::string service(const EconomicCommand&, EconomyPlayer&, size_t);
     uint64_t travelTicks(size_t, size_t) const;
     int64_t unitPrice(size_t, Good, int64_t available, bool buy) const;
 };
@@ -271,6 +296,8 @@ struct EconomySnapshot {
         Good good = Good::Water;
         int64_t kg = 0;
         std::string title, route;
+        unsigned source = 0, destination = 0;
+        uint64_t deadline = 0;
     };
     std::vector<Job> jobs;
     std::optional<size_t> siteIndex(const ActivityId&) const;
@@ -280,6 +307,16 @@ struct EconomySnapshot {
 // Bounded worker-only search. Quotes include both spreads and marginal stock changes.
 std::vector<EconomySnapshot::TradeRoute> economicTradeRoutes(const EconomySnapshot&);
 std::vector<EconomySnapshot::Job> economicJobs(const EconomySnapshot&);
+ShipServiceQuote economicServiceQuote(const EconomySnapshot&, size_t, ShipService, unsigned units);
+struct MarketContext {
+    double hull = 100, cruiseSpeed = 9.4607304725808e17;
+    std::optional<glm::dvec3> systemPosition;
+};
+struct EconomicJobPlan {
+    double pickupMetres = 0, deliveryMetres = 0, seconds = 0, slackSeconds = 0;
+    bool timed = false, fits = false, procurement = false;
+};
+EconomicJobPlan economicPlanJob(const EconomySnapshot&, const EconomySnapshot::Job&, const MarketContext&);
 ActivityBody sampleEconomicFreight(const Universe&, const EconomicNetwork&, const EconomicFlight&,
                                    double seconds);
 // One cancellable worker owns the ledger and SQLite. Main/render consume immutable snapshots.
@@ -300,7 +337,7 @@ class EconomyRuntime {
 class Pilot;
 class Navigation;
 bool economicTradeAccess(const Universe&, const Navigation&, const Pilot&, const EconomicSite&);
-enum class MarketPage : uint8_t { Goods, Routes, Industry, Jobs };
+enum class MarketPage : uint8_t { Goods, Routes, Industry, Jobs, Services };
 struct MarketView {
     bool open = false, connected = false, ready = false;
     std::string site, role, message, bottleneck, contract;
@@ -312,7 +349,10 @@ struct MarketView {
     std::vector<std::string> detail;
     std::string summary;
     std::string activeJob;
+    int64_t capacityKg = 4000, capacityLitres = 8000;
+    std::string plan, planTiming;
 };
 MarketView economicMarketView(const EconomySnapshot*, const std::optional<ActivityId>&, size_t selected,
-                              int64_t quantity, bool connected, MarketPage page = MarketPage::Goods);
+                              int64_t quantity, bool connected, MarketPage page = MarketPage::Goods,
+                              const MarketContext& context = {});
 } // namespace infinite

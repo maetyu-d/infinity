@@ -1,0 +1,13 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start  2: economic_hauling_and_career
+    Start  3: economic_investment_and_trade
+1/4 Test  #2: economic_hauling_and_career .........   Passed    2.79 sec
+    Start  4: persistent_economic_supply_chains
+2/4 Test  #3: economic_investment_and_trade .......   Passed    3.63 sec
+    Start 25: ship_handling_and_roll
+3/4 Test #25: ship_handling_and_roll ..............   Passed    0.51 sec
+4/4 Test  #4: persistent_economic_supply_chains ...   Passed    4.59 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   7.40 sec

@@ -184,11 +184,11 @@ int main(int argc, char** argv) {
         check(dock.pilot.instruments().approachError < 6 && dock.pilot.instruments().relativeSpeed < .5,
               "Moving-target rendezvous did not match velocity and stand-off");
         const auto save = dock.pilot.serialize();
-        check(save.starts_with("INFINITE_SHIP 4 ") && dock.pilot.restore(save) &&
+        check(save.starts_with("INFINITE_SHIP 5 ") && dock.pilot.restore(save) &&
                   save == dock.pilot.serialize(),
               "Physics actuator state failed persistence round trip");
         auto legacy = save.substr(0, save.rfind(' '));
-        for (unsigned i = 0; i < 3; ++i)
+        for (unsigned i = 0; i < 4; ++i)
             legacy = legacy.substr(0, legacy.rfind(' '));
         legacy.replace(14, 1, "3");
         const auto retainedVelocity = dock.pilot.ship().velocity;

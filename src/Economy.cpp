@@ -50,6 +50,15 @@ const std::array<ProductionRecipe, 18> recipes{
 int64_t total(const Stock& s) {
     return std::accumulate(s.begin(), s.end(), int64_t(0));
 }
+std::string flightRange(double metres) {
+    std::ostringstream out;
+    out << std::fixed << std::setprecision(1);
+    if (metres >= 1e9)
+        out << metres / 1e9 << " MKM";
+    else
+        out << metres / 1000 << " KM";
+    return out.str();
+}
 bool cargoOnboard(FreightPhase p) {
     return p == FreightPhase::Transit || p == FreightPhase::Holding;
 }
@@ -64,14 +73,27 @@ int64_t price(const EconomicSite& d, const EconomicSiteState& s, Good good, int6
 }
 EconomyQuote quoted(const EconomicSite& d, const EconomicSiteState& s, Good good, int64_t kg) {
     EconomyQuote q;
-    if (size_t(good) >= goodCount || kg < 1 || kg > 4000)
+    if (size_t(good) >= goodCount || kg < 1 || kg > maxShipPayloadKg)
         return q;
     auto g = size_t(good);
     q.available = s.stock[g] - s.reserved[g];
-    for (int64_t i = 0; i < kg; i++) {
-        q.buyCents += price(d, s, good, std::max<int64_t>(0, q.available - i), true);
-        q.sellCents += price(d, s, good, q.available + i + 1, false);
-    }
+    auto integrate = [&](bool buy) {
+        auto marginal = [&](int64_t i) {
+            return price(d, s, good, buy ? std::max<int64_t>(0, q.available - i) : q.available + i + 1, buy);
+        };
+        // Marginal prices are monotone. Equal endpoints bound a constant-price
+        // interval, so large orders retain exact cent totals without a loop
+        // over every kilogram on the cockpit thread.
+        auto sum = [&](auto&& self, int64_t first, int64_t last, int64_t a, int64_t b) -> int64_t {
+            if (a == b)
+                return (last - first + 1) * a;
+            const auto mid = (first + last) / 2;
+            return self(self, first, mid, a, marginal(mid)) + self(self, mid + 1, last, marginal(mid + 1), b);
+        };
+        return sum(sum, 0, kg - 1, marginal(0), marginal(kg - 1));
+    };
+    q.buyCents = integrate(true);
+    q.sellCents = integrate(false);
     return q;
 }
 bool readStock(std::istream& in, Stock& s) {
@@ -102,7 +124,7 @@ int64_t EconomyPlayer::volumeLitres() const {
 }
 std::string EconomyPlayer::serialize() const {
     std::ostringstream o;
-    o << "INFINITE_WALLET 2 " << credits << ' ' << lastCommand;
+    o << "INFINITE_WALLET 3 " << credits << ' ' << lastCommand;
     writeStock(o, cargo);
     o << ' ' << deliveries << ' ' << lateDeliveries << ' ' << returnedHauls << ' ' << freightEarnings << ' '
       << bool(haul);
@@ -113,6 +135,7 @@ std::string EconomyPlayer::serialize() const {
           << std::quoted(h.destination.home.str()) << ' ' << h.destination.slot << ' ' << unsigned(h.good)
           << ' ' << h.kg << ' ' << h.onboard;
     }
+    o << ' ' << cargoLevel << ' ' << repairPoints;
     return o.str();
 }
 bool EconomyPlayer::restore(std::string_view text) {
@@ -120,10 +143,10 @@ bool EconomyPlayer::restore(std::string_view text) {
     std::istringstream in{std::string(text)};
     std::string h;
     unsigned v;
-    if (!(in >> h >> v >> p.credits >> p.lastCommand) || h != "INFINITE_WALLET" || (v != 1 && v != 2) ||
+    if (!(in >> h >> v >> p.credits >> p.lastCommand) || h != "INFINITE_WALLET" || (v < 1 || v > 3) ||
         p.credits < 0 || p.credits > 1000000000000000LL || !readStock(in, p.cargo))
         return false;
-    if (v == 2) {
+    if (v >= 2) {
         unsigned pending;
         if (!(in >> p.deliveries >> p.lateDeliveries >> p.returnedHauls >> p.freightEarnings >> pending) ||
             p.deliveries > 1000000000000ULL || p.lateDeliveries > p.deliveries ||
@@ -137,7 +160,7 @@ bool EconomyPlayer::restore(std::string_view text) {
             if (!(in >> std::quoted(system) >> h.id >> h.deadline >> std::quoted(source) >> h.source.slot >>
                   std::quoted(destination) >> h.destination.slot >> good >> h.kg >> onboard) ||
                 !h.id || h.id > 1000000000000ULL || h.deadline > 1000000000000ULL || good >= goodCount ||
-                h.kg < 10 || h.kg > 300 || onboard > 1)
+                h.kg < 10 || h.kg > maxShipPayloadKg || onboard > 1)
                 return false;
             try {
                 h.system = Address::parse(system);
@@ -156,6 +179,11 @@ bool EconomyPlayer::restore(std::string_view text) {
             p.haul = h;
         }
     }
+    if (v >= 3 && (!(in >> p.cargoLevel >> p.repairPoints) || p.cargoLevel > maxCargoLevel ||
+                   p.repairPoints > 1000000000000ULL))
+        return false;
+    p.capacityKg = holdCapacityKg(p.cargoLevel);
+    p.capacityLitres = holdCapacityLitres(p.cargoLevel);
     in >> std::ws;
     if (!in.eof() || p.massKg() > p.capacityKg || p.volumeLitres() > p.capacityLitres)
         return false;
@@ -553,16 +581,18 @@ std::string Economy::execute(const EconomicCommand& c, EconomyPlayer& player) {
     auto index = siteIndex(c.port);
     if (!index)
         return "PORT HAS NO MARKET";
-    if (unsigned(c.action) > unsigned(EconomicAction::CancelHaul))
+    if (unsigned(c.action) > unsigned(EconomicAction::UpgradeCargo))
         return "INVALID ECONOMIC ACTION";
     if (!reconcilePlayer(player))
         return "HAUL SAVE MISMATCH / TRADING PAUSED";
+    if (c.action == EconomicAction::RepairHull || c.action == EconomicAction::UpgradeCargo)
+        return service(c, player, *index);
     if (c.action >= EconomicAction::AcceptHaul)
         return haulCommand(c, player);
     if (c.action == EconomicAction::Invest || c.action == EconomicAction::CancelProject ||
         c.action == EconomicAction::CollectDividends)
         return invest(c, player, *index);
-    if (size_t(c.good) >= goodCount || c.kg < 1 || c.kg > 4000)
+    if (size_t(c.good) >= goodCount || c.kg < 1 || c.kg > maxShipPayloadKg)
         return "INVALID CARGO QUANTITY";
     auto i = *index, g = size_t(c.good);
     auto& s = sites_[i];
@@ -676,7 +706,7 @@ size_t Economy::residentBytes() const {
 }
 std::string Economy::serialize() const {
     std::ostringstream o;
-    o << "INFINITE_ECONOMY 3 " << network_->fingerprint << ' ' << tick_ << ' ' << nextContract_ << ' '
+    o << "INFINITE_ECONOMY 4 " << network_->fingerprint << ' ' << tick_ << ' ' << nextContract_ << ' '
       << treasury_ << ' ' << carrierCash_ << ' ' << externalMoneyDelta_ << ' ' << sites_.size() << '\n';
     for (const auto& s : sites_) {
         o << s.cash << ' ' << s.householdCash << ' ' << s.condition << ' ' << s.health << ' '
@@ -724,7 +754,7 @@ bool Economy::restore(std::string_view text) {
     size_t count;
     if (!(in >> header >> version >> fingerprint >> candidate.tick_ >> candidate.nextContract_ >>
           candidate.treasury_ >> candidate.carrierCash_ >> candidate.externalMoneyDelta_ >> count) ||
-        header != "INFINITE_ECONOMY" || (version < 1 || version > 3) ||
+        header != "INFINITE_ECONOMY" || (version < 1 || version > 4) ||
         fingerprint != network_->fingerprint || count != sites_.size() || candidate.treasury_ < 0 ||
         candidate.carrierCash_ < 0 || candidate.treasury_ > 1000000000000000LL ||
         candidate.carrierCash_ > 1000000000000000LL || candidate.externalMoneyDelta_ < -1000000000000000LL ||
@@ -831,8 +861,9 @@ bool Economy::restore(std::string_view text) {
                   h.escrow >> phase) ||
                 !h.id || h.id >= candidate.nextHaul_ || h.deadline > 1000000000000ULL ||
                 h.source >= sites_.size() || h.destination >= sites_.size() || h.source == h.destination ||
-                good >= goodCount || h.kg < 10 || h.kg > 300 || h.cost < 1 || h.cost > 1000000000 ||
-                h.fee < 1 || h.fee > 1000000000 || phase > unsigned(HaulPhase::Expired))
+                good >= goodCount || h.kg < 10 || h.kg > maxShipPayloadKg || h.cost < 1 ||
+                h.cost > 1000000000 || h.fee < 1 || h.fee > 1000000000 ||
+                phase > unsigned(HaulPhase::Expired))
                 return false;
             h.good = Good(good);
             h.phase = HaulPhase(phase);
@@ -905,7 +936,8 @@ std::optional<ActivityId> EconomySnapshot::contractDestination() const {
     return {};
 }
 MarketView economicMarketView(const EconomySnapshot* s, const std::optional<ActivityId>& port,
-                              size_t selected, int64_t quantity, bool connected, MarketPage page) {
+                              size_t selected, int64_t quantity, bool connected, MarketPage page,
+                              const MarketContext& context) {
     MarketView v;
     v.page = page;
     v.open = true;
@@ -919,6 +951,8 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
     v.credits = s->player.credits;
     v.cargoKg = s->player.massKg();
     v.cargoLitres = s->player.volumeLitres();
+    v.capacityKg = s->player.capacityKg;
+    v.capacityLitres = s->player.capacityLitres;
     v.tick = s->tick;
     v.message = s->message;
     if (s->player.haul)
@@ -937,6 +971,42 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
         v.connected = false;
         v.message = "ECONOMY CATCHING UP / TRADING PAUSED";
     }
+    if (page == MarketPage::Services) {
+        v.selected = std::min<size_t>(selected, 1);
+        const double hull = std::isfinite(context.hull) ? std::clamp(context.hull, 0., 100.) : 100.;
+        const auto points = unsigned(std::ceil(std::clamp(100. - hull, 0., 10.)));
+        auto credits = [](int64_t cents) {
+            std::ostringstream out;
+            out << std::fixed << std::setprecision(2) << cents / 100.;
+            return out.str();
+        };
+        for (auto service : {ShipService::Repair, ShipService::CargoHold}) {
+            const bool repair = service == ShipService::Repair;
+            const auto level = std::min(maxCargoLevel, s->player.cargoLevel + 1);
+            auto q = economicServiceQuote(*s, *i, service, repair ? points : level);
+            v.detail.push_back(repair ? "HULL REPAIR / +" + std::to_string(points) + " POINTS / HULL " +
+                                            std::to_string(int(hull)) + "%"
+                                      : "CARGO REFIT / LEVEL " + std::to_string(s->player.cargoLevel) +
+                                            "/3 > " + std::to_string(level) + "/3");
+            v.detail.push_back(repair ? "REPAIR UP TO 10 POINTS PER ORDER / REPEAT FOR MORE DAMAGE"
+                                      : std::to_string(holdCapacityKg(level)) + " KG / " +
+                                            std::to_string(holdCapacityLitres(level)) +
+                                            " L / INTERNAL BAY RACKS");
+            v.detail.push_back("TOTAL " + credits(q.totalCents()) + " CR / PARTS " + credits(q.partsCents) +
+                               " / CREW " + credits(q.labourCents));
+            std::string parts = "PORT PARTS: ";
+            for (size_t g = 0; g < goodCount; g++)
+                if (q.materials[g])
+                    parts +=
+                        std::string(goodInfo(Good(g)).name) + " " + std::to_string(q.materials[g]) + "KG ";
+            v.detail.push_back(std::move(parts));
+            v.detail.push_back(q.status);
+        }
+        v.summary = "HOLD " + std::to_string(v.cargoKg) + "/" + std::to_string(v.capacityKg) + " KG / " +
+                    std::to_string(v.cargoLitres) + "/" + std::to_string(v.capacityLitres) + " L";
+        v.bottleneck = "PORT SUPPLIES UNRESERVED PARTS / CREW PAID / REPAIRS PERSIST THROUGH RESTART";
+        return v;
+    }
     if (page == MarketPage::Jobs) {
         v.selected = s->jobs.empty() ? 0 : std::min(selected, s->jobs.size() - 1);
         v.summary = std::string(s->player.carrierRank()) + " / DELIVERED " +
@@ -948,9 +1018,35 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
             v.detail.push_back(job.title);
             v.detail.push_back(job.route);
         }
+        if (!s->jobs.empty()) {
+            const auto& job = s->jobs[v.selected];
+            const auto plan = economicPlanJob(*s, job, context);
+            auto duration = [](double seconds) {
+                if (!std::isfinite(seconds) || seconds > 99 * 86400.)
+                    return std::string(">99D");
+                const auto n = int64_t(std::ceil(std::max(0., seconds)));
+                if (n >= 86400)
+                    return std::to_string(n / 86400) + "D " + std::to_string(n % 86400 / 3600) + "H";
+                if (n >= 3600)
+                    return std::to_string(n / 3600) + "H " + std::to_string(n % 3600 / 60) + "M";
+                return std::to_string(n / 60) + "M " + std::to_string(n % 60) + "S";
+            };
+            v.plan = "DIRECT " + flightRange(plan.pickupMetres + plan.deliveryMetres) + " / LOAD " +
+                     std::to_string(job.kg) + " KG / " +
+                     std::to_string(job.kg * goodInfo(job.good).litresPerKg) + " L / " +
+                     (plan.fits ? "HOLD FITS" : "NEEDS MORE HOLD SPACE / SERVICES");
+            v.planTiming = plan.procurement ? "SOURCE GOODS FIRST / TRAVEL ESTIMATE AWAITS PROCUREMENT"
+                           : !plan.timed
+                               ? "SELECTED ROUTE ONLY / SHIP POSITION UNAVAILABLE"
+                               : "EST N MANUAL " + duration(plan.seconds) + " / DEADLINE " +
+                                     duration(std::max(0., (double(job.deadline) - double(s->tick)) *
+                                                               economyTickSeconds)) +
+                                     " / MARGIN " + (plan.slackSeconds < 0 ? "-" : "+") +
+                                     duration(std::abs(plan.slackSeconds));
+        }
         v.bottleneck = s->player.haul && s->player.haul->system != s->network->system
                            ? "ACTIVE HAUL IN ANOTHER SYSTEM / F4 RETURNS TO ITS SYSTEM"
-                           : "HAULS INCLUDE CARGO / SUPPLY JOBS NEED YOUR OWN UNSEALED GOODS";
+                           : "MANUAL N CRUISE / J FINAL APPROACH / FLIGHT TIME / DETOURS AND WEATHER EXTRA";
         if (s->jobs.empty())
             v.message = "NO FUNDED JOBS YET / CHECK AGAIN AS LOCAL SHORTAGES DEVELOP";
         return v;
@@ -964,8 +1060,7 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
                                " / COST " + std::to_string(r.costCents / 100) + " CR / MARGIN +" +
                                std::to_string((r.revenueCents - r.costCents) / 100) + " CR");
             v.detail.push_back(s->network->sites[r.source].name + " > " +
-                               s->network->sites[r.destination].name + " / " +
-                               std::to_string(int64_t(r.distanceMetres / 1e6)) + " MKM");
+                               s->network->sites[r.destination].name + " / " + flightRange(r.distanceMetres));
         }
         if (v.detail.empty())
             v.message = "NO AFFORDABLE PROFITABLE ROUTES / FREE HOLD SPACE OR BUILD CAPITAL";
