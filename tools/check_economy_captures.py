@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check real goods, route and industry pages, commissioning and portrait captures."""
+"""Check native trading, industry, hauling, carrier history and portrait captures."""
 from pathlib import Path
 import sys
 
@@ -9,6 +9,7 @@ for name in (
     'market-hyperion', 'market-cargo', 'market-portrait', 'market-live-supply',
     'market-routes', 'market-industry', 'market-refit-complete',
     'market-industry-portrait', 'market-routes-portrait',
+    'jobs-board', 'jobs-sealed-cargo', 'jobs-paid', 'jobs-portrait',
 ):
     with (root / 'captures' / (name + '.ppm')).open('rb') as f:
         assert f.readline().strip() == b'P6'
@@ -30,6 +31,7 @@ assert 'funded refits, delivered capital, commissioning, trade intelligence' in 
 for name, page in (
     ('market-routes', 1), ('market-routes-portrait', 1), ('market-industry', 2),
     ('market-industry-portrait', 2), ('market-refit-complete', 2),
+    ('jobs-board',3), ('jobs-sealed-cargo',3), ('jobs-paid',3), ('jobs-portrait',3),
 ):
     assert f'ECONOMY_CAPTURE {name} page={page} ' in log, name + ': incorrect page'
 for a, b in (
@@ -37,4 +39,6 @@ for a, b in (
     ('market-routes', 'market-industry'), ('market-routes-portrait', 'market-industry-portrait'),
 ):
     assert images[a] != images[b], f'{a}/{b}: duplicate capture'
-print('PASS: nine native goods, route, industry, construction, cargo and portrait images')
+assert 'PASS: native job board, reserved acceptance, physical pickup, sealed cargo, landed delivery and paid carrier history' in log
+assert images['jobs-sealed-cargo'] != images['jobs-paid']
+print('PASS: thirteen native goods, routes, industry, hauling, paid career and portrait images')

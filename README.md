@@ -1,5 +1,7 @@
 # INFINITE
 
+**0.40:** funded hauling jobs, sealed consignments, physical pickup/delivery, late fees and carrier history. **F2 → F5** opens jobs; Enter accepts/loads/delivers, F4 targets the next port, and Backspace returns or withdraws a haul. Supply work and industrial investment remain available. The restored flight controls are unchanged. [Hauling and job controls](docs/ECONOMY_0_40.md).
+
 **0.39.1:** restores the pre-0.37 assisted manual controls: original mouse/turn response and velocity-scaled manoeuvring, with independent roll control. The current economy, landing, cargo, cruise, shrinking and graphics remain intact. [Control restore and checks](docs/SHIP_HANDLING.md).
 
 **0.39:** player-funded warehouse, utility and automation refits, physical construction materials, paid crews and cash-backed dividends. A live trade board finds affordable routes and bookmarks their buyers. **F2** market, **F5** goods/routes/industry; industry **Enter** funds/delivers, **Backspace** collects, **Delete** cancels. Existing universe and saves are retained. [Economic development, controls and checks](docs/ECONOMY_0_39.md).

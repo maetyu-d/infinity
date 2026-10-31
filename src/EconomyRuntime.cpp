@@ -181,6 +181,7 @@ struct EconomyRuntime::Impl {
             s->network = definitions.at(e->network().system);
             s->sites = e->sites();
             s->contracts = e->contracts();
+            s->hauls = e->hauls();
             s->events = e->events();
             s->tick = e->tick();
             s->catchingUp = e->tick() < goal;
@@ -230,6 +231,7 @@ struct EconomyRuntime::Impl {
             }
         }
         s->routes = economicTradeRoutes(*s);
+        s->jobs = economicJobs(*s);
         size_t bytes = 0;
         for (const auto& [_, economy] : active)
             bytes += economy->residentBytes();
@@ -306,7 +308,11 @@ struct EconomyRuntime::Impl {
                 }
                 auto& economy = *active.at(*system);
                 used[*system] = ++useSerial;
+                if (!economy.reconcilePlayer(player))
+                    throw std::runtime_error("HAUL SAVE MISMATCH / original ledger retained");
                 economy.advanceTo(goal, 16);
+                if (!economy.reconcilePlayer(player))
+                    throw std::runtime_error("HAUL SAVE MISMATCH / original ledger retained");
                 catching = economy.tick() < goal;
                 if (!catching)
                     for (const auto& c : orders) {
@@ -392,8 +398,19 @@ size_t EconomyRuntime::residentBytes() const {
     auto s = snapshot();
     if (!s)
         return 0;
-    return impl_->workerBytes.load() + sizeof(*s) + s->sites.capacity() * sizeof(EconomicSiteState) +
+    size_t extras = 0;
+    for (const auto& job : s->jobs)
+        extras +=
+            job.title.capacity() + job.route.capacity() + job.target.home.path.capacity() * sizeof(Segment);
+    if (s->player.haul) {
+        const auto& h = *s->player.haul;
+        extras +=
+            (h.system.path.capacity() + h.source.home.path.capacity() + h.destination.home.path.capacity()) *
+            sizeof(Segment);
+    }
+    return extras + impl_->workerBytes.load() + sizeof(*s) + s->sites.capacity() * sizeof(EconomicSiteState) +
            s->flights.capacity() * sizeof(EconomicFlight) +
-           s->routes.capacity() * sizeof(EconomySnapshot::TradeRoute);
+           s->routes.capacity() * sizeof(EconomySnapshot::TradeRoute) +
+           s->hauls.capacity() * sizeof(HaulContract) + s->jobs.capacity() * sizeof(EconomySnapshot::Job);
 }
 } // namespace infinite

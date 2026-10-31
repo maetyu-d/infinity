@@ -102,8 +102,17 @@ int64_t EconomyPlayer::volumeLitres() const {
 }
 std::string EconomyPlayer::serialize() const {
     std::ostringstream o;
-    o << "INFINITE_WALLET 1 " << credits << ' ' << lastCommand;
+    o << "INFINITE_WALLET 2 " << credits << ' ' << lastCommand;
     writeStock(o, cargo);
+    o << ' ' << deliveries << ' ' << lateDeliveries << ' ' << returnedHauls << ' ' << freightEarnings << ' '
+      << bool(haul);
+    if (haul) {
+        const auto& h = *haul;
+        o << ' ' << std::quoted(h.system.str()) << ' ' << h.id << ' ' << h.deadline << ' '
+          << std::quoted(h.source.home.str()) << ' ' << h.source.slot << ' '
+          << std::quoted(h.destination.home.str()) << ' ' << h.destination.slot << ' ' << unsigned(h.good)
+          << ' ' << h.kg << ' ' << h.onboard;
+    }
     return o.str();
 }
 bool EconomyPlayer::restore(std::string_view text) {
@@ -111,9 +120,42 @@ bool EconomyPlayer::restore(std::string_view text) {
     std::istringstream in{std::string(text)};
     std::string h;
     unsigned v;
-    if (!(in >> h >> v >> p.credits >> p.lastCommand) || h != "INFINITE_WALLET" || v != 1 || p.credits < 0 ||
-        p.credits > 1000000000000000LL || !readStock(in, p.cargo))
+    if (!(in >> h >> v >> p.credits >> p.lastCommand) || h != "INFINITE_WALLET" || (v != 1 && v != 2) ||
+        p.credits < 0 || p.credits > 1000000000000000LL || !readStock(in, p.cargo))
         return false;
+    if (v == 2) {
+        unsigned pending;
+        if (!(in >> p.deliveries >> p.lateDeliveries >> p.returnedHauls >> p.freightEarnings >> pending) ||
+            p.deliveries > 1000000000000ULL || p.lateDeliveries > p.deliveries ||
+            p.returnedHauls > 1000000000000ULL || p.freightEarnings < 0 ||
+            p.freightEarnings > 1000000000000000LL || pending > 1)
+            return false;
+        if (pending) {
+            PlayerHaul h;
+            std::string system, source, destination;
+            unsigned good, onboard;
+            if (!(in >> std::quoted(system) >> h.id >> h.deadline >> std::quoted(source) >> h.source.slot >>
+                  std::quoted(destination) >> h.destination.slot >> good >> h.kg >> onboard) ||
+                !h.id || h.id > 1000000000000ULL || h.deadline > 1000000000000ULL || good >= goodCount ||
+                h.kg < 10 || h.kg > 300 || onboard > 1)
+                return false;
+            try {
+                h.system = Address::parse(system);
+                h.source.home = Address::parse(source);
+                h.destination.home = Address::parse(destination);
+            } catch (...) {
+                return false;
+            }
+            h.good = Good(good);
+            h.onboard = onboard;
+            if (h.system.kind() != Kind::System || h.source.home.kind() != Kind::Planet ||
+                h.destination.home.kind() != Kind::Planet || !h.system.ancestorOf(h.source.home) ||
+                !h.system.ancestorOf(h.destination.home) || h.source == h.destination ||
+                (h.onboard && p.cargo[good] < h.kg))
+                return false;
+            p.haul = h;
+        }
+    }
     in >> std::ws;
     if (!in.eof() || p.massKg() > p.capacityKg || p.volumeLitres() > p.capacityLitres)
         return false;
@@ -354,6 +396,10 @@ void Economy::logistics() {
     for (const auto& f : freight_)
         if (f.phase != FreightPhase::Idle)
             inbound[f.destination][size_t(f.good)] += f.kg;
+    for (const auto& h : hauls_)
+        if (tick_ <= h.deadline &&
+            (h.phase == HaulPhase::Open || h.phase == HaulPhase::Reserved || h.phase == HaulPhase::InTransit))
+            inbound[h.destination][size_t(h.good)] += h.kg;
     for (size_t g = 0; g < goodCount; g++) {
         for (size_t a = 0; a < sites_.size(); a++)
             if (sites_[a].stock[g] - sites_[a].reserved[g] - network_->sites[a].target[g] >= 10)
@@ -498,6 +544,7 @@ void Economy::step() {
     }
     development();
     offers();
+    haulOffers();
 }
 std::string Economy::execute(const EconomicCommand& c, EconomyPlayer& player) {
     if (!c.sequence || c.sequence <= player.lastCommand)
@@ -506,8 +553,12 @@ std::string Economy::execute(const EconomicCommand& c, EconomyPlayer& player) {
     auto index = siteIndex(c.port);
     if (!index)
         return "PORT HAS NO MARKET";
-    if (unsigned(c.action) > unsigned(EconomicAction::CollectDividends))
+    if (unsigned(c.action) > unsigned(EconomicAction::CancelHaul))
         return "INVALID ECONOMIC ACTION";
+    if (!reconcilePlayer(player))
+        return "HAUL SAVE MISMATCH / TRADING PAUSED";
+    if (c.action >= EconomicAction::AcceptHaul)
+        return haulCommand(c, player);
     if (c.action == EconomicAction::Invest || c.action == EconomicAction::CancelProject ||
         c.action == EconomicAction::CollectDividends)
         return invest(c, player, *index);
@@ -527,7 +578,7 @@ std::string Economy::execute(const EconomicCommand& c, EconomyPlayer& player) {
         if (it->phase != ContractPhase::Accepted)
             return "CONTRACT CLOSED";
         g = size_t(it->good);
-        auto n = std::min({c.kg, player.cargo[g], it->requested - it->delivered,
+        auto n = std::min({c.kg, player.availableCargo(it->good), it->requested - it->delivered,
                            economicCapacity(network_->sites[i], s) - total(s.stock)});
         if (n <= 0)
             return "REQUIRED CARGO OR WAREHOUSE SPACE UNAVAILABLE";
@@ -564,8 +615,8 @@ std::string Economy::execute(const EconomicCommand& c, EconomyPlayer& player) {
         externalMoneyDelta_ += q.buyCents;
         return "BOUGHT " + std::to_string(c.kg) + " KG " + std::string(goods[g].name);
     }
-    if (player.cargo[g] < c.kg)
-        return "INSUFFICIENT SHIP CARGO";
+    if (player.availableCargo(c.good) < c.kg)
+        return "INSUFFICIENT UNSEALED SHIP CARGO";
     if (total(s.stock) + c.kg > economicCapacity(network_->sites[i], s))
         return "PORT WAREHOUSE FULL";
     if (q.sellCents < c.limitCents)
@@ -588,6 +639,8 @@ int64_t Economy::moneyTotal() const {
         n += f.payment + f.fee;
     for (const auto& c : contracts_)
         n += c.escrow;
+    for (const auto& h : hauls_)
+        n += h.escrow;
     return n;
 }
 Stock Economy::inventoryTotal() const {
@@ -619,11 +672,11 @@ Stock Economy::externalGoodsDelta() const {
 size_t Economy::residentBytes() const {
     return network_->residentBytes() + sites_.capacity() * sizeof(EconomicSiteState) +
            freight_.capacity() * sizeof(EconomicFreight) + contracts_.capacity() * sizeof(EconomicContract) +
-           events_.capacity() * sizeof(EconomicEvent);
+           events_.capacity() * sizeof(EconomicEvent) + hauls_.capacity() * sizeof(HaulContract);
 }
 std::string Economy::serialize() const {
     std::ostringstream o;
-    o << "INFINITE_ECONOMY 2 " << network_->fingerprint << ' ' << tick_ << ' ' << nextContract_ << ' '
+    o << "INFINITE_ECONOMY 3 " << network_->fingerprint << ' ' << tick_ << ' ' << nextContract_ << ' '
       << treasury_ << ' ' << carrierCash_ << ' ' << externalMoneyDelta_ << ' ' << sites_.size() << '\n';
     for (const auto& s : sites_) {
         o << s.cash << ' ' << s.householdCash << ' ' << s.condition << ' ' << s.health << ' '
@@ -655,6 +708,11 @@ std::string Economy::serialize() const {
         }
         o << '\n';
     }
+    o << nextHaul_ << ' ' << hauls_.size() << '\n';
+    for (const auto& h : hauls_)
+        o << h.id << ' ' << h.deadline << ' ' << h.source << ' ' << h.destination << ' ' << unsigned(h.good)
+          << ' ' << h.kg << ' ' << h.cost << ' ' << h.fee << ' ' << h.escrow << ' ' << unsigned(h.phase)
+          << '\n';
     return o.str();
 }
 bool Economy::restore(std::string_view text) {
@@ -666,7 +724,7 @@ bool Economy::restore(std::string_view text) {
     size_t count;
     if (!(in >> header >> version >> fingerprint >> candidate.tick_ >> candidate.nextContract_ >>
           candidate.treasury_ >> candidate.carrierCash_ >> candidate.externalMoneyDelta_ >> count) ||
-        header != "INFINITE_ECONOMY" || (version != 1 && version != 2) ||
+        header != "INFINITE_ECONOMY" || (version < 1 || version > 3) ||
         fingerprint != network_->fingerprint || count != sites_.size() || candidate.treasury_ < 0 ||
         candidate.carrierCash_ < 0 || candidate.treasury_ > 1000000000000000LL ||
         candidate.carrierCash_ > 1000000000000000LL || candidate.externalMoneyDelta_ < -1000000000000000LL ||
@@ -762,6 +820,36 @@ bool Economy::restore(std::string_view text) {
             (candidate.sites_[i].modules[1] || candidate.sites_[i].modules[2] ||
              (candidate.sites_[i].project && candidate.sites_[i].project->module != FacilityModule::Storage)))
             return false;
+    if (version >= 3) {
+        if (!(in >> candidate.nextHaul_ >> count) || !candidate.nextHaul_ ||
+            candidate.nextHaul_ > 1000000000000ULL || count > 32)
+            return false;
+        for (size_t j = 0; j < count; j++) {
+            HaulContract h;
+            unsigned good, phase;
+            if (!(in >> h.id >> h.deadline >> h.source >> h.destination >> good >> h.kg >> h.cost >> h.fee >>
+                  h.escrow >> phase) ||
+                !h.id || h.id >= candidate.nextHaul_ || h.deadline > 1000000000000ULL ||
+                h.source >= sites_.size() || h.destination >= sites_.size() || h.source == h.destination ||
+                good >= goodCount || h.kg < 10 || h.kg > 300 || h.cost < 1 || h.cost > 1000000000 ||
+                h.fee < 1 || h.fee > 1000000000 || phase > unsigned(HaulPhase::Expired))
+                return false;
+            h.good = Good(good);
+            h.phase = HaulPhase(phase);
+            const auto expected = h.phase == HaulPhase::Open || h.phase == HaulPhase::Reserved ||
+                                          h.phase == HaulPhase::InTransit
+                                      ? h.cost + h.fee
+                                      : 0;
+            if (h.escrow != expected || std::any_of(candidate.hauls_.begin(), candidate.hauls_.end(),
+                                                    [&](const auto& x) { return x.id == h.id; }))
+                return false;
+            candidate.hauls_.push_back(h);
+        }
+        if (std::count_if(candidate.hauls_.begin(), candidate.hauls_.end(), [](const auto& h) {
+                return h.phase == HaulPhase::Reserved || h.phase == HaulPhase::InTransit;
+            }) > 1)
+            return false;
+    }
     in >> std::ws;
     if (!in.eof())
         return false;
@@ -773,6 +861,10 @@ bool Economy::restore(std::string_view text) {
                 if ((f.phase == FreightPhase::Reposition || f.phase == FreightPhase::Loading) &&
                     f.source == i && size_t(f.good) == g)
                     reserved += f.kg;
+            for (const auto& h : candidate.hauls_)
+                if ((h.phase == HaulPhase::Open || h.phase == HaulPhase::Reserved) && h.source == i &&
+                    size_t(h.good) == g)
+                    reserved += h.kg;
             if (reserved != candidate.sites_[i].reserved[g])
                 return false;
         }
@@ -829,6 +921,9 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
     v.cargoLitres = s->player.volumeLitres();
     v.tick = s->tick;
     v.message = s->message;
+    if (s->player.haul)
+        v.activeJob = std::string(s->player.haul->onboard ? "SEALED " : "PICKUP ") +
+                      std::to_string(s->player.haul->kg) + "KG / F4 HAUL";
     auto i = port ? s->siteIndex(*port) : std::nullopt;
     if (!i) {
         v.message = "SELECT A HARBOUR OR SURFACE PORT / K OR SHIFT-K";
@@ -841,6 +936,24 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
     if (s->catchingUp) {
         v.connected = false;
         v.message = "ECONOMY CATCHING UP / TRADING PAUSED";
+    }
+    if (page == MarketPage::Jobs) {
+        v.selected = s->jobs.empty() ? 0 : std::min(selected, s->jobs.size() - 1);
+        v.summary = std::string(s->player.carrierRank()) + " / DELIVERED " +
+                    std::to_string(s->player.deliveries) + " / LATE " +
+                    std::to_string(s->player.lateDeliveries) + " / WITHDRAWN " +
+                    std::to_string(s->player.returnedHauls) + " / EARNED " +
+                    std::to_string(s->player.freightEarnings / 100) + " CR";
+        for (const auto& job : s->jobs) {
+            v.detail.push_back(job.title);
+            v.detail.push_back(job.route);
+        }
+        v.bottleneck = s->player.haul && s->player.haul->system != s->network->system
+                           ? "ACTIVE HAUL IN ANOTHER SYSTEM / F4 RETURNS TO ITS SYSTEM"
+                           : "HAULS INCLUDE CARGO / SUPPLY JOBS NEED YOUR OWN UNSEALED GOODS";
+        if (s->jobs.empty())
+            v.message = "NO FUNDED JOBS YET / CHECK AGAIN AS LOCAL SHORTAGES DEVELOP";
+        return v;
     }
     if (page == MarketPage::Routes) {
         v.selected = s->routes.empty() ? 0 : std::min(selected, s->routes.size() - 1);
@@ -878,9 +991,9 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
                 const auto left = r.materials[g] - (active ? state.project->delivered[g] : 0);
                 if (r.materials[g])
                     needed += std::string(goodInfo(Good(g)).name) + " " + std::to_string(left) + "KG ";
-                if (left > s->player.cargo[g])
+                if (left > s->player.availableCargo(Good(g)))
                     missing += std::string(goodInfo(Good(g)).name) + " " +
-                               std::to_string(left - s->player.cargo[g]) + "KG ";
+                               std::to_string(left - s->player.availableCargo(Good(g))) + "KG ";
             }
             v.detail.push_back(state.modules[m] == 3 ? "MAXIMUM REFIT LEVEL" : needed);
             v.detail.push_back(state.modules[m] == 3 ? "EXISTING FACILITY FULLY REFITTED" : missing);
@@ -901,8 +1014,8 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
         auto q = s->quote(*i, Good(g), quantity);
         std::ostringstream line;
         line << std::left << std::setw(20) << goods[g].name << std::right << std::setw(8) << q.available
-             << std::setw(8) << s->player.cargo[g] << std::setw(11) << q.buyCents / 100. << std::setw(11)
-             << q.sellCents / 100.;
+             << std::setw(8) << s->player.availableCargo(Good(g)) << std::setw(11) << q.buyCents / 100.
+             << std::setw(11) << q.sellCents / 100.;
         v.rows[g] = line.str();
     }
     for (const auto& c : s->contracts)

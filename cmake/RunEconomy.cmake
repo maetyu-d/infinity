@@ -4,11 +4,16 @@ endif()
 file(MAKE_DIRECTORY "${OUTPUT}")
 # Isolated fixture ledger; actual saved flights are never touched.
 file(REMOVE_RECURSE "${OUTPUT}/data" "${OUTPUT}/captures")
-execute_process(COMMAND "${INFINITE_EXE}" --economy-test --render-mode hyperion
+# Keep the executable immutable through asynchronous GPU readback, even if another build starts.
+get_filename_component(native_name "${INFINITE_EXE}" NAME)
+set(native_exe "${OUTPUT}/${native_name}")
+file(COPY_FILE "${INFINITE_EXE}" "${native_exe}" ONLY_IF_DIFFERENT)
+file(CHMOD "${native_exe}" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+execute_process(COMMAND "${native_exe}" --economy-test --render-mode hyperion
   --width 1440 --height 900 --capture-dir "${OUTPUT}/captures" --data "${OUTPUT}/data"
   --profile "${OUTPUT}/frames.csv"
   OUTPUT_FILE "${OUTPUT}/native.log" ERROR_FILE "${OUTPUT}/native.log"
-  RESULT_VARIABLE result TIMEOUT 150)
+  RESULT_VARIABLE result TIMEOUT 360)
 if(NOT result EQUAL 0)
   file(READ "${OUTPUT}/native.log" diagnostics)
   message(FATAL_ERROR "Native economy failed (${result}):\n${diagnostics}")

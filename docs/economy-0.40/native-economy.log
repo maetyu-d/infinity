@@ -1,0 +1,20 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+ECONOMY_CAPTURE market-hyperion page=0 tick=0
+ECONOMY_CAPTURE market-cargo page=0 tick=0
+ECONOMY_CAPTURE market-routes page=1 tick=0
+ECONOMY_CAPTURE market-industry page=2 tick=0
+ECONOMY_CAPTURE market-refit-complete page=2 tick=12
+ECONOMY_CAPTURE market-industry-portrait page=2 tick=12
+ECONOMY_CAPTURE market-routes-portrait page=1 tick=12
+ECONOMY_CAPTURE market-portrait page=0 tick=12
+ECONOMY_CAPTURE market-live-supply page=0 tick=60
+ECONOMY_NATIVE sites=95 vessels=123 tick=60 player_credits_cents=208264 cargo_kg=0 worker_snapshot_bytes=503964
+PASS: native market purchase/resale, Hyperion scene identity, portrait fit, funded refits, delivered capital, commissioning, trade intelligence and real freight
+ECONOMY_CAPTURE jobs-board page=3 tick=60
+ECONOMY_CAPTURE jobs-sealed-cargo page=3 tick=60
+ECONOMY_CAPTURE jobs-paid page=3 tick=60
+PASS: native job board, reserved acceptance, physical pickup, sealed cargo, landed delivery and paid carrier history
+ECONOMY_CAPTURE jobs-portrait page=3 tick=60
+FRAME median_ms=24.7037 p95_ms=75.1611 frames=701 cache_bytes=12220512
+peak_rss_bytes=161169408

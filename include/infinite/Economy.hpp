@@ -115,6 +115,22 @@ struct EconomicContract {
     int64_t requested = 0, delivered = 0, unitCents = 0, escrow = 0;
     ContractPhase phase = ContractPhase::Open;
 };
+enum class HaulPhase : uint8_t { Open, Reserved, InTransit, Complete, Cancelled, Expired };
+struct HaulContract {
+    uint64_t id = 0, deadline = 0;
+    unsigned source = 0, destination = 0;
+    Good good = Good::Water;
+    int64_t kg = 0, cost = 0, fee = 0, escrow = 0;
+    HaulPhase phase = HaulPhase::Open;
+};
+struct PlayerHaul {
+    Address system;
+    uint64_t id = 0, deadline = 0;
+    ActivityId source, destination;
+    Good good = Good::Water;
+    int64_t kg = 0;
+    bool onboard = false;
+};
 struct EconomicEvent {
     uint64_t tick = 0;
     std::string text;
@@ -123,15 +139,32 @@ struct EconomyPlayer {
     int64_t credits = 250000, capacityKg = 4000, capacityLitres = 8000;
     Stock cargo{};
     uint64_t lastCommand = 0;
+    std::optional<PlayerHaul> haul;
+    uint64_t deliveries = 0, lateDeliveries = 0, returnedHauls = 0;
+    int64_t freightEarnings = 0;
     int64_t massKg() const;
     int64_t volumeLitres() const;
+    int64_t availableCargo(Good) const;
+    int64_t sealedKg() const;
+    std::string_view carrierRank() const;
     std::string serialize() const;
     bool restore(std::string_view);
 };
 struct EconomyQuote {
     int64_t buyCents = 0, sellCents = 0, available = 0;
 };
-enum class EconomicAction : uint8_t { Buy, Sell, Contract, Invest, CancelProject, CollectDividends };
+enum class EconomicAction : uint8_t {
+    Buy,
+    Sell,
+    Contract,
+    Invest,
+    CancelProject,
+    CollectDividends,
+    AcceptHaul,
+    PickupHaul,
+    DeliverHaul,
+    CancelHaul
+};
 struct EconomicCommand {
     uint64_t sequence = 0;
     ActivityId port;
@@ -160,6 +193,9 @@ class Economy {
     const std::vector<EconomicEvent>& events() const {
         return events_;
     }
+    const std::vector<HaulContract>& hauls() const {
+        return hauls_;
+    }
     uint64_t tick() const {
         return tick_;
     }
@@ -167,6 +203,7 @@ class Economy {
     std::optional<size_t> siteIndex(const ActivityId&) const;
     EconomyQuote quote(size_t site, Good, int64_t kg) const;
     std::string execute(const EconomicCommand&, EconomyPlayer&);
+    bool reconcilePlayer(EconomyPlayer&) const;
     void outage(const ActivityId&, uint64_t untilTick); // canonical external event, e.g. damaged plant
     int64_t moneyTotal() const;
     Stock inventoryTotal() const;
@@ -182,6 +219,8 @@ class Economy {
     std::vector<EconomicFreight> freight_;
     std::vector<EconomicContract> contracts_;
     std::vector<EconomicEvent> events_;
+    std::vector<HaulContract> hauls_;
+    uint64_t nextHaul_ = 1;
     uint64_t tick_ = 0, nextContract_ = 1;
     int64_t treasury_ = 100000000, carrierCash_ = 10000000;
     int64_t endowmentMoney_ = 0, externalMoneyDelta_ = 0;
@@ -192,6 +231,8 @@ class Economy {
     void offers();
     void development();
     std::string invest(const EconomicCommand&, EconomyPlayer&, size_t);
+    void haulOffers();
+    std::string haulCommand(const EconomicCommand&, EconomyPlayer&);
     uint64_t travelTicks(size_t, size_t) const;
     int64_t unitPrice(size_t, Good, int64_t available, bool buy) const;
 };
@@ -210,6 +251,7 @@ struct EconomySnapshot {
     std::vector<EconomicFlight> flights;
     std::vector<EconomicContract> contracts;
     std::vector<EconomicEvent> events;
+    std::vector<HaulContract> hauls;
     EconomyPlayer player;
     uint64_t tick = 0;
     bool catchingUp = false;
@@ -221,12 +263,23 @@ struct EconomySnapshot {
         double distanceMetres = 0;
     };
     std::vector<TradeRoute> routes;
+    struct Job {
+        bool haul = false;
+        uint64_t id = 0;
+        ActivityId target;
+        EconomicAction action = EconomicAction::Contract;
+        Good good = Good::Water;
+        int64_t kg = 0;
+        std::string title, route;
+    };
+    std::vector<Job> jobs;
     std::optional<size_t> siteIndex(const ActivityId&) const;
     EconomyQuote quote(size_t, Good, int64_t kg) const;
     std::optional<ActivityId> contractDestination() const;
 };
 // Bounded worker-only search. Quotes include both spreads and marginal stock changes.
 std::vector<EconomySnapshot::TradeRoute> economicTradeRoutes(const EconomySnapshot&);
+std::vector<EconomySnapshot::Job> economicJobs(const EconomySnapshot&);
 ActivityBody sampleEconomicFreight(const Universe&, const EconomicNetwork&, const EconomicFlight&,
                                    double seconds);
 // One cancellable worker owns the ledger and SQLite. Main/render consume immutable snapshots.
@@ -247,7 +300,7 @@ class EconomyRuntime {
 class Pilot;
 class Navigation;
 bool economicTradeAccess(const Universe&, const Navigation&, const Pilot&, const EconomicSite&);
-enum class MarketPage : uint8_t { Goods, Routes, Industry };
+enum class MarketPage : uint8_t { Goods, Routes, Industry, Jobs };
 struct MarketView {
     bool open = false, connected = false, ready = false;
     std::string site, role, message, bottleneck, contract;
@@ -258,6 +311,7 @@ struct MarketView {
     MarketPage page = MarketPage::Goods;
     std::vector<std::string> detail;
     std::string summary;
+    std::string activeJob;
 };
 MarketView economicMarketView(const EconomySnapshot*, const std::optional<ActivityId>&, size_t selected,
                               int64_t quantity, bool connected, MarketPage page = MarketPage::Goods);

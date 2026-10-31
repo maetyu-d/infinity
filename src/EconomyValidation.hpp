@@ -20,7 +20,9 @@ class EconomyValidation {
     MarketPage page_ = MarketPage::Goods;
     size_t supply_ = 0;
     uint64_t sequence_ = 3;
-    bool finished_ = false;
+    bool finished_ = false, requireLink_ = true;
+    std::optional<HaulContract> haul_;
+    int64_t haulCredits_ = 0;
     int64_t beforeCredits_ = 0;
     std::string camera_;
     uint64_t geometry_ = 0;
@@ -41,6 +43,34 @@ class EconomyValidation {
         port_ = ActivityId{planet.address, 0};
     }
 
+    void placePort(const EconomicSite& site) {
+        const auto home = u_.describe(site.id.home);
+        const auto radial = glm::normalize(site.metres);
+        auto tangent = glm::cross(radial, glm::dvec3(0, 1, 0));
+        if (glm::length(tangent) < .01)
+            tangent = glm::cross(radial, glm::dvec3(1, 0, 0));
+        tangent = glm::normalize(tangent);
+        const auto eye = site.metres + radial * (site.orbital ? site.radius * 2 + 100 : 8.);
+        const auto q = glm::quatLookAtRH(site.orbital ? -radial : tangent, site.orbital ? tangent : radial);
+        const auto offset = eye / std::pow(10., home.frame.logRadius) - q * glm::dvec3(0, 0, 1);
+        std::ostringstream view;
+        view.precision(17);
+        view << home.address.str() << ' ' << home.frame.logRadius << ' ' << q.w << ' ' << q.x << ' ' << q.y
+             << ' ' << q.z << ' ' << offset.x << ' ' << offset.y << ' ' << offset.z;
+        if (!nav_.restore(view.str()))
+            throw std::runtime_error("Native job placement failed");
+        if (!site.orbital) {
+            nav_.changeFrame(FlightController::surfaceAt(site.id.home, radial));
+            nav_.setRenderScale(2);
+        }
+        pilot_.resetMotion();
+        activity_.selected.reset();
+        port_ = site.id;
+        requireLink_ = false;
+        if (!site.orbital && !pilot_.landAt(site.id.home, radial))
+            throw std::runtime_error("Native job surface port has no safe landing approach");
+    }
+
   public:
     EconomyValidation(const Universe& u, Navigation& n, Pilot& p, EconomyRuntime& e, ActivityState& a,
                       SDL_Window* window)
@@ -57,9 +87,20 @@ class EconomyValidation {
         auto i = s->siteIndex(*port_);
         if (!i)
             throw std::runtime_error("Existing harbour has no economic account");
-        view_ = economicMarketView(s.get(), port_, page_ == MarketPage::Industry ? 0 : 1, 10,
+        view_ = economicMarketView(s.get(), port_,
+                                   page_ == MarketPage::Industry || page_ == MarketPage::Jobs ? 0 : 1, 10,
                                    economicTradeAccess(u_, nav_, pilot_, s->network->sites[*i]), page_);
-        if (!view_.connected && !s->catchingUp)
+        if (!requireLink_) {
+            pilot_.update({}, 1. / 30, renderer.submittedGeometry(nav_.anchor));
+            if (age_ % 180 == 0)
+                std::cout << "HAUL_APPROACH stage=" << stage_ << " agl=" << pilot_.instruments().altitude
+                          << " speed=" << pilot_.instruments().speed << " landed=" << pilot_.ship().landed
+                          << " phase=" << pilot_.instruments().phase << '\n';
+            if (age_ > 1200)
+                throw std::runtime_error("Native job approach stalled / " + pilot_.instruments().phase +
+                                         " / AGL " + std::to_string(pilot_.instruments().altitude));
+        }
+        if (requireLink_ && !view_.connected && !s->catchingUp)
             throw std::runtime_error("Economic harbour approach did not establish trade access");
         pilot_.setCargoMass(s->player.massKg());
         renderer.setEconomy(s, &view_);
@@ -192,8 +233,70 @@ class EconomyValidation {
             std::cout << "PASS: native market purchase/resale, Hyperion scene identity, portrait "
                          "fit, funded refits, delivered capital, commissioning, trade intelligence and real "
                          "freight\n";
-            next(8);
-        } else if (stage_ == 8 && age_ > 10)
+            next(70);
+        } else if (stage_ == 70 && age_ > 10) {
+            auto available = std::find_if(s->hauls.begin(), s->hauls.end(), [&](const auto& h) {
+                return h.phase == HaulPhase::Open && s->network->sites[h.source].orbital;
+            });
+            if (available == s->hauls.end())
+                available = std::find_if(s->hauls.begin(), s->hauls.end(),
+                                         [](const auto& h) { return h.phase == HaulPhase::Open; });
+            if (available == s->hauls.end())
+                throw std::runtime_error("Native job board has no funded haul");
+            haul_ = *available;
+            page_ = MarketPage::Jobs;
+            const double density = std::max(1., double(SDL_GetWindowPixelDensity(window_)));
+            SDL_SetWindowSize(window_, int(1440 / density), int(900 / density));
+            next(71);
+        } else if (stage_ == 71 && age_ > 30) {
+            capture("jobs-board");
+            next(72);
+        } else if (stage_ == 72 && age_ > 10) {
+            runtime_.command({++sequence_, s->network->sites[haul_->source].id, EconomicAction::AcceptHaul,
+                              haul_->good, haul_->kg, 0, haul_->id});
+            next(73);
+        } else if (stage_ == 73 && s->player.lastCommand >= sequence_ && age_ > 8) {
+            if (!s->player.haul || s->player.haul->onboard)
+                throw std::runtime_error("Native haul acceptance failed");
+            placePort(s->network->sites[haul_->source]);
+            next(74);
+        } else if (stage_ == 74 && age_ > 15 &&
+                   economicTradeAccess(u_, nav_, pilot_, s->network->sites[haul_->source])) {
+            requireLink_ = true;
+            haulCredits_ = s->player.credits;
+            runtime_.command(
+                {++sequence_, *port_, EconomicAction::PickupHaul, haul_->good, haul_->kg, 0, haul_->id});
+            next(75);
+        } else if (stage_ == 75 && s->player.lastCommand >= sequence_ && age_ > 12) {
+            if (!s->player.haul || !s->player.haul->onboard || s->player.sealedKg() != haul_->kg ||
+                s->player.credits != haulCredits_)
+                throw std::runtime_error("Native sealed pickup failed");
+            capture("jobs-sealed-cargo");
+            next(76);
+        } else if (stage_ == 76 && age_ > 10) {
+            placePort(s->network->sites[haul_->destination]);
+            next(77);
+        } else if (stage_ == 77 && age_ > 15 &&
+                   economicTradeAccess(u_, nav_, pilot_, s->network->sites[haul_->destination])) {
+            requireLink_ = true;
+            runtime_.command(
+                {++sequence_, *port_, EconomicAction::DeliverHaul, haul_->good, haul_->kg, 0, haul_->id});
+            next(78);
+        } else if (stage_ == 78 && s->player.lastCommand >= sequence_ && age_ > 12) {
+            if (s->player.haul || s->player.sealedKg() || s->player.deliveries != 1 ||
+                s->player.credits != haulCredits_ + haul_->fee)
+                throw std::runtime_error("Native funded haul delivery failed");
+            capture("jobs-paid");
+            std::cout << "PASS: native job board, reserved acceptance, physical pickup, sealed cargo, landed "
+                         "delivery and paid carrier history\n";
+            next(79);
+        } else if (stage_ == 79 && age_ > 10) {
+            SDL_SetWindowSize(window_, 480, 640);
+            next(80);
+        } else if (stage_ == 80 && age_ > 30) {
+            capture("jobs-portrait");
+            next(81);
+        } else if (stage_ == 81 && age_ > 10)
             finished_ = true;
     }
     bool finished() const {

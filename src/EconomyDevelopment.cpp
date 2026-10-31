@@ -75,7 +75,7 @@ Stock facilityMaterials(const EconomicSiteState& s) {
     return result;
 }
 int64_t economicPendingPayload(const EconomicCommand& c, const EconomicSiteState& s) {
-    if (c.action == EconomicAction::Buy)
+    if (c.action == EconomicAction::Buy || c.action == EconomicAction::PickupHaul)
         return std::clamp<int64_t>(c.kg, 0, 4000);
     if (c.action == EconomicAction::CancelProject && s.project)
         return total(s.project->delivered);
@@ -138,7 +138,7 @@ std::string Economy::invest(const EconomicCommand& c, EconomyPlayer& player, siz
     auto r = facilityRefit(p.module, s.modules[m] + 1);
     int64_t delivered = 0;
     for (size_t g = 0; g < goodCount; g++) {
-        auto kg = std::min(player.cargo[g], r.materials[g] - p.delivered[g]);
+        auto kg = std::min(player.availableCargo(Good(g)), r.materials[g] - p.delivered[g]);
         p.delivered[g] += kg;
         player.cargo[g] -= kg;
         s.imported[g] += kg;

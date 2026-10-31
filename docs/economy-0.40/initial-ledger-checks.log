@@ -1,0 +1,56 @@
+Start testing: Oct 31 11:00 GMT
+----------------------------------------------------------
+2/83 Testing: economic_hauling_and_career
+2/83 Test: economic_hauling_and_career
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_economy_hauling_tests" "/Users/user/Documents/SC tutorial/Infinite/build/economy/haul-test"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"economic_hauling_and_career" start time: Oct 31 11:00 GMT
+Output:
+----------------------------------------------------------
+worker_bytes=503148 job_rows=12
+PASS: 2916 hauling, seals, conservation, expiry, returns, history, UI and restart checks
+<end of output>
+Test time =  19.50 sec
+----------------------------------------------------------
+Test Passed.
+"economic_hauling_and_career" end time: Oct 31 11:00 GMT
+"economic_hauling_and_career" time elapsed: 00:00:19
+----------------------------------------------------------
+
+3/83 Testing: economic_investment_and_trade
+3/83 Test: economic_investment_and_trade
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_economy_development_tests" "/Users/user/Documents/SC tutorial/Infinite/build/economy/development-test"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"economic_investment_and_trade" start time: Oct 31 11:00 GMT
+Output:
+----------------------------------------------------------
+network_trade_search_median_ms=32.9415 max_ms=54.9853
+worker_bytes=503164 routes=12
+fixture_trade_search_ms=0.322625
+PASS: 332 investment, capital conservation, construction, dividends, migration, trade and persistence checks
+<end of output>
+Test time =  18.30 sec
+----------------------------------------------------------
+Test Passed.
+"economic_investment_and_trade" end time: Oct 31 11:00 GMT
+"economic_investment_and_trade" time elapsed: 00:00:18
+----------------------------------------------------------
+
+4/83 Testing: persistent_economic_supply_chains
+4/83 Test: persistent_economic_supply_chains
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_economy_tests" "/Users/user/Documents/SC tutorial/Infinite/build/economy/runtime-test"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"persistent_economic_supply_chains" start time: Oct 31 11:00 GMT
+Output:
+----------------------------------------------------------
+network_sites=95 vessels=123 adapter_and_100_ticks_ms=3700.69 thousand_ticks_ms=939.307 network_bytes=337892
+PASS: 64610 economic accounting, freight, contracts, replay, cargo physics, preservation and SQLite checks
+<end of output>
+Test time =  27.53 sec
+----------------------------------------------------------
+Test Passed.
+"persistent_economic_supply_chains" end time: Oct 31 11:01 GMT
+"persistent_economic_supply_chains" time elapsed: 00:00:27
+----------------------------------------------------------
+
+End testing: Oct 31 11:01 GMT

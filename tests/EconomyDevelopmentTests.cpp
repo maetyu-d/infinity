@@ -56,6 +56,19 @@ EconomicCommand command(const Economy& e, uint64_t seq, EconomicAction a, Facili
     return c;
 }
 std::string legacy(std::string text, size_t sites) {
+    // Version three appends a hauling section after the existing facility records.
+    std::vector<std::string> lines;
+    std::istringstream input(text);
+    for (std::string line; std::getline(input, line);)
+        lines.push_back(line);
+    // This legacy fixture has no commodities below target, hence no hauling offers.
+    const auto& tail = lines.back();
+    if (tail == "1 0") {
+        lines.pop_back();
+        text.clear();
+        for (const auto& line : lines)
+            text += line + "\n";
+    }
     for (size_t i = 0; i < sites; i++) {
         text.pop_back();
         text.erase(text.rfind('\n') + 1);
@@ -208,10 +221,13 @@ int main(int argc, char** argv) {
                   "Utility/automation commissioning did not improve real production");
         }
         // Version-one ledgers migrate without changing stock, money, history or wallet.
-        Economy old(fixture());
+        auto legacyNetwork = fixture();
+        for (auto& site : legacyNetwork->sites)
+            site.target.fill(0);
+        Economy old(legacyNetwork);
         old.advanceTo(20);
         auto v1 = legacy(old.serialize(), old.sites().size());
-        Economy migrated(fixture());
+        Economy migrated(legacyNetwork);
         check(migrated.restore(v1) && migrated.inventoryTotal() == old.inventoryTotal() &&
                   migrated.moneyTotal() == old.moneyTotal() && migrated.tick() == old.tick(),
               "Legacy economy migration lost existing state");

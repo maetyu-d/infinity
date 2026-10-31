@@ -1,0 +1,11 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start  2: economic_investment_and_trade
+1/3 Test  #2: economic_investment_and_trade .......   Passed   97.15 sec
+    Start  3: persistent_economic_supply_chains
+2/3 Test  #3: persistent_economic_supply_chains ...   Passed  128.80 sec
+    Start 24: ship_handling_and_roll
+3/3 Test #24: ship_handling_and_roll ..............   Passed   11.59 sec
+
+100% tests passed, 0 tests failed out of 3
+
+Total Test time (real) = 238.80 sec
