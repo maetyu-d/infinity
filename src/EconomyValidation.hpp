@@ -89,23 +89,11 @@ class EconomyValidation {
             if (s->player.massKg() != 10 || s->player.credits >= beforeCredits_)
                 throw std::runtime_error("Native market purchase failed");
             capture("market-cargo");
-            next(20);
-        } else if (stage_ == 20 && age_ > 8) {
-            renderer.setMode(RenderMode::Original);
-            next(3);
-        } else if (stage_ == 3 && age_ > 12) {
-            if (nav_.serialize() != camera_ ||
-                geometryFingerprint(*renderer.submittedGeometry(nav_.anchor)) != geometry_)
-                throw std::runtime_error("Economic mode switch changed universe/camera");
-            capture("market-original");
-            next(30);
-        } else if (stage_ == 30 && age_ > 8) {
-            renderer.setMode(RenderMode::Hybrid);
-            next(4);
-        } else if (stage_ == 4 && age_ > 12) {
-            capture("market-hybrid");
             next(40);
         } else if (stage_ == 40 && age_ > 8) {
+            if (nav_.serialize() != camera_ ||
+                geometryFingerprint(*renderer.submittedGeometry(nav_.anchor)) != geometry_)
+                throw std::runtime_error("Economic trading changed universe/camera");
             auto q = s->quote(*i, Good::Water, 10);
             runtime_.command({2, *port_, EconomicAction::Sell, Good::Water, 10, q.sellCents, 0});
             next(5);
@@ -136,7 +124,7 @@ class EconomyValidation {
                       << " vessels=" << s->flights.size() << " tick=" << s->tick
                       << " player_credits_cents=" << s->player.credits << " cargo_kg=" << s->player.massKg()
                       << " worker_snapshot_bytes=" << runtime_.residentBytes() << '\n';
-            std::cout << "PASS: native market purchase/resale, original/hyperion/hybrid identity, portrait "
+            std::cout << "PASS: native market purchase/resale, Hyperion scene identity, portrait "
                          "fit and real freight\n";
             next(8);
         } else if (stage_ == 8 && age_ > 10)

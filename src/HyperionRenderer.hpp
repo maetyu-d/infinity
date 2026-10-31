@@ -103,7 +103,6 @@ class HyperionRenderer {
     bgfx::UniformHandle detailSampler_ = BGFX_INVALID_HANDLE, surface_ = BGFX_INVALID_HANDLE;
     size_t detailBytes_ = 0, detailUploadBytes_ = 0;
     void screen(bgfx::ViewId, bgfx::ProgramHandle);
-    RenderMode mode_ = RenderMode::Original;
     int width_ = 0, height_ = 0;
     size_t bytes_ = 0;
     bgfx::FrameBufferHandle scene_ = BGFX_INVALID_HANDLE;

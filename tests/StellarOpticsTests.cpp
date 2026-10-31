@@ -95,7 +95,7 @@ int main() {
               "A clear day star was hidden by a coordinate-frame mismatch");
         const auto geometry = GeometryGenerator(u).generate(star, 1);
         const auto hash = geometryFingerprint(*geometry);
-        for (auto mode : {RenderMode::Original, RenderMode::Hyperion, RenderMode::Hybrid}) {
+        for (auto mode : {RenderMode::Hyperion}) {
             const auto p = extractPresentation(star, *geometry, mode);
             check(p.domain.x == 6 && std::abs(p.domain.y - star.stellarRadiusMetres /
                                                                std::pow(10., star.frame.logRadius)) < 1e-8,

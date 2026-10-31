@@ -6,7 +6,7 @@ import sys
 
 root = pathlib.Path(sys.argv[1])
 images = {}
-for name in ("orbit-original", "orbit-hyperion", "orbit-hybrid", "landing-approach",
+for name in ("orbit-hyperion", "landing-approach",
              "landed", "departure", "atomic-shrink", "stellar-background", "micro-shrink", "system-contacts", "orbital-activity", "busy-orbit", "moon-family", "controls", "roll-right", "roll-left", "roll-stopped"):
     with (root / (name + ".ppm")).open("rb") as file:
         assert file.readline().strip() == b"P6"
@@ -22,13 +22,11 @@ for name in ("orbit-original", "orbit-hyperion", "orbit-hybrid", "landing-approa
     assert count(500, 795, 720, 870, lambda p: p[1] > 120 and p[2] > 110) > 120, name + ": missing velocity instruments"
     assert count(350, 150, 1050, 700, lambda p: max(p) > 40) > 200, name + ": missing scene"
     images[name] = pixels
-assert images["orbit-original"] != images["orbit-hyperion"]
-assert images["orbit-hyperion"] != images["orbit-hybrid"]
 assert images["system-contacts"] != images["orbit-hyperion"]
 assert images["orbital-activity"] != images["orbit-hyperion"]
 assert images["controls"] != images["moon-family"]
 assert images["roll-right"] != images["roll-left"] != images["roll-stopped"]
-print("PASS: all seventeen cockpit, roll/release, controls guide, real moon family, orbital activity, celestial contacts, addressed stellar background, landing/departure and micro/nano ship captures contain scene geometry and flight instruments")
+print("PASS: all fifteen cockpit, roll/release, controls guide, real moon family, orbital activity, celestial contacts, addressed stellar background, landing/departure and micro/nano ship captures contain scene geometry and flight instruments")
 
 profile = root.parent / "frames.csv"
 if profile.exists():

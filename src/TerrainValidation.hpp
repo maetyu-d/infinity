@@ -55,9 +55,7 @@ class TerrainValidation {
                 return;
             }
             pendingCapture_ = false;
-            if (++mode_ < 3)
-                renderer.setMode(static_cast<RenderMode>(mode_));
-            else {
+            {
                 if (quality_ && ++altitude_ < 3) {
                 } else {
                     ++world_;
@@ -65,11 +63,11 @@ class TerrainValidation {
                 }
                 mode_ = 0;
                 if (world_ < planets_.size()) {
-                    renderer.setMode(RenderMode::Original);
+                    renderer.setMode(RenderMode::Hyperion);
                     place();
                 } else
                     std::cout << "PASS: native solid terrain worlds=" << planets_.size()
-                              << " modes=3; height fields, positions and cameras retained\n";
+                              << " renderer=HYPERION; height fields, positions and cameras retained\n";
             }
             return;
         }

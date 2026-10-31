@@ -9,22 +9,22 @@ import sys
 root = pathlib.Path(sys.argv[1])
 width, height = map(int, sys.argv[2:4]) if len(sys.argv) > 2 else (1440,900)
 log = (root / 'native.log').read_text()
-assert 'PASS: native solid terrain worlds=2 modes=3' in log
+assert 'PASS: native solid terrain worlds=2 renderer=HYPERION' in log
 records = re.findall(r'TERRAIN_RENDER (\S+) type=(.+?) mode=(\w+) tiles=(\d+) height_m=([\d.]+) shadow=(\d+) terrain=(\d+) geometry=(\d+)', log)
-assert len(records) == 18, 'Missing a world / height / rendering mode'
+assert len(records) == 6, 'Missing a world / height / rendering mode'
 scenes = {}
 for address, kind, mode, tiles, altitude, shadow, terrain, geometry in records:
     scenes.setdefault((address, altitude), []).append((mode, terrain, geometry))
     assert int(tiles) > 50
-    assert int(shadow) == (mode != 'ORIGINAL'), 'Terrain sun map missing or changed Original mode'
+    assert int(shadow) == (mode == 'HYPERION'), 'Terrain sun map missing or changed Original mode'
 assert len(scenes) == 6
 for scene in scenes.values():
-    assert {r[0] for r in scene} == {'ORIGINAL', 'HYPERION', 'HYBRID'}
+    assert {r[0] for r in scene} == {'HYPERION'}
     assert len({r[1:] for r in scene}) == 1, 'Mode changed terrain or planet geometry'
 images = sorted({p.with_suffix('') if p.suffix == '.gz' else p
-                 for pattern in ['*.ppm', '*.ppm.gz']
+                 for pattern in ['*-HYPERION.ppm', '*-HYPERION.ppm.gz']
                  for p in (root / 'captures').glob(pattern)})
-assert len(images) == 18
+assert len(images) == 6
 for path in images:
     # A lossless archive contains exactly the same P6 frame and assertions.
     try:
@@ -48,4 +48,4 @@ assert max(int(f['weather_gpu_bytes']) for f in frames) <= 2*43692
 assert max(int(f['weather_cache_bytes']) for f in frames) <= 4*43692
 assert max(int(f['effect_bytes']) for f in frames) <= width*height*12 + (width//3)*(height//3)*16 + (width//2)*(height//2)*8 + int(width*scale)*int(height*scale)*8 + 8388608
 assert any(int(f['shadow_updates']) for f in frames)
-print('PASS: 18 native views at 250 m, 2 km and 11.8 km; identical planet/terrain meshes across modes; sun maps active; fixed texture budgets')
+print('PASS: six native views at 250 m, 2 km and 11.8 km; identical planet/terrain meshes in Hyperion; sun maps active; fixed texture budgets')

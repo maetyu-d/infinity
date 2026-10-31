@@ -108,8 +108,8 @@ class UiValidation {
         bool help;
     };
     static constexpr Case cases_[] = {{"small", 800, 500, RenderMode::Hyperion, false},
-                                      {"square", 600, 600, RenderMode::Original, false},
-                                      {"portrait", 600, 900, RenderMode::Hybrid, false},
+                                      {"square", 600, 600, RenderMode::Hyperion, false},
+                                      {"portrait", 600, 900, RenderMode::Hyperion, false},
                                       {"retina", 1920, 1200, RenderMode::Hyperion, false},
                                       {"wide", 1440, 900, RenderMode::Hyperion, false},
                                       {"controls", 800, 500, RenderMode::Hyperion, true}};

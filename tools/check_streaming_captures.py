@@ -47,7 +47,7 @@ def uncovered(width, data):
     return holes / count
 
 ground = {}
-for name in ['before', 'HYPERION', 'HYBRID', 'ORIGINAL']:
+for name in ['before', 'HYPERION']:
     read('terrain-' + name + '.ppm')  # All normal presentation captures remain required.
     width, height, data = read('coverage-' + name + '.ppm')
     ratio = uncovered(width, data)

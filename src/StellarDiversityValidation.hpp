@@ -26,12 +26,6 @@ class StellarDiversityValidation {
             scenes_.push_back({star, "star-" + std::to_string(unsigned(kind)), RenderMode::Hyperion});
         for (auto [type, star] : spectra)
             scenes_.push_back({star, "spectral-" + type, RenderMode::Hyperion});
-        for (auto kind : {StellarKind::WolfRayet, StellarKind::WhiteDwarf, StellarKind::NeutronStar,
-                          StellarKind::BrownDwarf}) {
-            const auto name = "star-" + std::to_string(unsigned(kind));
-            scenes_.push_back({kinds.at(kind), name + "-original", RenderMode::Original});
-            scenes_.push_back({kinds.at(kind), name + "-hybrid", RenderMode::Hybrid});
-        }
         for (auto kind : {StellarKind::WhiteDwarf, StellarKind::NeutronStar})
             scenes_.push_back({kinds.at(kind), "star-" + std::to_string(unsigned(kind)) + "-rebased",
                                RenderMode::Hyperion, true});
@@ -53,8 +47,9 @@ class StellarDiversityValidation {
                 if (!finished())
                     place();
                 else
-                    std::cout << "PASS: addressed stellar families, spectral classes, compact radii, three "
-                                 "modes and physical camera invariance\n";
+                    std::cout << "PASS: addressed stellar families, spectral classes, compact radii, "
+                                 "Hyperion rendering "
+                                 "and physical camera invariance\n";
             }
             return;
         }

@@ -81,13 +81,13 @@ class PilotValidation {
             if (!geometry)
                 return;
             const auto hash = geometryFingerprint(*geometry);
-            if (mode_ == 0) {
+            if (!queued_) {
                 camera_ = n_.serialize();
                 geometry_ = hash;
             } else if (n_.serialize() != camera_ || hash != geometry_)
                 throw std::runtime_error("Cockpit mode changed scene geometry or camera");
             if (!queued_) {
-                capture(mode_ == 0 ? "orbit-original" : mode_ == 1 ? "orbit-hyperion" : "orbit-hybrid");
+                capture("orbit-hyperion");
                 queued_ = true;
                 hold_ = 4;
                 return;
@@ -95,12 +95,7 @@ class PilotValidation {
             if (--hold_ > 0)
                 return;
             queued_ = false;
-            if (++mode_ < 3) {
-                renderer.setMode(static_cast<RenderMode>(mode_));
-                age_ = 65;
-                return;
-            }
-            std::cout << "PILOT_MODE_PROOF identical camera and planet geometry in all three cockpit modes / "
+            std::cout << "PILOT_MODE_PROOF identical camera and planet geometry in Hyperion rendering / "
                          "sky stars="
                       << stats.skyStars << " background_galaxies=" << stats.skyGalaxies
                       << " atmosphere=" << stats.atmospheres << '\n';
@@ -389,7 +384,7 @@ class PilotValidation {
     glm::dvec3 rollForward_{}, rollRight_{};
     uint64_t descriptor_ = 0, geometry_ = 0;
     std::string camera_;
-    int stage_ = 0, age_ = 0, mode_ = 0, hold_ = 0;
+    int stage_ = 0, age_ = 0, hold_ = 0;
     bool finished_ = false, queued_ = false;
     void place(bool orbit) {
         auto p = u_.describe(planet_);

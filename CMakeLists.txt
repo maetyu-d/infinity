@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Infinite VERSION 0.38.2 LANGUAGES C CXX)
+project(Infinite VERSION 0.38.3 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -163,7 +163,6 @@ set_tests_properties(continuity_restart_write PROPERTIES FIXTURES_SETUP continui
 add_test(NAME continuity_restart_read COMMAND infinite_continuity_tests --read "${CMAKE_BINARY_DIR}/continuity-restart.sqlite")
 set_tests_properties(continuity_restart_read PROPERTIES FIXTURES_REQUIRED continuity_restart TIMEOUT 90)
 if(INFINITE_VIEWER)
-  include(cmake/EmbedShaders.cmake)
   if(WIN32 AND (NOT EXISTS "${PROJECT_SOURCE_DIR}/shaders/bin/dxbc/vs_hyperion_smooth.bin"
       OR NOT EXISTS "${PROJECT_SOURCE_DIR}/shaders/bin/dxbc/fs_hyperion.bin"
       OR NOT EXISTS "${PROJECT_SOURCE_DIR}/shaders/bin/dxbc/fs_hyperion_flight.bin"
@@ -183,6 +182,10 @@ if(INFINITE_VIEWER)
   endif()
   if(INFINITE_GPU_TESTS)
     find_package(Python3 3.9 COMPONENTS Interpreter REQUIRED)
+    add_test(NAME native_hyperion_settings COMMAND "${CMAKE_COMMAND}"
+      "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/hyperion-settings"
+      -P "${PROJECT_SOURCE_DIR}/cmake/RunHyperionSettings.cmake")
+    set_tests_properties(native_hyperion_settings PROPERTIES TIMEOUT 150)
     add_test(NAME native_cockpit_motion COMMAND "${CMAKE_COMMAND}"
       "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/cockpit-motion-native"
       -P "${PROJECT_SOURCE_DIR}/cmake/RunCockpitMotion.cmake")
@@ -331,13 +334,13 @@ if(INFINITE_VIEWER)
       "${PROJECT_SOURCE_DIR}/tools/check_continuity_captures.py" "${CMAKE_BINARY_DIR}/native-continuity/captures"
       "${CMAKE_BINARY_DIR}/native-continuity/native.log")
     set_tests_properties(native_atomic_visibility PROPERTIES FIXTURES_REQUIRED native_captures)
-    add_test(NAME native_render_mode_round_trip COMMAND "${CMAKE_COMMAND}"
-      "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/hyperion-comparison"
-      -P "${PROJECT_SOURCE_DIR}/cmake/RunModeTour.cmake")
-    set_tests_properties(native_render_mode_round_trip PROPERTIES FIXTURES_SETUP mode_captures TIMEOUT 180)
-    add_test(NAME native_render_mode_images COMMAND "${Python3_EXECUTABLE}"
-      "${PROJECT_SOURCE_DIR}/tools/check_mode_captures.py" "${CMAKE_BINARY_DIR}/hyperion-comparison/captures"
-      "${CMAKE_BINARY_DIR}/hyperion-comparison/native.log")
-    set_tests_properties(native_render_mode_images PROPERTIES FIXTURES_REQUIRED mode_captures)
+    add_test(NAME native_hyperion_round_trip COMMAND "${CMAKE_COMMAND}"
+      "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/hyperion-presentation"
+      -P "${PROJECT_SOURCE_DIR}/cmake/RunPresentationTour.cmake")
+    set_tests_properties(native_hyperion_round_trip PROPERTIES FIXTURES_SETUP hyperion_captures TIMEOUT 180)
+    add_test(NAME native_hyperion_images COMMAND "${Python3_EXECUTABLE}"
+      "${PROJECT_SOURCE_DIR}/tools/check_presentation_captures.py" "${CMAKE_BINARY_DIR}/hyperion-presentation/captures"
+      "${CMAKE_BINARY_DIR}/hyperion-presentation/native.log")
+    set_tests_properties(native_hyperion_images PROPERTIES FIXTURES_REQUIRED hyperion_captures)
   endif()
 endif()

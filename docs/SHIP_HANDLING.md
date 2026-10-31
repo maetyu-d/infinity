@@ -1,5 +1,15 @@
 # Ship handling and roll
 
+## Hyperion-only graphics — Infinite 0.38.3
+
+Full-strength, colourful Hyperion rendering is the sole graphics style. The Original and Hybrid enum values, renderer branches, legacy instancing program and billboard buffer, H toggle, HUD hints and old mode-comparison utilities have been removed. Existing `display.txt` preferences are ignored and are no longer written. `--render-mode hyperion` remains a compatible explicit launch argument; `original` and `hybrid` are refused. The control guide and README list the current controls. F7 cockpit motion, physical ship handling, saved flights, universe generation and deterministic seeds remain intact.
+
+Native validation now captures one Hyperion view per scene. `--presentation-test` replaces the comparison tour: it follows nine scales inward and returns through the same addresses, checking geometry, camera and generation state. Weather/city, star, planet, terrain, cockpit-motion and market fixtures retain their substantive tests without rendering duplicate retired styles. Earlier sections below are historical release records and include the former multi-mode comparisons.
+
+Validation: [37 core tests](hyperion-only-0.38.3/core-tests.log), [72,521 presentation preservation checks](hyperion-only-0.38.3/presentation-tests.log) and [21 native checks](hyperion-only-0.38.3/validation.json) passed. The native run covers ignored legacy preferences, refused removed CLI choices, six cockpit-motion cases, trading, stellar/planet varieties, planetary depth stability, cities/weather, terrain, landing/roll, fitted UI and seventeen nine-scale round-trip captures. City-shadow reuse is measured in settled capture/readback frames; terrain streaming and morphing legitimately redraw shadows during loading. [Final image checks](hyperion-only-0.38.3/final-image-tests.log) supersede the old loading-frame cache limit and renamed checker path in the initial run.
+
+The [matched Hyperion world crop](hyperion-only-0.38.3/visual-preservation.json) is bit-identical to 0.38.2 across 1,362,750 colour channels. [138 universe, physics, economy, shader and cockpit-motion source files](hyperion-only-0.38.3/preservation.json) remain unchanged. The [signed 0.38.3 / build 41 app](hyperion-only-0.38.3/package.json) matches all 28 tested code/data sections.
+
 ## Cockpit inertia and feedback — Infinite 0.38.2
 
 The cockpit now has a separate presentation-only head-motion controller. It reads actual body-axis proper acceleration, angular velocity, engine demand, hull loss and transient collision impulses. Exact damped springs provide a small lean against applied forces, a lag during turns, cabin parallax and short recoil/impact jolts. Smooth, band-limited vibration grows above 1.3 G and remains quiet during idle/coasting. Soft landings receive a much smaller impulse than a hard contact. No ship force, torque, inertia, control gain, seed or generator was changed.

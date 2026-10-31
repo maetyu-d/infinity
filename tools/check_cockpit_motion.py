@@ -4,7 +4,7 @@ import pathlib
 import sys
 
 root = pathlib.Path(sys.argv[1])
-for mode in ("original", "hyperion", "hybrid"):
+for mode in ("hyperion",):
     images = {}
     for effect in ("neutral", "turn", "recoil", "impact", "damage", "recovery"):
         with (root / f"{mode}-{effect}.ppm").open("rb") as f:
@@ -24,4 +24,4 @@ for mode in ("original", "hyperion", "hybrid"):
     error = sum(abs(a - b) for a, b in zip(baseline, images["recovery"])) / len(baseline)
     assert error < .10, f"{mode}: recovery changed the resting scene ({error=})"
     print(f"{mode}: recovery mean channel error {error:.6f}")
-print("PASS: all eighteen cockpit feedback captures show visible impulses and return to the same scene")
+print("PASS: all six cockpit feedback captures show visible impulses and return to the same scene")

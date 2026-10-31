@@ -38,11 +38,11 @@ def compare(reference, candidate):
 
 directory = pathlib.Path(sys.argv[1])
 log = (directory.parent / "native.log").read_text()
-assert log.count("PLANET_STABILITY ") == 18, "Native run skipped a world, rendering mode or magnification"
+assert log.count("PLANET_STABILITY ") == 6, "Native run skipped a world, rendering mode or magnification"
 assert "PASS: planet stability captured primary/moon" in log, "Native fixture did not complete"
 results = {}
 for world in ["solid", "moon"]:
-    for mode in ["ORIGINAL", "HYPERION", "HYBRID"]:
+    for mode in ["HYPERION"]:
         for sample in [1, 2]:
             name = f"{world}-{mode}-{sample}"
             results[name] = compare(directory / f"{world}-{mode}-0.ppm", directory / f"{name}.ppm")

@@ -1,0 +1,27 @@
+{
+  "core_tests_passed": 37,
+  "latest_native_test_status": {
+    "native_hyperion_settings": "Passed",
+    "native_cockpit_motion": "Passed",
+    "native_cockpit_motion_images": "Passed",
+    "native_economic_loop": "Passed",
+    "native_economic_images": "Passed",
+    "native_stellar_diversity": "Passed",
+    "native_stellar_diversity_images": "Passed",
+    "native_planet_diversity": "Passed",
+    "native_planet_diversity_images": "Passed",
+    "native_ui_fit": "Passed",
+    "native_ui_fit_images": "Passed",
+    "native_planet_stability": "Passed",
+    "native_planet_stability_images": "Passed",
+    "native_weather_and_surface_life": "Passed",
+    "native_surface_quality": "Passed",
+    "native_surface_quality_images": "Passed",
+    "native_piloting_loop": "Passed",
+    "native_cockpit_images": "Passed",
+    "native_hyperion_round_trip": "Passed",
+    "native_weather_and_surface_images": "Passed",
+    "native_hyperion_images": "Passed"
+  },
+  "note": "The final image-check run supersedes two obsolete validation assumptions in the initial full run."
+}

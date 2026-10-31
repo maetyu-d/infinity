@@ -41,16 +41,16 @@ struct Options {
     int frames = 0, width = 1440, height = 900;
     uint64_t seed = 0x494e46494e495445ULL;
     std::string captures, profile, data, terrainView;
-    RenderMode renderMode = RenderMode::Original;
+    RenderMode renderMode = RenderMode::Hyperion;
     double visualTime = -1;
-    bool compareModes = false;
+    bool presentationTest = false;
     bool flightTest = false, planetTest = false, uiFitTest = false, polarTest = false, cloudTest = false,
          celestialTest = false, celestialSunOnly = false, landingLightTest = false, weatherTest = false,
          diversityTest = false, stellarDiversityTest = false;
     bool streamingTest = false;
     bool terrainQuality = false, terrainSurfaceFrame = false, sunShadows = true;
     bool economyTest = false, cockpitMotionTest = false;
-    bool pilotTest = false, terrainTest = false, surfaceTest = false, explicitMode = false;
+    bool pilotTest = false, terrainTest = false, surfaceTest = false;
 };
 static Options options(int argc, char** argv) {
     Options o;
@@ -132,11 +132,10 @@ static Options options(int argc, char** argv) {
             o.fresh = true;
         else if (arg == "--render-mode") {
             o.renderMode = parseRenderMode(value());
-            o.explicitMode = true;
         } else if (arg == "--visual-time")
             o.visualTime = std::stod(value());
-        else if (arg == "--compare-modes") {
-            o.compareModes = o.benchmark = o.smoke = o.tour = o.fresh = true;
+        else if (arg == "--presentation-test") {
+            o.presentationTest = o.benchmark = o.smoke = o.tour = o.fresh = true;
             o.visualTime = 12;
         } else if (arg == "--frames")
             o.frames = std::stoi(value());
@@ -177,8 +176,8 @@ static Options options(int argc, char** argv) {
                    "--capture-dir DIR "
                    "--profile CSV "
                    "--data DIR\n";
-            std::cout << "H cycles ORIGINAL / HYPERION / HYBRID. --render-mode original|hyperion|hybrid "
-                         "--compare-modes --visual-time SECONDS\n";
+            std::cout
+                << "Hyperion rendering. --render-mode hyperion --presentation-test --visual-time SECONDS\n";
             std::cout
                 << "F2 market: arrows select goods/quantity, Enter buy, Backspace sell, F3 supply "
                    "contract.\nLocal activity: K cycles traffic, I hails, J approaches/matches course, F6 "
@@ -187,8 +186,7 @@ static Options options(int argc, char** argv) {
         } else
             throw std::invalid_argument("Unknown option " + arg);
     }
-    if (o.compareModes || o.terrainTest || o.surfaceTest || o.planetTest) {
-        o.renderMode = RenderMode::Original;
+    if (o.presentationTest || o.terrainTest || o.surfaceTest || o.planetTest) {
         o.visualTime = 12;
     }
     const unsigned validationModes =
@@ -230,7 +228,7 @@ int main(int argc, char** argv) {
                   << opt.height << ")\n";
         Universe universe(opt.seed);
         Navigation nav(universe);
-        if (opt.compareModes)
+        if (opt.presentationTest)
             nav.parent();
         RegionCache cache(universe);
         FlightController flight(universe, nav, cache);
@@ -262,20 +260,6 @@ int main(int argc, char** argv) {
         {
             Renderer renderer(window, universe, opt.benchmark);
             renderer.setSunShadows(opt.sunShadows);
-            if (!opt.smoke && !opt.explicitMode) {
-                opt.renderMode = RenderMode::Hyperion;
-                std::ifstream settings(data / "display.txt");
-                std::string selected;
-                if (std::getline(settings, selected)) {
-                    for (char& c : selected)
-                        if (c >= 'A' && c <= 'Z')
-                            c = char(c - 'A' + 'a');
-                    try {
-                        opt.renderMode = parseRenderMode(selected);
-                    } catch (...) {
-                    }
-                }
-            }
             renderer.setMode(opt.renderMode);
             if (!opt.smoke) {
                 std::ifstream motionSettings(data / "cockpit-motion.txt");
@@ -540,7 +524,6 @@ int main(int argc, char** argv) {
             bool mouseFlight = false, rightLook = false;
             int frame = 0, tourStage = 0, stable = 0, captureHold = 0;
             bool captureQueued = false, returning = false, tourPassed = false;
-            unsigned compareMode = 0;
             uint64_t compareHash = 0;
             std::string compareCamera;
             GenerationStats compareGeneration{};
@@ -919,11 +902,6 @@ int main(int argc, char** argv) {
                         case SDL_SCANCODE_TAB:
                             overlay = !overlay;
                             break;
-                        case SDL_SCANCODE_H:
-                            renderer.setMode(nextRenderMode(renderer.mode()));
-                            notice = std::string(renderModeName(renderer.mode())) + " / H cycles render mode";
-                            noticeTime = 3;
-                            break;
                         case SDL_SCANCODE_R:
                             activity.selected.reset();
                             if (pilotEnabled)
@@ -1198,12 +1176,12 @@ int main(int argc, char** argv) {
                     if (captureHold > 0)
                         --captureHold;
                     if (stable >= 35 && captureHold == 0) {
-                        if (opt.compareModes) {
+                        if (opt.presentationTest) {
                             auto geometry = renderer.submittedGeometry(nav.anchor);
                             if (!geometry)
                                 throw std::runtime_error("Missing comparison geometry");
                             auto hash = geometryFingerprint(*geometry);
-                            if (compareMode == 0 && !captureQueued) {
+                            if (!captureQueued) {
                                 compareHash = hash;
                                 compareCamera = nav.serialize();
                                 compareGeneration = gen;
@@ -1222,24 +1200,16 @@ int main(int argc, char** argv) {
                                             .string());
                                 captureQueued = true;
                                 captureHold = 4;
-                            } else if (compareMode < 2) {
-                                ++compareMode;
-                                captureQueued = false;
-                                captureHold = 8;
-                                renderer.setMode(static_cast<RenderMode>(compareMode));
                             } else {
-                                std::cout << "MODE_PROOF " << nav.anchor.str() << " geometry=" << hash
-                                          << " camera=identical generation=unchanged modes=3\n";
-                                compareMode = 0;
+                                std::cout << "PRESENTATION_PROOF " << nav.anchor.str() << " geometry=" << hash
+                                          << " camera=identical generation=unchanged renderer=HYPERION\n";
                                 captureQueued = false;
                                 stable = 0;
-                                renderer.setMode(RenderMode::Original);
-                                // Continue through the ordinary tour advancement below.
                             }
-                            if (compareMode != 0 || captureQueued)
+                            if (captureQueued)
                                 continue;
                         }
-                        if (!opt.compareModes && !opt.captures.empty() && !captureQueued) {
+                        if (!opt.presentationTest && !opt.captures.empty() && !captureQueued) {
                             renderer.screenshot(
                                 (std::filesystem::path(opt.captures) /
                                  (std::to_string(tourStage) + "-" +
@@ -1273,7 +1243,8 @@ int main(int argc, char** argv) {
                                                           [&](auto& v) { return v.first == nav.anchor; });
                                 if (found == visited.end() || found->second != node.seed)
                                     throw std::runtime_error("Tour revisit identity mismatch");
-                                if (nav.anchor.kind() == (opt.compareModes ? Kind::Cosmic : Kind::Galaxy)) {
+                                if (nav.anchor.kind() ==
+                                    (opt.presentationTest ? Kind::Cosmic : Kind::Galaxy)) {
                                     tourPassed = true;
                                     opt.tour = false;
                                     notice = "Journey complete / the same galaxy, star, planet, rock and "
@@ -1324,7 +1295,7 @@ int main(int argc, char** argv) {
                 saveText(("ship-" + std::to_string(universe.seed()) + ".txt").c_str(), pilot.serialize());
                 saveText(("activity-" + std::to_string(universe.seed()) + ".txt").c_str(),
                          activity.serialize());
-                saveText("display.txt", std::string(renderModeName(renderer.mode())));
+                // Rendering is fixed to Hyperion; historical display.txt preferences are ignored.
                 saveText("cockpit-motion.txt", renderer.cockpitMotionEnabled() ? "1" : "0");
             }
             cache.wait();
@@ -1398,7 +1369,7 @@ int main(int argc, char** argv) {
                     std::cout << "PROOF recipe=" << generationRecipeVersion << " objects=" << proof->objects()
                               << " revisits=" << proof->revisits() << " digest=" << proof->digest()
                               << " (all LODs, descriptors, materials and atomic sites)\n";
-                if (!tourPassed || tourVisited != (opt.compareModes ? 9 : 8))
+                if (!tourPassed || tourVisited != (opt.presentationTest ? 9 : 8))
                     throw std::runtime_error("Native GPU tour incomplete");
                 std::cout << "PASS: native GPU journey visited " << tourVisited
                           << " scales and returned with matching identities.\n";

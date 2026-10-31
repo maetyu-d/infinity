@@ -259,7 +259,7 @@ bgfx::ProgramHandle HyperionRenderer::geometryProgram(bool smooth, bool stellar)
         flightGeometry_ = program("vs_hyperion", "fs_hyperion_flight");
     return flightGeometry_;
 }
-void HyperionRenderer::begin(RenderMode mode, int width, int height, bool opticalDepth, bool flight) {
+void HyperionRenderer::begin(RenderMode, int width, int height, bool opticalDepth, bool flight) {
     detailUploadBytes_ = 0;
     flight_ = flight;
     weatherVisualData_ = {};
@@ -275,17 +275,6 @@ void HyperionRenderer::begin(RenderMode mode, int width, int height, bool optica
     weatherCache_.beginFrame();
     sunActive_ = false;
     sunUpdated_ = false;
-    const auto previousMode = mode_;
-    mode_ = mode;
-    if (mode == RenderMode::Original) {
-        // Restore every world view, including the per-atom instance views.
-        if (previousMode != RenderMode::Original)
-            for (bgfx::ViewId id = 0; id < 66; ++id)
-                bgfx::setViewFrameBuffer(id, BGFX_INVALID_HANDLE);
-        if (previousMode != RenderMode::Original)
-            bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x03060cff, 0.f, 0);
-        return;
-    }
     init();
     publishDetail();
     const bool replaceTarget = width_ != width || height_ != height || readableDepth_ != opticalDepth;
@@ -323,7 +312,7 @@ void HyperionRenderer::begin(RenderMode mode, int width, int height, bool optica
             bytes_ += size_t(cloudWidth_) * cloudHeight_ * 8;
         }
     }
-    if (replaceTarget || previousMode == RenderMode::Original)
+    if (replaceTarget)
         for (bgfx::ViewId id = 0; id < 66; ++id)
             bgfx::setViewFrameBuffer(id, scene_);
     // Hyperion skyFragment's linear ink (.004,.007,.016), rounded to the
@@ -346,7 +335,7 @@ bgfx::ProgramHandle HyperionRenderer::coverageProgram() {
     return coverageProgram_;
 }
 bool HyperionRenderer::prepareSun(const SunShadowFrame& frame, uint64_t key) {
-    if (mode_ == RenderMode::Original || !readableDepth_)
+    if (!readableDepth_)
         return false;
     if (!bgfx::isValid(sunTarget_)) {
         if (!bgfx::isTextureValid(0, false, 1, bgfx::TextureFormat::D16, BGFX_TEXTURE_RT))
@@ -444,7 +433,7 @@ void HyperionRenderer::stellar(const StellarImage& image, float aspect, float ta
 void HyperionRenderer::prepareWeather(const Node& planet, const glm::dmat4& mapping, double seconds,
                                       double delta, bool volumes, bool frozen) {
     const auto climate = planetClimate(planet);
-    if (mode_ == RenderMode::Original || !readableDepth_ || climate.pressureBar == 0)
+    if (!readableDepth_ || climate.pressureBar == 0)
         return;
     if (!weatherPlanet_ || *weatherPlanet_ != planet.address) {
         weatherRamp_ = 0;
@@ -504,7 +493,7 @@ void HyperionRenderer::prepareWeather(const Node& planet, const glm::dmat4& mapp
     const auto flow =
         glm::mod(seconds * climate.windMetresPerSecond / 1000. * glm::dvec3(.29, .07, .13), glm::dvec3(256));
     weatherData_[2] = glm::vec4(flow, float(thickness / 1000.));
-    weatherData_[3] = {1.f / cloudWidth_, 1.f / cloudHeight_, mode_ == RenderMode::Hybrid ? 12.f : 20.f, 1};
+    weatherData_[3] = {1.f / cloudWidth_, 1.f / cloudHeight_, 20.f, 1};
     weatherFromEye_ = glm::mat4(mapping);
 }
 float HyperionRenderer::weatherBlend(const Address& planet) const {
@@ -570,14 +559,13 @@ bgfx::ProgramHandle HyperionRenderer::ringProgram(const PlanetTraits& t, glm::ve
     return rings_;
 }
 void HyperionRenderer::sky(const SpectralSky& sky, double seconds, float aspect, float tanHalfFov) {
-    if (mode_ == RenderMode::Original || sky.strength <= .001f)
+    if (sky.strength <= .001f)
         return;
     init();
     if (!bgfx::isValid(sky_))
         sky_ = program("vs_hyperion_screen", "fs_hyperion_sky");
     const std::array<glm::vec4, 2> parameters{
-        glm::vec4(sky.strength * (mode_ == RenderMode::Hybrid ? .24f : 1.f), sky.phase, sky.gas,
-                  float(seconds)),
+        glm::vec4(sky.strength * (1.f), sky.phase, sky.gas, float(seconds)),
         glm::vec4(aspect * tanHalfFov, tanHalfFov, bgfx::getCaps()->originBottomLeft ? 1.f : -1.f, 0)};
     const auto rotation = glm::mat4_cast(glm::quat(sky.cameraToField));
     bgfx::setUniform(skyParams_, parameters.data(), 2);
@@ -591,7 +579,7 @@ void HyperionRenderer::bindEmissions(const Node& node, const glm::mat4& pattern,
     bgfx::setUniform(starTypeParams_, stellar.data(), 2);
     const float phase = hyperionPhase(node.seed);
     std::array<glm::vec4, 4> data{};
-    data[0] = {mode_ == RenderMode::Hybrid ? .24f : 1.f, float(seconds), phase, 3};
+    data[0] = {1.f, float(seconds), phase, 3};
     bgfx::setUniform(style_, data.data(), 4);
     bgfx::setUniform(pattern_, glm::value_ptr(pattern));
     const glm::vec4 domain{};
@@ -613,8 +601,6 @@ void HyperionRenderer::screen(bgfx::ViewId id, bgfx::ProgramHandle p) {
     bgfx::submit(id, p);
 }
 void HyperionRenderer::finish() {
-    if (mode_ == RenderMode::Original)
-        return;
     if (readableDepth_) {
         weatherData_[3].x = 1.f / cloudWidth_;
         weatherData_[3].y = 1.f / cloudHeight_;
@@ -680,7 +666,7 @@ void HyperionRenderer::finish() {
     bgfx::setViewFrameBuffer(83, BGFX_INVALID_HANDLE);
     bgfx::setViewRect(83, 0, 0, width_, height_);
     std::array<glm::vec4, 2> params{};
-    params[0] = {1.f / width_, 1.f / height_, mode_ == RenderMode::Hybrid ? .36f : 1.f, 0};
+    params[0] = {1.f / width_, 1.f / height_, 1.f, 0};
     params[1] = {1.f / std::max(1, width_ / 2), 1.f / std::max(1, height_ / 2), 0, 0};
     bgfx::setUniform(postParams_, params.data(), 2);
     bgfx::setTexture(0, sceneSampler_, bgfx::getTexture(scene_), sampling);

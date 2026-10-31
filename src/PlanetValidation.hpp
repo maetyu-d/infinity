@@ -37,17 +37,13 @@ class PlanetValidation {
             captured_ = false;
             if (++sample_ == 3) {
                 sample_ = 0;
-                if (++mode_ == 3) {
-                    mode_ = 0;
-                    ++world_;
-                }
+                ++world_;
             }
             if (finished()) {
-                std::cout << "PASS: planet stability captured primary/moon, three modes, same physical "
+                std::cout << "PASS: planet stability captured primary/moon, Hyperion, same physical "
                              "orbit at ordinary/far-depth/jittered magnifications\n";
                 return;
             }
-            renderer.setMode(static_cast<RenderMode>(mode_));
             place();
             return;
         }
@@ -89,7 +85,7 @@ class PlanetValidation {
     Navigation& nav_;
     Pilot& pilot_;
     std::optional<Node> solid_, moon_;
-    unsigned world_ = 0, mode_ = 0, sample_ = 0, stable_ = 0, hold_ = 0;
+    unsigned world_ = 0, sample_ = 0, stable_ = 0, hold_ = 0;
     bool captured_ = false;
     uint64_t descriptor_ = 0, geometry_ = 0, terrain_ = 0;
     void place() {

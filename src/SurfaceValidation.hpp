@@ -87,17 +87,15 @@ class SurfaceValidation {
             if (hold_-- > 0)
                 return;
             capturing_ = false;
-            if (++mode_ < 3)
-                renderer.setMode(RenderMode(mode_));
-            else {
+            {
                 mode_ = 0;
                 ++stage_;
                 if (!finished()) {
-                    renderer.setMode(RenderMode::Original);
+                    renderer.setMode(RenderMode::Hyperion);
                     place();
                 } else
                     std::cout << "PASS: native weather, city, residents and sealed colony / seven views in "
-                                 "three modes with identical planet geometry and camera\n";
+                                 "Hyperion rendering with identical planet geometry and camera\n";
             }
             return;
         }

@@ -48,11 +48,8 @@ void renderWeather(const Node& planet, glm::dvec3 localEye, const Navigation& na
         return glm::dvec3(std::cos(latitude) * std::cos(longitude), std::sin(latitude),
                           std::cos(latitude) * std::sin(longitude));
     };
-    const auto light = glm::inverse(pose.orientation) * lightAt(planet.address, nav);
-    const float legacyWeight = mode == RenderMode::Original ? 1.f
-                               : cloudVolumes               ? 1.f - hyperion->weatherBlend(planet.address)
-                                                            : 0.f;
-    if (mode != RenderMode::Original && hyperion->weatherBlend(planet.address) > 0)
+    const float legacyWeight = cloudVolumes ? 1.f - hyperion->weatherBlend(planet.address) : 0.f;
+    if (hyperion->weatherBlend(planet.address) > 0)
         ++stats.weatherVolumes;
     for (unsigned ring = 0; ring < rings; ring++)
         for (unsigned sector = 0; sector < sectors; sector++) {
@@ -75,20 +72,15 @@ void renderWeather(const Node& planet, glm::dvec3 localEye, const Navigation& na
                 const float alpha =
                     float(sample.cloud * .54 * std::min(1., climate.pressureBar * 2)) * legacyWeight;
                 const auto delta = pose.orientation * (q * shellRadius - localEye) / units;
-                const float sun = float(.22 + .78 * std::max(0., glm::dot(q, light)));
                 const glm::vec3 tint =
-                    mode == RenderMode::Original
-                        ? glm::vec3(.75, .81, .88)
-                        : glm::mix(glm::vec3(.32, .52, .78), glm::vec3(.83, .67, .88), float(sample.storm));
-                clouds.vertices.push_back({float(delta.x), float(delta.y), float(delta.z),
-                                           rgba(tint * (mode == RenderMode::Original ? sun : 1.f), alpha)});
+                    glm::mix(glm::vec3(.32, .52, .78), glm::vec3(.83, .67, .88), float(sample.storm));
+                clouds.vertices.push_back(
+                    {float(delta.x), float(delta.y), float(delta.z), rgba(tint, alpha)});
             }
             clouds.indices.insert(clouds.indices.end(),
                                   {first, first + 1, first + 2, first, first + 2, first + 3});
         }
-    if (mode == RenderMode::Original)
-        transient(clouds, 63, false, false, true, false, true);
-    else if (!clouds.vertices.empty()) {
+    if (!clouds.vertices.empty()) {
         const auto nv = uint32_t(clouds.vertices.size()), ni = uint32_t(clouds.indexCount());
         if (bgfx::getAvailTransientVertexBuffer(nv, layout) >= nv &&
             bgfx::getAvailTransientIndexBuffer(ni, true) >= ni && bgfx::getAvailInstanceDataBuffer(1, 80)) {
@@ -105,11 +97,8 @@ void renderWeather(const Node& planet, glm::dvec3 localEye, const Navigation& na
             glm::dmat4 pattern(glm::mat3_cast(glm::inverse(pose.orientation)) * (units / shellRadius));
             pattern[3] = glm::dvec4(localEye / shellRadius, 1);
             Geometry source;
-            const ScenePresentation presentation{source,
-                                                 planet.address,
-                                                 {},
-                                                 hyperionPhase(climate.seed),
-                                                 mode == RenderMode::Hybrid ? .36f : 1.f};
+            const ScenePresentation presentation{
+                source, planet.address, {}, hyperionPhase(climate.seed), 1.f};
             hyperion->bind(presentation, {}, glm::vec3(lightAt(planet.address, nav)), glm::mat4(pattern), 0,
                            seconds);
             bgfx::setVertexBuffer(0, &vertices);
@@ -133,14 +122,13 @@ void renderWeather(const Node& planet, glm::dvec3 localEye, const Navigation& na
     // grow temporary vertex/index vectors on the rendering thread.
     flakes.vertices.reserve(384 * 9);
     flakes.indices.reserve(384 * 24);
-    const bool originalWeather = mode == RenderMode::Original;
     const double cellSize = weather.type == WeatherType::Dust   ? 12
                             : weather.type == WeatherType::Snow ? 8
                                                                 : 6;
     const auto cell = glm::floor(localEye / cellSize);
     const glm::dvec3 down = -glm::normalize(localEye);
     const auto flutterFrame = tangentFrame(-down);
-    const unsigned limit = originalWeather ? 96 : unsigned(160 + std::min(1., weather.precipitation) * 224);
+    const unsigned limit = unsigned(160 + std::min(1., weather.precipitation) * 224);
     for (unsigned i = 0; i < 1331 && stats.weatherParticles < limit; i++) {
         const auto grid = cell + glm::dvec3(int(i % 11) - 5, int(i / 11 % 11) - 5, int(i / 121) - 5);
         const auto hash =
@@ -170,7 +158,7 @@ void renderWeather(const Node& planet, glm::dvec3 localEye, const Navigation& na
             weather.type == WeatherType::Dust ? glm::vec3(.72, .43, .25) : glm::vec3(.54, .75, .86);
         auto tail = pose.orientation *
                     (down * (weather.type == WeatherType::Snow ? .2 : 2.) + weather.wind * .04) / units;
-        if (!originalWeather && weather.type != WeatherType::Snow && weather.type != WeatherType::Dust) {
+        if (weather.type != WeatherType::Snow && weather.type != WeatherType::Dust) {
             auto motion = (pose.orientation * (down * fallSpeed + weather.wind) -
                            cameraQ * instruments->localVelocity) *
                           .065;
@@ -198,9 +186,7 @@ void renderWeather(const Node& planet, glm::dvec3 localEye, const Navigation& na
             for (unsigned vertex = 0; vertex < 8; vertex++)
                 flakes.indices.insert(flakes.indices.end(),
                                       {first, first + 1 + vertex, first + 1 + (vertex + 1) % 8});
-        } else if (originalWeather)
-            addLine(precipitation, delta, delta + tail, tint * fade);
-        else {
+        } else {
             // Motion-blurred rain ribbons stay legible on Retina displays.
             // Their endpoints remain in the same physical, wind-driven cells.
             const double pixel = distance * 2 * std::tan(fieldOfView * .5) / height;
@@ -226,9 +212,7 @@ void renderWeather(const Node& planet, glm::dvec3 localEye, const Navigation& na
 void drawCityPaving(const Mesh& mesh, const Node& planet, const Navigation& nav) {
     if (mesh.vertices.empty())
         return;
-    if (mode == RenderMode::Original) {
-        transient(mesh, 61, false, false, true, true);
-    } else {
+    {
         const auto nv = uint32_t(mesh.vertices.size()), ni = uint32_t(mesh.indexCount());
         if (bgfx::getAvailTransientVertexBuffer(nv, layout) < nv ||
             bgfx::getAvailTransientIndexBuffer(ni, true) < ni || !bgfx::getAvailInstanceDataBuffer(1, 80))
@@ -262,7 +246,7 @@ void drawCityPaving(const Mesh& mesh, const Node& planet, const Navigation& nav)
             planet.address,
             {.92, 0, .025, .01},
             hyperionPhase(planet.seed),
-            mode == RenderMode::Hybrid ? .36f : 1.f,
+            1.f,
             {4, float(SurfaceMesh::Road), float(units), 1},
             {float(glm::dot(up, glm::inverse(pose.orientation) * light)), float(climate.pressureBar), 0, 0},
             glm::vec4(glm::vec3(pose.orientation * up), float(climate.pressureBar))};
@@ -319,8 +303,8 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
             double sunRange = terrainSunSpan * .75;
             const SurfaceSettlement* shadowCity = nullptr;
             double nearestCity = 1e30;
-            if (sunShadows && mode != RenderMode::Original && instruments && !instruments->shrinking &&
-                instruments->altitude < 5000 && units > .01 && !hyperion->sunActive()) {
+            if (sunShadows && instruments && !instruments->shrinking && instruments->altitude < 5000 &&
+                units > .01 && !hyperion->sunActive()) {
                 for (const auto& city : world->settlements) {
                     const double range = glm::length(city.landingPoint - planetEye);
                     if (range < nearestCity && range < city.radius + 3500 &&
@@ -499,14 +483,14 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
                         bgfx::setInstanceDataBuffer(&buffer);
                         bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_Z |
                                        BGFX_STATE_DEPTH_TEST_GEQUAL | BGFX_STATE_MSAA);
-                        if (mode != RenderMode::Original) {
+                        {
                             Geometry source;
                             const ScenePresentation presentation{
                                 source,
                                 planet.address,
                                 {.42, .6, .025, .01},
                                 hyperionPhase(planet.seed) + float(role) * .13f,
-                                mode == RenderMode::Hybrid ? .36f : 1.f,
+                                1.f,
                                 {4, float(role), float(units), 0},
                                 {float(glm::dot(glm::normalize(planetEye), glm::inverse(pose.orientation) *
                                                                                lightAt(planet.address, nav))),
@@ -516,8 +500,7 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
                             hyperion->bind(presentation, {}, glm::vec3(lightAt(planet.address, nav)),
                                            glm::mat4(1), 0, activity->seconds);
                         }
-                        bgfx::submit(61, mode == RenderMode::Original ? instanceProgram
-                                                                      : hyperion->geometryProgram());
+                        bgfx::submit(61, hyperion->geometryProgram());
                         stats.surfaceTriangles += count * mesh.count / 3;
                     }
                     objects.clear();

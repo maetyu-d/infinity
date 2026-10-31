@@ -16,9 +16,18 @@ static void check(bool v, const char* message) {
 }
 int main() {
     try {
-        check(nextRenderMode(nextRenderMode(nextRenderMode(RenderMode::Original))) == RenderMode::Original,
-              "All three modes cycle without changing state");
-        check(parseRenderMode("hybrid") == RenderMode::Hybrid, "Mode parsing");
+        check(parseRenderMode("hyperion") == RenderMode::Hyperion &&
+                  renderModeName(RenderMode::Hyperion) == "HYPERION",
+              "Hyperion is the sole rendering mode");
+        for (auto removed : {"original", "hybrid"}) {
+            bool refused = false;
+            try {
+                parseRenderMode(removed);
+            } catch (const std::invalid_argument&) {
+                refused = true;
+            }
+            check(refused, "Removed graphics mode is still accepted");
+        }
         bool rejected = false;
         try {
             parseRenderMode("unknown");
@@ -191,8 +200,7 @@ int main() {
                 auto descriptor = descriptorFingerprint(node);
                 Navigation nav(u);
                 const auto camera = nav.serialize();
-                for (auto mode :
-                     {RenderMode::Original, RenderMode::Hyperion, RenderMode::Hybrid, RenderMode::Original}) {
+                for (auto mode : {RenderMode::Hyperion}) {
                     const auto scene = extractPresentation(node, *geometry, mode);
                     check(&scene.geometry == geometry.get(), "Adapter retains identical geometry");
                     check(scene.environment.x == (node.address.kind() == Kind::Planet
@@ -205,16 +213,16 @@ int main() {
                     check(scene.environment.y ==
                               float(node.geology ? node.geology->terrain.type : TerrainType::None),
                           "Surface presentation lost its inherited terrain regime");
-                    check(geometryFingerprint(scene.geometry) == hash, "Modes never mutate geometry");
+                    check(geometryFingerprint(scene.geometry) == hash, "Presentation never mutates geometry");
                     check(descriptorFingerprint(node) == descriptor, "Materials never mutate simulation");
-                    check(nav.serialize() == camera, "Modes never mutate camera");
+                    check(nav.serialize() == camera, "Presentation never mutates camera");
                     check(scene.surface.x == float(node.environment.mineral) &&
                               scene.surface.y == float(node.environment.waterActivity) &&
                               scene.surface.z == float(node.environment.temperature),
                           "Close material lost inherited environmental constraints");
                     check(scene.surface.w == (geometry->section ? 1.f : 0.f),
                           "Inspection material flag changed its geometry source");
-                    check(scene.strength >= 0 && scene.strength <= 1, "Presentation weights bounded");
+                    check(scene.strength == 1.f, "Hyperion must retain its full colour strength");
                     check(scene.phase >= 0 && scene.phase < 1, "Inherited phase bounded");
                     auto [phase, inserted] = materialPhases.emplace(scene.materialFrame, scene.phase);
                     check(inserted || phase->second == scene.phase,
@@ -239,7 +247,7 @@ int main() {
             auto section =
                 generator.section(enclosure, address, sectionBucket(enclosure.frame.logRadius - 6));
             const auto sectionHash = geometryFingerprint(*section);
-            for (auto mode : {RenderMode::Original, RenderMode::Hyperion, RenderMode::Hybrid}) {
+            for (auto mode : {RenderMode::Hyperion}) {
                 const auto scene = extractPresentation(enclosure, *section, mode);
                 check(scene.surface.w == 1.f && &scene.geometry == section.get(),
                       "Inspected enclosure lost its retained section geometry");

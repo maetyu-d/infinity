@@ -8,8 +8,8 @@ proof=[]
 for mode in ('on','off'):
     log=(root/mode/'native.log').read_text()
     rows=re.findall(r'TERRAIN_RENDER (\S+) type=.+? mode=(\w+) tiles=(\d+) height_m=([\d.]+) shadow=(\d+) terrain=(\d+) geometry=(\d+)',log)
-    assert len(rows)==3 and all(int(r[2])>50 for r in rows)
-    assert all(int(r[4])==(mode=='on' and r[1]!='ORIGINAL') for r in rows)
+    assert len(rows)==1 and all(int(r[2])>50 for r in rows)
+    assert all(int(r[4])==(mode=='on') for r in rows)
     proof.append([(r[0],r[1],r[5],r[6]) for r in rows])
 assert proof[0]==proof[1], 'Sunlight changed the terrain geometry'
 def read(path):
@@ -20,12 +20,10 @@ def read(path):
         data=f.read()
     assert len(data)==w*h*3
     return b''.join(data[(y*w+500)*3:(y*w+940)*3] for y in range(350,650))
-for mode in ('ORIGINAL','HYPERION','HYBRID'):
+for mode in ('HYPERION',):
     a=read(root/'on'/'captures'/f'0-Highlands-{mode}.ppm')
     b=read(root/'off'/'captures'/f'0-Highlands-{mode}.ppm')
     delta=[abs(x-y) for x,y in zip(a,b)]
-    if mode=='ORIGINAL': assert max(delta)==0
-    elif mode=='HYPERION': assert sum(v>3 for v in delta)>1000 and max(delta)>15, 'Known terrain occluder cast no visible shadow'
-    else: assert sum(v>0 for v in delta)>200 and max(delta)>1, 'Hybrid lost the terrain shadow'
+    assert sum(v>3 for v in delta)>1000 and max(delta)>15, 'Known terrain occluder cast no visible shadow'
     print(f'{mode}: {sum(v>3 for v in delta)} components differ >3/255; maximum {max(delta)}/255')
-print('PASS: a real generated ridge casts sunlight shadows without changing geometry, cameras or Original mode')
+print('PASS: a real generated ridge casts sunlight shadows without changing geometry, and cameras')

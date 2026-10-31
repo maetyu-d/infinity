@@ -19,7 +19,7 @@ class CockpitMotionValidation {
         if (finished())
             return;
         if (age_ == 0) {
-            renderer.setMode(RenderMode(stage_ / 6));
+            renderer.setMode(RenderMode::Hyperion);
             renderer.setCockpitMotionEnabled(false);
             renderer.setCockpitMotionEnabled(true);
         }
@@ -80,7 +80,7 @@ class CockpitMotionValidation {
                 throw std::runtime_error("Resting/recovered cockpit failed to return to neutral");
             if (effect > 0 && effect < 5 && stats.cockpitMotionDegrees < .0001)
                 throw std::runtime_error("Native feedback event did not move the cockpit view");
-            const std::string name = std::string(modes_[stage_ / 6]) + "-" + effects_[effect];
+            const std::string name = std::string("hyperion") + "-" + effects_[effect];
             renderer.screenshot((std::filesystem::path(dir) / (name + ".ppm")).string());
             std::cout << "COCKPIT_MOTION case=" << name << " degrees=" << stats.cockpitMotionDegrees
                       << " translation_mm=" << stats.cockpitMotionMetres * 1000
@@ -91,11 +91,11 @@ class CockpitMotionValidation {
             age_ = hold_ = 0;
             if (finished())
                 std::cout << "PASS: native cockpit inertia / recoil hook / impact / damage / recovery "
-                             "in all three rendering modes; unchanged physical flight and picking\n";
+                             "in Hyperion rendering; unchanged physical flight and picking\n";
         }
     }
     bool finished() const {
-        return stage_ == 18;
+        return stage_ == 6;
     }
 
   private:
@@ -105,7 +105,6 @@ class CockpitMotionValidation {
     std::string camera_, ship_;
     uint64_t descriptor_ = 0;
     unsigned stage_ = 0, age_ = 0, hold_ = 0;
-    static constexpr const char* modes_[] = {"original", "hyperion", "hybrid"};
     static constexpr const char* effects_[] = {"neutral", "turn", "recoil", "impact", "damage", "recovery"};
 };
 } // namespace infinite

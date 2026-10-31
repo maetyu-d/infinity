@@ -1,0 +1,7 @@
+{
+  "reference": "Infinite 0.38.2 Hyperion neutral view",
+  "candidate": "Infinite 0.38.3 Hyperion-only neutral view",
+  "compared_world_channels": 1362750,
+  "changed_channels": 0,
+  "mean_absolute_channel_error": 0.0
+}

@@ -9,28 +9,17 @@
 namespace infinite {
 std::string_view renderModeName(RenderMode mode) {
     switch (mode) {
-    case RenderMode::Original:
-        return "ORIGINAL";
     case RenderMode::Hyperion:
         return "HYPERION";
-    case RenderMode::Hybrid:
-        return "HYBRID";
     }
     throw std::invalid_argument("Invalid rendering mode");
 }
 RenderMode parseRenderMode(std::string_view name) {
-    if (name == "original")
-        return RenderMode::Original;
     if (name == "hyperion")
         return RenderMode::Hyperion;
-    if (name == "hybrid")
-        return RenderMode::Hybrid;
-    throw std::invalid_argument("Use --render-mode original|hyperion|hybrid");
+    throw std::invalid_argument("Only Hyperion rendering is available (--render-mode hyperion)");
 }
-RenderMode nextRenderMode(RenderMode mode) {
-    return static_cast<RenderMode>((static_cast<unsigned>(mode) + 1) % 3);
-}
-ScenePresentation extractPresentation(const Node& node, const Geometry& geometry, RenderMode mode) {
+ScenePresentation extractPresentation(const Node& node, const Geometry& geometry, RenderMode) {
     float roughness = .78f, metal = 0;
     switch (node.environment.mineral) {
     case Mineral::Iron:
@@ -65,7 +54,7 @@ ScenePresentation extractPresentation(const Node& node, const Geometry& geometry
     uint64_t key = kind >= Kind::Rock ? (node.hostRockSeed ? node.hostRockSeed : node.seed)
                                       : (node.planetSeed ? node.planetSeed : node.seed);
     const float phase = hyperionPhase(key);
-    float strength = mode == RenderMode::Original ? 0.f : mode == RenderMode::Hybrid ? .24f : 1.f;
+    constexpr float strength = 1.f;
     auto materialFrame = node.address;
     if (kind >= Kind::Planet && kind <= Kind::Mountain)
         while (materialFrame.kind() != Kind::Planet)

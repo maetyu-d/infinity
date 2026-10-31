@@ -2,7 +2,7 @@
 """Check native stellar material/precision evidence without extra dependencies."""
 import pathlib,sys,json,math,statistics
 root=pathlib.Path(sys.argv[1]);log=(root/'native.log').read_text()
-assert 'PASS: addressed stellar families' in log and log.count('STELLAR_VARIETY scene=')==28
+assert 'PASS: addressed stellar families' in log and log.count('STELLAR_VARIETY scene=')==20
 
 def read(name):
  with (root/'captures'/(name+'.ppm')).open('rb') as f:
@@ -20,10 +20,6 @@ for i in range(10):
  a=read('star-'+str(i));result['surface_red_channel_stddev_255'][str(i)]=variation(a)
  assert max(a[i] for i in points)>25,'Invisible generated star family '+str(i)
 for t in 'OBAFGKM':read('spectral-'+t)
-for i in (5,6,7,8):
- a=read('star-'+str(i));original=read(f'star-{i}-original');hybrid=read(f'star-{i}-hybrid')
- assert rms(a,original)>2,'Mode presentation absent'
- assert rms(a,hybrid)>1,'Hybrid presentation absent'
 result['rebase_rms_255']={}
 for i in (6,7):
  error=rms(read('star-'+str(i)),read(f'star-{i}-rebased'))
@@ -37,4 +33,4 @@ error=rms(read('star-3'),read('star-3-no-optics'))
 assert error<8,'Analytic disc doubles resolved stellar emission'
 result['resolved_photosphere_optics_control_rms_255']=error
 (root/'comparison.json').write_text(json.dumps(result,indent=2)+'\n')
-print(json.dumps(result,indent=2));print('PASS: visible stellar families, three modes, convection, compact precision and exposure control')
+print(json.dumps(result,indent=2));print('PASS: visible stellar families, Hyperion, convection, compact precision and exposure control')

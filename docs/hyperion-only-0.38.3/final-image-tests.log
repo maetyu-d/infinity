@@ -1,0 +1,9 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 62: native_weather_and_surface_images
+1/2 Test #62: native_weather_and_surface_images ...   Passed    0.33 sec
+    Start 81: native_hyperion_images
+2/2 Test #81: native_hyperion_images ..............   Passed    4.25 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =   4.59 sec

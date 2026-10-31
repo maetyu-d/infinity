@@ -128,16 +128,12 @@ class StreamingValidation {
             stage_ = 15;
         } else if (stage_ == 15) {
             renderer.setTerrainCoverageDebug(false);
-            stage_ = modes_++ == 2 ? 9 : 8;
-            stable_ = 0;
-        } else if (stage_ == 8) {
-            renderer.setMode(nextRenderMode(renderer.mode()));
-            stage_ = 7;
+            stage_ = 9;
             stable_ = 0;
         } else if (stage_ == 9) {
             finished_ = true;
             std::cout << "PASS: native cell crossing, invariant camera rebase, continuous terrain face "
-                         "traversal and three rendering modes.\n";
+                         "traversal in Hyperion rendering.\n";
         }
     }
     bool finished() const {
@@ -149,7 +145,7 @@ class StreamingValidation {
     Navigation& nav_;
     RegionCache& cache_;
     std::optional<Node> planet_;
-    int stage_ = 0, stable_ = 0, hold_ = 0, travel_ = 0, modes_ = 0;
+    int stage_ = 0, stable_ = 0, hold_ = 0, travel_ = 0;
     bool finished_ = false;
     uint64_t coverageHash_ = 0;
     glm::dvec3 worldEye_{};

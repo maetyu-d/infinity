@@ -30,9 +30,8 @@ class PlanetDiversityValidation {
         const PlanetType giants[] = {PlanetType::GasGiant, PlanetType::IceGiant, PlanetType::SubNeptune};
         const char* names[] = {"gas", "ice-giant", "sub-neptune"};
         for (unsigned i = 0; i < 3; i++)
-            for (unsigned mode = 0; mode < 3; mode++)
-                scenes_.push_back({found.at(giants[i]), std::string(names[i]) + "-" + std::to_string(mode),
-                                   RenderMode(mode)});
+            scenes_.push_back({found.at(giants[i]), std::string(names[i]) + "-" + std::string("hyperion"),
+                               RenderMode::Hyperion});
         for (unsigned i = 0; i < 6; i++)
             scenes_.push_back({found.at(PlanetType(i)), "solid-" + std::to_string(i), RenderMode::Hyperion});
         scenes_.push_back({*hot, "hot-giant", RenderMode::Hyperion});

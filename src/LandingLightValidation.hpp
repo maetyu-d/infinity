@@ -27,9 +27,7 @@ class LandingLightValidation {
         place();
     }
     void advance(Renderer& renderer) {
-        renderer.setMode(stage_ == 2   ? RenderMode::Original
-                         : stage_ == 3 ? RenderMode::Hybrid
-                                       : RenderMode::Hyperion);
+        renderer.setMode(RenderMode::Hyperion);
         renderer.setLandingShade(sample_ != 0);
         renderer.setStellarOptics(false);
         renderer.setPolarLights(false);
@@ -76,7 +74,7 @@ class LandingLightValidation {
         if (glm::length(physical - eye_) > 1e-10 || glm::length(nav_.orientation * glm::dvec3(0, 0, -1) -
                                                                 orientation_ * glm::dvec3(0, 0, -1)) > 1e-12)
             throw std::runtime_error("Landing contact changed the physical camera");
-        static const char* names[] = {"near", "distant", "original", "hybrid"};
+        static const char* names[] = {"near", "distant"};
         renderer.screenshot((std::filesystem::path(dir) /
                              (std::string(names[stage_]) + "-" + std::to_string(sample_) + ".ppm"))
                                 .string());
@@ -87,7 +85,7 @@ class LandingLightValidation {
         stable_ = 0;
     }
     bool finished() const {
-        return stage_ == 4;
+        return stage_ == 2;
     }
 
   private:

@@ -5,10 +5,9 @@
 
 namespace infinite {
 class Navigation;
-enum class RenderMode : uint8_t { Original, Hyperion, Hybrid };
+enum class RenderMode : uint8_t { Hyperion };
 std::string_view renderModeName(RenderMode);
 RenderMode parseRenderMode(std::string_view);
-RenderMode nextRenderMode(RenderMode);
 
 // Read-only simulation -> presentation boundary. No seeds, geometry or LOD
 // requests are changed by a presentation choice. Coordinates remain local.

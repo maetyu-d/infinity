@@ -559,7 +559,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     label("F1 CONTROLS", 26, 887, 145, muted);
     quantity("FLIGHT " + duration(t.flightSeconds) + " / " + flightQuantity(t.travelMetres),
              std::max(178., center - 180), 887, std::max(180., w - 490), 9, muted);
-    label("H RENDER / TAB HUD", w - 200, 887, 178, muted);
+    label("TAB HUD", w - 200, 887, 178, muted);
     if (market && market->open) {
         const auto& m = *market;
         const CockpitRect panel{center - std::min(790., w - 60) * .5, 166, std::min(790., w - 60), 574};
@@ -607,7 +607,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                                                              {"N / SHIFT-N", "CRUISE / STAR TYPES"},
                                                              {"Z / , / .", "SHRINK / SMALLER / LARGER"},
                                                              {"SHIFT-Z / V", "FULL SIZE / EXPLORER"},
-                                                             {"F6 / H / TAB", "TRAFFIC / RENDER / HUD"},
+                                                             {"F6 / TAB", "TRAFFIC / HUD"},
                                                              {"F7", "COCKPIT MOTION"},
                                                              {"F2 / F3 / F4", "MARKET / CONTRACT / TARGET"},
                                                              {"F1 / ESC", "CLOSE GUIDE / RELEASE HELM"}};

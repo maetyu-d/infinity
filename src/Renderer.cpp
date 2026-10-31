@@ -6,7 +6,6 @@
 #include "infinite/Streaming.hpp"
 #include "infinite/SurfaceShading.hpp"
 #include "infinite/WorldDepth.hpp"
-#include <InstanceShaders.hpp>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_metal.h>
 #include <algorithm>
@@ -113,11 +112,11 @@ struct Renderer::Impl {
     bgfx::VertexLayout layout, instanceLayout, normalLayout;
     oneapi::tbb::task_group normalTasks;
     std::atomic<unsigned> normalJobs{0};
-    bgfx::ProgramHandle colorProgram = BGFX_INVALID_HANDLE, instanceProgram = BGFX_INVALID_HANDLE;
+    bgfx::ProgramHandle colorProgram = BGFX_INVALID_HANDLE;
     bgfx::SwapChain swapChain;
     uint32_t resetFlags = BGFX_RESET_VSYNC | BGFX_RESET_MAXANISOTROPY;
     std::array<GPUMesh, 4> atomSpheres;
-    GPUMesh billboardMesh, hyperionBillboardMesh;
+    GPUMesh hyperionBillboardMesh;
     GPUMesh cabin;
     double cabinAspect = 0;
     std::optional<FlightInstruments> instruments;
@@ -153,7 +152,7 @@ struct Renderer::Impl {
     Mesh weatherRain, weatherFlakes;
     double weatherSeverity = 0, weatherPriority = 1e100;
     std::unique_ptr<HyperionRenderer> hyperion;
-    RenderMode mode = RenderMode::Original;
+    static constexpr RenderMode mode = RenderMode::Hyperion;
     double visualTime = 0, fixedVisualTime = -1;
     bgfx::ViewId atomView = 2;
     std::map<const Geometry*, GPUGeometry> gpu;
@@ -220,7 +219,6 @@ struct Renderer::Impl {
             }
             for (auto& mesh : atomSpheres)
                 destroy(mesh);
-            destroy(billboardMesh);
             destroy(cabin);
             destroy(hyperionBillboardMesh);
             for (auto& role : craftMeshes)
@@ -232,8 +230,6 @@ struct Renderer::Impl {
             hyperion.reset();
             if (bgfx::isValid(colorProgram))
                 bgfx::destroy(colorProgram);
-            if (bgfx::isValid(instanceProgram))
-                bgfx::destroy(instanceProgram);
             bgfx::shutdown();
         }
     }
@@ -250,27 +246,6 @@ struct Renderer::Impl {
             m.wideIndices() ? BGFX_BUFFER_INDEX32 : 0);
         result.count = m.indexCount();
         return result;
-    }
-    bgfx::ShaderHandle loadShader(const std::string& name) {
-        bool vertex = name == "vs_instancing";
-#define INSTANCE_SHADER(BACKEND)                                                                             \
-    return vertex ? bgfx::createShader(bgfx::copy(vs_instance_##BACKEND, sizeof(vs_instance_##BACKEND)))     \
-                  : bgfx::createShader(bgfx::copy(fs_instance_##BACKEND, sizeof(fs_instance_##BACKEND)))
-        switch (bgfx::getRendererType()) {
-        case bgfx::RendererType::Metal:
-            INSTANCE_SHADER(metal);
-        case bgfx::RendererType::Direct3D11:
-            INSTANCE_SHADER(dxbc);
-        case bgfx::RendererType::Vulkan:
-            INSTANCE_SHADER(spirv);
-        case bgfx::RendererType::OpenGLES:
-            INSTANCE_SHADER(essl);
-        case bgfx::RendererType::OpenGL:
-            INSTANCE_SHADER(glsl);
-        default:
-            throw std::runtime_error("Unsupported renderer for instancing shaders");
-        }
-#undef INSTANCE_SHADER
     }
     glm::dvec3 cameraSpace(glm::dvec3 p) const {
         return cameraInverse * (p - eye);
@@ -301,18 +276,17 @@ struct Renderer::Impl {
     void addBillboard(glm::dvec3 p, double radius, glm::vec3 color, bool cosmic = false,
                       float opticalMaterial = 0, bool background = false) {
         ++stats.particles;
-        if (background && mode != RenderMode::Original)
+        if (background)
             color *= stellarExposure;
         auto right = cameraQ * glm::dvec3(radius, 0, 0), up = cameraQ * glm::dvec3(0, radius, 0);
         glm::mat4 transform(1);
         transform[0] = glm::vec4(glm::vec3(right), 0);
         transform[1] = glm::vec4(glm::vec3(up), 0);
         transform[3] = glm::vec4(glm::vec3(p), 1);
-        (mode != RenderMode::Original && opticalMaterial >= 3 ? stellarBillboards
-         : cosmic                                             ? cosmicBillboards
-                                                              : billboards)
-            .push_back(
-                {transform, glm::vec4(color, mode == RenderMode::Original ? 1.f : 1.f + opticalMaterial)});
+        (opticalMaterial >= 3 ? stellarBillboards
+         : cosmic             ? cosmicBillboards
+                              : billboards)
+            .push_back({transform, glm::vec4(color, 1.f + opticalMaterial)});
     }
     bool prepareGPU(const std::shared_ptr<const Geometry>& geometry) {
         if (!geometry)
@@ -359,8 +333,7 @@ struct Renderer::Impl {
         // One bounded CPU task at a time. Keep the original flat-shaded mesh
         // visible until its read-only lighting stream is ready.
         const auto count = geometry->solid.vertices.size();
-        if (mode == RenderMode::Original || bgfx::isValid(item.normals) || !count || count > 65536 ||
-            geometry->address.kind() >= Kind::Grain)
+        if (bgfx::isValid(item.normals) || !count || count > 65536 || geometry->address.kind() >= Kind::Grain)
             return;
         if (item.normalWork && item.normalWork->ready.load(std::memory_order_acquire)) {
             auto& data = item.normalWork->result;
@@ -399,7 +372,7 @@ struct Renderer::Impl {
         std::memcpy(idb.data, &item, sizeof(item));
         bgfx::setVertexBuffer(0, m.vertices);
         bgfx::setIndexBuffer(m.indices);
-        const bool smooth = mode != RenderMode::Original && bgfx::isValid(normals);
+        const bool smooth = bgfx::isValid(normals);
         if (smooth)
             bgfx::setVertexBuffer(1, normals);
         bgfx::setInstanceDataBuffer(&idb);
@@ -412,8 +385,7 @@ struct Renderer::Impl {
         else
             state |= BGFX_STATE_BLEND_ALPHA;
         bgfx::setState(state);
-        bgfx::submit(worldView(), mode == RenderMode::Original ? instanceProgram
-                                                               : hyperion->geometryProgram(smooth, stellar));
+        bgfx::submit(worldView(), hyperion->geometryProgram(smooth, stellar));
     }
     void drawLines(const GPUMesh& m, const glm::mat4& model) {
         if (!bgfx::isValid(m.vertices))
@@ -491,7 +463,7 @@ struct Renderer::Impl {
             auto light = lightAt(materialAddress, nav);
             glm::mat4 micro(0);
             float relief = 0;
-            if (mode != RenderMode::Original && node.address.kind() >= Kind::Planet) {
+            if (node.address.kind() >= Kind::Planet) {
                 const double materialRadius = std::pow(10., materialFrames.back().logRadius);
                 const double spacing =
                     materialAddress.kind() == Kind::Planet ? 8. : std::max(1e-12, materialRadius * .02);
@@ -512,8 +484,7 @@ struct Renderer::Impl {
         }
     }
     glm::dvec3 lightAt(const Address& material, const Navigation& nav) {
-        if (instruments || (mode != RenderMode::Original && material.kind() >= Kind::Planet &&
-                            material.kind() <= Kind::Mountain)) {
+        if (instruments || (material.kind() >= Kind::Planet && material.kind() <= Kind::Mountain)) {
             auto system = material;
             while (system.kind() > Kind::System)
                 system = system.parent();
@@ -544,10 +515,10 @@ struct Renderer::Impl {
         auto model = glm::translate(glm::mat4(1), glm::vec3(pose.position)) *
                      glm::mat4_cast(glm::quat(pose.orientation)) *
                      glm::scale(glm::mat4(1), glm::vec3(static_cast<float>(r)));
-        if (mode != RenderMode::Original && bgfx::isValid(item.solid.vertices))
+        if (bgfx::isValid(item.solid.vertices))
             bindPresentation(*geometry, node, nav, model, pose, r, bgfx::isValid(item.normals) ? .25f : 0.f);
         drawMesh(item.solid, model, opacity, false, item.normals, node.address.kind() == Kind::System);
-        if (mode != RenderMode::Original && bgfx::isValid(item.lines.vertices))
+        if (bgfx::isValid(item.lines.vertices))
             bindPresentation(*geometry, node, nav, model, pose, r, 2);
         drawMesh(item.lines, model, opacity, true);
         const auto& sourceFrames = framesFor(geometry->referenceFrame);
@@ -597,8 +568,7 @@ struct Renderer::Impl {
             if (p.z >= 0)
                 continue;
             const bool stellar = geometry->address.kind() == Kind::System &&
-                                 glm::dot(particle.position, particle.position) < 1e-24 &&
-                                 mode != RenderMode::Original;
+                                 glm::dot(particle.position, particle.position) < 1e-24;
             double size = std::clamp(static_cast<double>(particle.radius) * r * distanceScale, -p.z * .0005,
                                      -p.z * (stellar ? .8 : .035));
             if (LOD::visible(p, size, static_cast<double>(width) / height, fieldOfView))
@@ -615,7 +585,7 @@ struct Renderer::Impl {
             double diameter =
                 LOD::pixels(r * geometry->lattice.atoms.front().radius,
                             std::max(.05, glm::length(cameraSpace(pose.position)) - r), height, 1);
-            unsigned level = atomPresentationLevel(diameter, mode == RenderMode::Original);
+            unsigned level = atomPresentationLevel(diameter, false);
             unsigned rings = level == 3   ? 24
                              : level == 2 ? 12
                              : level == 1 ? 8
@@ -639,10 +609,9 @@ struct Renderer::Impl {
             else
                 state |= BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_FACTOR, BGFX_STATE_BLEND_INV_FACTOR);
             bgfx::setState(state, rgba(glm::vec3(opacity), opacity));
-            if (mode != RenderMode::Original)
-                bindPresentation(*geometry, node, nav, model, pose, r, 1);
-            bgfx::submit(viewId,
-                         mode == RenderMode::Original ? instanceProgram : hyperion->geometryProgram());
+
+            bindPresentation(*geometry, node, nav, model, pose, r, 1);
+            bgfx::submit(viewId, hyperion->geometryProgram());
             stats.atoms += count;
             stats.atomTriangles += count * rings * sectors * 2;
         }
@@ -949,18 +918,14 @@ struct Renderer::Impl {
                     bgfx::setInstanceDataBuffer(&buffer);
                     bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_GREATER |
                                    BGFX_STATE_MSAA);
-                    if (mode != RenderMode::Original) {
+                    {
                         Geometry source;
-                        const ScenePresentation presentation{source,
-                                                             system.address,
-                                                             {.43, .65, .035, .01},
-                                                             float(role) / 6,
-                                                             mode == RenderMode::Hybrid ? .36f : 1.f};
+                        const ScenePresentation presentation{
+                            source, system.address, {.43, .65, .035, .01}, float(role) / 6, 1.f};
                         hyperion->bind(presentation, {}, glm::vec3(lightAt(system.address, nav)),
                                        glm::mat4(1), 0, activity->seconds);
                     }
-                    bgfx::submit(62, mode == RenderMode::Original ? instanceProgram
-                                                                  : hyperion->geometryProgram());
+                    bgfx::submit(62, hyperion->geometryProgram());
                     stats.activityTriangles += count * mesh.count / 3;
                 }
         }
@@ -1033,8 +998,7 @@ struct Renderer::Impl {
                                        : node.address == nav.anchor ? 0
                                                                     : 4,
                                        viewKey);
-        const bool streamedTerrain =
-            terrainActive && streamedTerrainCovers(node.address, nav.anchor, mode == RenderMode::Original);
+        const bool streamedTerrain = terrainActive && streamedTerrainCovers(node.address, nav.anchor, false);
         // Retain the original node/LOD reference for identity and inspection;
         // streamed tiles provide the terrain draw without duplicate GPU buffers.
         state.blend.update(streamedTerrain || prepareGPU(candidate) ? candidate : nullptr, frameSeconds);
@@ -1086,9 +1050,8 @@ struct Renderer::Impl {
             pattern[i] = glm::dvec4(mapping.linear[i] * units, 0);
         pattern[3] = glm::dvec4(mapping(eye * units), 1);
         bool updateSun = false;
-        if (landingShade && mode != RenderMode::Original && instruments && !instruments->shrinking &&
-            nav.anchor.kind() < Kind::Rock && instruments->altitude >= 0 &&
-            instruments->altitude < instruments->hullMetres / 12. * 38.) {
+        if (landingShade && instruments && !instruments->shrinking && nav.anchor.kind() < Kind::Rock &&
+            instruments->altitude >= 0 && instruments->altitude < instruments->hullMetres / 12. * 38.) {
             const auto pose = poseFor(planet.address, nav);
             const double radiusMetres = std::pow(10., planet.frame.logRadius);
             const auto planetEye = glm::dvec3(pattern[3]) * radiusMetres;
@@ -1107,8 +1070,8 @@ struct Renderer::Impl {
             }
         }
         SunShadowFrame sun;
-        if (sunShadows && mode != RenderMode::Original && instruments && !instruments->shrinking &&
-            nav.anchor.kind() < Kind::Rock && std::pow(10., nav.logDistance) > .01) {
+        if (sunShadows && instruments && !instruments->shrinking && nav.anchor.kind() < Kind::Rock &&
+            std::pow(10., nav.logDistance) > .01) {
             const auto pose = poseFor(planet.address, nav);
             const double radiusMetres = std::pow(10., planet.frame.logRadius);
             const auto planetEye = glm::dvec3(pattern[3]) * radiusMetres;
@@ -1159,7 +1122,7 @@ struct Renderer::Impl {
             }
             if (!visible && !caster)
                 continue;
-            const bool smoothTerrain = mode != RenderMode::Original && g.terrainNormals.size() == 81;
+            const bool smoothTerrain = g.terrainNormals.size() == 81;
             const uint32_t count = uint32_t(g.solid.indexCount());
             if ((smoothTerrain && bgfx::getAvailTransientVertexBuffer(81, normalLayout) < 81) ||
                 bgfx::getAvailTransientVertexBuffer(81, layout) < 81 ||
@@ -1208,7 +1171,7 @@ struct Renderer::Impl {
                 cavity = glm::vec4(glm::vec3(-eye), float(std::max(1.3, glm::length(eye) * 1.1)));
             glm::mat4 micro(0), meso(0);
             float relief = 0, mesoRelief = 0;
-            if (mode != RenderMode::Original) {
+            {
                 const double radiusMetres = std::pow(10., planet.frame.logRadius);
                 micro = periodicMaterialFrame(pattern, radiusMetres, 8, 64);
                 meso = periodicNoiseFrame(pattern, radiusMetres, 256, 4096);
@@ -1317,9 +1280,7 @@ Renderer::Renderer(SDL_Window* window, const Universe& universe, bool benchmark)
     p.colorProgram = bgfx::createProgram(
         bgfx::createEmbeddedShader(embedded, bgfx::getRendererType(), "vs_debugdraw_lines"),
         bgfx::createEmbeddedShader(embedded, bgfx::getRendererType(), "fs_debugdraw_lines"), true);
-    p.instanceProgram =
-        bgfx::createProgram(p.loadShader("vs_instancing"), p.loadShader("fs_instancing"), true);
-    if (!bgfx::isValid(p.colorProgram) || !bgfx::isValid(p.instanceProgram))
+    if (!bgfx::isValid(p.colorProgram))
         throw std::runtime_error("bgfx shader program creation failed");
     for (unsigned i = 0; i < 4; ++i) {
         Mesh sphere;
@@ -1341,7 +1302,6 @@ Renderer::Renderer(SDL_Window* window, const Universe& universe, bool benchmark)
                      {1, 1, 0, rgba({0, 0, 0})},
                      {-1, 1, 0, rgba({0, 0, 0})}};
     quad.indices = {0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 1};
-    p.billboardMesh = p.upload(quad);
     for (auto& vertex : quad.vertices)
         vertex.color = rgba({1, 1, 1});
     p.hyperionBillboardMesh = p.upload(quad);
@@ -1359,7 +1319,8 @@ Renderer::Renderer(SDL_Window* window, const Universe& universe, bool benchmark)
 }
 Renderer::~Renderer() = default;
 void Renderer::setMode(RenderMode mode) {
-    impl_->mode = mode;
+    if (mode != RenderMode::Hyperion)
+        throw std::invalid_argument("Only Hyperion rendering is available");
 }
 RenderMode Renderer::mode() const {
     return impl_->mode;
@@ -1558,8 +1519,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     p.hyperion->begin(p.mode, p.width, p.height, bool(p.instruments) || opticalDepth, bool(p.instruments));
     const Node* opticalPlanet = nullptr;
     double opticalDistance = 1e100;
-    if (p.mode != RenderMode::Original && nav.anchor.kind() < Kind::Rock &&
-        (!p.instruments || !p.instruments->shrinking)) {
+    if (nav.anchor.kind() < Kind::Rock && (!p.instruments || !p.instruments->shrinking)) {
         for (const auto& planet : nodes) {
             if (planet.address.kind() != Kind::Planet || !hasSolidSurface(planet))
                 continue;
@@ -1594,12 +1554,11 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     }
     p.staticUploadBytes += p.hyperion->materialUploadBytes();
     p.stats.uploadBytes += p.hyperion->materialUploadBytes();
-    bgfx::setViewMode(0,
-                      p.mode == RenderMode::Original ? bgfx::ViewMode::Default : bgfx::ViewMode::Sequential);
+    bgfx::setViewMode(0, bgfx::ViewMode::Sequential);
     bgfx::setViewTransform(0, glm::value_ptr(v), glm::value_ptr(proj));
     bgfx::setViewRect(0, 0, 0, static_cast<uint16_t>(p.width), static_cast<uint16_t>(p.height));
     p.stellarExposure = 1;
-    if (p.mode != RenderMode::Original) {
+    {
         auto sky = extractSpectralSky(p.universe, nav);
         sky.cameraToField = sky.cameraToField * p.head.orientation;
         for (const auto& planet : nodes)
@@ -1615,8 +1574,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                         (glm::length(localEye) - 1) * std::pow(10., planet.frame.logRadius),
                         climate.scaleHeightMetres, glm::dot(glm::normalize(localEye), light));
                     sky.strength *= transmission;
-                    p.stellarExposure *=
-                        p.mode == RenderMode::Hybrid ? glm::mix(1.f, transmission, .36f) : transmission;
+                    p.stellarExposure *= transmission;
                 }
             }
         p.hyperion->sky(sky, p.visualTime, float(p.width) / p.height, float(std::tan(fov * .5)));
@@ -1660,7 +1618,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     for (const auto& contact : p.contacts)
         if (contact.angularRadius > pixelAngle * .125)
             p.skyOccluders.push_back(contact);
-    if (p.mode != RenderMode::Original && p.instruments && !p.instruments->shrinking && p.stellarOptics)
+    if (p.instruments && !p.instruments->shrinking && p.stellarOptics)
         p.hyperion->stellar(extractStellarImage(p.universe, nav, p.contacts, p.head.orientation),
                             float(p.width) / p.height, float(std::tan(fov * .5)), p.visualTime);
     p.stats.celestialContacts = p.contacts.size();
@@ -1834,13 +1792,13 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
             bgfx::InstanceDataBuffer buffer;
             bgfx::allocInstanceDataBuffer(&buffer, count, 80);
             std::memcpy(buffer.data, instances.data(), count * sizeof(Instance));
-            const auto& mesh = p.mode == RenderMode::Original ? p.billboardMesh : p.hyperionBillboardMesh;
+            const auto& mesh = p.hyperionBillboardMesh;
             bgfx::setVertexBuffer(0, mesh.vertices);
             bgfx::setIndexBuffer(mesh.indices);
             bgfx::setInstanceDataBuffer(&buffer);
             bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_MSAA | BGFX_STATE_DEPTH_TEST_GEQUAL |
                            BGFX_STATE_BLEND_ADD);
-            if (p.mode != RenderMode::Original) {
+            {
                 // Use the same focus-local reference at every magnification.
                 if (cosmic) {
                     const auto q = p.universe.relative(nav.anchor, root, nav.logDistance).orientation;
@@ -1859,17 +1817,14 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                     p.hyperion->bindEmissions(node, glm::inverse(focusModel), p.visualTime);
                 }
             }
-            bgfx::submit(cosmic && p.instruments ? 0 : p.worldView(), p.mode == RenderMode::Original
-                                                                          ? p.instanceProgram
-                                                                      : stellar ? p.hyperion->coronaProgram()
-                                                                                : p.hyperion->glowProgram());
+            bgfx::submit(cosmic && p.instruments ? 0 : p.worldView(),
+                         stellar ? p.hyperion->coronaProgram() : p.hyperion->glowProgram());
         }
     };
     drawBillboards(p.cosmicBillboards, true);
     drawBillboards(p.billboards, false);
     drawBillboards(p.stellarBillboards, false, true);
-    if (p.instruments && p.mode != RenderMode::Original && !p.instruments->shrinking &&
-        !p.instruments->landed && p.instruments->speed > 24) {
+    if (p.instruments && !p.instruments->shrinking && !p.instruments->landed && p.instruments->speed > 24) {
         // Hyperion drawMotion's bounded, world-grid-anchored navigation streaks.
         // These are optical cues, never additional stars or collision objects.
         Mesh trails;
@@ -1902,7 +1857,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                 }
         p.transient(trails, p.worldView(), true, true);
     }
-    if (opticalDepth && p.mode != RenderMode::Original) {
+    if (opticalDepth) {
         for (const auto& planet : nodes)
             if (opticalPlanet && planet.address == opticalPlanet->address) {
                 const auto pose = p.poseFor(planet.address, nav);
@@ -1952,18 +1907,15 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         bgfx::setIndexBuffer(p.cabin.indices);
         bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS |
                        BGFX_STATE_MSAA);
-        if (p.mode != RenderMode::Original && bgfx::getAvailInstanceDataBuffer(1, 80)) {
+        if (bgfx::getAvailInstanceDataBuffer(1, 80)) {
             bgfx::InstanceDataBuffer instance;
             bgfx::allocInstanceDataBuffer(&instance, 1, 80);
             const Instance identity{glm::mat4(1), glm::vec4(1)};
             std::memcpy(instance.data, &identity, sizeof(identity));
             Geometry source;
-            const ScenePresentation presentation{source,
-                                                 nav.anchor,
-                                                 {.38f, .55f, .20f, 0},
-                                                 hyperionPhase(p.universe.seed()),
-                                                 p.mode == RenderMode::Hybrid ? .35f : 1.f,
-                                                 {5, 0, 0, 0}};
+            const ScenePresentation presentation{
+                source, nav.anchor,  {.38f, .55f, .20f, 0}, hyperionPhase(p.universe.seed()),
+                1.f,    {5, 0, 0, 0}};
             const auto sun = glm::inverse(nav.orientation) * p.lightAt(nav.anchor, nav);
             p.hyperion->bind(presentation, {}, glm::vec3(sun), glm::mat4(1), 0, p.visualTime);
             bgfx::setInstanceDataBuffer(&instance);
@@ -2013,9 +1965,8 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         auto info = cache.stats();
         int bottom = std::max(10, p.height / 16 - 9);
         bgfx::dbgTextPrintf(3, 2, 0x0f, "I N F I N I T E");
-        if (p.mode != RenderMode::Original)
-            bgfx::dbgTextPrintf(3, 3, 0x0b, "%s / H RENDER MODE",
-                                std::string(renderModeName(p.mode)).c_str());
+
+        bgfx::dbgTextPrintf(3, 3, 0x0b, "%s", std::string(renderModeName(p.mode)).c_str());
         bgfx::dbgTextPrintf(3, 4, 0x08, "A DETERMINISTIC UNIVERSE   /   SEED %08llX",
                             static_cast<unsigned long long>(p.universe.seed() & 0xffffffff));
         bgfx::dbgTextPrintf(3, bottom, 0x0f, "%s", node.label().c_str());
