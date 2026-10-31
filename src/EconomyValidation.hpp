@@ -29,6 +29,83 @@ class EconomyValidation {
     size_t serviceRow_ = 0;
     int64_t serviceCredits_ = 0;
     uint64_t repairUnits_ = 0;
+    std::unique_ptr<Economy> feedbackLedger_;
+    std::shared_ptr<EconomySnapshot> feedback_;
+    size_t feedbackSite_ = 0;
+    std::string feedbackCamera_;
+    uint64_t feedbackWorld_ = 0, feedbackGeometry_ = 0;
+    void refreshFeedback(const std::shared_ptr<const EconomySnapshot>& live) {
+        feedback_ = std::make_shared<EconomySnapshot>(*live);
+        feedback_->sites = feedbackLedger_->sites();
+        feedback_->tick = feedbackLedger_->tick();
+        feedback_->contracts = feedbackLedger_->contracts();
+        feedback_->hauls = feedbackLedger_->hauls();
+        feedback_->catchingUp = false;
+        feedback_->routes = economicTradeRoutes(*feedback_);
+        feedback_->portSignals = economicPortSignals(*feedback_);
+    }
+    void placeFeedback(const std::shared_ptr<const EconomySnapshot>& live, Renderer& renderer) {
+        feedbackLedger_ = std::make_unique<Economy>(live->network);
+        auto initial = std::make_shared<EconomySnapshot>(*live);
+        initial->sites = feedbackLedger_->sites();
+        initial->tick = 0;
+        auto signals = economicPortSignals(*initial);
+        double best = -1;
+        for (size_t i = 0; i < live->network->sites.size(); ++i) {
+            const auto& site = live->network->sites[i];
+            if (site.orbital || site.population < 1000 || signals[i].power < .25f)
+                continue;
+            const auto sun = glm::normalize(u_.relative(system_, site.id.home, 0).position);
+            const auto up = glm::normalize(site.metres);
+            const double night = -glm::dot(up, sun);
+            if (night < .1)
+                continue;
+            const double score = night + std::log1p(double(site.population)) * .1;
+            if (score > best) {
+                best = score;
+                feedbackSite_ = i;
+            }
+        }
+        if (best < 0)
+            throw std::runtime_error("No real night-side settlement for economic light comparison");
+        const auto& site = live->network->sites[feedbackSite_];
+        port_ = site.id;
+        const auto home = u_.describe(site.id.home);
+        const auto up = glm::normalize(site.metres);
+        auto north = glm::cross(up, glm::dvec3(1, 0, 0));
+        if (glm::length(north) < .1)
+            north = glm::cross(up, glm::dvec3(0, 1, 0));
+        north = glm::normalize(north);
+        auto eye = site.metres + north * 240. + up * 100.;
+        const auto d = glm::normalize(eye);
+        const auto ground = std::pow(10., home.frame.logRadius) + u_.terrainHeight(home, d);
+        if (glm::length(eye) < ground + 60)
+            eye = d * (ground + 60);
+        const auto q = glm::quatLookAtRH(glm::normalize(site.metres + up * 20. - eye), up);
+        const auto offset = eye / 1000. - q * glm::dvec3(0, 0, 1);
+        std::ostringstream camera;
+        camera.precision(17);
+        camera << site.id.home.str() << " 3 " << q.w << ' ' << q.x << ' ' << q.y << ' ' << q.z << ' '
+               << offset.x << ' ' << offset.y << ' ' << offset.z;
+        if (!nav_.restore(camera.str()))
+            throw std::runtime_error("Economic city camera failed");
+        nav_.changeFrame(FlightController::surfaceAt(site.id.home, up));
+        nav_.setRenderScale(2);
+        pilot_.resetMotion();
+        std::istringstream old(pilot_.serialize());
+        std::string clean, word;
+        for (unsigned field = 0; old >> word; ++field)
+            clean += (field == 23 || field == 24 ? "-" : field == 21 ? "0" : word) + std::string(" ");
+        if (!pilot_.restore(clean))
+            throw std::runtime_error("Economic city pilot reset failed");
+        activity_.selected = site.id;
+        const double density = std::max(1., double(SDL_GetWindowPixelDensity(window_)));
+        SDL_SetWindowSize(window_, int(1440 / density), int(900 / density));
+        renderer.freezeVisualTime(12);
+        refreshFeedback(live);
+        std::cout << "ECONOMIC_CITY " << site.id.str() << " name=" << site.name
+                  << " light=" << feedback_->portSignals[feedbackSite_].lighting << '\n';
+    }
     void place() {
         const auto planet = u_.describe(system_.child(Kind::Planet, 0));
         const auto harbour = sampleActivity(planet, 0, 0);
@@ -84,6 +161,10 @@ class EconomyValidation {
     }
     void advance(Renderer& renderer) {
         age_++;
+        if (feedback_) {
+            renderer.setEconomy(feedback_, nullptr);
+            return;
+        }
         auto s = runtime_.snapshot();
         if (!s || !s->network || s->network->system != system_)
             return;
@@ -380,7 +461,65 @@ class EconomyValidation {
             std::cout << "PASS: native funded repair, physical hull receipt, cargo upgrade and service "
                          "portrait fit\n";
             next(86);
-        } else if (stage_ == 86 && age_ > 10)
+        } else if (stage_ == 86 && age_ > 10) {
+            placeFeedback(s, renderer);
+            next(90);
+        } else if (stage_ >= 90 && stage_ <= 92 && age_ > 180 && stats.surfaceBuildings > 0 &&
+                   stats.surfacePending == 0 && stats.lodTransitions == 0 && stats.uploadDeferred == 0) {
+            const auto world = renderer.surfaceWorld(port_->home);
+            if (!world)
+                return;
+            if (stage_ == 90) {
+                feedbackCamera_ = nav_.serialize();
+                feedbackWorld_ = world->descriptor;
+            } else if (nav_.serialize() != feedbackCamera_ || world->descriptor != feedbackWorld_)
+                throw std::runtime_error("Economic optics changed city identity or camera");
+            if (auto g = renderer.submittedGeometry(nav_.anchor)) {
+                const auto hash = geometryFingerprint(*g);
+                if (feedbackGeometry_ && hash != feedbackGeometry_)
+                    throw std::runtime_error("Economic optics changed submitted world geometry");
+                feedbackGeometry_ = hash;
+            }
+            const auto name = stage_ == 90   ? "economic-city-powered"
+                              : stage_ == 91 ? "economic-city-offline"
+                                             : "economic-city-restored";
+            capture(name);
+            std::cout << "ECONOMIC_LIGHT " << name
+                      << " factor=" << feedback_->portSignals[feedbackSite_].lighting
+                      << " world=" << world->descriptor << " geometry=" << feedbackGeometry_ << '\n';
+            if (stage_ == 90) {
+                next(98);
+            } else if (stage_ == 91) {
+                next(99);
+            } else
+                next(93);
+        } else if (stage_ == 93 && age_ > 12) {
+            auto freight = std::find_if(feedback_->flights.begin(), feedback_->flights.end(),
+                                        [](const auto& f) { return f.kg > 0; });
+            if (freight == feedback_->flights.end())
+                throw std::runtime_error("No real loaded freight for HUD capture");
+            activity_.selected = freight->id;
+            next(94);
+        } else if (stage_ == 94 && age_ > 20) {
+            capture("economic-freight-hud");
+            next(95);
+        } else if (stage_ == 95 && age_ > 12) {
+            SDL_SetWindowSize(window_, 480, 640);
+            next(96);
+        } else if (stage_ == 96 && age_ > 40) {
+            capture("economic-freight-portrait");
+            std::cout << "PASS: native port HUD, real-ledger power outage/recovery, preserved city/camera "
+                         "and freight manifest\n";
+            next(97);
+        } else if (stage_ == 98 && age_ > 12) {
+            feedbackLedger_->outage(*port_, 12);
+            refreshFeedback(s);
+            next(91);
+        } else if (stage_ == 99 && age_ > 12) {
+            feedbackLedger_->advanceTo(12, 64);
+            refreshFeedback(s);
+            next(92);
+        } else if (stage_ == 97 && age_ > 12)
             finished_ = true;
     }
     bool finished() const {

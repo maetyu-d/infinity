@@ -327,6 +327,7 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
                 }
             }
             Mesh paving;
+            float economicLighting = 1;
             auto instance = [&](SurfaceMesh kind, glm::dvec3 point, glm::dquat q, glm::dvec3 size,
                                 glm::vec3 tint, bool essential = false) {
                 if (instances >= 6000)
@@ -356,12 +357,19 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
                 if (!visible)
                     return;
                 const unsigned detail = pixels > 60 ? 2 : pixels > 10 ? 1 : 0;
-                batches[size_t(kind)][detail].push_back({glm::mat4(model), glm::vec4(tint, 1)});
+                batches[size_t(kind)][detail].push_back({glm::mat4(model), glm::vec4(tint, economicLighting)});
                 ++instances;
             };
             for (const auto& settlement : world->settlements) {
                 ++stats.surfaceSites;
-                const auto body = surfaceContact(*world, settlement, activity->seconds);
+                auto body = surfaceContact(*world, settlement, activity->seconds);
+                economicLighting = 1;
+                if (economy) {
+                    annotateEconomicPort(body, *economy);
+                    if (lightingNetwork == economy->network)
+                        if (auto i = economy->siteIndex(body.id); i && *i < settlementLights.size())
+                            economicLighting = settlementLights[*i];
+                }
                 const auto delta = pose.orientation * (body.position - planetEye);
                 const double distance = glm::length(delta);
                 if (distance < 1e-10)

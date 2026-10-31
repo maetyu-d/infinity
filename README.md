@@ -1,5 +1,7 @@
 # INFINITE
 
+**0.42:** economic port reports in the HUD, city lighting driven by real power and supply readiness, and detailed manifests for existing freighters. **K** selects, **I** hails, **J** approaches and **F2** opens port markets. Reports show shortages, repair stock, trade hints, cargo, routes, timing and warehouse holds. Structures, generators, save formats and flight controls remain intact. [Economic world feedback and checks](docs/ECONOMY_0_42.md).
+
 **0.41:** stocked port repairs, three persistent cargo-hold refits up to 10 tonnes / 32,000 L, and job planning with direct distance, cargo fit, travel estimates and deadline margin. **F2 → F5** cycles to **Services**; Enter buys the selected service at a connected port. Larger funded hauls and trade orders use the expanded bay, with existing payload inertia and shrinking restrictions. [Services, progression and planning](docs/ECONOMY_0_41.md).
 
 **0.40:** funded hauling jobs, sealed consignments, physical pickup/delivery, late fees and carrier history. **F2 → F5** opens jobs; Enter accepts/loads/delivers, F4 targets the next port, and Backspace returns or withdraws a haul. Supply work and industrial investment remain available. The restored flight controls are unchanged. [Hauling and job controls](docs/ECONOMY_0_40.md).

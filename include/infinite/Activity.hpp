@@ -1,5 +1,6 @@
 #pragma once
 #include "Geometry.hpp"
+#include <array>
 #include <span>
 
 namespace infinite {
@@ -22,6 +23,10 @@ struct ActivityBody {
     double radius = 1, phase = 0;
     uint64_t seed = 0;
     std::string name, status;
+    // Read-only ledger presentation. Empty while the economy is unavailable.
+    std::string economicBrief;
+    std::array<std::string, 3> economicReport;
+    float economicAlert = 0;
 };
 struct ActivityContact {
     ActivityBody body;

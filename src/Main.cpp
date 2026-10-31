@@ -536,6 +536,7 @@ int main(int argc, char** argv) {
                         body.radius = site.radius;
                         body.name = site.name;
                         body.status = site.role + " / F2 MARKET";
+                        annotateEconomicPort(body, *economicSnapshot);
                         return body;
                     }
                 }

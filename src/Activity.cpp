@@ -174,6 +174,13 @@ std::vector<ActivityBody> sampleActivity(const Node& planet, double seconds) {
     return bodies;
 }
 std::string hailActivity(const ActivityBody& b) {
+    if (!b.economicBrief.empty()) {
+        auto report = b.name + " / " + b.economicBrief;
+        for (const auto& line : b.economicReport)
+            if (!line.empty())
+                report += " / " + line;
+        return report;
+    }
     if (b.kind == ActivityKind::SurfacePort)
         return b.name + " / " + b.status;
     return b.name + " / " + b.status +

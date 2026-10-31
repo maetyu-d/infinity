@@ -11,6 +11,8 @@ for name in (
     'market-industry-portrait', 'market-routes-portrait',
     'jobs-board', 'jobs-sealed-cargo', 'jobs-paid', 'jobs-portrait',
     'services-before', 'services-repaired', 'services-upgraded', 'services-portrait',
+    'economic-city-powered', 'economic-city-offline', 'economic-city-restored',
+    'economic-freight-hud', 'economic-freight-portrait',
 ):
     with (root / 'captures' / (name + '.ppm')).open('rb') as f:
         assert f.readline().strip() == b'P6'
@@ -46,4 +48,14 @@ assert images['jobs-sealed-cargo'] != images['jobs-paid']
 assert 'PASS: native funded repair, physical hull receipt, cargo upgrade and service portrait fit' in log
 assert images['services-before'] != images['services-repaired']
 assert images['services-repaired'] != images['services-upgraded']
-print('PASS: seventeen native trading, hauling, services, upgrades, planning and portrait images')
+assert 'PASS: native port HUD, real-ledger power outage/recovery, preserved city/camera and freight manifest' in log
+# Compare the city inside the windshield, excluding the new report and fixed HUD.
+a = images['economic-city-powered']; b = images['economic-city-offline']; c = images['economic-city-restored']
+changed = recovered = 0
+for y in range(180, 630):
+    for x in range(360, 1080):
+        i = (y * 1440 + x) * 3
+        changed += sum(abs(a[i+j]-b[i+j]) for j in range(3)) > 15
+        recovered += sum(abs(c[i+j]-b[i+j]) for j in range(3)) > 15
+assert changed > 100 and recovered > 100, 'economic lights did not visibly dim and recover'
+print('PASS: twenty-two native trading, services, economic city lighting, port reports and freight images / changed', changed, 'recovered', recovered)

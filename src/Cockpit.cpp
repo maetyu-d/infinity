@@ -201,6 +201,21 @@ std::vector<size_t> cockpitActivityRows(std::span<const ActivityContact> contact
             rows.back() = i;
             break;
         }
+    // Keep a known port readable among nearby freighters, while K cycling and
+    // the contact vector retain their original order and identities.
+    std::optional<size_t> nearest;
+    for (size_t i = 0; i < contacts.size(); ++i)
+        if ((contacts[i].body.kind == ActivityKind::Harbour ||
+             contacts[i].body.kind == ActivityKind::SurfacePort) &&
+            !contacts[i].body.economicBrief.empty() &&
+            (!nearest || contacts[i].distance < contacts[*nearest].distance))
+            nearest = i;
+    if (nearest && rows.size() > 1 && std::find(rows.begin(), rows.end(), *nearest) == rows.end()) {
+        auto slot = rows.size() - 1;
+        if (contacts[rows[slot]].selected)
+            --slot;
+        rows[slot] = *nearest;
+    }
     return rows;
 }
 std::vector<size_t> cockpitCelestialRows(std::span<const CelestialContact> contacts) {
@@ -333,6 +348,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                               std::span<const ActivityContact> activity, bool help, double projectionScale,
                               const MarketView* market, glm::dquat headInShip) {
     CockpitOverlay h;
+    std::optional<CockpitRect> economicPanel;
     const CockpitLayout l(aspect);
     const double w = l.width, center = w * .5;
     const auto eyeFromShip = glm::inverse(headInShip);
@@ -680,13 +696,44 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                    c.selected   ? amber
                    : c.occluded ? muted
                                 : pearl);
-            auto status = c.body.status.substr(0, c.body.status.find(" / "));
+            auto status = c.body.economicBrief.empty() ? c.body.status.substr(0, c.body.status.find(" / "))
+                                                       : c.body.economicBrief;
             if (c.occluded)
                 status = "OCCULTED";
             quantity(flightQuantity(c.distance) + " / " + status, 52, y + 16, 234, 9,
-                     c.selected ? amber : muted);
+                     c.selected || c.body.economicAlert > .5f ? amber : muted);
         }
         label(std::to_string(activity.size()) + " CONTACTS / K SELECT", 38, 421, 246, muted);
+        const ActivityContact* report = nullptr;
+        for (const auto& contact : activity)
+            if (contact.selected && !contact.body.economicBrief.empty()) {
+                report = &contact;
+                break;
+            }
+        if (!report)
+            for (const auto& contact : activity)
+                if ((contact.body.kind == ActivityKind::Harbour ||
+                     contact.body.kind == ActivityKind::SurfacePort) &&
+                    !contact.body.economicBrief.empty() && (!report || contact.distance < report->distance))
+                    report = &contact;
+        if (report) {
+            const auto& body = report->body;
+            const auto colour = body.economicAlert > .9f   ? glm::vec3(1, .42, .25)
+                                : body.economicAlert > .5f ? amber
+                                                           : mint;
+            economicPanel = CockpitRect{24, 450, 274, 166};
+            card(h, *economicPanel, colour);
+            h.hitRegions.push_back(*economicPanel);
+            label(body.kind == ActivityKind::Freighter ? "FREIGHT MANIFEST" : "PORT STATUS", 38, 462, 246,
+                  colour);
+            fitted(h.lettering, body.name, 38, 482, 246, 11, pearl);
+            fitted(h.lettering, body.economicBrief, 38, 502, 246, 9.4, colour);
+            for (size_t i = 0; i < body.economicReport.size(); ++i)
+                fitted(h.lettering, body.economicReport[i], 38, 521 + i * 18, 246, 8.4, ice);
+            label(body.kind == ActivityKind::Freighter ? "I HAIL / J MATCH COURSE"
+                                                       : "I HAIL / J APPROACH / F2 MARKET",
+                  38, 598, 246, muted);
+        }
     }
     if (catalogues && !contacts.empty()) {
         card(h, l.celestial, ice);
@@ -759,8 +806,9 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                           width, 39};
             r.x = std::clamp(r.x, l.windscreen.x, l.windscreen.x + l.windscreen.w - width);
             r.y = std::clamp(r.y, l.windscreen.y, l.windscreen.y + l.windscreen.h - r.h);
-            if (r.overlaps(aim) || std::any_of(h.worldLabels.begin(), h.worldLabels.end(),
-                                               [&](auto other) { return r.overlaps(other); }))
+            if (r.overlaps(aim) || (economicPanel && r.overlaps(*economicPanel)) ||
+                std::any_of(h.worldLabels.begin(), h.worldLabels.end(),
+                            [&](auto other) { return r.overlaps(other); }))
                 continue;
             h.worldLabels.push_back(r);
             rect(h.panels, r.x, r.y, r.w, r.h, ink, .94f);
@@ -840,7 +888,8 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                 marker(c.localDirection, "LIFE / " + c.label, c.distanceMetres, mint);
         for (const auto& c : activity)
             if (!c.selected && !c.occluded && c.body.kind == ActivityKind::Harbour && c.distance < 2e7)
-                marker(c.localDirection, c.body.name, c.distance, trafficInk);
+                marker(c.localDirection, c.body.name, c.distance,
+                       c.body.economicAlert > .5f ? amber : trafficInk);
         for (const auto& c : contacts)
             if (!c.selected && !c.occluded && !hasSurfaceLife(c) && c.angularRadius < .008)
                 marker(c.localDirection, c.label, c.distanceMetres, ice);

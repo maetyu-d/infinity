@@ -1,0 +1,35 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+ECONOMY_CAPTURE market-hyperion page=0 tick=0
+ECONOMY_CAPTURE market-cargo page=0 tick=0
+ECONOMY_CAPTURE market-routes page=1 tick=0
+ECONOMY_CAPTURE market-industry page=2 tick=0
+ECONOMY_CAPTURE market-refit-complete page=2 tick=12
+ECONOMY_CAPTURE market-industry-portrait page=2 tick=12
+ECONOMY_CAPTURE market-routes-portrait page=1 tick=12
+ECONOMY_CAPTURE market-portrait page=0 tick=12
+ECONOMY_CAPTURE market-live-supply page=0 tick=60
+ECONOMY_NATIVE sites=95 vessels=123 tick=60 player_credits_cents=208264 cargo_kg=0 worker_snapshot_bytes=531216
+PASS: native market purchase/resale, Hyperion scene identity, portrait fit, funded refits, delivered capital, commissioning, trade intelligence and real freight
+ECONOMY_CAPTURE jobs-board page=3 tick=60
+ECONOMY_CAPTURE jobs-sealed-cargo page=3 tick=60
+ECONOMY_CAPTURE jobs-paid page=3 tick=60
+PASS: native job board, reserved acceptance, physical pickup, sealed cargo, landed delivery and paid carrier history
+ECONOMY_CAPTURE jobs-portrait page=3 tick=60
+ECONOMY_CAPTURE services-before page=4 tick=60
+ECONOMY_CAPTURE services-repaired page=4 tick=60
+ECONOMY_CAPTURE services-upgraded page=4 tick=60
+ECONOMY_CAPTURE services-portrait page=4 tick=60
+PASS: native funded repair, physical hull receipt, cargo upgrade and service portrait fit
+ECONOMIC_CITY 0,0,0/1:0/2:9/3:9223372036854775810@activity1:2003 name=COLONY 60201 light=0.6475
+ECONOMY_CAPTURE economic-city-powered page=4 tick=60
+ECONOMIC_LIGHT economic-city-powered factor=0.6475 world=17899170596612588743 geometry=7319388714327343702
+ECONOMY_CAPTURE economic-city-offline page=4 tick=60
+ECONOMIC_LIGHT economic-city-offline factor=0.06 world=17899170596612588743 geometry=7319388714327343702
+ECONOMY_CAPTURE economic-city-restored page=4 tick=60
+ECONOMIC_LIGHT economic-city-restored factor=0.6475 world=17899170596612588743 geometry=7319388714327343702
+ECONOMY_CAPTURE economic-freight-hud page=4 tick=60
+ECONOMY_CAPTURE economic-freight-portrait page=4 tick=60
+PASS: native port HUD, real-ledger power outage/recovery, preserved city/camera and freight manifest
+FRAME median_ms=56.5239 p95_ms=147.14 frames=1481 cache_bytes=12604616
+peak_rss_bytes=149946368

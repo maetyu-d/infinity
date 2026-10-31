@@ -269,6 +269,15 @@ struct EconomicFlight {
     Good good = Good::Water;
     int64_t kg = 0;
     FreightPhase phase = FreightPhase::Idle;
+    unsigned source = 0, destination = 0, location = 0;
+    int64_t reservedKg = 0;
+};
+struct EconomicPortSignal {
+    float power = 1, readiness = 1, lighting = 1, alert = 0;
+    Good shortage = Good::Water;
+    int64_t missingKg = 0;
+    std::string brief;
+    std::array<std::string, 3> report;
 };
 struct EconomySnapshot {
     std::shared_ptr<const EconomicNetwork> network;
@@ -277,6 +286,7 @@ struct EconomySnapshot {
     std::vector<EconomicContract> contracts;
     std::vector<EconomicEvent> events;
     std::vector<HaulContract> hauls;
+    std::vector<EconomicPortSignal> portSignals; // same ordering as network->sites
     EconomyPlayer player;
     uint64_t tick = 0;
     bool catchingUp = false;
@@ -307,6 +317,8 @@ struct EconomySnapshot {
 // Bounded worker-only search. Quotes include both spreads and marginal stock changes.
 std::vector<EconomySnapshot::TradeRoute> economicTradeRoutes(const EconomySnapshot&);
 std::vector<EconomySnapshot::Job> economicJobs(const EconomySnapshot&);
+std::vector<EconomicPortSignal> economicPortSignals(const EconomySnapshot&);
+void annotateEconomicPort(ActivityBody&, const EconomySnapshot&);
 ShipServiceQuote economicServiceQuote(const EconomySnapshot&, size_t, ShipService, unsigned units);
 struct MarketContext {
     double hull = 100, cruiseSpeed = 9.4607304725808e17;

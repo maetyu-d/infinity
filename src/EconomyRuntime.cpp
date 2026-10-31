@@ -107,6 +107,31 @@ ActivityBody sampleEconomicFreight(const Universe& u, const EconomicNetwork& n, 
                : f.phase == FreightPhase::Holding
                    ? "HOLDING / WAREHOUSE FULL"
                    : "FREIGHT / " + std::to_string(f.kg) + " KG " + std::string(goodInfo(f.good).name);
+    const auto endpoint = [&](unsigned index) {
+        return index < n.sites.size() ? n.sites[index].name : std::string("UNKNOWN PORT");
+    };
+    const auto remaining =
+        std::to_string(uint64_t(std::ceil(std::clamp(f.endSeconds - seconds, 0., 999999.)))) + "S";
+    const auto manifest =
+        std::to_string(f.kg ? f.kg : f.reservedKg) + "KG " + std::string(goodInfo(f.good).name);
+    b.economicBrief = f.phase == FreightPhase::Idle         ? "EMPTY / WAITING FOR WORK"
+                      : f.phase == FreightPhase::Reposition ? "EMPTY TO PICKUP"
+                      : f.phase == FreightPhase::Loading    ? "LOADING " + manifest
+                      : f.phase == FreightPhase::Holding    ? "HOLD " + manifest
+                                                            : manifest + " / TRANSIT";
+    b.economicReport[0] =
+        f.phase == FreightPhase::Idle         ? "NO FUNDED ASSIGNMENT"
+        : f.phase == FreightPhase::Reposition ? "EMPTY / PICKUP ETA " + remaining
+        : f.phase == FreightPhase::Loading    ? "RESERVED " + manifest + " / DEPARTS " + remaining
+        : f.phase == FreightPhase::Holding    ? "WAITING / DESTINATION WAREHOUSE FULL"
+                                              : "CARGO " + manifest + " / ARRIVES " + remaining;
+    b.economicReport[1] =
+        f.phase == FreightPhase::Idle ? "BERTH " + endpoint(f.location) : "FROM " + endpoint(f.source);
+    b.economicReport[2] = f.phase == FreightPhase::Idle ? "NO ASSIGNED DESTINATION"
+                          : f.phase == FreightPhase::Reposition
+                              ? "PICKUP " + endpoint(f.source) + " / THEN " + endpoint(f.destination)
+                              : "TO " + endpoint(f.destination);
+    b.economicAlert = f.phase == FreightPhase::Holding ? .65f : 0.f;
     return b;
 }
 bool economicTradeAccess(const Universe& u, const Navigation& nav, const Pilot& pilot,
@@ -191,6 +216,11 @@ struct EconomyRuntime::Impl {
                 flight.good = f.good;
                 flight.kg = (f.phase == FreightPhase::Transit || f.phase == FreightPhase::Holding) ? f.kg : 0;
                 flight.phase = f.phase;
+                flight.source = f.source;
+                flight.destination = f.destination;
+                flight.location = f.location;
+                flight.reservedKg =
+                    (f.phase == FreightPhase::Reposition || f.phase == FreightPhase::Loading) ? f.kg : 0;
                 auto from = f.phase == FreightPhase::Reposition ? f.location : f.source;
                 auto to = f.destination;
                 if (f.phase == FreightPhase::Reposition)
@@ -232,6 +262,7 @@ struct EconomyRuntime::Impl {
         }
         s->routes = economicTradeRoutes(*s);
         s->jobs = economicJobs(*s);
+        s->portSignals = economicPortSignals(*s);
         size_t bytes = 0;
         for (const auto& [_, economy] : active)
             bytes += economy->residentBytes();
@@ -402,6 +433,11 @@ size_t EconomyRuntime::residentBytes() const {
     for (const auto& job : s->jobs)
         extras +=
             job.title.capacity() + job.route.capacity() + job.target.home.path.capacity() * sizeof(Segment);
+    for (const auto& signal : s->portSignals) {
+        extras += signal.brief.capacity();
+        for (const auto& line : signal.report)
+            extras += line.capacity();
+    }
     if (s->player.haul) {
         const auto& h = *s->player.haul;
         extras +=
@@ -411,6 +447,7 @@ size_t EconomyRuntime::residentBytes() const {
     return extras + impl_->workerBytes.load() + sizeof(*s) + s->sites.capacity() * sizeof(EconomicSiteState) +
            s->flights.capacity() * sizeof(EconomicFlight) +
            s->routes.capacity() * sizeof(EconomySnapshot::TradeRoute) +
-           s->hauls.capacity() * sizeof(HaulContract) + s->jobs.capacity() * sizeof(EconomySnapshot::Job);
+           s->hauls.capacity() * sizeof(HaulContract) + s->jobs.capacity() * sizeof(EconomySnapshot::Job) +
+           s->portSignals.capacity() * sizeof(EconomicPortSignal);
 }
 } // namespace infinite

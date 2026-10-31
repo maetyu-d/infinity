@@ -1,0 +1,34 @@
+Start testing: Oct 31 21:47 GMT
+----------------------------------------------------------
+45/85 Testing: native_economic_loop
+45/85 Test: native_economic_loop
+Command: "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake" "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite" "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/economy/native" "-P" "/Users/user/Documents/SC tutorial/Infinite/cmake/RunEconomy.cmake"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_economic_loop" start time: Oct 31 21:47 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time = 127.68 sec
+----------------------------------------------------------
+Test Passed.
+"native_economic_loop" end time: Oct 31 21:49 GMT
+"native_economic_loop" time elapsed: 00:02:07
+----------------------------------------------------------
+
+46/85 Testing: native_economic_images
+46/85 Test: native_economic_images
+Command: "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9" "/Users/user/Documents/SC tutorial/Infinite/tools/check_economy_captures.py" "/Users/user/Documents/SC tutorial/Infinite/build/economy/native"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_economic_images" start time: Oct 31 21:49 GMT
+Output:
+----------------------------------------------------------
+PASS: twenty-two native trading, services, economic city lighting, port reports and freight images / changed 58515 recovered 30063
+<end of output>
+Test time =  48.40 sec
+----------------------------------------------------------
+Test Passed.
+"native_economic_images" end time: Oct 31 21:50 GMT
+"native_economic_images" time elapsed: 00:00:48
+----------------------------------------------------------
+
+End testing: Oct 31 21:50 GMT

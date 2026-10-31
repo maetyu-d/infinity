@@ -1,0 +1,9 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 45: native_economic_loop
+1/2 Test #45: native_economic_loop .............   Passed  127.68 sec
+    Start 46: native_economic_images
+2/2 Test #46: native_economic_images ...........   Passed   48.40 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) = 176.14 sec

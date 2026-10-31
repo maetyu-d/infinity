@@ -140,6 +140,23 @@ struct Renderer::Impl {
     const ActivityState* activity = nullptr;
     std::shared_ptr<const EconomySnapshot> economy;
     const MarketView* market = nullptr;
+    std::shared_ptr<const EconomicNetwork> lightingNetwork;
+    std::vector<float> settlementLights;
+    void updateEconomicLighting(double dt) {
+        if (!economy || !economy->network || economy->catchingUp ||
+            economy->portSignals.size() != economy->network->sites.size())
+            return;
+        if (lightingNetwork != economy->network) {
+            lightingNetwork = economy->network;
+            settlementLights.clear();
+            for (const auto& signal : economy->portSignals)
+                settlementLights.push_back(signal.lighting);
+            return;
+        }
+        const float blend = float(1 - std::exp(-std::clamp(dt, 0., .1) * 2.));
+        for (size_t i = 0; i < settlementLights.size(); ++i)
+            settlementLights[i] = glm::mix(settlementLights[i], economy->portSignals[i].lighting, blend);
+    }
     std::vector<ActivityContact> activityContacts;
     std::vector<std::pair<ActivityId, glm::dvec2>> activityPicks;
     std::array<std::array<GPUMesh, 3>, 6> craftMeshes;
@@ -817,6 +834,10 @@ struct Renderer::Impl {
                                 body = sampleEconomicFreight(universe, *economy->network, *it,
                                                              activity->seconds);
                         }
+                if (economy)
+                    for (auto& body : bodies)
+                        if (body.kind == ActivityKind::Harbour)
+                            annotateEconomicPort(body, *economy);
                 for (const auto& body : bodies) {
                     ++stats.activityBodies;
                     const auto deltaSI = pose.orientation * (body.position - planetEye);
@@ -1460,6 +1481,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     p.frameSeconds = std::clamp(std::chrono::duration<double>(start - p.previousTime).count(), 0.0, .1);
     p.previousTime = start;
     p.visualTime = p.fixedVisualTime >= 0 ? p.fixedVisualTime : p.visualTime + p.frameSeconds;
+    p.updateEconomicLighting(p.frameSeconds);
     p.sectionLabel.clear();
     p.stats = {};
     p.surfaceLife.beginFrame();

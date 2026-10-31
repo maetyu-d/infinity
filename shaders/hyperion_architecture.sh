@@ -25,7 +25,7 @@ vec3 windowInterior(vec3 V,vec3 N,vec2 grid,vec3 position,vec3 accent,float iden
  room*=.12+working*mix(.18,1.,step(.24,identity))*1.15;
  return mix(accent*(.015+working*.09),room,details);
 }
-vec3 architecture(vec3 base,vec3 N,vec3 V,vec3 L,vec3 p,vec3 authoredPoint,float phase,float seconds,float sunVisibility,vec3 position){
+vec3 architecture(vec3 base,vec3 N,vec3 V,vec3 L,vec3 p,vec3 authoredPoint,float phase,float seconds,float sunVisibility,vec3 position,float powered){
  float role=u_materialDomain.y,localY=authoredPoint.y;
  // Remove the fixed light baked into the existing surface-mesh colours.
  // True geometry normals, sun and sky then illuminate the same triangles once.
@@ -117,18 +117,18 @@ vec3 architecture(vec3 base,vec3 N,vec3 V,vec3 L,vec3 p,vec3 authoredPoint,float
  vec3 roomColour=mix(vec3(.12,.65,.72),vec3(1.,.49,.16),step(.53,panel));
  if(glass>.1){
   vec3 wallN=normalize(cross(dFdx(position),dFdy(position)));if(dot(wallN,V)<0.)wallN=-wallN;
-  vec3 interior=windowInterior(V,wallN,grid,position,roomColour,panel,.18+(1.-day)*.82);
+  vec3 interior=windowInterior(V,wallN,grid,position,roomColour,panel,(.18+(1.-day)*.82)*powered);
   c=mix(c,interior+sky*(.05+fresnel*.65),glass*(1.-fresnel*.78)*fine*.84);
  }
- c+=roomColour*glass*room*blind*(.035+(1.-day)*.85)*fine;
+ c+=roomColour*glass*room*blind*(.035+(1.-day)*.85)*fine*powered;
  c+=pigment(r.y*.22+r.z*.19+(paving?0.:p.y*.018)+phase)*(glass*(fresnel*.13+.008)+fresnel*.035);
  float trace=thread(p.y*.31+sin(p.x*.19+p.z*.17)*2.,.035);
  // Spectral light follows construction joints and glazing rather than
  // painting the whole street with a high-energy interference contour.
- c+=pigmentPaint*joint*.035*(.25+.75*day)*(paving?0.:1.);
- if(glass>.1)c+=pigmentPaint*trace*.025*fine;
+ c+=pigmentPaint*joint*.035*(.25+.75*day)*(paving?0.:1.)*powered;
+ if(glass>.1)c+=pigmentPaint*trace*.025*fine*powered;
  if(vegetation)c+=base*pow(max(0.,dot(-L,V)),2.)*max(0.,-dot(N,L))*sunVisibility*.18;
 
- c+=mix(vec3(.08,.65,.48),pigment(phase+p.y*.021+seconds*.001),.62)*inlay*1.45;
+ c+=mix(vec3(.08,.65,.48),pigment(phase+p.y*.021+seconds*.001),.62)*inlay*1.45*powered;
  return c;
 }

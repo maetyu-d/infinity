@@ -67,7 +67,7 @@ void main(){
  if(primitive< -1.5){float nv=dot(N,V);if(nv<.025)N=normalize(N+V*(.025-nv));}
  else if(dot(N,V)<0.)N=-N;
  if(u_materialDomain.x>3.5 && u_materialDomain.x<4.5){
-  gl_FragColor=vec4(mix(base,architecture(base,N,V,L,v_pattern,v_sphere,phase,seconds,surfaceSun(v_position-u_hyperion[2].xyz,dot(N,L))*weatherSun(v_position,u_hyperion[2].xyz,L),v_position),strength*.98),v_color0.a);return;
+  gl_FragColor=vec4(mix(base,architecture(base,N,V,L,v_pattern,v_sphere,phase,seconds,surfaceSun(v_position-u_hyperion[2].xyz,dot(N,L))*weatherSun(v_position,u_hyperion[2].xyz,L),v_position,clamp(v_color0.a,0.,1.)),strength*.98),1.);return;
  }
  bool terrain=primitive< -1.5;
  bool planet=u_materialDomain.x>.5 && u_materialDomain.x<1.5;
