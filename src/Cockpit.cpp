@@ -328,7 +328,7 @@ Mesh cockpitMesh(double aspect) {
     m.compact();
     return m;
 }
-CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::string_view mode,
+CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::string_view,
                               std::string_view notice, std::span<const CelestialContact> contacts,
                               std::span<const ActivityContact> activity, bool help, double projectionScale,
                               const MarketView* market, glm::dquat headInShip) {
@@ -379,7 +379,6 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     h.hitRegions.push_back({0, 0, w, 46});
     text(h.lettering, "INFINITE", 26, 15, 17.5, pearl);
     fitted(h.lettering, t.drive, center - 160, 19, 320, 10.5, t.shrinking ? amber : ice);
-    label(mode, w - 155, 19, 130, mint);
     line(h.strokes, 24, 45, w - 24, 45, muted * .3f);
 
     // Scale changes and physical ship size share one backed instrument. They
