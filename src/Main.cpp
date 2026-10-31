@@ -179,7 +179,8 @@ static Options options(int argc, char** argv) {
             std::cout
                 << "Hyperion rendering. --render-mode hyperion --presentation-test --visual-time SECONDS\n";
             std::cout
-                << "F2 market: arrows select goods/quantity, Enter buy, Backspace sell, F3 supply "
+                << "F2 market, F5 goods/routes/industry; arrows select, Enter buy/fund/deliver, Backspace "
+                   "sell/collect; F3 supply "
                    "contract.\nLocal activity: K cycles traffic, I hails, J approaches/matches course, F6 "
                    "hides/shows. Shift-K cycles surface ports; J approaches, L lands.\n";
             std::exit(0);
@@ -342,6 +343,19 @@ int main(int argc, char** argv) {
             bool marketOpen = false;
             std::optional<ActivityId> marketPort;
             size_t marketGood = 1;
+            MarketPage marketPage = MarketPage::Goods;
+            std::optional<ActivityId> tradeBuyer;
+            Good tradeGood = Good::Water;
+            int64_t tradeKg = 0;
+            std::string tradeHint;
+            EconomicAction pendingEconomicAction = EconomicAction::Buy;
+            Good pendingEconomicGood = Good::Water;
+            auto marketRows = [&]() -> size_t {
+                return marketPage == MarketPage::Goods ? goodCount
+                       : marketPage == MarketPage::Industry
+                           ? facilityModuleCount
+                           : std::max<size_t>(1, economicSnapshot ? economicSnapshot->routes.size() : 0);
+            };
             int64_t marketQuantity = 10;
             uint64_t economicSequence = 0, pendingEconomicSequence = 0;
             int64_t pendingCargoKg = 0;
@@ -390,9 +404,10 @@ int main(int argc, char** argv) {
                 EconomicCommand command;
                 command.port = *marketPort;
                 command.action = action;
-                command.good = Good(marketGood);
+                command.good = marketPage == MarketPage::Goods ? Good(marketGood) : Good::Water;
+                command.module = FacilityModule(std::min(marketGood, facilityModuleCount - 1));
                 command.kg = marketQuantity;
-                bool needsLink = true;
+                bool needsLink = action != EconomicAction::CollectDividends;
                 if (action == EconomicAction::Contract) {
                     auto it = std::find_if(economicSnapshot->contracts.begin(),
                                            economicSnapshot->contracts.end(), [&](const auto& c) {
@@ -411,11 +426,18 @@ int main(int argc, char** argv) {
                 }
                 auto q = economicSnapshot->quote(*i, command.good, marketQuantity);
                 command.limitCents = action == EconomicAction::Buy ? q.buyCents : q.sellCents;
+                if (action == EconomicAction::Invest)
+                    command.limitCents =
+                        facilityRefit(command.module,
+                                      economicSnapshot->sites[*i].modules[size_t(command.module)] + 1)
+                            .labourCents;
                 economicSequence = std::max(economicSequence, economicSnapshot->player.lastCommand);
                 command.sequence = ++economicSequence;
                 if (economy->command(command)) {
                     pendingEconomicSequence = command.sequence;
-                    pendingCargoKg = action == EconomicAction::Buy ? marketQuantity : 0;
+                    pendingEconomicAction = action;
+                    pendingEconomicGood = command.good;
+                    pendingCargoKg = economicPendingPayload(command, economicSnapshot->sites[*i]);
                     pilot.setCargoMass(
                         std::min<int64_t>(4000, economicSnapshot->player.massKg() + pendingCargoKg));
                     marketSay("ORDER SUBMITTED / AWAITING LEDGER");
@@ -495,6 +517,7 @@ int main(int argc, char** argv) {
                 if (auto body = activityBody())
                     pilot.trackWaypoint(waypointFor(*body));
             };
+
             auto navigateSelected = [&]() {
                 if (auto body = activityBody())
                     pilot.navigateWaypoint(waypointFor(*body));
@@ -550,6 +573,37 @@ int main(int argc, char** argv) {
             };
             auto previous = std::chrono::steady_clock::now();
             auto start = previous;
+            auto targetMarketRoute = [&](bool destination) {
+                if (!economicSnapshot || marketGood >= economicSnapshot->routes.size())
+                    return;
+                const auto& route = economicSnapshot->routes[marketGood];
+                tradeBuyer = economicSnapshot->network->sites[route.destination].id;
+                tradeGood = route.good;
+                tradeKg = route.kg;
+                tradeHint = "F4 BUYER " + economicSnapshot->network->sites[route.destination].name + " / " +
+                            std::to_string(route.kg) + " KG " + std::string(goodInfo(route.good).name);
+                marketPage = MarketPage::Goods;
+                marketGood = size_t(route.good);
+                marketQuantity = route.kg;
+                marketOpen = false;
+                chooseActivity(
+                    economicSnapshot->network->sites[destination ? route.destination : route.source].id);
+                notice = destination ? "TRADE BUYER TARGETED / J APPROACH / F2 MARKET"
+                                     : "SUPPLIER TARGETED / J APPROACH / F2 BUY / F4 BUYER";
+                noticeTime = 5;
+            };
+            auto targetTradeBuyer = [&]() {
+                if (!tradeBuyer || !economicSnapshot || !economicSnapshot->siteIndex(*tradeBuyer))
+                    return false;
+                chooseActivity(*tradeBuyer);
+                marketOpen = false;
+                marketGood = size_t(tradeGood);
+                marketQuantity =
+                    std::max<int64_t>(1, std::min(tradeKg, economicSnapshot->player.cargo[marketGood]));
+                notice = "TRADE BUYER TARGETED / J APPROACH / F2 SELL";
+                noticeTime = 5;
+                return true;
+            };
             while (running) {
                 auto now = std::chrono::steady_clock::now();
                 double wall = std::chrono::duration<double>(now - previous).count();
@@ -620,7 +674,8 @@ int main(int argc, char** argv) {
                         opt.tour = false;
                     }
                     if (marketOpen && event.type == SDL_EVENT_MOUSE_WHEEL && event.wheel.y != 0) {
-                        marketGood = (marketGood + goodCount + (event.wheel.y > 0 ? -1 : 1)) % goodCount;
+                        marketGood =
+                            (marketGood + marketRows() + (event.wheel.y > 0 ? -1 : 1)) % marketRows();
                         continue;
                     }
                     if (event.type == SDL_EVENT_MOUSE_WHEEL && event.wheel.y != 0) {
@@ -639,10 +694,10 @@ int main(int argc, char** argv) {
                                 marketOpen = false;
                                 break;
                             case SDL_SCANCODE_UP:
-                                marketGood = (marketGood + goodCount - 1) % goodCount;
+                                marketGood = (marketGood + marketRows() - 1) % marketRows();
                                 break;
                             case SDL_SCANCODE_DOWN:
-                                marketGood = (marketGood + 1) % goodCount;
+                                marketGood = (marketGood + 1) % marketRows();
                                 break;
                             case SDL_SCANCODE_LEFT:
                                 marketQuantity = std::max<int64_t>(1, marketQuantity / 10);
@@ -650,16 +705,43 @@ int main(int argc, char** argv) {
                             case SDL_SCANCODE_RIGHT:
                                 marketQuantity = std::min<int64_t>(1000, marketQuantity * 10);
                                 break;
+                            case SDL_SCANCODE_F5:
+                                marketPage = MarketPage((unsigned(marketPage) + 1) % 3);
+                                marketGood = 0;
+                                break;
                             case SDL_SCANCODE_RETURN:
-                                submitMarket(EconomicAction::Buy);
+                                if (marketPage == MarketPage::Routes)
+                                    targetMarketRoute(false);
+                                else
+                                    submitMarket(marketPage == MarketPage::Industry ? EconomicAction::Invest
+                                                                                    : EconomicAction::Buy);
                                 break;
                             case SDL_SCANCODE_BACKSPACE:
-                                submitMarket(EconomicAction::Sell);
+                                if (marketPage != MarketPage::Routes)
+                                    submitMarket(marketPage == MarketPage::Industry
+                                                     ? EconomicAction::CollectDividends
+                                                     : EconomicAction::Sell);
+                                break;
+                            case SDL_SCANCODE_DELETE:
+                                if (marketPage == MarketPage::Industry)
+                                    submitMarket(EconomicAction::CancelProject);
+                                else {
+                                    tradeBuyer.reset();
+                                    tradeHint.clear();
+                                    marketSay("TRADE BOOKMARK CLEARED / F4 SUPPLY CONTRACT");
+                                }
                                 break;
                             case SDL_SCANCODE_F3:
-                                submitMarket(EconomicAction::Contract);
+                                if (marketPage == MarketPage::Goods)
+                                    submitMarket(EconomicAction::Contract);
                                 break;
                             case SDL_SCANCODE_F4:
+                                if (marketPage == MarketPage::Routes && !(event.key.mod & SDL_KMOD_SHIFT)) {
+                                    targetMarketRoute(true);
+                                    break;
+                                }
+                                if (!(event.key.mod & SDL_KMOD_SHIFT) && targetTradeBuyer())
+                                    break;
                                 if (economicSnapshot)
                                     if (auto id = economicSnapshot->contractDestination()) {
                                         marketOpen = false;
@@ -711,6 +793,8 @@ int main(int argc, char** argv) {
                             opt.tour = false;
                             break;
                         case SDL_SCANCODE_F4:
+                            if (!(event.key.mod & SDL_KMOD_SHIFT) && targetTradeBuyer())
+                                break;
                             if (economicSnapshot)
                                 if (auto id = economicSnapshot->contractDestination()) {
                                     chooseActivity(*id);
@@ -962,15 +1046,29 @@ int main(int argc, char** argv) {
                             pendingCargoKg = 0;
                             pendingEconomicSequence = 0;
                             marketSay(economicSnapshot->message);
+                            if (pendingEconomicAction == EconomicAction::Sell &&
+                                pendingEconomicGood == tradeGood && tradeBuyer &&
+                                economicSnapshot->message.starts_with("SOLD") &&
+                                economicSnapshot->player.cargo[size_t(tradeGood)] == 0) {
+                                tradeBuyer.reset();
+                                tradeHint.clear();
+                            }
                         }
                         pilot.setCargoMass(
                             std::min<int64_t>(4000, economicSnapshot->player.massKg() + pendingCargoKg));
+                    }
+                    if (tradeBuyer && economicSnapshot && economicSnapshot->network &&
+                        !economicSnapshot->siteIndex(*tradeBuyer)) {
+                        tradeBuyer.reset();
+                        tradeHint.clear();
                     }
                     if (marketOpen) {
                         if (!marketPort || (economicSnapshot && !economicSnapshot->siteIndex(*marketPort)))
                             selectMarket();
                         marketView = economicMarketView(economicSnapshot.get(), marketPort, marketGood,
-                                                        marketQuantity, connectedMarket());
+                                                        marketQuantity, connectedMarket(), marketPage);
+                        if (marketPage == MarketPage::Goods && tradeBuyer)
+                            marketView.summary = tradeHint;
                         marketFeedbackSeconds = std::max(0., marketFeedbackSeconds - dt);
                         if (marketFeedbackSeconds > 0)
                             marketView.message = marketFeedback;

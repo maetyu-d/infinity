@@ -1,0 +1,51 @@
+[0/2] Re-checking globbed directories...
+[1/46] Building CXX object CMakeFiles/infinite_core.dir/src/EconomyDevelopment.cpp.o
+[2/46] Building CXX object CMakeFiles/infinite_core.dir/src/EconomicNetwork.cpp.o
+[3/46] Building CXX object CMakeFiles/infinite_core.dir/src/Economy.cpp.o
+[4/46] Building CXX object CMakeFiles/infinite_core.dir/src/EconomyRuntime.cpp.o
+[5/46] Building CXX object CMakeFiles/infinite_core.dir/src/Cockpit.cpp.o
+[6/46] Building CXX object CMakeFiles/infinite_economy_development_tests.dir/tests/EconomyDevelopmentTests.cpp.o
+[7/46] Linking CXX static library libinfinite_core.a
+[8/46] Building CXX object CMakeFiles/infinite_economy_tests.dir/tests/EconomyTests.cpp.o
+[9/46] Linking CXX executable infinite_tests
+[10/46] Linking CXX executable infinite_benchmark
+[11/46] Linking CXX executable infinite_continuity_tests
+[12/46] Linking CXX executable infinite_process_tests
+[13/46] Linking CXX executable infinite_performance_tests
+[14/46] Linking CXX executable infinite_cockpit_motion_tests
+[15/46] Linking CXX executable infinite_economy_development_tests
+[16/46] Linking CXX executable infinite_economy_tests
+[17/46] Linking CXX executable infinite_ship_physics_tests
+[18/46] Linking CXX executable infinite_stellar_evolution_tests
+[19/46] Linking CXX executable infinite_planet_diversity_tests
+[20/46] Linking CXX executable infinite_weather_process_tests
+[21/46] Linking CXX executable infinite_weather_benchmark
+[22/46] Linking CXX executable infinite_stellar_optics_tests
+[23/46] Linking CXX executable infinite_weather_field_tests
+[24/46] Linking CXX executable infinite_window_tests
+[25/46] Linking CXX executable infinite_depth_tests
+[26/46] Linking CXX executable infinite_surface_site_snapshot
+[27/46] Linking CXX executable infinite_city_tests
+[28/46] Linking CXX executable infinite_surface_life_tests
+[29/46] Linking CXX executable infinite_terrain_tests
+[30/46] Linking CXX executable infinite_cockpit_tests
+[31/46] Linking CXX executable infinite_population_tests
+[32/46] Linking CXX executable infinite_population_snapshot
+[33/46] Linking CXX executable infinite_activity_tests
+[34/46] Linking CXX executable infinite_operating_tests
+[35/46] Linking CXX executable infinite_piloting_tests
+[36/46] Linking CXX executable infinite_handling_tests
+[37/46] Linking CXX executable infinite_streaming_tests
+[38/46] Linking CXX executable infinite_flight_tests
+[39/46] Linking CXX executable infinite_navigation_tests
+[40/46] Linking CXX executable infinite_presentation_tests
+[41/46] Linking CXX executable infinite_shading_tests
+[42/46] Linking CXX executable infinite_material_tests
+[43/46] Building CXX object CMakeFiles/infinite.dir/src/Renderer.cpp.o
+[44/46] Building CXX object CMakeFiles/infinite.dir/src/Main.cpp.o
+[45/46] Linking CXX executable infinite
+
+Final viewer link:
+[0/2] Re-checking globbed directories...
+[1/3] Building CXX object CMakeFiles/infinite.dir/src/Main.cpp.o
+[2/3] Linking CXX executable infinite

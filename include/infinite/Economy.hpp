@@ -66,13 +66,37 @@ struct EconomicNetwork {
 // Worker-only adapter: all geometry and society generators are read-only.
 std::shared_ptr<const EconomicNetwork> generateEconomicNetwork(const Universe&, const Address&,
                                                                const std::atomic<bool>* cancel = nullptr);
+enum class FacilityModule : uint8_t { Storage, Power, Automation, Count };
+inline constexpr size_t facilityModuleCount = size_t(FacilityModule::Count);
+struct FacilityRefit {
+    std::string_view name, effect;
+    Stock materials{};
+    int64_t labourCents = 0;
+    unsigned ticks = 0;
+};
+FacilityRefit facilityRefit(FacilityModule, unsigned level);
+struct FacilityProject {
+    FacilityModule module = FacilityModule::Storage;
+    Stock delivered{};
+    unsigned progress = 0;
+    int64_t escrow = 0;
+};
 struct EconomicSiteState {
     Stock stock{}, reserved{}, extracted{}, produced{}, consumed{}, imported{}, exported{};
     int64_t cash = 0, householdCash = 0;
     unsigned condition = 1000, health = 1000;
     uint64_t outageUntil = 0;
     std::string bottleneck;
+    std::array<unsigned, facilityModuleCount> modules{};
+    std::optional<FacilityProject> project;
+    int64_t dividends = 0, dividendsPaid = 0, operatingBaseline = 0;
 };
+inline int64_t economicCapacity(const EconomicSite& d, const EconomicSiteState& s) {
+    return d.capacityKg + d.capacityKg * s.modules[size_t(FacilityModule::Storage)] / 4;
+}
+int64_t economicPower(const EconomicSite&, const EconomicSiteState&, uint64_t tick);
+bool economicConstructionActive(const EconomicSite&, const EconomicSiteState&, uint64_t tick);
+Stock facilityMaterials(const EconomicSiteState&); // installed and awaiting installation, not market stock
 enum class FreightPhase : uint8_t { Idle, Reposition, Loading, Transit, Holding };
 struct EconomicFreight {
     ActivityId id;
@@ -107,7 +131,7 @@ struct EconomyPlayer {
 struct EconomyQuote {
     int64_t buyCents = 0, sellCents = 0, available = 0;
 };
-enum class EconomicAction : uint8_t { Buy, Sell, Contract };
+enum class EconomicAction : uint8_t { Buy, Sell, Contract, Invest, CancelProject, CollectDividends };
 struct EconomicCommand {
     uint64_t sequence = 0;
     ActivityId port;
@@ -115,7 +139,9 @@ struct EconomicCommand {
     Good good = Good::Water;
     int64_t kg = 10, limitCents = 0;
     uint64_t contract = 0;
+    FacilityModule module = FacilityModule::Storage;
 };
+int64_t economicPendingPayload(const EconomicCommand&, const EconomicSiteState&);
 class Economy {
   public:
     explicit Economy(std::shared_ptr<const EconomicNetwork>);
@@ -164,6 +190,8 @@ class Economy {
     void production(size_t);
     void logistics();
     void offers();
+    void development();
+    std::string invest(const EconomicCommand&, EconomyPlayer&, size_t);
     uint64_t travelTicks(size_t, size_t) const;
     int64_t unitPrice(size_t, Good, int64_t available, bool buy) const;
 };
@@ -186,10 +214,19 @@ struct EconomySnapshot {
     uint64_t tick = 0;
     bool catchingUp = false;
     std::string message;
+    struct TradeRoute {
+        unsigned source = 0, destination = 0;
+        Good good = Good::Water;
+        int64_t kg = 0, costCents = 0, revenueCents = 0;
+        double distanceMetres = 0;
+    };
+    std::vector<TradeRoute> routes;
     std::optional<size_t> siteIndex(const ActivityId&) const;
     EconomyQuote quote(size_t, Good, int64_t kg) const;
     std::optional<ActivityId> contractDestination() const;
 };
+// Bounded worker-only search. Quotes include both spreads and marginal stock changes.
+std::vector<EconomySnapshot::TradeRoute> economicTradeRoutes(const EconomySnapshot&);
 ActivityBody sampleEconomicFreight(const Universe&, const EconomicNetwork&, const EconomicFlight&,
                                    double seconds);
 // One cancellable worker owns the ledger and SQLite. Main/render consume immutable snapshots.
@@ -210,6 +247,7 @@ class EconomyRuntime {
 class Pilot;
 class Navigation;
 bool economicTradeAccess(const Universe&, const Navigation&, const Pilot&, const EconomicSite&);
+enum class MarketPage : uint8_t { Goods, Routes, Industry };
 struct MarketView {
     bool open = false, connected = false, ready = false;
     std::string site, role, message, bottleneck, contract;
@@ -217,7 +255,10 @@ struct MarketView {
     size_t selected = 1;
     int64_t quantity = 10, credits = 0, cargoKg = 0, cargoLitres = 0;
     uint64_t tick = 0;
+    MarketPage page = MarketPage::Goods;
+    std::vector<std::string> detail;
+    std::string summary;
 };
 MarketView economicMarketView(const EconomySnapshot*, const std::optional<ActivityId>&, size_t selected,
-                              int64_t quantity, bool connected);
+                              int64_t quantity, bool connected, MarketPage page = MarketPage::Goods);
 } // namespace infinite

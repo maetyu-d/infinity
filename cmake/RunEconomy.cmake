@@ -3,7 +3,7 @@ if(NOT INFINITE_EXE OR NOT OUTPUT)
 endif()
 file(MAKE_DIRECTORY "${OUTPUT}")
 # Isolated fixture ledger; actual saved flights are never touched.
-file(REMOVE_RECURSE "${OUTPUT}/data")
+file(REMOVE_RECURSE "${OUTPUT}/data" "${OUTPUT}/captures")
 execute_process(COMMAND "${INFINITE_EXE}" --economy-test --render-mode hyperion
   --width 1440 --height 900 --capture-dir "${OUTPUT}/captures" --data "${OUTPUT}/data"
   --profile "${OUTPUT}/frames.csv"

@@ -1,5 +1,7 @@
 # INFINITE
 
+**0.39:** player-funded warehouse, utility and automation refits, physical construction materials, paid crews and cash-backed dividends. A live trade board finds affordable routes and bookmarks their buyers. **F2** market, **F5** goods/routes/industry; industry **Enter** funds/delivers, **Backspace** collects, **Delete** cancels. Existing universe and saves are retained. [Economic development, controls and checks](docs/ECONOMY_0_39.md).
+
 **0.38.3:** colourful Hyperion rendering is now the only graphics style. Original/Hybrid modes and the H mode toggle have been removed; old display preferences are ignored. Universe generation, saved flights, controls and cockpit motion remain intact.
 **0.38.2:** restrained cockpit inertia, high-G vibration, collision/landing jolts and hull-damage feedback. **F7** toggles motion and saves the preference. The physical ship, aim and easier controls remain unchanged; firing recoil hooks are available for a future weapon system. [Motion and controls](docs/SHIP_HANDLING.md).
 **0.38.1:** calmer ship controls, fine mouse response, a shared three-axis turn envelope and faster rotational arrest. **Hold B** to recover even while other controls are held. Returning to the cockpit with **V** enables assist; **X** explicitly selects inertial flight. [Handling measurements and validation](docs/SHIP_HANDLING.md).

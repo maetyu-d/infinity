@@ -1,0 +1,31 @@
+{
+  "baseline_commit": "d18814c14b4cb29f9c18edc64b90f3ef87e07c84",
+  "network_sites": 95,
+  "vessels": 123,
+  "before": {
+    "adapter_and_100_ticks_ms": 476.787,
+    "thousand_ticks_ms": 105.419,
+    "network_bytes": 307044.0
+  },
+  "after": {
+    "adapter_and_100_ticks_ms": 478.352,
+    "thousand_ticks_ms": 102.956,
+    "network_bytes": 336740.0
+  },
+  "trade_search": {
+    "network_trade_search_median_ms": 3.73208,
+    "max_ms": 3.73629,
+    "worker_bytes": 498516.0,
+    "routes": 12.0
+  },
+  "native_profile": {
+    "median_ms": 22.3642,
+    "p95_ms": 40.4385,
+    "frames": 378.0,
+    "peak_rss_bytes": 147079168.0
+  },
+  "new_development_checks": 332,
+  "original_economic_checks": 64610,
+  "core_tests": 38,
+  "native_tests": 4
+}

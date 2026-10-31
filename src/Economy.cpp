@@ -128,6 +128,7 @@ Economy::Economy(std::shared_ptr<const EconomicNetwork> n) : network_(std::move(
         s.stock = d.initial;
         s.cash = 2000000 + int64_t(d.population) * 150;
         s.householdCash = int64_t(d.population) * 500;
+        s.operatingBaseline = s.cash;
         sites_.push_back(std::move(s));
     }
     for (auto id : network_->vessels) {
@@ -223,11 +224,12 @@ void Economy::production(size_t i) {
                                            : "OPERATING";
     if (d.orbital || s.outageUntil > tick_)
         return;
-    int64_t workers = int64_t(d.workers) * s.health / 1000,
-            power = int64_t(d.power / (1 + std::abs(d.temperature - 290) / 250 + (d.sealed ? .2 : 0)));
-    if (d.climate.pressureBar > 0 && glm::length(d.metres) > 0) {
-        auto weather = sampleWeather(d.climate, glm::normalize(d.metres), 0, tick_ * economyTickSeconds);
-        power = power * int64_t(1000 - std::clamp(weather.storm, 0., 1.) * 350) / 1000;
+    int64_t workers = int64_t(d.workers) * s.health / 1000 *
+                      (4 + s.modules[size_t(FacilityModule::Automation)]) / 4,
+            power = economicPower(d, s, tick_);
+    if (economicConstructionActive(d, s, tick_)) {
+        workers = std::max<int64_t>(0, workers - 2);
+        power = std::max<int64_t>(0, power - 1);
     }
     for (auto r : d.recipes) {
         const auto& recipe = recipes.at(r);
@@ -237,28 +239,46 @@ void Economy::production(size_t i) {
                 stocked = false;
         if (stocked)
             continue;
-        int64_t batches = std::min({int64_t(1 + d.population / 500), workers / recipe.workers,
-                                    power / recipe.power, s.cash / (recipe.workers * 50)});
+        int64_t batches = std::min(
+            {int64_t(1 + d.population / 500) * (4 + s.modules[size_t(FacilityModule::Automation)]) / 4,
+             workers / recipe.workers, power / recipe.power, s.cash / (recipe.workers * 50)});
         if (batches > 0)
             batches = std::max<int64_t>(1, batches * s.condition / 1000);
         if (batches <= 0) {
             if (s.bottleneck == "OPERATING")
-                s.bottleneck = "LABOUR / POWER / PAYROLL";
+                s.bottleneck = workers < recipe.workers ? "LABOUR / " + std::string(recipe.name)
+                               : power < recipe.power   ? "POWER / " + std::string(recipe.name)
+                                                        : "PAYROLL / " + std::string(recipe.name);
             continue;
         }
         bool extracting = total(recipe.inputs) == 0;
+        std::optional<Good> shortage;
+        bool depleted = false;
         for (size_t g = 0; g < goodCount; g++) {
-            if (recipe.inputs[g])
-                batches = std::min(batches, (s.stock[g] - s.reserved[g]) / recipe.inputs[g]);
-            if (extracting && recipe.outputs[g])
-                batches = std::min(batches, (d.reserves[g] - s.extracted[g]) / recipe.outputs[g]);
+            if (recipe.inputs[g]) {
+                auto available = (s.stock[g] - s.reserved[g]) / recipe.inputs[g];
+                batches = std::min(batches, available);
+                if (!available && !shortage)
+                    shortage = Good(g);
+            }
+            if (extracting && recipe.outputs[g]) {
+                auto available = (d.reserves[g] - s.extracted[g]) / recipe.outputs[g];
+                batches = std::min(batches, available);
+                if (!available && !shortage) {
+                    shortage = Good(g);
+                    depleted = true;
+                }
+            }
         }
         int64_t delta = total(recipe.outputs) - total(recipe.inputs);
         if (delta > 0)
-            batches = std::min(batches, (d.capacityKg - total(s.stock)) / delta);
+            batches = std::min(batches, (economicCapacity(d, s) - total(s.stock)) / delta);
         if (batches <= 0) {
             if (s.bottleneck == "OPERATING")
-                s.bottleneck = std::string(recipe.name) + " / INPUTS OR STORAGE";
+                s.bottleneck = std::string(recipe.name) + " / " +
+                               (shortage ? std::string(depleted ? "DEPLETED " : "MISSING ") +
+                                               std::string(goods[size_t(*shortage)].name)
+                                         : "WAREHOUSE FULL");
             continue;
         }
         for (size_t g = 0; g < goodCount; g++) {
@@ -313,7 +333,7 @@ void Economy::logistics() {
             f.endTick = tick_ + travelTicks(f.source, f.destination);
         }
         if ((f.phase == FreightPhase::Transit && tick_ >= f.endTick) || f.phase == FreightPhase::Holding) {
-            if (network_->sites[f.destination].capacityKg - total(to.stock) < f.kg) {
+            if (economicCapacity(network_->sites[f.destination], to) - total(to.stock) < f.kg) {
                 f.phase = FreightPhase::Holding;
                 continue;
             }
@@ -364,9 +384,10 @@ void Economy::logistics() {
                     auto surplus = sites_[a].stock[g] - sites_[a].reserved[g] - network_->sites[a].target[g];
                     auto ask = unitPrice(a, Good(g), sites_[a].stock[g] - sites_[a].reserved[g], true);
                     auto shipping = 30 + int64_t(travelTicks(a, b)) * 2;
-                    int64_t n = std::min({surplus, need, int64_t(1000),
-                                          network_->sites[b].capacityKg - total(sites_[b].stock),
-                                          sites_[b].cash / (ask + shipping)});
+                    int64_t n =
+                        std::min({surplus, need, int64_t(1000),
+                                  economicCapacity(network_->sites[b], sites_[b]) - total(sites_[b].stock),
+                                  sites_[b].cash / (ask + shipping)});
                     if (n < 10)
                         continue;
                     const double score =
@@ -475,6 +496,7 @@ void Economy::step() {
             }
         treasury_ += surplus - distributed;
     }
+    development();
     offers();
 }
 std::string Economy::execute(const EconomicCommand& c, EconomyPlayer& player) {
@@ -484,6 +506,11 @@ std::string Economy::execute(const EconomicCommand& c, EconomyPlayer& player) {
     auto index = siteIndex(c.port);
     if (!index)
         return "PORT HAS NO MARKET";
+    if (unsigned(c.action) > unsigned(EconomicAction::CollectDividends))
+        return "INVALID ECONOMIC ACTION";
+    if (c.action == EconomicAction::Invest || c.action == EconomicAction::CancelProject ||
+        c.action == EconomicAction::CollectDividends)
+        return invest(c, player, *index);
     if (size_t(c.good) >= goodCount || c.kg < 1 || c.kg > 4000)
         return "INVALID CARGO QUANTITY";
     auto i = *index, g = size_t(c.good);
@@ -501,7 +528,7 @@ std::string Economy::execute(const EconomicCommand& c, EconomyPlayer& player) {
             return "CONTRACT CLOSED";
         g = size_t(it->good);
         auto n = std::min({c.kg, player.cargo[g], it->requested - it->delivered,
-                           network_->sites[i].capacityKg - total(s.stock)});
+                           economicCapacity(network_->sites[i], s) - total(s.stock)});
         if (n <= 0)
             return "REQUIRED CARGO OR WAREHOUSE SPACE UNAVAILABLE";
         auto payment = n * it->unitCents;
@@ -539,7 +566,7 @@ std::string Economy::execute(const EconomicCommand& c, EconomyPlayer& player) {
     }
     if (player.cargo[g] < c.kg)
         return "INSUFFICIENT SHIP CARGO";
-    if (total(s.stock) + c.kg > network_->sites[i].capacityKg)
+    if (total(s.stock) + c.kg > economicCapacity(network_->sites[i], s))
         return "PORT WAREHOUSE FULL";
     if (q.sellCents < c.limitCents)
         return "QUOTE CHANGED / REVIEW PRICE";
@@ -556,7 +583,7 @@ std::string Economy::execute(const EconomicCommand& c, EconomyPlayer& player) {
 int64_t Economy::moneyTotal() const {
     int64_t n = treasury_ + carrierCash_;
     for (const auto& s : sites_)
-        n += s.cash + s.householdCash;
+        n += s.cash + s.householdCash + s.dividends + (s.project ? s.project->escrow : 0);
     for (const auto& f : freight_)
         n += f.payment + f.fee;
     for (const auto& c : contracts_)
@@ -565,9 +592,11 @@ int64_t Economy::moneyTotal() const {
 }
 Stock Economy::inventoryTotal() const {
     Stock n{};
-    for (const auto& s : sites_)
+    for (const auto& s : sites_) {
+        const auto capital = facilityMaterials(s);
         for (size_t g = 0; g < goodCount; g++)
-            n[g] += s.stock[g];
+            n[g] += s.stock[g] + capital[g];
+    }
     for (const auto& f : freight_)
         if (cargoOnboard(f.phase))
             n[size_t(f.good)] += f.kg;
@@ -594,7 +623,7 @@ size_t Economy::residentBytes() const {
 }
 std::string Economy::serialize() const {
     std::ostringstream o;
-    o << "INFINITE_ECONOMY 1 " << network_->fingerprint << ' ' << tick_ << ' ' << nextContract_ << ' '
+    o << "INFINITE_ECONOMY 2 " << network_->fingerprint << ' ' << tick_ << ' ' << nextContract_ << ' '
       << treasury_ << ' ' << carrierCash_ << ' ' << externalMoneyDelta_ << ' ' << sites_.size() << '\n';
     for (const auto& s : sites_) {
         o << s.cash << ' ' << s.householdCash << ' ' << s.condition << ' ' << s.health << ' '
@@ -616,6 +645,16 @@ std::string Economy::serialize() const {
     o << events_.size() << '\n';
     for (const auto& e : events_)
         o << e.tick << ' ' << std::quoted(e.text) << '\n';
+    for (const auto& s : sites_) {
+        for (auto level : s.modules)
+            o << level << ' ';
+        o << s.dividends << ' ' << s.dividendsPaid << ' ' << s.operatingBaseline << ' ' << bool(s.project);
+        if (s.project) {
+            o << ' ' << unsigned(s.project->module) << ' ' << s.project->progress << ' ' << s.project->escrow;
+            writeStock(o, s.project->delivered);
+        }
+        o << '\n';
+    }
     return o.str();
 }
 bool Economy::restore(std::string_view text) {
@@ -627,10 +666,10 @@ bool Economy::restore(std::string_view text) {
     size_t count;
     if (!(in >> header >> version >> fingerprint >> candidate.tick_ >> candidate.nextContract_ >>
           candidate.treasury_ >> candidate.carrierCash_ >> candidate.externalMoneyDelta_ >> count) ||
-        header != "INFINITE_ECONOMY" || version != 1 || fingerprint != network_->fingerprint ||
-        count != sites_.size() || candidate.treasury_ < 0 || candidate.carrierCash_ < 0 ||
-        candidate.treasury_ > 1000000000000000LL || candidate.carrierCash_ > 1000000000000000LL ||
-        candidate.externalMoneyDelta_ < -1000000000000000LL ||
+        header != "INFINITE_ECONOMY" || (version != 1 && version != 2) ||
+        fingerprint != network_->fingerprint || count != sites_.size() || candidate.treasury_ < 0 ||
+        candidate.carrierCash_ < 0 || candidate.treasury_ > 1000000000000000LL ||
+        candidate.carrierCash_ > 1000000000000000LL || candidate.externalMoneyDelta_ < -1000000000000000LL ||
         candidate.externalMoneyDelta_ > 1000000000000000LL || candidate.tick_ > 1000000000000ULL)
         return false;
     for (auto& s : candidate.sites_) {
@@ -688,6 +727,41 @@ bool Economy::restore(std::string_view text) {
             return false;
         candidate.events_.push_back(e);
     }
+    for (auto& s : candidate.sites_) {
+        s.operatingBaseline = s.cash; // v1 migration: no retroactive dividends or refits
+        if (version == 1)
+            continue;
+        for (auto& level : s.modules)
+            if (!(in >> level) || level > 3)
+                return false;
+        unsigned pending;
+        if (!(in >> s.dividends >> s.dividendsPaid >> s.operatingBaseline >> pending) || pending > 1 ||
+            s.dividends < 0 || s.dividends > 1000000000000000LL || s.dividendsPaid < 0 ||
+            s.dividendsPaid > 1000000000000000LL || s.operatingBaseline < 0 ||
+            s.operatingBaseline > 1000000000000000LL)
+            return false;
+        if (pending) {
+            FacilityProject p;
+            unsigned module;
+            if (!(in >> module >> p.progress >> p.escrow) || module >= facilityModuleCount ||
+                s.modules[module] >= 3 || !readStock(in, p.delivered))
+                return false;
+            p.module = FacilityModule(module);
+            auto r = facilityRefit(p.module, s.modules[module] + 1);
+            if (p.progress >= r.ticks || p.escrow != r.labourCents - r.labourCents * p.progress / r.ticks ||
+                (p.progress && p.delivered != r.materials))
+                return false;
+            for (size_t g = 0; g < goodCount; g++)
+                if (p.delivered[g] > r.materials[g])
+                    return false;
+            s.project = p;
+        }
+    }
+    for (size_t i = 0; i < sites_.size(); i++)
+        if (network_->sites[i].orbital &&
+            (candidate.sites_[i].modules[1] || candidate.sites_[i].modules[2] ||
+             (candidate.sites_[i].project && candidate.sites_[i].project->module != FacilityModule::Storage)))
+            return false;
     in >> std::ws;
     if (!in.eof())
         return false;
@@ -712,7 +786,7 @@ bool Economy::restore(std::string_view text) {
     if (candidate.moneyTotal() != candidate.endowmentMoney_ + candidate.externalMoneyDelta_)
         return false;
     for (size_t i = 0; i < sites_.size(); i++) {
-        if (total(candidate.sites_[i].stock) > network_->sites[i].capacityKg)
+        if (total(candidate.sites_[i].stock) > economicCapacity(network_->sites[i], candidate.sites_[i]))
             return false;
         for (size_t g = 0; g < goodCount; g++)
             if (candidate.sites_[i].extracted[g] > network_->sites[i].reserves[g])
@@ -739,8 +813,9 @@ std::optional<ActivityId> EconomySnapshot::contractDestination() const {
     return {};
 }
 MarketView economicMarketView(const EconomySnapshot* s, const std::optional<ActivityId>& port,
-                              size_t selected, int64_t quantity, bool connected) {
+                              size_t selected, int64_t quantity, bool connected, MarketPage page) {
     MarketView v;
+    v.page = page;
     v.open = true;
     v.selected = std::min(selected, goodCount - 1);
     v.quantity = quantity;
@@ -766,6 +841,61 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
     if (s->catchingUp) {
         v.connected = false;
         v.message = "ECONOMY CATCHING UP / TRADING PAUSED";
+    }
+    if (page == MarketPage::Routes) {
+        v.selected = s->routes.empty() ? 0 : std::min(selected, s->routes.size() - 1);
+        v.summary = "LIVE QUOTES / COST AND GROSS MARGIN / PRICES MAY CHANGE IN FLIGHT";
+        v.bottleneck = "BOUNDED LOCAL SEARCH / EMPTY HOLD SPACE / CURRENT WALLET AND BUYER FUNDS";
+        for (const auto& r : s->routes) {
+            v.detail.push_back(std::to_string(r.kg) + " KG " + std::string(goodInfo(r.good).name) +
+                               " / COST " + std::to_string(r.costCents / 100) + " CR / MARGIN +" +
+                               std::to_string((r.revenueCents - r.costCents) / 100) + " CR");
+            v.detail.push_back(s->network->sites[r.source].name + " > " +
+                               s->network->sites[r.destination].name + " / " +
+                               std::to_string(int64_t(r.distanceMetres / 1e6)) + " MKM");
+        }
+        if (v.detail.empty())
+            v.message = "NO AFFORDABLE PROFITABLE ROUTES / FREE HOLD SPACE OR BUILD CAPITAL";
+        return v;
+    }
+    if (page == MarketPage::Industry) {
+        const auto& state = s->sites[*i];
+        const auto& site = s->network->sites[*i];
+        v.selected = std::min(selected, facilityModuleCount - 1);
+        v.summary = "DIVIDENDS " + std::to_string(state.dividends / 100) + " CR / PAID " +
+                    std::to_string(state.dividendsPaid / 100) + " CR / STORAGE " +
+                    std::to_string(economicCapacity(site, state)) + " KG";
+        for (size_t m = 0; m < facilityModuleCount; m++) {
+            auto r = facilityRefit(FacilityModule(m), std::min(3u, state.modules[m] + 1));
+            const bool active = state.project && size_t(state.project->module) == m;
+            v.detail.push_back(std::string(r.name) + " / LEVEL " + std::to_string(state.modules[m]) + "/3" +
+                               (active ? " / ACTIVE PROJECT" : ""));
+            v.detail.push_back(std::string(r.effect) + (site.orbital && m ? " / SURFACE ONLY" : ""));
+            v.detail.push_back("LABOUR " + std::to_string(r.labourCents / 100) + " CR / BUILD " +
+                               std::to_string(r.ticks * 5) + " ECON MIN / 2% CASH-SURPLUS SHARE PER LEVEL");
+            std::string needed = "PARTS: ", missing = "STILL TO SOURCE: ";
+            for (size_t g = 0; g < goodCount; g++) {
+                const auto left = r.materials[g] - (active ? state.project->delivered[g] : 0);
+                if (r.materials[g])
+                    needed += std::string(goodInfo(Good(g)).name) + " " + std::to_string(left) + "KG ";
+                if (left > s->player.cargo[g])
+                    missing += std::string(goodInfo(Good(g)).name) + " " +
+                               std::to_string(left - s->player.cargo[g]) + "KG ";
+            }
+            v.detail.push_back(state.modules[m] == 3 ? "MAXIMUM REFIT LEVEL" : needed);
+            v.detail.push_back(state.modules[m] == 3 ? "EXISTING FACILITY FULLY REFITTED" : missing);
+        }
+        if (state.project) {
+            const auto& p = *state.project;
+            auto r = facilityRefit(p.module, state.modules[size_t(p.module)] + 1);
+            v.bottleneck =
+                std::string(r.name) + " / " + std::to_string(p.progress) + "/" + std::to_string(r.ticks) +
+                " TICKS / " +
+                (p.delivered != r.materials    ? "AWAITING PARTS"
+                 : state.outageUntil > s->tick ? "PAUSED / PLANT OUTAGE"
+                                               : "CONSTRUCTION / REQUIRES HEALTHY CREW AND UTILITIES");
+        }
+        return v;
     }
     for (size_t g = 0; g < goodCount; g++) {
         auto q = s->quote(*i, Good(g), quantity);

@@ -564,27 +564,58 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
         const CockpitRect panel{center - std::min(790., w - 60) * .5, 166, std::min(790., w - 60), 574};
         card(h, panel, m.connected ? mint : amber);
         h.hitRegions.push_back(panel);
-        label("F2 MARKET / ESC CLOSE / ECON " + std::to_string(m.tick * 5 / 60) + "H", panel.x + 18,
-              panel.y + 16, panel.w - 36, mint);
+        label("F2 CLOSE / F5 " +
+                  std::string(m.page == MarketPage::Goods    ? "GOODS"
+                              : m.page == MarketPage::Routes ? "TRADE ROUTES"
+                                                             : "INDUSTRY") +
+                  " / ECON " + std::to_string(m.tick * 5 / 60) + "H",
+              panel.x + 18, panel.y + 16, panel.w - 36, mint);
         quantity(m.ready ? m.site : "LOCAL ECONOMY", panel.x + 18, panel.y + 39, panel.w - 36, 14, pearl);
         label(m.role + " / " + (m.connected ? "TRADE LINK" : "REMOTE / APPROACH AND STOP"), panel.x + 18,
               panel.y + 64, panel.w - 36, m.connected ? mint : amber);
         quantity("CREDITS " + std::to_string(m.credits / 100) + " / CARGO " + std::to_string(m.cargoKg) +
                      "/4000 KG / " + std::to_string(m.cargoLitres) + "/8000 L",
                  panel.x + 18, panel.y + 86, panel.w - 36, 10.5, ice);
-        label("GOOD                 STOCK   HOLD     BUY CR     SELL CR", panel.x + 18, panel.y + 112,
-              panel.w - 36, muted);
-        for (size_t g = 0; g < goodCount; g++) {
-            const double y = panel.y + 125 + g * 17;
-            if (g == m.selected)
-                rect(h.panels, panel.x + 12, y - 3, panel.w - 24, 16, mint * .18f, .95f);
-            fitted(h.lettering, m.rows[g], panel.x + 18, y, panel.w - 36, 9.2, g == m.selected ? pearl : ice);
+        if (m.page == MarketPage::Goods) {
+            label("GOOD                 STOCK   HOLD     BUY CR     SELL CR", panel.x + 18, panel.y + 112,
+                  panel.w - 36, muted);
+            for (size_t g = 0; g < goodCount; g++) {
+                const double y = panel.y + 125 + g * 17;
+                if (g == m.selected)
+                    rect(h.panels, panel.x + 12, y - 3, panel.w - 24, 16, mint * .18f, .95f);
+                fitted(h.lettering, m.rows[g], panel.x + 18, y, panel.w - 36, 9.2,
+                       g == m.selected ? pearl : ice);
+            }
+            label("ORDER " + std::to_string(m.quantity) + " KG / UP-DOWN GOODS / LEFT-RIGHT SIZE",
+                  panel.x + 18, panel.y + 472, panel.w - 36, mint);
+            label("ENTER BUY / BACKSPACE SELL / F3 CONTRACT / F4 TARGET", panel.x + 18, panel.y + 492,
+                  panel.w - 36, pearl);
+            fitted(h.lettering, m.summary.empty() ? m.contract : m.summary, panel.x + 18, panel.y + 512,
+                   panel.w - 36, 8.4, amber);
+        } else {
+            const bool industry = m.page == MarketPage::Industry;
+            label(industry ? "EXISTING FACILITY REFITS / DELIVER CARGO TO BUILD"
+                           : "AFFORDABLE LOCAL OPPORTUNITIES / UP-DOWN SELECT",
+                  panel.x + 18, panel.y + 112, panel.w - 36, mint);
+            const size_t group = industry ? 5 : 2;
+            const double rowHeight = industry ? 21 : 13;
+            for (size_t row = 0; row < m.detail.size(); row++) {
+                const auto y = panel.y + 140 + row * rowHeight;
+                const bool selected = row / group == m.selected;
+                if (selected && row % group == 0)
+                    rect(h.panels, panel.x + 12, y - 4, panel.w - 24, group * rowHeight - 3, mint * .15f,
+                         .95f);
+                fitted(h.lettering, m.detail[row], panel.x + 18, y, panel.w - 36,
+                       row % group == 0 ? 9.4 : 8.4, selected ? (row % group == 0 ? pearl : ice) : muted);
+            }
+            fitted(h.lettering, m.summary, panel.x + 18, panel.y + 472, panel.w - 36, 8.4, mint);
+            label(industry ? "ENTER FUND / DELIVER PARTS / BACKSPACE COLLECT DIVIDENDS"
+                           : "ENTER TARGET SOURCE / F4 TARGET BUYER / J APPROACH",
+                  panel.x + 18, panel.y + 492, panel.w - 36, pearl);
+            label(industry ? "DELETE CANCEL PROJECT / UNUSED FEES AND PARTS RETURNED"
+                           : "QUOTES INCLUDE SPREAD / MARGINAL PRICES / NO PRICE GUARANTEE",
+                  panel.x + 18, panel.y + 512, panel.w - 36, amber);
         }
-        label("ORDER " + std::to_string(m.quantity) + " KG / UP-DOWN GOODS / LEFT-RIGHT SIZE", panel.x + 18,
-              panel.y + 472, panel.w - 36, mint);
-        label("ENTER BUY / BACKSPACE SELL / F3 CONTRACT / F4 TARGET", panel.x + 18, panel.y + 492,
-              panel.w - 36, pearl);
-        fitted(h.lettering, m.contract, panel.x + 18, panel.y + 512, panel.w - 36, 8.4, amber);
         fitted(h.lettering, m.bottleneck, panel.x + 18, panel.y + 532, panel.w - 36, 8.4, muted);
         fitted(h.lettering, m.message, panel.x + 18, panel.y + 551, panel.w - 36, 8.4, ice);
         return h;
@@ -608,7 +639,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                                                              {"SHIFT-Z / V", "FULL SIZE / EXPLORER"},
                                                              {"F6 / TAB", "TRAFFIC / HUD"},
                                                              {"F7", "COCKPIT MOTION"},
-                                                             {"F2 / F3 / F4", "MARKET / CONTRACT / TARGET"},
+                                                             {"F2 / F5", "MARKET / ROUTES / INDUSTRY"},
                                                              {"F1 / ESC", "CLOSE GUIDE / RELEASE HELM"}};
         for (size_t i = 0; i < std::size(controls); ++i) {
             label(controls[i].first, guide.x + 22, guide.y + 65 + i * 24, guide.w * .42, ice);

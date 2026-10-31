@@ -229,6 +229,7 @@ struct EconomyRuntime::Impl {
                 s->flights.push_back(flight);
             }
         }
+        s->routes = economicTradeRoutes(*s);
         size_t bytes = 0;
         for (const auto& [_, economy] : active)
             bytes += economy->residentBytes();
@@ -392,6 +393,7 @@ size_t EconomyRuntime::residentBytes() const {
     if (!s)
         return 0;
     return impl_->workerBytes.load() + sizeof(*s) + s->sites.capacity() * sizeof(EconomicSiteState) +
-           s->flights.capacity() * sizeof(EconomicFlight);
+           s->flights.capacity() * sizeof(EconomicFlight) +
+           s->routes.capacity() * sizeof(EconomySnapshot::TradeRoute);
 }
 } // namespace infinite
