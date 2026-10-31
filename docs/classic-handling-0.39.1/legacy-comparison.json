@@ -1,0 +1,40 @@
+{
+  "reference_implementation": "7a35cf76202fc0cf2dfcd9876e66270624e9e201",
+  "probes": {
+    "roll_rate_rad_s": {
+      "historical": 1.79992366398,
+      "restored": 1.79992366398,
+      "absolute_error": 0.0
+    },
+    "roll_settle_s": {
+      "historical": 0.316666666667,
+      "restored": 0.316666666667,
+      "absolute_error": 0.0
+    },
+    "release_overshoot_rad": {
+      "historical": 0.184291763009,
+      "restored": 0.184291763009,
+      "absolute_error": 0.0
+    },
+    "roll_reverse_s": {
+      "historical": 0.2,
+      "restored": 0.2,
+      "absolute_error": 0.0
+    },
+    "assist_capture_kick_m_s": {
+      "historical": 0.000508401213469,
+      "restored": 0.000508401213469,
+      "absolute_error": 0.0
+    },
+    "assist_residual_drift_m_s": {
+      "historical": 1.76635064555,
+      "restored": 1.76635064555,
+      "absolute_error": 0.0
+    },
+    "turn_slip_rad": {
+      "historical": 0.640476108348,
+      "restored": 0.640476108348,
+      "absolute_error": 0.0
+    }
+  }
+}

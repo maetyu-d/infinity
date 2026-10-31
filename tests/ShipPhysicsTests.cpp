@@ -129,8 +129,9 @@ int main(int argc, char** argv) {
              "Unassisted coasting has hidden damping or speed clamp");
         coast.pilot.toggleAssist();
         coast.fly({}, 2);
-        check(glm::length(coast.pilot.ship().velocity - velocity) < 120,
-              "Assist used field braking for ordinary overspeed");
+        check(glm::length(coast.pilot.ship().velocity) < glm::length(velocity) &&
+                  glm::length(coast.pilot.ship().velocity) > 0,
+              "Classic flight assistance failed to slow overspeed or reset momentum instantly");
         check(!coast.pilot.instruments().fieldActive,
               "Conventional braking silently engaged a fictional drive");
         // Gravity remains present beyond the terrain-contact range and on gas giants.

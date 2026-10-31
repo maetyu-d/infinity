@@ -1,0 +1,6 @@
+{"roll_rate_rad_s":1.79992366398,"roll_settle_s":0.316666666667,"release_overshoot_rad":0.184291763009,"roll_reverse_s":0.2,"assist_capture_kick_m_s":0.000508401213469,"assist_residual_drift_m_s":1.76635064555,"turn_slip_rad":0.640476108348,"pitch_rate_rad_s":1.19997233472,"yaw_rate_rad_s":1.09997664544,"small_yaw_rate_rad_s":0.164997430527,"combined_peak_rate_rad_s":2.4269322199,"combined_release_residual_rad_s":0.00237993202246}
+response_dt=0.0666666666667 rate=1.79992366398 settle=0.333333333333 overshoot=0.187738956498
+response_dt=0.0333333333333 rate=1.7999236334 settle=0.333333333333 overshoot=0.185220619064
+response_dt=0.00694444444444 rate=1.79992364174 settle=0.319444444444 overshoot=0.184153348043
+recovery_rate_after_2_s=2.75930827314e-14 recovery_speed_after_2_s=0.581634225218
+PASS: 185 handling, roll and assist checks

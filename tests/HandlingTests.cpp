@@ -113,18 +113,19 @@ int main(int argc, char**) {
                   << ",\"combined_release_residual_rad_s\":" << combinedResidual << "}\n";
         if (argc > 1)
             return 0; // --measure records the baseline without the new handling thresholds.
-        check(r.rate > .94 && r.rate < .96, "Roll is outside the controllable assisted turn envelope");
-        check(r.settle <= .2 && r.overshoot < .07, "Released roll feels loose or overshoots excessively");
-        check(r.reverse < .2, "Roll reversal is too slow");
-        check(pitch.rate > .69 && pitch.rate < .71 && yaw.rate > .64 && yaw.rate < .66,
-              "Pitch/yaw is outside the controllable assisted turn envelope");
-        check(nudge.rate > .02 && nudge.rate < yaw.rate * .08,
-              "Small mouse corrections lack a fine centre response");
-        check(peakCombined < 1 && combinedResidual < .001,
-              "Simultaneous axes multiply turn speed or leave the ship tumbling on release");
-        const double initialDrift = glm::length(glm::dvec2(initial));
-        check(assistKick < .2 && residual < initialDrift && residual > initialDrift - 100,
-              "Assist capture kicked, failed to counter drift, or exceeded finite RCS authority");
+        // Recorded pre-0.37 probes: restore the actual old controller response,
+        // rather than tuning another approximation of the physical torque servo.
+        check(std::abs(r.rate - 1.79992366398) < 1e-9 && std::abs(r.overshoot - .184291763009) < 1e-9 &&
+                  std::abs(r.settle - .316666666667) < 1e-9 && std::abs(r.reverse - .2) < 1e-9,
+              "Classic roll differs from the recorded pre-physics response");
+        check(pitch.rate > 1.19 && pitch.rate < 1.21 && yaw.rate > 1.09 && yaw.rate < 1.11,
+              "Original pitch/yaw authority was not restored");
+        check(std::abs(nudge.rate - .164997430527) < 1e-9,
+              "Original linear fine-helm response was not restored");
+        check(peakCombined > 2.4 && peakCombined < 2.5 && combinedResidual < .003,
+              "Independent classic axes changed rate or continued tumbling on release");
+        check(assistKick < .2 && std::abs(residual - 1.76635064555) < 1e-8,
+              "Original velocity capture/steering did not recover lateral drift");
         for (double dt : {1. / 15, 1. / 30, 1. / 144}) {
             const auto other = response(u, dt);
             std::cout << "response_dt=" << dt << " rate=" << other.rate << " settle=" << other.settle
@@ -135,20 +136,29 @@ int main(int argc, char**) {
                   "Rotational handling depends on display frame rate");
         }
         // A fully loaded bay and low display frame rate must still arrest each
-        // axis promptly; the force/torque model retains the cargo's real inertia.
+        // axis promptly; payload reduces available classic manoeuvring authority.
         for (int axis = 0; axis < 3; ++axis)
             for (double dt : {1. / 15, 1. / 60, 1. / 144}) {
                 const auto laden = response(u, dt, 1, false, axis, 1, 4000);
-                check(laden.settle <= .3 && laden.overshoot < .1 && laden.reverse < .3,
+                check(laden.settle <= .5 && laden.overshoot < .3 && laden.reverse < .4,
                       "Cargo or a low frame rate makes rotation difficult to arrest");
             }
+        Rig powered(u);
+        HelmInput loadedHelm;
+        loadedHelm.throttle = loadedHelm.strafe = loadedHelm.lift = loadedHelm.roll = 1;
+        powered.fly(loadedHelm, 1);
+        check(std::abs(powered.pilot.ship().angularVelocity.z + r.rate) < 1e-9 &&
+                  glm::length(powered.pilot.ship().velocity) > 1 &&
+                  powered.pilot.ship().angularThrusters == glm::dvec3(0),
+              "Engine/steering demand stole classic roll authority or retained physical torque");
         const auto left = response(u, 1. / 60, -1);
         check(std::abs(left.rate - r.rate) < 1e-10 && std::abs(left.settle - r.settle) < 1e-10,
               "Left and right roll are asymmetric");
         const auto fine = response(u, 1. / 60, 1, true);
         check(fine.rate < r.rate * .36 && fine.rate > r.rate * .34,
               "Precision handling does not reduce roll authority");
-        check(slip > .2 && slip < .65, "Turn lost finite-thrust inertia or left excessive lateral slip");
+        check(std::abs(slip - .640476108348) < 1e-9,
+              "Powered turning differs from the recorded classic response");
         // The actual SDL input path calls this same resolver. Roll remains
         // available without mouse capture, and its modifier cannot fire strafe.
         HelmInput keys;
@@ -170,7 +180,7 @@ int main(int argc, char**) {
               "Opposing dedicated and modified roll inputs failed to cancel");
         for (double dt : {1. / 30, 1. / 60, 1. / 144}) {
             const auto look = resolveHelmInput({}, {150 * dt, -80 * dt}, dt);
-            check(std::abs(look.yaw - .225) < 1e-12 && std::abs(look.pitch - .12) < 1e-12,
+            check(std::abs(look.yaw - .375) < 1e-12 && std::abs(look.pitch - .2) < 1e-12,
                   "Mouse distance was treated as a frame-dependent angular command");
         }
         keys.roll = 1;
@@ -220,7 +230,7 @@ int main(int argc, char**) {
         panic.pilot.update(recovery, 1. / 60);
         cleanBrake.pilot.update(plain, 1. / 60);
         check(glm::length(panic.pilot.ship().angularVelocity) > .1,
-              "Recovery erased angular momentum instead of applying finite torque");
+              "Recovery reset spin instantly instead of using the classic bounded rate servo");
         panic.fly(recovery, 2);
         cleanBrake.fly(plain, 2);
         std::cout << "recovery_rate_after_2_s=" << glm::length(panic.pilot.ship().angularVelocity)
@@ -298,8 +308,8 @@ int main(int argc, char**) {
         braking.pilot.toggleAssist();
         braking.pilot.brake();
         braking.pilot.update({}, 1. / 60);
-        check(glm::length(braking.pilot.ship().velocity - initial) > 1e-4 &&
-                  glm::length(braking.pilot.ship().velocity - initial) < 1,
+        check(glm::length(braking.pilot.ship().velocity - initial) > .2 &&
+                  glm::length(braking.pilot.ship().velocity) > 0,
               "Assist capture delayed the explicit brake command");
         std::cout << "PASS: " << checks << " handling, roll and assist checks\n";
     } catch (const std::exception& e) {

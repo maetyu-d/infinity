@@ -1,5 +1,7 @@
 # INFINITE
 
+**0.39.1:** restores the pre-0.37 assisted manual controls: original mouse/turn response and velocity-scaled manoeuvring, with independent roll control. The current economy, landing, cargo, cruise, shrinking and graphics remain intact. [Control restore and checks](docs/SHIP_HANDLING.md).
+
 **0.39:** player-funded warehouse, utility and automation refits, physical construction materials, paid crews and cash-backed dividends. A live trade board finds affordable routes and bookmarks their buyers. **F2** market, **F5** goods/routes/industry; industry **Enter** funds/delivers, **Backspace** collects, **Delete** cancels. Existing universe and saves are retained. [Economic development, controls and checks](docs/ECONOMY_0_39.md).
 
 **0.38.3:** colourful Hyperion rendering is now the only graphics style. Original/Hybrid modes and the H mode toggle have been removed; old display preferences are ignored. Universe generation, saved flights, controls and cockpit motion remain intact.

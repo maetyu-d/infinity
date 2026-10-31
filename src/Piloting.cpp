@@ -17,13 +17,55 @@ glm::dvec3 limited(glm::dvec3 v, double maximum) {
 glm::dvec3 unit(glm::dvec3 v, glm::dvec3 fallback = {0, 1, 0}) {
     return glm::length(v) > 1e-30 ? glm::normalize(v) : fallback;
 }
-const glm::dvec3 manualRates(.70, .65, .95);
+// Restore the pre-0.37 helm: independent rate control and velocity-scaled
+// manoeuvring jets. The inertial and navigation solvers remain separate.
+const glm::dvec3 manualRates(1.20, 1.10, 1.80);
 glm::dvec3 manualSpin(const HelmInput& input) {
-    // Fine mouse corrections use a soft centre; keyboard travel still reaches
-    // the full rate. A diagonal helm must not multiply the overall turn speed.
-    glm::dvec3 helm(input.pitch, -input.yaw, -input.roll);
-    helm *= glm::dvec3(.35) + glm::abs(helm) * .65;
-    return limited(helm, 1.) * manualRates * (input.precision ? .35 : 1.);
+    return glm::dvec3(input.pitch, -input.yaw, -input.roll) * manualRates * (input.precision ? .35 : 1.);
+}
+struct ClassicAuthority {
+    glm::dvec3 caps;
+    double retro;
+};
+ClassicAuthority classicAuthority(double size, double limit, double speed, double payloadKg) {
+    const double gain = std::max(1e-14, std::max(size, std::max(limit, speed * .7) / 85.));
+    const double load = 12000. / (12000. + payloadKg);
+    return {glm::dvec3(44, 48, 52) * gain * load, 32 * gain * load};
+}
+void classicRotation(glm::dquat& orientation, glm::dvec3& rate, glm::dvec3 target, double dt,
+                     double payloadKg) {
+    glm::dvec3 correction;
+    for (int axis = 0; axis < 3; ++axis) {
+        const bool slowing = target[axis] * rate[axis] <= 0 || std::abs(target[axis]) < std::abs(rate[axis]);
+        correction[axis] = (target[axis] - rate[axis]) * -std::expm1(-dt * (slowing ? 18. : 11.));
+    }
+    const bool slowing = glm::dot(rate, correction) < 0;
+    const auto next =
+        rate + limited(correction, (slowing ? 9.5 : 6.5) * (12000. / (12000. + payloadKg)) * dt);
+    const auto mid = (rate + next) * .5;
+    const auto angle = glm::length(mid) * dt;
+    if (angle > 1e-15)
+        orientation = glm::normalize(orientation * glm::angleAxis(angle, glm::normalize(mid)));
+    rate = next;
+}
+glm::dvec3 allocateForce(glm::dvec3 support, glm::dvec3 command, glm::dvec3 caps, double retro) {
+    auto normalized = [&](glm::dvec3 force) {
+        return glm::dvec3(force.x / caps.x, force.y / caps.y, force.z / (force.z < 0 ? caps.z : retro));
+    };
+    const double load = glm::length(normalized(support));
+    if (load > 1)
+        support /= load;
+    if (glm::length(normalized(support + command)) <= 1)
+        return support + command;
+    double lo = 0, hi = 1;
+    for (int i = 0; i < 18; i++) {
+        double t = (lo + hi) * .5;
+        if (glm::length(normalized(support + command * t)) <= 1)
+            lo = t;
+        else
+            hi = t;
+    }
+    return support + command * lo;
 }
 glm::dvec3 angularTarget(glm::dquat orientation, glm::dvec3 heading, glm::dvec3 up) {
     const auto forward = orientation * glm::dvec3(0, 0, -1);
@@ -48,7 +90,7 @@ HelmInput resolveHelmInput(HelmInput keyboard, glm::dvec2 mouseDelta, double sec
         keyboard.strafe = 0;
     }
     if (seconds > 0 && std::isfinite(seconds) && std::isfinite(mouseDelta.x) && std::isfinite(mouseDelta.y)) {
-        const auto rate = glm::clamp(mouseDelta * (.09 / (60 * seconds)), glm::dvec2(-1), glm::dvec2(1));
+        const auto rate = glm::clamp(mouseDelta * (.15 / (60 * seconds)), glm::dvec2(-1), glm::dvec2(1));
         keyboard.pitch -= rate.y;
         keyboard.yaw += rate.x;
     }
@@ -365,7 +407,7 @@ double Pilot::speedLimit() const {
         std::min(1e28, base * (ship_.cruise ? 1. : nav_.speedMultiplier()) * (1 + 1.4 * ship_.boost));
     if (auto g = ground())
         limit = std::min(limit, (350. + std::max(0., g->altitude - 100.) * .12));
-    if (!ship_.cruise) {
+    if (!ship_.cruise && (!ship_.assist || autopilot_ || launchTime_ > 0)) {
         const auto p = shipProperties(ratio, 0, cargoMassKg_);
         const double brake = p.reverseForce / p.massKg;
         limit =
@@ -807,58 +849,89 @@ void Pilot::step(const HelmInput& input, double dt) {
             phase_ = "DEPARTURE COMPLETE";
         }
     }
-    const auto inverse = glm::inverse(nav_.orientation);
-    // The explicit shrink field rescales local wind and shields a hull below
-    // the continuum regime; atomic collision geometry remains authoritative.
-    const double continuum = smoothstep(-7., -5., std::log10(12 * sizeRatio()));
-    const auto drag =
-        atmosphericDrag(properties, nav_.orientation, ship_.velocity - environmentSample_.wind * sizeRatio(),
-                        environmentSample_.airDensity * continuum, dt);
-    glm::dvec3 angularCommand;
-    if (ship_.assist) {
-        // Arrest released/reversed axes more firmly than a new turn spools up.
-        // This remains real, allocated RCS torque rather than a spin overwrite.
-        const auto error = spin - ship_.angularVelocity;
-        glm::dvec3 gain(11., 11., 14.);
-        for (int axis = 0; axis < 3; ++axis)
-            if (spin[axis] * ship_.angularVelocity[axis] <= 0 ||
-                std::abs(spin[axis]) < std::abs(ship_.angularVelocity[axis]))
-                gain[axis] = axis == 2 ? 22. : 18.;
-        const auto acceleration = error * gain;
-        angularCommand = properties.inertia * acceleration +
-                         glm::cross(ship_.angularVelocity, properties.inertia * ship_.angularVelocity);
+    glm::dvec3 appliedAcceleration;
+    if (manualAssist) {
+        // This is the original assisted controller, not another gain adjustment
+        // to the coupled torque allocator. Turning cannot steal steering jets.
+        classicRotation(nav_.orientation, ship_.angularVelocity, spin, dt, cargoMassKg_);
+        ship_.angularThrusters = {};
+        const auto inverse = glm::inverse(nav_.orientation);
+        const auto authority =
+            classicAuthority(sizeRatio(), limit, glm::length(ship_.velocity), cargoMassKg_);
+        const double continuum = smoothstep(-7., -5., std::log10(12 * sizeRatio()));
+        const auto drag = atmosphericDrag(properties, nav_.orientation,
+                                          ship_.velocity - environmentSample_.wind * sizeRatio(),
+                                          environmentSample_.airDensity * continuum, dt);
+        const auto support = inverse * (-gravity - drag / properties.massKg);
+        const auto command = inverse * (wanted - ship_.velocity) * glm::dvec3(2.4, 2.4, 1.6);
+        const auto steering =
+            allocateForce(support, {command.x, command.y, 0}, authority.caps, authority.retro);
+        const auto local = allocateForce(steering, {0, 0, command.z}, authority.caps, authority.retro);
+        const auto demand = limited({local.x / authority.caps.x, local.y / authority.caps.y,
+                                     local.z / (local.z < 0 ? authority.caps.z : authority.retro)},
+                                    1.);
+        ship_.thrusters = glm::mix(ship_.thrusters, demand, -std::expm1(-dt / .12));
+        appliedAcceleration =
+            nav_.orientation *
+                glm::dvec3(ship_.thrusters.x * authority.caps.x, ship_.thrusters.y * authority.caps.y,
+                           ship_.thrusters.z * (ship_.thrusters.z < 0 ? authority.caps.z : authority.retro)) +
+            drag / properties.massKg;
     } else {
-        angularCommand = properties.torqueCaps * (spin / manualRates) * .55;
+        const auto inverse = glm::inverse(nav_.orientation);
+        // The explicit shrink field rescales local wind and shields a hull below
+        // the continuum regime; atomic collision geometry remains authoritative.
+        const double continuum = smoothstep(-7., -5., std::log10(12 * sizeRatio()));
+        const auto drag = atmosphericDrag(properties, nav_.orientation,
+                                          ship_.velocity - environmentSample_.wind * sizeRatio(),
+                                          environmentSample_.airDensity * continuum, dt);
+        glm::dvec3 angularCommand;
+        if (ship_.assist) {
+            // Arrest released/reversed axes more firmly than a new turn spools up.
+            // This remains real, allocated RCS torque rather than a spin overwrite.
+            const auto error = spin - ship_.angularVelocity;
+            glm::dvec3 gain(11., 11., 14.);
+            for (int axis = 0; axis < 3; ++axis)
+                if (spin[axis] * ship_.angularVelocity[axis] <= 0 ||
+                    std::abs(spin[axis]) < std::abs(ship_.angularVelocity[axis]))
+                    gain[axis] = axis == 2 ? 22. : 18.;
+            const auto acceleration = error * gain;
+            angularCommand = properties.inertia * acceleration +
+                             glm::cross(ship_.angularVelocity, properties.inertia * ship_.angularVelocity);
+        } else {
+            angularCommand = properties.torqueCaps * (spin / manualRates) * .55;
+        }
+        const auto support = inverse * (-gravity - drag / properties.massKg) * properties.massKg;
+        glm::dvec3 commanded;
+        if (ship_.assist) {
+            const auto error = inverse * (wanted - ship_.velocity);
+            commanded = error * glm::dvec3(manualAssist ? 2.4 : 1.6, manualAssist ? 2.4 : 1.6, 1.6) *
+                        properties.massKg;
+        } else {
+            const double fine = input.precision ? .18 : 1.;
+            commanded = shipForce(properties, {input.strafe * fine, input.lift * fine, -ship_.throttle});
+        }
+        const auto wrench =
+            allocateShipWrench(properties, ship_.assist ? support : glm::dvec3(0), commanded, angularCommand);
+        ship_.thrusters = glm::mix(ship_.thrusters, wrench.linear, -std::expm1(-dt / .12));
+        for (int axis = 0; axis < 3; ++axis) {
+            const bool arrest = spin[axis] * ship_.angularVelocity[axis] <= 0 ||
+                                std::abs(spin[axis]) < std::abs(ship_.angularVelocity[axis]);
+            ship_.angularThrusters[axis] = ship_.assist
+                                               ? glm::mix(ship_.angularThrusters[axis], wrench.angular[axis],
+                                                          -std::expm1(-dt / (arrest ? .015 : .06)))
+                                               : wrench.angular[axis];
+        }
+        // Independently timed valve responses can leave the shared envelope. The
+        // final allocation enforces the same physical force/torque budget again.
+        const auto actual = allocateShipWrench(properties, {}, shipForce(properties, ship_.thrusters),
+                                               shipTorque(properties, ship_.angularThrusters));
+        ship_.thrusters = actual.linear;
+        ship_.angularThrusters = actual.angular;
+        appliedAcceleration = nav_.orientation * shipForce(properties, actual.linear) / properties.massKg +
+                              drag / properties.massKg;
+        integrateShipRotation(nav_.orientation, ship_.angularVelocity, properties.inertia,
+                              shipTorque(properties, actual.angular), dt);
     }
-    const auto support = inverse * (-gravity - drag / properties.massKg) * properties.massKg;
-    glm::dvec3 commanded;
-    if (ship_.assist) {
-        const auto error = inverse * (wanted - ship_.velocity);
-        commanded =
-            error * glm::dvec3(manualAssist ? 2.4 : 1.6, manualAssist ? 2.4 : 1.6, 1.6) * properties.massKg;
-    } else {
-        const double fine = input.precision ? .18 : 1.;
-        commanded = shipForce(properties, {input.strafe * fine, input.lift * fine, -ship_.throttle});
-    }
-    const auto wrench =
-        allocateShipWrench(properties, ship_.assist ? support : glm::dvec3(0), commanded, angularCommand);
-    ship_.thrusters = glm::mix(ship_.thrusters, wrench.linear, -std::expm1(-dt / .12));
-    for (int axis = 0; axis < 3; ++axis) {
-        const bool arrest = spin[axis] * ship_.angularVelocity[axis] <= 0 ||
-                            std::abs(spin[axis]) < std::abs(ship_.angularVelocity[axis]);
-        ship_.angularThrusters[axis] = ship_.assist
-                                           ? glm::mix(ship_.angularThrusters[axis], wrench.angular[axis],
-                                                      -std::expm1(-dt / (arrest ? .015 : .06)))
-                                           : wrench.angular[axis];
-    }
-    // Independently timed valve responses can leave the shared envelope. The
-    // final allocation enforces the same physical force/torque budget again.
-    const auto actual = allocateShipWrench(properties, {}, shipForce(properties, ship_.thrusters),
-                                           shipTorque(properties, ship_.angularThrusters));
-    ship_.thrusters = actual.linear;
-    ship_.angularThrusters = actual.angular;
-    const auto thrust = nav_.orientation * shipForce(properties, actual.linear);
-    const auto torque = shipTorque(properties, actual.angular);
     const auto oldVelocity = ship_.velocity;
     const bool resizingField = ship_.shrinking && ship_.targetLogSize < ship_.logSize;
     glm::dvec3 fieldAcceleration{};
@@ -872,9 +945,8 @@ void Pilot::step(const HelmInput& input, double dt) {
         if (!ship_.cruise && speed <= limit * 1.001)
             ship_.driveBraking = false;
     }
-    properAcceleration_ = (thrust + drag) / properties.massKg;
+    properAcceleration_ = appliedAcceleration;
     ship_.velocity += (properAcceleration_ + gravity + fieldAcceleration) * dt;
-    integrateShipRotation(nav_.orientation, ship_.angularVelocity, properties.inertia, torque, dt);
     const double units = std::pow(10., nav_.logDistance);
     const auto displacement = (oldVelocity + ship_.velocity) * (.5 * dt) + ship_.positionResidual;
     auto proposed = oldEye + displacement / units;
@@ -1105,18 +1177,32 @@ void Pilot::instrument() {
     if (t.relativeSpeed > 1e-30) {
         const auto inverse = glm::inverse(nav_.orientation);
         const auto direction = relativeVelocity / t.relativeSpeed;
-        const auto wrench = allocateShipWrench(properties, inverse * -gravity * properties.massKg,
-                                               inverse * (-direction * properties.forceCaps.z * 200.), {});
-        const double a =
-            glm::dot(nav_.orientation * shipForce(properties, wrench.linear) / properties.massKg + gravity,
-                     -direction);
+        double a;
+        if (ship_.assist && !autopilot_ && launchTime_ <= 0) {
+            const auto authority = classicAuthority(sizeRatio(), t.driveSpeed, t.speed, cargoMassKg_);
+            const auto force =
+                allocateForce(inverse * -gravity, inverse * (-direction * authority.caps.z * 200.),
+                              authority.caps, authority.retro);
+            a = glm::dot(nav_.orientation * force + gravity, -direction);
+        } else {
+            const auto wrench =
+                allocateShipWrench(properties, inverse * -gravity * properties.massKg,
+                                   inverse * (-direction * properties.forceCaps.z * 200.), {});
+            a = glm::dot(nav_.orientation * shipForce(properties, wrench.linear) / properties.massKg +
+                             gravity,
+                         -direction);
+        }
         t.brakingSeconds = a > 1e-30 ? t.relativeSpeed / a + .24 : 1e30;
         t.stoppingDistance =
             a > 1e-30 ? t.relativeSpeed * .24 + t.relativeSpeed * t.relativeSpeed / (2 * a) : 1e30;
     }
-    t.thrustLimited = glm::length(gravity) >
-                      std::max({properties.forceCaps.x, properties.forceCaps.y, properties.forceCaps.z}) /
-                          properties.massKg;
+    const auto authority = classicAuthority(sizeRatio(), t.driveSpeed, t.speed, cargoMassKg_);
+    t.thrustLimited =
+        glm::length(gravity) >
+        (ship_.assist && !autopilot_ && launchTime_ <= 0
+             ? std::max({authority.caps.x, authority.caps.y, authority.caps.z})
+             : std::max({properties.forceCaps.x, properties.forceCaps.y, properties.forceCaps.z}) /
+                   properties.massKg);
     t.throttle = ship_.throttle;
     t.engine = glm::length(ship_.thrusters);
     t.hull = ship_.hull;
