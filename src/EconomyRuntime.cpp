@@ -207,6 +207,8 @@ struct EconomyRuntime::Impl {
             s->sites = e->sites();
             s->contracts = e->contracts();
             s->hauls = e->hauls();
+            s->recoveries = e->recoveries();
+            s->outcomes = e->outcomes();
             s->events = e->events();
             s->tick = e->tick();
             s->catchingUp = e->tick() < goal;
@@ -447,7 +449,9 @@ size_t EconomyRuntime::residentBytes() const {
     return extras + impl_->workerBytes.load() + sizeof(*s) + s->sites.capacity() * sizeof(EconomicSiteState) +
            s->flights.capacity() * sizeof(EconomicFlight) +
            s->routes.capacity() * sizeof(EconomySnapshot::TradeRoute) +
-           s->hauls.capacity() * sizeof(HaulContract) + s->jobs.capacity() * sizeof(EconomySnapshot::Job) +
+           s->hauls.capacity() * sizeof(HaulContract) + s->recoveries.capacity() * sizeof(RecoveryJob) +
+           s->outcomes.capacity() * sizeof(EconomicOutcome) +
+           s->jobs.capacity() * sizeof(EconomySnapshot::Job) +
            s->portSignals.capacity() * sizeof(EconomicPortSignal);
 }
 } // namespace infinite

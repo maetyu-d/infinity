@@ -56,6 +56,7 @@ EconomicCommand command(const Economy& e, uint64_t seq, EconomicAction a, Facili
     return c;
 }
 std::string legacy(std::string text, size_t sites) {
+    text.erase(text.find("RECOVERY "));
     // Version three appends a hauling section after the existing facility records.
     std::vector<std::string> lines;
     std::istringstream input(text);

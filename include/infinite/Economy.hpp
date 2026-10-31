@@ -124,6 +124,33 @@ struct HaulContract {
     int64_t kg = 0, cost = 0, fee = 0, escrow = 0;
     HaulPhase phase = HaulPhase::Open;
 };
+// Funded recovery work is a ledger overlay on existing inhabited surface sites.
+enum class RecoveryKind : uint8_t { Relief, Maintenance };
+enum class RecoveryPhase : uint8_t { Open, Accepted, Working, Complete, Expired };
+struct RecoveryJob {
+    uint64_t id = 0, deadline = 0, outageUntil = 0, outcome = 0;
+    unsigned site = 0, pairs = 0, progress = 0;
+    RecoveryKind kind = RecoveryKind::Relief;
+    RecoveryPhase phase = RecoveryPhase::Open;
+    Stock required{}, delivered{}, rates{};
+    int64_t escrow = 0;
+};
+struct EconomicVitals {
+    unsigned health = 0, condition = 0, power = 0, readiness = 0, repairPoints = 0;
+    int64_t outputKg = 0;
+};
+EconomicVitals economicVitals(const EconomicSite&, const EconomicSiteState&, uint64_t);
+enum class OutcomeKind : uint8_t { Sale, Supply, Haul, Relief, Maintenance };
+struct EconomicOutcome {
+    uint64_t id = 0, command = 0, tick = 0, updated = 0, observeUntil = 0;
+    unsigned site = 0;
+    OutcomeKind kind = OutcomeKind::Sale;
+    Stock delivered{};
+    int64_t payment = 0, crewPaid = 0;
+    unsigned conditionRestored = 0;
+    bool working = false, outageCleared = false;
+    EconomicVitals before, after;
+};
 struct PlayerHaul {
     Address system;
     uint64_t id = 0, deadline = 0;
@@ -168,7 +195,9 @@ enum class EconomicAction : uint8_t {
     DeliverHaul,
     CancelHaul,
     RepairHull,
-    UpgradeCargo
+    UpgradeCargo,
+    AcceptRecovery,
+    DeliverRecovery
 };
 struct EconomicCommand {
     uint64_t sequence = 0;
@@ -220,6 +249,12 @@ class Economy {
     const std::vector<HaulContract>& hauls() const {
         return hauls_;
     }
+    const std::vector<RecoveryJob>& recoveries() const {
+        return recoveries_;
+    }
+    const std::vector<EconomicOutcome>& outcomes() const {
+        return outcomes_;
+    }
     uint64_t tick() const {
         return tick_;
     }
@@ -244,6 +279,9 @@ class Economy {
     std::vector<EconomicContract> contracts_;
     std::vector<EconomicEvent> events_;
     std::vector<HaulContract> hauls_;
+    std::vector<RecoveryJob> recoveries_;
+    std::vector<EconomicOutcome> outcomes_;
+    uint64_t nextRecovery_ = 1, nextOutcome_ = 1;
     uint64_t nextHaul_ = 1;
     uint64_t tick_ = 0, nextContract_ = 1;
     int64_t treasury_ = 100000000, carrierCash_ = 10000000;
@@ -253,8 +291,17 @@ class Economy {
     void production(size_t);
     void logistics();
     void offers();
-    void development();
+    void development(std::span<const unsigned> crewUsed);
     std::string invest(const EconomicCommand&, EconomyPlayer&, size_t);
+    void recoveryOffers();
+    void recoveryWork(std::span<unsigned> crewUsed);
+    bool recoveryCrew(size_t) const;
+    std::string recoveryCommand(const EconomicCommand&, EconomyPlayer&, size_t);
+    EconomicOutcome& recordOutcome(const EconomicCommand&, size_t, OutcomeKind, const Stock&, int64_t payment,
+                                   EconomicVitals before);
+    void observeOutcomes();
+    void writeRecovery(std::ostream&) const;
+    bool readRecovery(std::istream&);
     void haulOffers();
     std::string haulCommand(const EconomicCommand&, EconomyPlayer&);
     std::string service(const EconomicCommand&, EconomyPlayer&, size_t);
@@ -286,6 +333,8 @@ struct EconomySnapshot {
     std::vector<EconomicContract> contracts;
     std::vector<EconomicEvent> events;
     std::vector<HaulContract> hauls;
+    std::vector<RecoveryJob> recoveries;
+    std::vector<EconomicOutcome> outcomes;
     std::vector<EconomicPortSignal> portSignals; // same ordering as network->sites
     EconomyPlayer player;
     uint64_t tick = 0;
@@ -299,7 +348,8 @@ struct EconomySnapshot {
     };
     std::vector<TradeRoute> routes;
     struct Job {
-        bool haul = false;
+        bool haul = false, recovery = false, working = false;
+        Stock required{};
         uint64_t id = 0;
         ActivityId target;
         EconomicAction action = EconomicAction::Contract;
@@ -349,7 +399,7 @@ class EconomyRuntime {
 class Pilot;
 class Navigation;
 bool economicTradeAccess(const Universe&, const Navigation&, const Pilot&, const EconomicSite&);
-enum class MarketPage : uint8_t { Goods, Routes, Industry, Jobs, Services };
+enum class MarketPage : uint8_t { Goods, Routes, Industry, Jobs, Services, Outcomes };
 struct MarketView {
     bool open = false, connected = false, ready = false;
     std::string site, role, message, bottleneck, contract;
@@ -364,6 +414,7 @@ struct MarketView {
     int64_t capacityKg = 4000, capacityLitres = 8000;
     std::string plan, planTiming;
 };
+void economicOutcomeView(MarketView&, const EconomySnapshot&, size_t selected);
 MarketView economicMarketView(const EconomySnapshot*, const std::optional<ActivityId>&, size_t selected,
                               int64_t quantity, bool connected, MarketPage page = MarketPage::Goods,
                               const MarketContext& context = {});

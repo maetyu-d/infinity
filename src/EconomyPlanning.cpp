@@ -12,10 +12,19 @@ EconomicJobPlan economicPlanJob(const EconomySnapshot& s, const EconomySnapshot:
     const auto& destination = s.network->sites[job.destination];
     const bool loaded = job.haul && job.action == EconomicAction::DeliverHaul;
     const auto missing = std::max<int64_t>(0, job.kg - s.player.availableCargo(job.good));
-    const auto incoming = job.haul ? (loaded ? 0 : job.kg) : missing;
+    auto incoming = job.haul ? (loaded ? 0 : job.kg) : missing;
+    int64_t incomingLitres = incoming * goodInfo(job.good).litresPerKg;
+    if (job.recovery) {
+        incoming = incomingLitres = 0;
+        for (size_t g = 0; g < goodCount; ++g) {
+            auto kg = std::max<int64_t>(0, job.required[g] - s.player.availableCargo(Good(g)));
+            incoming += kg;
+            incomingLitres += kg * goodInfo(Good(g)).litresPerKg;
+        }
+    }
     p.fits = s.player.massKg() + incoming <= s.player.capacityKg &&
-             s.player.volumeLitres() + incoming * goodInfo(job.good).litresPerKg <= s.player.capacityLitres;
-    p.procurement = !job.haul && missing > 0;
+             s.player.volumeLitres() + incomingLitres <= s.player.capacityLitres;
+    p.procurement = !job.haul && incoming > 0;
     p.deliveryMetres = job.haul && !loaded ? glm::length(destination.systemMetres - source.systemMetres) : 0;
     if (!context.systemPosition || !std::isfinite(glm::length(*context.systemPosition)) ||
         !std::isfinite(context.cruiseSpeed) || context.cruiseSpeed < 1e6 || p.procurement)

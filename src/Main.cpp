@@ -179,7 +179,7 @@ static Options options(int argc, char** argv) {
             std::cout
                 << "Hyperion rendering. --render-mode hyperion --presentation-test --visual-time SECONDS\n";
             std::cout
-                << "F2 market, F5 goods/routes/industry/jobs/services; arrows select, Enter "
+                << "F2 market, F5 goods/routes/industry/jobs/services/outcomes; arrows select, Enter "
                    "buy/fund/deliver, "
                    "Backspace "
                    "sell/collect; F3 supply "
@@ -357,6 +357,8 @@ int main(int argc, char** argv) {
                 return marketPage == MarketPage::Goods      ? goodCount
                        : marketPage == MarketPage::Industry ? facilityModuleCount
                        : marketPage == MarketPage::Services ? 2
+                       : marketPage == MarketPage::Outcomes
+                           ? std::max<size_t>(1, economicSnapshot ? economicSnapshot->outcomes.size() : 0)
                        : marketPage == MarketPage::Jobs
                            ? std::max<size_t>(1, economicSnapshot ? economicSnapshot->jobs.size() : 0)
                            : std::max<size_t>(1, economicSnapshot ? economicSnapshot->routes.size() : 0);
@@ -441,8 +443,9 @@ int main(int argc, char** argv) {
                         return;
                     }
                 }
-                bool needsLink =
-                    action != EconomicAction::CollectDividends && action != EconomicAction::AcceptHaul;
+                bool needsLink = action != EconomicAction::CollectDividends &&
+                                 action != EconomicAction::AcceptHaul &&
+                                 action != EconomicAction::AcceptRecovery;
                 if (action == EconomicAction::CancelHaul)
                     needsLink = economicSnapshot->player.haul && economicSnapshot->player.haul->onboard;
                 if (action == EconomicAction::Contract) {
@@ -808,19 +811,36 @@ int main(int argc, char** argv) {
                                 marketQuantity = std::min<int64_t>(maxShipPayloadKg, marketQuantity * 10);
                                 break;
                             case SDL_SCANCODE_F5:
-                                marketPage = MarketPage((unsigned(marketPage) + 1) % 5);
+                                marketPage = MarketPage((unsigned(marketPage) + 1) % 6);
                                 marketGood = 0;
                                 break;
                             case SDL_SCANCODE_RETURN:
                                 if (marketPage == MarketPage::Jobs) {
-                                    if (auto job = selectedJob())
-                                        submitMarket(job->action, job);
+                                    if (auto job = selectedJob()) {
+                                        if (job->working) {
+                                            auto recovery =
+                                                std::find_if(economicSnapshot->recoveries.begin(),
+                                                             economicSnapshot->recoveries.end(),
+                                                             [&](const auto& j) { return j.id == job->id; });
+                                            if (recovery != economicSnapshot->recoveries.end())
+                                                for (size_t k = 0; k < economicSnapshot->outcomes.size(); ++k)
+                                                    if (economicSnapshot
+                                                            ->outcomes[economicSnapshot->outcomes.size() - 1 -
+                                                                       k]
+                                                            .id == recovery->outcome) {
+                                                        marketPage = MarketPage::Outcomes;
+                                                        marketGood = k;
+                                                        break;
+                                                    }
+                                        } else
+                                            submitMarket(job->action, job);
+                                    }
                                 } else if (marketPage == MarketPage::Services)
                                     submitMarket(marketGood == 0 ? EconomicAction::RepairHull
                                                                  : EconomicAction::UpgradeCargo);
                                 else if (marketPage == MarketPage::Routes)
                                     targetMarketRoute(false);
-                                else
+                                else if (marketPage != MarketPage::Outcomes)
                                     submitMarket(marketPage == MarketPage::Industry ? EconomicAction::Invest
                                                                                     : EconomicAction::Buy);
                                 break;
@@ -830,7 +850,8 @@ int main(int argc, char** argv) {
                                         job && job->haul && job->action != EconomicAction::AcceptHaul)
                                         submitMarket(EconomicAction::CancelHaul, job);
                                 } else if (marketPage != MarketPage::Routes &&
-                                           marketPage != MarketPage::Services)
+                                           marketPage != MarketPage::Services &&
+                                           marketPage != MarketPage::Outcomes)
                                     submitMarket(marketPage == MarketPage::Industry
                                                      ? EconomicAction::CollectDividends
                                                      : EconomicAction::Sell);
@@ -839,7 +860,8 @@ int main(int argc, char** argv) {
                                 if (marketPage == MarketPage::Industry)
                                     submitMarket(EconomicAction::CancelProject);
                                 else if (marketPage != MarketPage::Services &&
-                                         marketPage != MarketPage::Jobs) {
+                                         marketPage != MarketPage::Jobs &&
+                                         marketPage != MarketPage::Outcomes) {
                                     tradeBuyer.reset();
                                     tradeHint.clear();
                                     marketSay("TRADE BOOKMARK CLEARED / F4 SUPPLY CONTRACT");
@@ -850,6 +872,18 @@ int main(int argc, char** argv) {
                                     submitMarket(EconomicAction::Contract);
                                 break;
                             case SDL_SCANCODE_F4:
+                                if (marketPage == MarketPage::Outcomes) {
+                                    if (economicSnapshot && !economicSnapshot->outcomes.empty()) {
+                                        const auto k =
+                                            std::min(marketGood, economicSnapshot->outcomes.size() - 1);
+                                        const auto& o =
+                                            economicSnapshot
+                                                ->outcomes[economicSnapshot->outcomes.size() - 1 - k];
+                                        chooseActivity(economicSnapshot->network->sites[o.site].id);
+                                        marketOpen = false;
+                                    }
+                                    break;
+                                }
                                 if (marketPage == MarketPage::Services) {
                                     if (marketPort) {
                                         chooseActivity(*marketPort);
@@ -1176,6 +1210,12 @@ int main(int argc, char** argv) {
                         if (pendingEconomicSequence &&
                             economicSnapshot->player.lastCommand >= pendingEconomicSequence) {
                             pendingCargoKg = 0;
+                            if (!economicSnapshot->outcomes.empty() &&
+                                economicSnapshot->outcomes.back().command == pendingEconomicSequence) {
+                                marketPage = MarketPage::Outcomes;
+                                marketGood = 0;
+                                marketOpen = true;
+                            }
                             pendingEconomicSequence = 0;
                             marketSay(economicSnapshot->message);
                             if (pendingEconomicAction == EconomicAction::Sell &&

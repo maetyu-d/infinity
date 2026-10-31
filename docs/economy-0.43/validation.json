@@ -1,0 +1,20 @@
+{
+  "build_sha256": "b9333fc9a0abd1aab5b61e7500afd234858fc43e4ee84c2ee754e852a28a92b4",
+  "native_executable_sha256": "b9333fc9a0abd1aab5b61e7500afd234858fc43e4ee84c2ee754e852a28a92b4",
+  "frames": 1649,
+  "median_ms": 65.8252,
+  "p95_ms": 142.551,
+  "peak_rss_bytes": 157351936,
+  "native_loop_seconds": 127.53,
+  "core_tests": 42,
+  "native_tests": 2,
+  "native_captures": 26,
+  "recovery_checks": 647,
+  "recovery_payment_cents": 74198,
+  "recovery_crew_cents": 800,
+  "power_permille_before": 0,
+  "power_permille_after": 625,
+  "observed_site_output_kg": 159,
+  "hauling_fixture_worker_bytes_042": 530445,
+  "hauling_fixture_worker_bytes_043": 535797
+}

@@ -1,0 +1,776 @@
+Start testing: Oct 31 23:36 GMT
+----------------------------------------------------------
+38/42 Testing: persistence_process_write
+38/42 Test: persistence_process_write
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_tests" "--write" "/Users/user/Documents/SC tutorial/Infinite/build/restart-test.sqlite"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"persistence_process_write" start time: Oct 31 23:36 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   1.57 sec
+----------------------------------------------------------
+Test Passed.
+"persistence_process_write" end time: Oct 31 23:36 GMT
+"persistence_process_write" time elapsed: 00:00:01
+----------------------------------------------------------
+
+41/42 Testing: continuity_restart_write
+41/42 Test: continuity_restart_write
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_continuity_tests" "--write" "/Users/user/Documents/SC tutorial/Infinite/build/continuity-restart.sqlite"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"continuity_restart_write" start time: Oct 31 23:36 GMT
+Output:
+----------------------------------------------------------
+PASS: persisted full hierarchy --write
+<end of output>
+Test time =   3.05 sec
+----------------------------------------------------------
+Test Passed.
+"continuity_restart_write" end time: Oct 31 23:36 GMT
+"continuity_restart_write" time elapsed: 00:00:03
+----------------------------------------------------------
+
+3/42 Testing: economic_ship_services_and_planning
+3/42 Test: economic_ship_services_and_planning
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_economy_services_tests" "/Users/user/Documents/SC tutorial/Infinite/build/economy/services-test"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"economic_ship_services_and_planning" start time: Oct 31 23:36 GMT
+Output:
+----------------------------------------------------------
+PASS: 575 port services, repair receipts, cargo tiers, planning, conservation and restart checks
+<end of output>
+Test time =  23.46 sec
+----------------------------------------------------------
+Test Passed.
+"economic_ship_services_and_planning" end time: Oct 31 23:37 GMT
+"economic_ship_services_and_planning" time elapsed: 00:00:23
+----------------------------------------------------------
+
+5/42 Testing: economic_hauling_and_career
+5/42 Test: economic_hauling_and_career
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_economy_hauling_tests" "/Users/user/Documents/SC tutorial/Infinite/build/economy/haul-test"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"economic_hauling_and_career" start time: Oct 31 23:36 GMT
+Output:
+----------------------------------------------------------
+worker_bytes=535797 job_rows=12
+PASS: 2985 hauling, seals, conservation, expiry, returns, history, UI and restart checks
+<end of output>
+Test time =  27.46 sec
+----------------------------------------------------------
+Test Passed.
+"economic_hauling_and_career" end time: Oct 31 23:37 GMT
+"economic_hauling_and_career" time elapsed: 00:00:27
+----------------------------------------------------------
+
+7/42 Testing: persistent_economic_supply_chains
+7/42 Test: persistent_economic_supply_chains
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_economy_tests" "/Users/user/Documents/SC tutorial/Infinite/build/economy/runtime-test"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"persistent_economic_supply_chains" start time: Oct 31 23:37 GMT
+Output:
+----------------------------------------------------------
+network_sites=95 vessels=123 adapter_and_100_ticks_ms=3025.25 thousand_ticks_ms=1197.69 network_bytes=338276
+PASS: 64610 economic accounting, freight, contracts, replay, cargo physics, preservation and SQLite checks
+<end of output>
+Test time =  28.40 sec
+----------------------------------------------------------
+Test Passed.
+"persistent_economic_supply_chains" end time: Oct 31 23:37 GMT
+"persistent_economic_supply_chains" time elapsed: 00:00:28
+----------------------------------------------------------
+
+19/42 Testing: planetary_weather_and_surface_life
+19/42 Test: planetary_weather_and_surface_life
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_surface_life_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"planetary_weather_and_surface_life" start time: Oct 31 23:37 GMT
+Output:
+----------------------------------------------------------
+SOCIETY regime=0 temperate=1 sites=10 bytes=2048432
+SOCIETY regime=1 temperate=0 sites=5 bytes=378078
+SOCIETY regime=2 temperate=0 sites=1 bytes=32006
+SOCIETY regime=3 temperate=0 sites=1 bytes=39830
+ACTUAL_SURFACE 0,0,0/1:0/2:0/3:7 MINING 38290 population=775
+PASS: 59836 climate, solid-only habitation, deterministic residents, foundations, collision, async budgets, saved destination, landing and atomic-preservation checks / templates=727784 bytes
+<end of output>
+Test time =  36.75 sec
+----------------------------------------------------------
+Test Passed.
+"planetary_weather_and_surface_life" end time: Oct 31 23:37 GMT
+"planetary_weather_and_surface_life" time elapsed: 00:00:36
+----------------------------------------------------------
+
+40/42 Testing: cross_scale_round_trip
+40/42 Test: cross_scale_round_trip
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_continuity_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"cross_scale_round_trip" start time: Oct 31 23:37 GMT
+Output:
+----------------------------------------------------------
+PASS: 57234 continuity checks; full non-default galaxy-to-lattice round trips, all LODs, caches, local sections, persisted breadcrumbs, transported frames and atomic site stability.
+<end of output>
+Test time =  23.68 sec
+----------------------------------------------------------
+Test Passed.
+"cross_scale_round_trip" end time: Oct 31 23:38 GMT
+"cross_scale_round_trip" time elapsed: 00:00:23
+----------------------------------------------------------
+
+6/42 Testing: economic_investment_and_trade
+6/42 Test: economic_investment_and_trade
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_economy_development_tests" "/Users/user/Documents/SC tutorial/Infinite/build/economy/development-test"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"economic_investment_and_trade" start time: Oct 31 23:37 GMT
+Output:
+----------------------------------------------------------
+network_trade_search_median_ms=24.2798 max_ms=42.5255
+worker_bytes=535173 routes=12
+fixture_trade_search_ms=0.051583
+PASS: 333 investment, capital conservation, construction, dividends, migration, trade and persistence checks
+<end of output>
+Test time =  18.25 sec
+----------------------------------------------------------
+Test Passed.
+"economic_investment_and_trade" end time: Oct 31 23:38 GMT
+"economic_investment_and_trade" time elapsed: 00:00:18
+----------------------------------------------------------
+
+30/42 Testing: seamless_scale_flight
+30/42 Test: seamless_scale_flight
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_flight_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"seamless_scale_flight" start time: Oct 31 23:38 GMT
+Output:
+----------------------------------------------------------
+ENTER GALAXY -9223372036854775808,7,9223372036854775807/1:66 log=24.876
+ENTER STAR SYSTEM -9223372036854775808,7,9223372036854775807/1:66/2:241 log=19.2077
+ENTER PLANET -9223372036854775808,7,9223372036854775807/1:66/2:241/3:9223372036856086529 log=11.2721
+ENTER SURFACE -9223372036854775808,7,9223372036854775807/1:66/2:241/3:9223372036856086529/4:300647746880 log=4.43359
+ENTER MOUNTAIN -9223372036854775808,7,9223372036854775807/1:66/2:241/3:9223372036856086529/4:300647746880/5:4 log=3.03647
+ENTER ROCK -9223372036854775808,7,9223372036854775807/1:66/2:241/3:9223372036856086529/4:300647746880/5:4/6:0 log=1.63164
+ENTER MINERAL GRAIN -9223372036854775808,7,9223372036854775807/1:66/2:241/3:9223372036856086529/4:300647746880/5:4/6:0/7:25 log=-1.08858
+ENTER CRYSTAL LATTICE -9223372036854775808,7,9223372036854775807/1:66/2:241/3:9223372036856086529/4:300647746880/5:4/6:0/7:25/8:0 log=-4.45177
+EXIT CRYSTAL LATTICE
+EXIT MINERAL GRAIN
+EXIT ROCK
+EXIT MOUNTAIN
+EXIT SURFACE
+EXIT PLANET
+EXIT STAR SYSTEM
+EXIT GALAXY
+ENTER GALAXY -9223372036854775808,7,9223372036854775807/1:79 log=24.9003
+ENTER STAR SYSTEM -9223372036854775808,7,9223372036854775807/1:79/2:484 log=19.3832
+ENTER PLANET -9223372036854775808,7,9223372036854775807/1:79/2:484/3:9223372036856217602 log=11.7877
+ENTER SURFACE -9223372036854775808,7,9223372036854775807/1:79/2:484/3:9223372036856217602/4:592705513793 log=4.12169
+ENTER MOUNTAIN -9223372036854775808,7,9223372036854775807/1:79/2:484/3:9223372036856217602/4:592705513793/5:6 log=2.72307
+ENTER ROCK -9223372036854775808,7,9223372036854775807/1:79/2:484/3:9223372036856217602/4:592705513793/5:6/6:13 log=1.31299
+ENTER MINERAL GRAIN -9223372036854775808,7,9223372036854775807/1:79/2:484/3:9223372036856217602/4:592705513793/5:6/6:13/7:29 log=-1.21841
+ENTER CRYSTAL LATTICE -9223372036854775808,7,9223372036854775807/1:79/2:484/3:9223372036856217602/4:592705513793/5:6/6:13/7:29/8:0 log=-4.69495
+EXIT CRYSTAL LATTICE
+EXIT MINERAL GRAIN
+EXIT ROCK
+EXIT MOUNTAIN
+EXIT SURFACE
+EXIT PLANET
+EXIT STAR SYSTEM
+EXIT GALAXY
+ENTER GALAXY -9223372036854775808,7,9223372036854775807/1:10 log=24.8879
+ENTER STAR SYSTEM -9223372036854775808,7,9223372036854775807/1:10/2:4760 log=19.2574
+ENTER PLANET -9223372036854775808,7,9223372036854775807/1:10/2:4760/3:9223372036855955460 log=10.7172
+ENTER SURFACE -9223372036854775808,7,9223372036854775807/1:10/2:4760/3:9223372036855955460/4:657130032451 log=4.38673
+ENTER MOUNTAIN -9223372036854775808,7,9223372036854775807/1:10/2:4760/3:9223372036855955460/4:657130032451/5:0 log=2.98767
+ENTER ROCK -9223372036854775808,7,9223372036854775807/1:10/2:4760/3:9223372036855955460/4:657130032451/5:0/6:21 log=1.58446
+ENTER MINERAL GRAIN -9223372036854775808,7,9223372036854775807/1:10/2:4760/3:9223372036855955460/4:657130032451/5:0/6:21/7:1 log=-1.248
+ENTER CRYSTAL LATTICE -9223372036854775808,7,9223372036854775807/1:10/2:4760/3:9223372036855955460/4:657130032451/5:0/6:21/7:1/8:0 log=-4.1955
+EXIT CRYSTAL LATTICE
+EXIT MINERAL GRAIN
+EXIT ROCK
+EXIT MOUNTAIN
+EXIT SURFACE
+EXIT PLANET
+EXIT STAR SYSTEM
+EXIT GALAXY
+PASS: 30372 seamless-flight checks; full cosmic-to-atomic and outward flights, no focus/zoom commands, three seeds, finite frames and deterministic geometry.
+<end of output>
+Test time =  40.34 sec
+----------------------------------------------------------
+Test Passed.
+"seamless_scale_flight" end time: Oct 31 23:38 GMT
+"seamless_scale_flight" time elapsed: 00:00:40
+----------------------------------------------------------
+
+25/42 Testing: persistent_orbital_activity
+25/42 Test: persistent_orbital_activity
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_activity_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"persistent_orbital_activity" start time: Oct 31 23:38 GMT
+Output:
+----------------------------------------------------------
+HARBOUR_APPROACH error=4.29227 speed=9.40027e-16 phase=HOLDING / MATCHING TARGET VELOCITY anchor=0,0,0/1:0/2:9/3:0
+MOVING_RENDEZVOUS error=10.9957 relative_speed=0.427202
+PASS: 22079 stable activity IDs, environment density, continuous routes, persistence, mesh budgets and rendezvous checks / templates=170468 bytes
+<end of output>
+Test time =  46.50 sec
+----------------------------------------------------------
+Test Passed.
+"persistent_orbital_activity" end time: Oct 31 23:39 GMT
+"persistent_orbital_activity" time elapsed: 00:00:46
+----------------------------------------------------------
+
+29/42 Testing: unbounded_spatial_streaming
+29/42 Test: unbounded_spatial_streaming
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_streaming_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"unbounded_spatial_streaming" start time: Oct 31 23:38 GMT
+Output:
+----------------------------------------------------------
+PASS: 5698358 streaming checks; cross-cell coordinates/persistence, continuous cosmic collars, full balanced terrain coverage, stitched seams and geomorphs.
+<end of output>
+Test time =  12.16 sec
+----------------------------------------------------------
+Test Passed.
+"unbounded_spatial_streaming" end time: Oct 31 23:39 GMT
+"unbounded_spatial_streaming" time elapsed: 00:00:12
+----------------------------------------------------------
+
+26/42 Testing: operating_regimes_and_shrinking
+26/42 Test: operating_regimes_and_shrinking
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_operating_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"operating_regimes_and_shrinking" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+PASS: 37 planetary defaults, independent cruise, continuous voyages, real shrinking, safe growth, nano contacts and persistence checks
+<end of output>
+Test time =   6.47 sec
+----------------------------------------------------------
+Test Passed.
+"operating_regimes_and_shrinking" end time: Oct 31 23:39 GMT
+"operating_regimes_and_shrinking" time elapsed: 00:00:06
+----------------------------------------------------------
+
+17/42 Testing: surface_site_preservation
+17/42 Test: surface_site_preservation
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_surface_site_snapshot" "--check" "/Users/user/Documents/SC tutorial/Infinite/tests/data/surface-sites-0.19.txt"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"surface_site_preservation" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+PASS: 62 stable surface site anchors, seeds, names and orientations
+<end of output>
+Test time =   6.53 sec
+----------------------------------------------------------
+Test Passed.
+"surface_site_preservation" end time: Oct 31 23:39 GMT
+"surface_site_preservation" time elapsed: 00:00:06
+----------------------------------------------------------
+
+34/42 Testing: rendering_preserves_universe
+34/42 Test: rendering_preserves_universe
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_presentation_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"rendering_preserves_universe" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+72521 presentation preservation checks passed
+<end of output>
+Test time =   6.77 sec
+----------------------------------------------------------
+Test Passed.
+"rendering_preserves_universe" end time: Oct 31 23:39 GMT
+"rendering_preserves_universe" time elapsed: 00:00:06
+----------------------------------------------------------
+
+10/42 Testing: stellar_catalogue_preservation
+10/42 Test: stellar_catalogue_preservation
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_population_snapshot" "--check" "/Users/user/Documents/SC tutorial/Infinite/tests/data/stellar-catalogue-0.35.txt"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"stellar_catalogue_preservation" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+PASS: 2258 pre-expansion descriptors and geometry fingerprints remain exact
+<end of output>
+Test time =   2.36 sec
+----------------------------------------------------------
+Test Passed.
+"stellar_catalogue_preservation" end time: Oct 31 23:39 GMT
+"stellar_catalogue_preservation" time elapsed: 00:00:02
+----------------------------------------------------------
+
+18/42 Testing: procedural_city_structure
+18/42 Test: procedural_city_structure
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_city_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"procedural_city_structure" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+PLANNED buildings=240 streets=224 parcels=240 population=45387 routes=3177
+RADIAL buildings=166 streets=116 parcels=166 population=26801 routes=3399
+ORGANIC buildings=240 streets=205 parcels=240 population=37096 routes=3129
+CONTOUR buildings=240 streets=224 parcels=240 population=34049 routes=3082
+PASS: 24041 urban topology, frontage, hierarchy, mixed uses, deterministic morphology, ground routes, clearance and preservation checks; architectural families=6
+<end of output>
+Test time =   3.54 sec
+----------------------------------------------------------
+Test Passed.
+"procedural_city_structure" end time: Oct 31 23:39 GMT
+"procedural_city_structure" time elapsed: 00:00:03
+----------------------------------------------------------
+
+9/42 Testing: stellar_evolution_and_inheritance
+9/42 Test: stellar_evolution_and_inheritance
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_stellar_evolution_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"stellar_evolution_and_inheritance" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+BROWN_SPECTRAL L
+BROWN_SPECTRAL T
+BROWN_SPECTRAL Y
+Main sequence=1200
+Protostar=80
+Red giant=120
+Red supergiant=72
+Blue supergiant=72
+Wolf-Rayet=72
+White dwarf=364
+Neutron star=108
+Brown dwarf=108
+Carbon giant=108
+PASS: 57099 stellar evolution, spectral, population, planetary inheritance and identity checks
+<end of output>
+Test time =   1.77 sec
+----------------------------------------------------------
+Test Passed.
+"stellar_evolution_and_inheritance" end time: Oct 31 23:39 GMT
+"stellar_evolution_and_inheritance" time elapsed: 00:00:01
+----------------------------------------------------------
+
+27/42 Testing: ship_dynamics_and_landing
+27/42 Test: ship_dynamics_and_landing
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_piloting_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"ship_dynamics_and_landing" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+PASS: 6015 ship, SI momentum, galaxy/atomic round trip, braking, landing, launch and persistence checks
+<end of output>
+Test time =   6.58 sec
+----------------------------------------------------------
+Test Passed.
+"ship_dynamics_and_landing" end time: Oct 31 23:39 GMT
+"ship_dynamics_and_landing" time elapsed: 00:00:06
+----------------------------------------------------------
+
+36/42 Testing: structural_processes
+36/42 Test: structural_processes
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_process_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"structural_processes" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+SPIRAL DISC thickness=0.0597837 young=875
+BARRED SPIRAL thickness=0.0348088 young=510
+ELLIPTICAL SPHEROID thickness=0.330961 young=39
+IRREGULAR ASSOCIATIONS thickness=0.0394489 young=3610
+PASS: 66204 process checks; web, populations, tectonics, lithologies, habits, stoichiometry, coordination, phase, defects, inheritance, parallel regeneration.
+<end of output>
+Test time =   6.04 sec
+----------------------------------------------------------
+Test Passed.
+"structural_processes" end time: Oct 31 23:39 GMT
+"structural_processes" time elapsed: 00:00:06
+----------------------------------------------------------
+
+11/42 Testing: planetary_type_diversity
+11/42 Test: planetary_type_diversity
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_planet_diversity_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"planetary_type_diversity" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+PASS: 346303 planet diversity, irradiation, envelope mass, orbital stability, ring and preservation checks / hot=24 rings=315
+Rocky=103
+Iron-rich=9
+Desert=214
+Oceanic=16
+Ice world=1288
+Lava world=1
+Gas giant=192
+Ice giant=96
+Sub-Neptune=96
+<end of output>
+Test time =   2.85 sec
+----------------------------------------------------------
+Test Passed.
+"planetary_type_diversity" end time: Oct 31 23:39 GMT
+"planetary_type_diversity" time elapsed: 00:00:02
+----------------------------------------------------------
+
+20/42 Testing: solid_planet_local_terrain
+20/42 Test: solid_planet_local_terrain
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_terrain_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"solid_planet_local_terrain" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+Highlands relief=419.781 local_range=624.711
+Volcanic relief=348.049 local_range=572.854
+Canyons relief=688.463 local_range=854.705
+Ice ridges relief=381.565 local_range=484.331
+Near-camera terrain level=11 leaves=192
+Terrain world 0,0,0/1:0/2:9/3:5 / Volcanic 78271 rough=8 smooth=4; deterministic mesh/physics, legacy worlds, gas exclusion, atoms and landing passed
+<end of output>
+Test time =   3.64 sec
+----------------------------------------------------------
+Test Passed.
+"solid_planet_local_terrain" end time: Oct 31 23:39 GMT
+"solid_planet_local_terrain" time elapsed: 00:00:03
+----------------------------------------------------------
+
+4/42 Testing: cockpit_motion_and_feedback
+4/42 Test: cockpit_motion_and_feedback
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_cockpit_motion_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"cockpit_motion_and_feedback" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+peak_recoil_degrees=0.0517353 peak_damage_degrees=0.117228 turn_lean_degrees=0.361216 turn_slide_mm=6.12243
+PASS: 6044 cockpit inertia, bounded shake, event, scale and aim checks
+<end of output>
+Test time =   0.92 sec
+----------------------------------------------------------
+Test Passed.
+"cockpit_motion_and_feedback" end time: Oct 31 23:39 GMT
+"cockpit_motion_and_feedback" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/42 Testing: economic_world_feedback
+2/42 Test: economic_world_feedback
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_economy_signals_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"economic_world_feedback" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+PASS: 61 economic HUD, power feedback, real supply recovery, freight manifests and preservation checks
+<end of output>
+Test time =   1.09 sec
+----------------------------------------------------------
+Test Passed.
+"economic_world_feedback" end time: Oct 31 23:39 GMT
+"economic_world_feedback" time elapsed: 00:00:01
+----------------------------------------------------------
+
+22/42 Testing: planetary_population_and_moons
+22/42 Test: planetary_population_and_moons
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_population_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"planetary_population_and_moons" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+PASS: 11103 population, Hill/Roche, identity, deterministic replay, moon flight, landing and atomic checks / 12 systems / 245 planets / 796 moons
+<end of output>
+Test time =   2.09 sec
+----------------------------------------------------------
+Test Passed.
+"planetary_population_and_moons" end time: Oct 31 23:39 GMT
+"planetary_population_and_moons" time elapsed: 00:00:02
+----------------------------------------------------------
+
+8/42 Testing: physical_ship_forces_and_guidance
+8/42 Test: physical_ship_forces_and_guidance
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_ship_physics_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"physical_ship_forces_and_guidance" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+moving_error=4.29263 relative_speed=1.23135e-09 phase=HOLDING / MATCHING TARGET VELOCITY
+rotation_max_relative_energy_error=1.51324e-08 burn_mean_accel_m_s2=26.0084
+PASS: 12053 physical force, torque, gravity, atmosphere, coasting, moving-target and persistence checks
+<end of output>
+Test time =   2.40 sec
+----------------------------------------------------------
+Test Passed.
+"physical_ship_forces_and_guidance" end time: Oct 31 23:39 GMT
+"physical_ship_forces_and_guidance" time elapsed: 00:00:02
+----------------------------------------------------------
+
+42/42 Testing: continuity_restart_read
+42/42 Test: continuity_restart_read
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_continuity_tests" "--read" "/Users/user/Documents/SC tutorial/Infinite/build/continuity-restart.sqlite"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"continuity_restart_read" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+PASS: persisted full hierarchy --read
+<end of output>
+Test time =   1.52 sec
+----------------------------------------------------------
+Test Passed.
+"continuity_restart_read" end time: Oct 31 23:39 GMT
+"continuity_restart_read" time elapsed: 00:00:01
+----------------------------------------------------------
+
+35/42 Testing: performance_invariants
+35/42 Test: performance_invariants
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_performance_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"performance_invariants" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+PASS: 64471 performance invariants; prepared fields/transforms, adaptive LOD, indexed topology, instance identity, cancellation, admission and eviction.
+<end of output>
+Test time =   1.47 sec
+----------------------------------------------------------
+Test Passed.
+"performance_invariants" end time: Oct 31 23:39 GMT
+"performance_invariants" time elapsed: 00:00:01
+----------------------------------------------------------
+
+32/42 Testing: filtered_material_texture
+32/42 Test: filtered_material_texture
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_material_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"filtered_material_texture" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+Packed material: fixed GPU budget, deterministic bake, periodic origins, fracture relief and mip energy passed
+<end of output>
+Test time =   1.39 sec
+----------------------------------------------------------
+Test Passed.
+"filtered_material_texture" end time: Oct 31 23:39 GMT
+"filtered_material_texture" time elapsed: 00:00:01
+----------------------------------------------------------
+
+13/42 Testing: addressed_stellar_optics
+13/42 Test: addressed_stellar_optics
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_stellar_optics_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"addressed_stellar_optics" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+PASS: addressed stellar optics, temperature colours, physical radius, reversed-depth scale, partial/annular/full eclipses and unchanged geometry
+<end of output>
+Test time =   0.79 sec
+----------------------------------------------------------
+Test Passed.
+"addressed_stellar_optics" end time: Oct 31 23:39 GMT
+"addressed_stellar_optics" time elapsed: 00:00:00
+----------------------------------------------------------
+
+12/42 Testing: planetary_weather_processes
+12/42 Test: planetary_weather_processes
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_weather_process_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"planetary_weather_processes" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+PASS: evolving circulation, weather continuity, moist storms, dry dust, snow, gusts, cloud heights and bounded lightning / evolved=1070 rain=1743 storm=386 dust=1001 snow=1785
+<end of output>
+Test time =   0.87 sec
+----------------------------------------------------------
+Test Passed.
+"planetary_weather_processes" end time: Oct 31 23:39 GMT
+"planetary_weather_processes" time elapsed: 00:00:00
+----------------------------------------------------------
+
+1/42 Testing: economic_recovery_and_outcomes
+1/42 Test: economic_recovery_and_outcomes
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_economy_recovery_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"economic_recovery_and_outcomes" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+647 recovery/outcome checks passed
+<end of output>
+Test time =   0.09 sec
+----------------------------------------------------------
+Test Passed.
+"economic_recovery_and_outcomes" end time: Oct 31 23:39 GMT
+"economic_recovery_and_outcomes" time elapsed: 00:00:00
+----------------------------------------------------------
+
+14/42 Testing: read_only_weather_optics
+14/42 Test: read_only_weather_optics
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_weather_field_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"read_only_weather_optics" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+PASS: inherited weather atlas, deterministic mips, pole continuity, cancellation, bounded async cache and adaptive cloud resolution
+<end of output>
+Test time =   1.37 sec
+----------------------------------------------------------
+Test Passed.
+"read_only_weather_optics" end time: Oct 31 23:39 GMT
+"read_only_weather_optics" time elapsed: 00:00:01
+----------------------------------------------------------
+
+15/42 Testing: window_fits_display_work_area
+15/42 Test: window_fits_display_work_area
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_window_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"window_fits_display_work_area" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+PASS: desktop work areas, decorations, small/portrait/multiple displays and stable refits
+<end of output>
+Test time =   1.11 sec
+----------------------------------------------------------
+Test Passed.
+"window_fits_display_work_area" end time: Oct 31 23:39 GMT
+"window_fits_display_work_area" time elapsed: 00:00:01
+----------------------------------------------------------
+
+21/42 Testing: cockpit_layout_and_targeting
+21/42 Test: cockpit_layout_and_targeting
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_cockpit_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"cockpit_layout_and_targeting" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+PASS: 2112248 cockpit layout, target projection, decluttering, stable selection and SI unit checks
+<end of output>
+Test time =   1.26 sec
+----------------------------------------------------------
+Test Passed.
+"cockpit_layout_and_targeting" end time: Oct 31 23:39 GMT
+"cockpit_layout_and_targeting" time elapsed: 00:00:01
+----------------------------------------------------------
+
+16/42 Testing: multiscale_depth_precision
+16/42 Test: multiscale_depth_precision
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_depth_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"multiscale_depth_precision" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+World depth: unchanged projection, monotonic ordering, float far-planet separation and atmosphere reconstruction passed; legacy failure reproduced
+<end of output>
+Test time =   1.34 sec
+----------------------------------------------------------
+Test Passed.
+"multiscale_depth_precision" end time: Oct 31 23:39 GMT
+"multiscale_depth_precision" time elapsed: 00:00:01
+----------------------------------------------------------
+
+31/42 Testing: free_flight_navigation
+31/42 Test: free_flight_navigation
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_navigation_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"free_flight_navigation" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+PASS: 3967 flight checks across all nine scales and three seeds; stationary free look, camera-relative movement, frame rates, speed controls, manual takeover and saves.
+<end of output>
+Test time =   1.16 sec
+----------------------------------------------------------
+Test Passed.
+"free_flight_navigation" end time: Oct 31 23:39 GMT
+"free_flight_navigation" time elapsed: 00:00:01
+----------------------------------------------------------
+
+33/42 Testing: surface_shading_preserves_mesh
+33/42 Test: surface_shading_preserves_mesh
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_shading_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"surface_shading_preserves_mesh" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+Surface shading: packing, seam welding, crease preservation, scale invariance, immutable topology, cancellation and sun shadow frame invariance passed
+<end of output>
+Test time =   1.13 sec
+----------------------------------------------------------
+Test Passed.
+"surface_shading_preserves_mesh" end time: Oct 31 23:39 GMT
+"surface_shading_preserves_mesh" time elapsed: 00:00:01
+----------------------------------------------------------
+
+28/42 Testing: ship_handling_and_roll
+28/42 Test: ship_handling_and_roll
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_handling_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"ship_handling_and_roll" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+{"roll_rate_rad_s":1.79992366398,"roll_settle_s":0.316666666667,"release_overshoot_rad":0.184291763009,"roll_reverse_s":0.2,"assist_capture_kick_m_s":0.000508401213469,"assist_residual_drift_m_s":1.76635064555,"turn_slip_rad":0.640476108348,"pitch_rate_rad_s":1.19997233472,"yaw_rate_rad_s":1.09997664544,"small_yaw_rate_rad_s":0.164997430527,"combined_peak_rate_rad_s":2.4269322199,"combined_release_residual_rad_s":0.00237993202246}
+response_dt=0.0666666666667 rate=1.79992366398 settle=0.333333333333 overshoot=0.187738956498
+response_dt=0.0333333333333 rate=1.7999236334 settle=0.333333333333 overshoot=0.185220619064
+response_dt=0.00694444444444 rate=1.79992364174 settle=0.319444444444 overshoot=0.184153348043
+recovery_rate_after_2_s=2.75930827314e-14 recovery_speed_after_2_s=0.581634225218
+PASS: 185 handling, roll and assist checks
+<end of output>
+Test time =   2.21 sec
+----------------------------------------------------------
+Test Passed.
+"ship_handling_and_roll" end time: Oct 31 23:39 GMT
+"ship_handling_and_roll" time elapsed: 00:00:02
+----------------------------------------------------------
+
+24/42 Testing: established_world_preservation
+24/42 Test: established_world_preservation
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_population_snapshot" "--check" "/Users/user/Documents/SC tutorial/Infinite/tests/data/planet-catalogue-0.34.txt"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"established_world_preservation" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+PASS: 897 pre-expansion descriptors and geometry fingerprints remain exact
+<end of output>
+Test time =   0.39 sec
+----------------------------------------------------------
+Test Passed.
+"established_world_preservation" end time: Oct 31 23:39 GMT
+"established_world_preservation" time elapsed: 00:00:00
+----------------------------------------------------------
+
+23/42 Testing: legacy_population_preservation
+23/42 Test: legacy_population_preservation
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_population_snapshot" "--check" "/Users/user/Documents/SC tutorial/Infinite/tests/data/legacy-0.12.txt"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"legacy_population_preservation" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+PASS: 120 pre-expansion descriptors and geometry fingerprints remain exact
+<end of output>
+Test time =   0.37 sec
+----------------------------------------------------------
+Test Passed.
+"legacy_population_preservation" end time: Oct 31 23:39 GMT
+"legacy_population_preservation" time elapsed: 00:00:00
+----------------------------------------------------------
+
+37/42 Testing: universe_regressions
+37/42 Test: universe_regressions
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"universe_regressions" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+PASS: 251 checks; determinism, order, boundaries, coordinates, identity, LOD, cache, persistence, cancellation.
+<end of output>
+Test time =   0.42 sec
+----------------------------------------------------------
+Test Passed.
+"universe_regressions" end time: Oct 31 23:39 GMT
+"universe_regressions" time elapsed: 00:00:00
+----------------------------------------------------------
+
+39/42 Testing: persistence_process_read
+39/42 Test: persistence_process_read
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_tests" "--read" "/Users/user/Documents/SC tutorial/Infinite/build/restart-test.sqlite"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"persistence_process_read" start time: Oct 31 23:39 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"persistence_process_read" end time: Oct 31 23:39 GMT
+"persistence_process_read" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 31 23:39 GMT

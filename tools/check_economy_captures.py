@@ -13,6 +13,7 @@ for name in (
     'services-before', 'services-repaired', 'services-upgraded', 'services-portrait',
     'economic-city-powered', 'economic-city-offline', 'economic-city-restored',
     'economic-freight-hud', 'economic-freight-portrait',
+    'recovery-jobs-portrait', 'recovery-working-portrait', 'recovery-outcome', 'recovery-outcome-portrait',
 ):
     with (root / 'captures' / (name + '.ppm')).open('rb') as f:
         assert f.readline().strip() == b'P6'
@@ -35,6 +36,7 @@ for name, page in (
     ('market-routes', 1), ('market-routes-portrait', 1), ('market-industry', 2),
     ('market-industry-portrait', 2), ('market-refit-complete', 2),
     ('jobs-board',3), ('jobs-sealed-cargo',3), ('jobs-paid',3), ('jobs-portrait',3),
+    ('recovery-jobs-portrait',3), ('recovery-working-portrait',5), ('recovery-outcome',5), ('recovery-outcome-portrait',5),
     ('services-before',4), ('services-repaired',4), ('services-upgraded',4), ('services-portrait',4),
 ):
     assert f'ECONOMY_CAPTURE {name} page={page} ' in log, name + ': incorrect page'
@@ -58,4 +60,6 @@ for y in range(180, 630):
         changed += sum(abs(a[i+j]-b[i+j]) for j in range(3)) > 15
         recovered += sum(abs(c[i+j]-b[i+j]) for j in range(3)) > 15
 assert changed > 100 and recovered > 100, 'economic lights did not visibly dim and recover'
-print('PASS: twenty-two native trading, services, economic city lighting, port reports and freight images / changed', changed, 'recovered', recovered)
+assert 'PASS: native funded recovery job, real supplier procurement, paid kit, crew work and persistent outcomes' in log
+assert images['recovery-working-portrait'] != images['recovery-outcome-portrait']
+print('PASS: twenty-six native trading, services, economic city lighting, port reports and freight images / changed', changed, 'recovered', recovered)

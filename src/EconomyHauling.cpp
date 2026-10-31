@@ -200,6 +200,7 @@ std::string Economy::haulCommand(const EconomicCommand& c, EconomyPlayer& player
             return "DELIVER AT THE CONTRACT DESTINATION";
         if (economicCapacity(network_->sites[h->destination], destination) - total(destination.stock) < h->kg)
             return "DESTINATION WAREHOUSE FULL / CARGO RETAINED";
+        const auto before = economicVitals(network_->sites[h->destination], destination, tick_);
         const bool late = tick_ > h->deadline;
         const auto payment = late ? h->fee / 2 : h->fee;
         destination.stock[g] += h->kg;
@@ -215,6 +216,9 @@ std::string Economy::haulCommand(const EconomicCommand& c, EconomyPlayer& player
         player.lateDeliveries += late;
         player.freightEarnings += payment;
         player.haul.reset();
+        Stock delivery{};
+        delivery[g] = h->kg;
+        recordOutcome(c, h->destination, OutcomeKind::Haul, delivery, payment, before);
         event("PLAYER HAUL DELIVERED / " + std::to_string(payment / 100) + " CR" +
               (late ? " / LATE" : " / ON TIME"));
         return "HAUL DELIVERED / " + std::to_string(payment / 100) + " CR" +
@@ -278,6 +282,40 @@ std::vector<EconomySnapshot::Job> economicJobs(const EconomySnapshot& s) {
     for (const auto& h : s.hauls)
         if (h.phase == HaulPhase::Reserved || h.phase == HaulPhase::InTransit)
             addHaul(h);
+    auto addRecovery = [&](const RecoveryJob& j) {
+        EconomySnapshot::Job job;
+        job.recovery = true;
+        job.working = j.phase == RecoveryPhase::Working;
+        job.id = j.id;
+        job.target = s.network->sites[j.site].id;
+        job.source = job.destination = j.site;
+        job.deadline = j.deadline;
+        job.action =
+            j.phase == RecoveryPhase::Open ? EconomicAction::AcceptRecovery : EconomicAction::DeliverRecovery;
+        std::string bundle;
+        int64_t payment = 0;
+        for (size_t g = 0; g < goodCount; ++g) {
+            job.required[g] = j.required[g] - j.delivered[g];
+            job.kg += job.required[g];
+            payment += job.required[g] * j.rates[g];
+            if (job.required[g]) {
+                job.good = Good(g);
+                bundle += std::to_string(job.required[g]) + "KG " + std::string(goodInfo(Good(g)).name) + " ";
+            }
+        }
+        job.title = std::string(j.kind == RecoveryKind::Relief ? "RELIEF " : "RECOVER PLANT ") +
+                    (job.working ? "CREW " + std::to_string(j.progress) + "/" + std::to_string(j.pairs) +
+                                       " / ENTER REPORT"
+                     : j.phase == RecoveryPhase::Accepted ? "ACTIVE / " + bundle
+                                                          : bundle) +
+                    (job.working ? "" : " / " + std::to_string(payment / 100) + "CR / " + time(j.deadline));
+        job.route = s.network->sites[j.site].name +
+                    (job.working ? " / LOCAL CREW USES RESERVED KIT" : " / SOURCE UNSEALED SUPPLIES");
+        jobs.push_back(std::move(job));
+    };
+    for (const auto& j : s.recoveries)
+        if ((j.phase == RecoveryPhase::Accepted || j.phase == RecoveryPhase::Working) && jobs.size() < 12)
+            addRecovery(j);
     auto addSupply = [&](const EconomicContract& c) {
         EconomySnapshot::Job job;
         job.id = c.id;
@@ -295,6 +333,9 @@ std::vector<EconomySnapshot::Job> economicJobs(const EconomySnapshot& s) {
     for (const auto& c : s.contracts)
         if (c.phase == ContractPhase::Accepted && jobs.size() < 12)
             addSupply(c);
+    for (const auto& j : s.recoveries)
+        if (j.phase == RecoveryPhase::Open && jobs.size() < 12)
+            addRecovery(j);
     for (const auto& h : s.hauls)
         if (h.phase == HaulPhase::Open && jobs.size() < 12)
             addHaul(h);

@@ -1,5 +1,7 @@
 # INFINITE
 
+**0.43:** funded household relief and plant recovery jobs at existing surface settlements, reserved maintenance kits, paid repair crews, and persistent delivery outcomes. **F2 → F5 → Jobs** accepts and delivers recovery supplies; **Outcomes** shows payment and actual health, power, readiness, service and production changes. Partial deliveries, crew pauses, expiry and save reloads retain their real goods and money. [Recovery jobs and delivery reports](docs/ECONOMY_0_43.md).
+
 **0.42:** economic port reports in the HUD, city lighting driven by real power and supply readiness, and detailed manifests for existing freighters. **K** selects, **I** hails, **J** approaches and **F2** opens port markets. Reports show shortages, repair stock, trade hints, cargo, routes, timing and warehouse holds. Structures, generators, save formats and flight controls remain intact. [Economic world feedback and checks](docs/ECONOMY_0_42.md).
 
 **0.41:** stocked port repairs, three persistent cargo-hold refits up to 10 tonnes / 32,000 L, and job planning with direct distance, cargo fit, travel estimates and deadline margin. **F2 → F5** cycles to **Services**; Enter buys the selected service at a connected port. Larger funded hauls and trade orders use the expanded bay, with existing payload inertia and shrinking restrictions. [Services, progression and planning](docs/ECONOMY_0_41.md).

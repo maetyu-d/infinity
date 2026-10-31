@@ -303,6 +303,7 @@ int main(int argc, char** argv) {
         legacyRefit.limitCents = 30000;
         legacy.execute(legacyRefit, legacyOwner);
         auto versionTwo = legacy.serialize();
+        versionTwo.erase(versionTwo.find("RECOVERY "));
         const auto tail = versionTwo.rfind("1 0\n");
         check(tail != std::string::npos, "Missing legacy conversion boundary");
         versionTwo.erase(tail);
@@ -332,8 +333,9 @@ int main(int argc, char** argv) {
               "Corrupt hauling wallet mutated live state");
         // Terminal record corruption is rejected transactionally.
         auto invalid = late.serialize();
-        const auto last = invalid.rfind(' ');
-        invalid.replace(last + 1, invalid.size() - last - 1, "99\n");
+        const auto recoveryTail = invalid.find("RECOVERY ");
+        const auto last = invalid.rfind(' ', recoveryTail - 2);
+        invalid.replace(last + 1, recoveryTail - last - 1, "99\n");
         const auto live = late.serialize();
         check(!late.restore(invalid) && late.serialize() == live, "Invalid haul phase mutated the ledger");
         EconomyPlayer ranks;
@@ -404,8 +406,21 @@ int main(int argc, char** argv) {
             check(!snap->player.haul && snap->player.deliveries == 1 &&
                       snap->player.credits == savedCredits + job.fee,
                   "Restarted haul did not deliver once");
+            check(!snap->outcomes.empty() && snap->outcomes.back().command == 3 &&
+                      snap->outcomes.back().payment == job.fee &&
+                      snap->outcomes.back().kind == OutcomeKind::Haul,
+                  "Worker failed to publish delivery outcome with payment");
+            runtime.flush();
             std::cout << "worker_bytes=" << runtime.residentBytes() << " job_rows=" << snap->jobs.size()
                       << '\n';
+        }
+        {
+            EconomyRuntime runtime(universe, dir);
+            runtime.request(system, 60);
+            auto snap = wait(runtime, system, 12, 3);
+            check(!snap->outcomes.empty() && snap->outcomes.back().command == 3 &&
+                      snap->player.deliveries == 1,
+                  "Delivery report did not survive SQLite restart");
         }
         std::cout << "PASS: " << checks
                   << " hauling, seals, conservation, expiry, returns, history, UI and restart checks\n";

@@ -31,6 +31,8 @@ class EconomyValidation {
     uint64_t repairUnits_ = 0;
     std::unique_ptr<Economy> feedbackLedger_;
     std::shared_ptr<EconomySnapshot> feedback_;
+    EconomyPlayer recoveryPlayer_;
+    uint64_t recoveryId_ = 0;
     size_t feedbackSite_ = 0;
     std::string feedbackCamera_;
     uint64_t feedbackWorld_ = 0, feedbackGeometry_ = 0;
@@ -40,6 +42,13 @@ class EconomyValidation {
         feedback_->tick = feedbackLedger_->tick();
         feedback_->contracts = feedbackLedger_->contracts();
         feedback_->hauls = feedbackLedger_->hauls();
+        feedback_->recoveries = feedbackLedger_->recoveries();
+        feedback_->outcomes = feedbackLedger_->outcomes();
+        feedback_->player = recoveryPlayer_;
+        feedback_->message = feedback_->outcomes.empty()
+                                 ? "FUNDED RECOVERY WORK AT EXISTING SURFACE SITES"
+                                 : "DELIVERY SAVED / CREW WORK AND OBSERVATIONS PERSIST";
+        feedback_->jobs = economicJobs(*feedback_);
         feedback_->catchingUp = false;
         feedback_->routes = economicTradeRoutes(*feedback_);
         feedback_->portSignals = economicPortSignals(*feedback_);
@@ -162,7 +171,11 @@ class EconomyValidation {
     void advance(Renderer& renderer) {
         age_++;
         if (feedback_) {
-            renderer.setEconomy(feedback_, nullptr);
+            if (stage_ >= 100) {
+                view_ = economicMarketView(feedback_.get(), port_, 0, 10, false, page_);
+                renderer.setEconomy(feedback_, &view_);
+            } else
+                renderer.setEconomy(feedback_, nullptr);
             return;
         }
         auto s = runtime_.snapshot();
@@ -519,7 +532,97 @@ class EconomyValidation {
             feedbackLedger_->advanceTo(12, 64);
             refreshFeedback(s);
             next(92);
-        } else if (stage_ == 97 && age_ > 12)
+        } else if (stage_ == 97 && age_ > 12) {
+            auto site = std::find_if(s->network->sites.begin(), s->network->sites.end(), [](const auto& d) {
+                return !d.orbital && d.population && d.workers >= 2;
+            });
+            if (site == s->network->sites.end())
+                throw std::runtime_error("No recovery settlement");
+            port_ = site->id;
+            feedbackLedger_->outage(*port_, 1000);
+            feedbackLedger_->advanceTo(24);
+            auto j = std::find_if(feedbackLedger_->recoveries().begin(), feedbackLedger_->recoveries().end(),
+                                  [&](const auto& j) {
+                                      return j.kind == RecoveryKind::Maintenance &&
+                                             s->network->sites[j.site].id == *port_;
+                                  });
+            if (j == feedbackLedger_->recoveries().end())
+                throw std::runtime_error("Real damaged plant did not post recovery");
+            recoveryId_ = j->id;
+            refreshFeedback(s);
+            page_ = MarketPage::Jobs;
+            next(100);
+        } else if (stage_ == 100 && age_ > 20) {
+            capture("recovery-jobs-portrait");
+            next(101);
+        } else if (stage_ == 101 && age_ > 12) {
+            const auto j =
+                *std::find_if(feedbackLedger_->recoveries().begin(), feedbackLedger_->recoveries().end(),
+                              [&](const auto& j) { return j.id == recoveryId_; });
+            EconomicCommand c;
+            c.sequence = 1;
+            c.port = *port_;
+            c.action = EconomicAction::AcceptRecovery;
+            c.contract = j.id;
+            if (!feedbackLedger_->execute(c, recoveryPlayer_).starts_with("RECOVERY ACCEPTED"))
+                throw std::runtime_error("Native recovery acceptance failed");
+            for (size_t g = 0; g < goodCount; ++g)
+                if (j.required[g]) {
+                    std::optional<size_t> supplier;
+                    int64_t cheapest = INT64_MAX;
+                    for (size_t k = 0; k < s->network->sites.size(); ++k)
+                        if (k != j.site) {
+                            auto q = feedbackLedger_->quote(k, Good(g), j.required[g]);
+                            if (q.available >= j.required[g] && q.buyCents < cheapest) {
+                                supplier = k;
+                                cheapest = q.buyCents;
+                            }
+                        }
+                    if (!supplier)
+                        throw std::runtime_error("No actual supplier for native kit");
+                    c.sequence++;
+                    c.port = s->network->sites[*supplier].id;
+                    c.action = EconomicAction::Buy;
+                    c.good = Good(g);
+                    c.kg = j.required[g];
+                    c.limitCents = cheapest;
+                    if (!feedbackLedger_->execute(c, recoveryPlayer_).starts_with("BOUGHT"))
+                        throw std::runtime_error("Native kit procurement failed");
+                }
+            c.sequence++;
+            c.port = *port_;
+            c.action = EconomicAction::DeliverRecovery;
+            if (!feedbackLedger_->execute(c, recoveryPlayer_).starts_with("RECOVERY DELIVERED"))
+                throw std::runtime_error("Native kit handover failed");
+            refreshFeedback(s);
+            page_ = MarketPage::Outcomes;
+            next(102);
+        } else if (stage_ == 102 && age_ > 20) {
+            capture("recovery-working-portrait");
+            next(103);
+        } else if (stage_ == 103 && age_ > 12) {
+            feedbackLedger_->advanceTo(88, 64);
+            refreshFeedback(s);
+            const auto& o = feedback_->outcomes.back();
+            if (o.working || !o.outageCleared || o.crewPaid == 0)
+                throw std::runtime_error("Native recovery crew did not restore existing plant");
+            std::cout << "RECOVERY_OUTCOME payment=" << o.payment << " crew=" << o.crewPaid
+                      << " power=" << o.before.power << ">" << o.after.power
+                      << " output=" << o.after.outputKg - o.before.outputKg << '\n';
+            SDL_SetWindowSize(window_, 720, 450);
+            next(104);
+        } else if (stage_ == 104 && age_ > 30) {
+            capture("recovery-outcome");
+            next(105);
+        } else if (stage_ == 105 && age_ > 12) {
+            SDL_SetWindowSize(window_, 480, 640);
+            next(106);
+        } else if (stage_ == 106 && age_ > 30) {
+            capture("recovery-outcome-portrait");
+            std::cout << "PASS: native funded recovery job, real supplier procurement, paid kit, crew work "
+                         "and persistent outcomes\n";
+            next(107);
+        } else if (stage_ == 107 && age_ > 12)
             finished_ = true;
     }
     bool finished() const {

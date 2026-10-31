@@ -148,7 +148,7 @@ std::string Economy::invest(const EconomicCommand& c, EconomyPlayer& player, siz
                ? "REFIT SUPPLIED / CONSTRUCTION SCHEDULED"
                : "DELIVERED " + std::to_string(delivered) + " KG / REFIT AWAITS MATERIALS";
 }
-void Economy::development() {
+void Economy::development(std::span<const unsigned> crewUsed) {
     for (size_t i = 0; i < sites_.size(); i++) {
         auto& s = sites_[i];
         const auto& d = network_->sites[i];
@@ -158,7 +158,12 @@ void Economy::development() {
             const auto r = facilityRefit(p.module, s.modules[m] + 1);
             // Existing orbital service crews handle warehouse work. Surface work depends on
             // the existing population, utility supply and equipment; it pauses during outages.
-            if (economicConstructionActive(d, s, tick_)) {
+            const int64_t workers = int64_t(d.workers) * s.health / 1000 *
+                                    (4 + s.modules[size_t(FacilityModule::Automation)]) / 4;
+            // A repair can make construction possible during this same tick. The
+            // crew that performed it is still occupied until the next tick.
+            if (economicConstructionActive(d, s, tick_) &&
+                (crewUsed[i] == 0 || workers >= int64_t(crewUsed[i]) + 2)) {
                 p.progress++;
                 auto remaining = r.labourCents - r.labourCents * p.progress / r.ticks;
                 auto wage = p.escrow - remaining;
