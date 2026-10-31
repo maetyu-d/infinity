@@ -463,11 +463,10 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     std::snprintf(value, sizeof(value), "ROLL %+.0f DEG/S / U-O", t.rollRate * 57.2957795);
     fitted(h.lettering, value, flight.x + 14, flight.y + 88, flight.w - 28, 8.4,
            std::abs(t.rollRate) > .02 ? ice : muted);
-    std::snprintf(value, sizeof(value), "%s / %.1fG",
-                  t.fieldActive     ? "FIELD DRIVE"
-                  : t.thrustLimited ? "THRUST LIMIT"
-                  : t.assist        ? "X ASSIST"
-                                    : "X INERTIAL",
+    std::snprintf(value, sizeof(value), "%s%s / %.1fG", t.assist ? "X ASSIST" : "X INERTIAL / B RECOVER",
+                  t.fieldActive     ? " / FIELD"
+                  : t.thrustLimited ? " / LIMIT"
+                                    : "",
                   std::min(999., t.properG));
     label(value, flight.x + 14, flight.y + 105, flight.w - 28,
           t.thrustLimited ? amber
@@ -596,7 +595,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                                                              {"A / D   Q / E", "STRAFE / LIFT"},
                                                              {"C / MOUSE / ARROWS", "HELM / LOOK"},
                                                              {"U / O  ALT+A / D", "ROLL"},
-                                                             {"B / X", "BRAKE / ASSIST"},
+                                                             {"B / X", "RECOVER / ASSIST"},
                                                              {"Y / SHIFT-Y", "PLANETS / MOONS"},
                                                              {"CTRL-Y", "LIFE-DETECTED WORLDS"},
                                                              {"K / I / J", "TRAFFIC / HAIL / APPROACH"},

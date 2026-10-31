@@ -741,11 +741,13 @@ int main(int argc, char** argv) {
                         case SDL_SCANCODE_V:
                             pilotEnabled = !pilotEnabled;
                             pilot.resetMotion();
+                            if (pilotEnabled)
+                                pilot.brake();
                             if (pilotEnabled && nav.anchor.kind() >= Kind::Rock && !pilot.ship().shrinking)
                                 pilot.fitToView();
                             opt.tour = false;
                             notice = pilotEnabled
-                                         ? "Pilot helm engaged / W-S throttle / B brake"
+                                         ? "Pilot helm / assist ON / W-S throttle / B recover"
                                          : "Explorer camera / existing WASD controls / V returns to ship";
                             noticeTime = 5;
                             break;
@@ -754,8 +756,13 @@ int main(int argc, char** argv) {
                                 pilot.brake();
                             break;
                         case SDL_SCANCODE_X:
-                            if (pilotEnabled)
+                            if (pilotEnabled) {
                                 pilot.toggleAssist();
+                                notice = pilot.ship().assist
+                                             ? "Flight assist ON / release helm to arrest rotation"
+                                             : "INERTIAL / spin persists / B recovers / X restores assist";
+                                noticeTime = 6;
+                            }
                             break;
                         case SDL_SCANCODE_N:
                             if (pilotEnabled) {

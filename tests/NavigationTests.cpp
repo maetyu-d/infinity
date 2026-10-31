@@ -22,6 +22,15 @@ static void place(Navigation& nav, const Universe& u, const Address& address) {
 }
 int main() {
     try {
+        Universe reference;
+        Navigation mouse(reference);
+        const auto initialLook = mouse.orientation;
+        const auto mouseEye = mouse.cameraPosition();
+        mouse.rotate(25, 0);
+        const double nudgeAngle = 2 * std::acos(std::abs(glm::dot(initialLook, mouse.orientation)));
+        check(nudgeAngle > .03 && nudgeAngle < .06,
+              "Explorer mouse gain makes small corrections turn excessively");
+        near(mouse.cameraPosition(), mouseEye, "Explorer sensitivity tuning moved the physical eye");
         for (uint64_t seed : {0x494e46494e495445ULL, 17ULL, 937ULL}) {
             Universe u(seed);
             Address address;

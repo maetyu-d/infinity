@@ -349,7 +349,7 @@ class PilotValidation {
             const auto attitude = u_.relative(n_.anchor, planet_, 0).orientation * n_.orientation;
             const auto bank = glm::dot(attitude * glm::dvec3(0, 1, 0), rollRight_);
             const double side = stage_ == 14 ? 1 : -1;
-            if (p_.instruments().rollRate * side < 1.7 || bank * side < .5 ||
+            if (p_.instruments().rollRate * side < .90 || bank * side < .5 ||
                 glm::dot(attitude * glm::dvec3(0, 0, -1), rollForward_) < .99999)
                 throw std::runtime_error(
                     "Native roll did not bank in the commanded direction about ship forward");

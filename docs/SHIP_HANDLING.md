@@ -1,4 +1,35 @@
-# Ship handling and roll — Infinite 0.25
+# Ship handling and roll
+
+## Control recovery — Infinite 0.38.1
+
+The physical torque/inertia model introduced in 0.37 retained the earlier fast helm settings. Combined pitch/yaw/roll commands could reach 2.46 rad/s, and releasing roll at 1.8 rad/s allowed a further 13.3 degrees of rotation. B enabled braking but did not suppress a concurrently held turn or throttle command. Returning from the explorer camera with V could also retain the previous assist-off setting.
+
+The manual assisted rate envelope is now 0.70 / 0.65 / 0.95 rad/s for pitch/yaw/roll, with normalized combined inputs. Mouse gain is 40% lower and a continuous soft-centre curve gives small corrections finer control. The explorer camera's mouse gain is halved. Full keyboard input and unrestricted 360-degree roll remain available. Ctrl still provides precision flight.
+
+Released, reversed and overspeed axes use stronger rate feedback and faster valve response. Actual RCS torque still passes through the existing shared actuator allocation and physical rotation integrator. The hull, payload inertia, thrust limits, unassisted conservation, gravity, atmospheric model, navigation and universe generators remain authoritative. There is no artificial angular-velocity clamp or automatic levelling.
+
+**Hold B** to recover: it enables assist and overrides all simultaneous helm, translation and boost input. Rotation arrests promptly; linear stopping still takes the time permitted by available thrust. **V** enables assist on returning to the ship. **X** remains an explicit choice of inertial flight, with a warning that spin persists. The cockpit shows the inertial recovery hint together with field/limited-thrust status. Save format 4 is unchanged.
+
+Measured in the same deterministic Release-build vacuum fixture on Apple M1, with 60 Hz input and at-most-10-ms physics substeps; baseline commit `5910563`. These measure controls, not renderer performance.
+
+| Probe | 0.38.0 | 0.38.1 |
+| --- | ---: | ---: |
+| Assisted roll rate | 103.13 deg/s | 54.43 deg/s |
+| Roll release settling below 0.02 rad/s | 0.267 s | 0.150 s |
+| Additional roll while stopping | 13.29 deg | 3.44 deg |
+| Roll reversal | 0.233 s | 0.117 s |
+| Peak simultaneous pitch/yaw/roll | 140.94 deg/s | 45.50 deg/s |
+| Spin 0.5 s after releasing all axes | 0.0270 rad/s | 0.000000238 rad/s |
+| Small yaw correction (15% helm) | 9.45 deg/s | 2.50 deg/s |
+| Slip after the existing powered-turn probe | 47.38 deg | 26.79 deg |
+
+The handling suite additionally covers roll at 15/30/60/144 FPS, all three axes with a full 4,000 kg cargo bay at 15/60/144 FPS, combined-input release, B recovery from an inertial tumble while all controls remain held, full barrel rolls, left/right symmetry, unchanged inertial coasting, frame/scale continuity and save round trips. Low-FPS settling comparisons allow one sampled display frame of timing quantization. The recovery fixture retains nonzero spin on its first frame, arrests spin below 0.001 rad/s within two seconds, and slows its initial 45.8 m/s translation through finite thrust rather than an instantaneous reset.
+
+Evidence: [before](control-recovery-0.38.1/before.json), [after](control-recovery-0.38.1/after.json), [185 handling checks](control-recovery-0.38.1/handling-tests.log), and [133 unchanged generation, rendering, physics and economy sources](control-recovery-0.38.1/preservation.json).
+
+All [36 core tests](control-recovery-0.38.1/core-tests.log) and [seven native checks](control-recovery-0.38.1/native-tests.log) passed. The native run verifies both roll directions at 0.95 rad/s, release to rest, landing/launch, the fitted cockpit, seamless flight and the galaxy-to-atomic return. The [signed 0.38.1 / build 39 package](control-recovery-0.38.1/package.json) matches all 28 code/data sections of the tested executable.
+
+## Original handling upgrade — Infinite 0.25
 
 The existing ship already had U/O roll, but its slow shared rate governor and remote keyboard position made it easy to miss. This update improves manual handling and makes roll visible in the cockpit. Generation, coordinates, orbital snapshots, geology, cities, object identities, seeds and rendering are retained. Baseline **8d3bf01** is saved at `checkpoint/infinite-0.24-before-handling`.
 

@@ -198,8 +198,8 @@ void Navigation::rotate(double dx, double dy) {
     // Look from the eye, rather than orbiting the current object's origin.
     // Keep the existing pivot/offset representation for zoom and saved views.
     const auto eye = cameraPosition();
-    orientation = glm::normalize(orientation * glm::angleAxis(-dx * .004, glm::dvec3(0, 1, 0)) *
-                                 glm::angleAxis(-dy * .004, glm::dvec3(1, 0, 0)));
+    orientation = glm::normalize(orientation * glm::angleAxis(-dx * .002, glm::dvec3(0, 1, 0)) *
+                                 glm::angleAxis(-dy * .002, glm::dvec3(1, 0, 0)));
     offset = eye - orientation * glm::dvec3(0, 0, 1);
     takeControl();
 }

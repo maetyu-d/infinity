@@ -17,6 +17,14 @@ glm::dvec3 limited(glm::dvec3 v, double maximum) {
 glm::dvec3 unit(glm::dvec3 v, glm::dvec3 fallback = {0, 1, 0}) {
     return glm::length(v) > 1e-30 ? glm::normalize(v) : fallback;
 }
+const glm::dvec3 manualRates(.70, .65, .95);
+glm::dvec3 manualSpin(const HelmInput& input) {
+    // Fine mouse corrections use a soft centre; keyboard travel still reaches
+    // the full rate. A diagonal helm must not multiply the overall turn speed.
+    glm::dvec3 helm(input.pitch, -input.yaw, -input.roll);
+    helm *= glm::dvec3(.35) + glm::abs(helm) * .65;
+    return limited(helm, 1.) * manualRates * (input.precision ? .35 : 1.);
+}
 glm::dvec3 angularTarget(glm::dquat orientation, glm::dvec3 heading, glm::dvec3 up) {
     const auto forward = orientation * glm::dvec3(0, 0, -1);
     const auto currentUp = orientation * glm::dvec3(0, 1, 0);
@@ -40,7 +48,7 @@ HelmInput resolveHelmInput(HelmInput keyboard, glm::dvec2 mouseDelta, double sec
         keyboard.strafe = 0;
     }
     if (seconds > 0 && std::isfinite(seconds) && std::isfinite(mouseDelta.x) && std::isfinite(mouseDelta.y)) {
-        const auto rate = glm::clamp(mouseDelta * (.15 / (60 * seconds)), glm::dvec2(-1), glm::dvec2(1));
+        const auto rate = glm::clamp(mouseDelta * (.09 / (60 * seconds)), glm::dvec2(-1), glm::dvec2(1));
         keyboard.pitch -= rate.y;
         keyboard.yaw += rate.x;
     }
@@ -676,9 +684,7 @@ void Pilot::step(const HelmInput& input, double dt) {
     const auto gravity = environmentSample_.gravity * sizeRatio();
     glm::dvec3 wanted = nav_.orientation * glm::dvec3(input.strafe * limit * .28, input.lift * limit * .30,
                                                       -ship_.throttle * limit);
-    glm::dvec3 spin{input.pitch * 1.20, -input.yaw * 1.10, -input.roll * 1.80};
-    if (input.precision)
-        spin *= .35;
+    glm::dvec3 spin = manualSpin(input);
     if (autopilot_) {
         auto delta = (destinationPoint() - oldEye) * std::pow(10., nav_.logDistance);
         if (landingPlanet_ && beforeGround && beforeGround->planet.address == *landingPlanet_) {
@@ -808,15 +814,19 @@ void Pilot::step(const HelmInput& input, double dt) {
                         environmentSample_.airDensity * continuum, dt);
     glm::dvec3 angularCommand;
     if (ship_.assist) {
-        // Rate servo requests torque; inertia and the actuator envelope decide
-        // what can actually be achieved. No angular-velocity clamp or damping.
+        // Arrest released/reversed axes more firmly than a new turn spools up.
+        // This remains real, allocated RCS torque rather than a spin overwrite.
         const auto error = spin - ship_.angularVelocity;
-        const auto acceleration = error * glm::dvec3(11., 11., 14.);
+        glm::dvec3 gain(11., 11., 14.);
+        for (int axis = 0; axis < 3; ++axis)
+            if (spin[axis] * ship_.angularVelocity[axis] <= 0 ||
+                std::abs(spin[axis]) < std::abs(ship_.angularVelocity[axis]))
+                gain[axis] = axis == 2 ? 22. : 18.;
+        const auto acceleration = error * gain;
         angularCommand = properties.inertia * acceleration +
                          glm::cross(ship_.angularVelocity, properties.inertia * ship_.angularVelocity);
     } else {
-        const glm::dvec3 rates(1.20, 1.10, 1.80);
-        angularCommand = properties.torqueCaps * (spin / rates) * .55;
+        angularCommand = properties.torqueCaps * (spin / manualRates) * .55;
     }
     const auto support = inverse * (-gravity - drag / properties.massKg) * properties.massKg;
     glm::dvec3 commanded;
@@ -831,11 +841,16 @@ void Pilot::step(const HelmInput& input, double dt) {
     const auto wrench =
         allocateShipWrench(properties, ship_.assist ? support : glm::dvec3(0), commanded, angularCommand);
     ship_.thrusters = glm::mix(ship_.thrusters, wrench.linear, -std::expm1(-dt / .12));
-    ship_.angularThrusters = ship_.assist
-                                 ? glm::mix(ship_.angularThrusters, wrench.angular, -std::expm1(-dt / .04))
-                                 : wrench.angular;
-    // Both filtered states remain in the same convex actuator envelope. Apply
-    // a final bound because their valve response times are different.
+    for (int axis = 0; axis < 3; ++axis) {
+        const bool arrest = spin[axis] * ship_.angularVelocity[axis] <= 0 ||
+                            std::abs(spin[axis]) < std::abs(ship_.angularVelocity[axis]);
+        ship_.angularThrusters[axis] = ship_.assist
+                                           ? glm::mix(ship_.angularThrusters[axis], wrench.angular[axis],
+                                                      -std::expm1(-dt / (arrest ? .015 : .06)))
+                                           : wrench.angular[axis];
+    }
+    // Independently timed valve responses can leave the shared envelope. The
+    // final allocation enforces the same physical force/torque budget again.
     const auto actual = allocateShipWrench(properties, {}, shipForce(properties, ship_.thrusters),
                                            shipTorque(properties, ship_.angularThrusters));
     ship_.thrusters = actual.linear;
@@ -1011,6 +1026,12 @@ void Pilot::update(const HelmInput& input, double dt, const std::shared_ptr<cons
     for (auto* value :
          {&bounded.throttle, &bounded.strafe, &bounded.lift, &bounded.pitch, &bounded.yaw, &bounded.roll})
         *value = std::clamp(*value, -1., 1.);
+    if (bounded.brake) {
+        // B is the recovery control even when a turn key or mouse is still
+        // commanding rotation. It must also suppress a held throttle/boost.
+        bounded = {};
+        bounded.brake = true;
+    }
     synchronizeFrame();
     if (visible && visible->address == nav_.anchor)
         collisionGeometry_ = visible;
