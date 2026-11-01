@@ -4,6 +4,7 @@
 #include "EconomyValidation.hpp"
 #include "FlightValidation.hpp"
 #include "LandingLightValidation.hpp"
+#include "NpcValidation.hpp"
 #include "PilotValidation.hpp"
 #include "PlanetDiversityValidation.hpp"
 #include "PlanetValidation.hpp"
@@ -19,6 +20,7 @@
 #include "infinite/Continuity.hpp"
 #include "infinite/Economy.hpp"
 #include "infinite/Flight.hpp"
+#include "infinite/NpcCombat.hpp"
 #include "infinite/Piloting.hpp"
 #include "infinite/Renderer.hpp"
 #include "infinite/Weapons.hpp"
@@ -50,7 +52,7 @@ struct Options {
          diversityTest = false, stellarDiversityTest = false;
     bool streamingTest = false;
     bool terrainQuality = false, terrainSurfaceFrame = false, sunShadows = true;
-    bool economyTest = false, cockpitMotionTest = false;
+    bool economyTest = false, cockpitMotionTest = false, npcTest = false;
     bool pilotTest = false, terrainTest = false, surfaceTest = false;
 };
 static Options options(int argc, char** argv) {
@@ -70,7 +72,10 @@ static Options options(int argc, char** argv) {
             o.smoke = o.tour = o.fresh = true;
         else if (arg == "--benchmark-tour")
             o.benchmark = o.smoke = o.tour = o.fresh = true;
-        else if (arg == "--economy-test") {
+        else if (arg == "--npc-combat-test") {
+            o.smoke = o.fresh = o.npcTest = o.benchmark = true;
+            o.tour = false;
+        } else if (arg == "--economy-test") {
             o.economyTest = o.benchmark = o.smoke = o.fresh = true;
             o.visualTime = 12;
         } else if (arg == "--cockpit-motion-test") {
@@ -198,7 +203,7 @@ static Options options(int argc, char** argv) {
         unsigned(o.terrainTest) + unsigned(o.surfaceTest) + unsigned(o.planetTest) + unsigned(o.uiFitTest) +
         unsigned(o.polarTest) + unsigned(o.cloudTest) + unsigned(o.celestialTest) +
         unsigned(o.landingLightTest) + unsigned(o.weatherTest) + unsigned(o.diversityTest) +
-        unsigned(o.stellarDiversityTest);
+        unsigned(o.stellarDiversityTest) + unsigned(o.npcTest);
     if (validationModes > 1 || (validationModes && o.tour))
         throw std::invalid_argument("Choose one automated validation mode");
     if (o.width < 320 || o.height < 240 || o.width > 7680 || o.height > 4320 || o.frames < 0)
@@ -241,7 +246,7 @@ int main(int argc, char** argv) {
                             opt.terrainTest || opt.surfaceTest || opt.planetTest || opt.uiFitTest ||
                             opt.polarTest || opt.cloudTest || opt.celestialTest || opt.landingLightTest ||
                             opt.weatherTest || opt.diversityTest || opt.stellarDiversityTest ||
-                            opt.cockpitMotionTest;
+                            opt.cockpitMotionTest || opt.npcTest;
         std::unique_ptr<FlightValidation> flightProof;
         if (opt.flightTest)
             flightProof = std::make_unique<FlightValidation>(universe, nav);
@@ -345,6 +350,14 @@ int main(int argc, char** argv) {
                 if (std::getline(file, text))
                     weapons.restore(text, universe);
             }
+            NpcCombat npcCombat;
+            if (!opt.smoke) {
+                std::ifstream file(data / ("npc-combat-" + std::to_string(universe.seed()) + ".txt"));
+                std::string text;
+                if (std::getline(file, text))
+                    npcCombat.restore(text, universe);
+            }
+            renderer.setNpcCombat(&npcCombat);
             renderer.setWeapons(&weapons);
             renderer.setActivity(&activity);
             std::unique_ptr<EconomyRuntime> economy;
@@ -531,6 +544,10 @@ int main(int argc, char** argv) {
             if (opt.economyTest)
                 economyProof = std::make_unique<EconomyValidation>(universe, nav, pilot, *economy, activity,
                                                                    window, weapons);
+            std::unique_ptr<NpcValidation> npcProof;
+            if (opt.npcTest)
+                npcProof = std::make_unique<NpcValidation>(universe, nav, pilot, activity, weapons, npcCombat,
+                                                           window);
             std::unique_ptr<SurfaceValidation> surfaceProof;
             if (opt.surfaceTest)
                 surfaceProof = std::make_unique<SurfaceValidation>(universe, nav, pilot, activity);
@@ -545,6 +562,7 @@ int main(int argc, char** argv) {
             if (opt.diversityTest)
                 diversityProof = std::make_unique<PlanetDiversityValidation>(universe, nav, pilot, activity);
             auto damagedBody = [&](ActivityBody body) {
+                npcCombat.apply(body);
                 weapons.apply(body);
                 return body;
             };
@@ -584,8 +602,7 @@ int main(int argc, char** argv) {
                             return surfaceContact(*world, s, activity.seconds);
                     return {};
                 }
-                return damagedBody(sampleActivity(universe.describe(activity.selected->home),
-                                                  activity.selected->slot, activity.seconds));
+                return damagedBody(sampleCombatActivity(universe, *activity.selected, activity.seconds));
             };
             auto waypointFor = [](const ActivityBody& body) {
                 const bool surface = body.kind == ActivityKind::SurfacePort;
@@ -1143,6 +1160,22 @@ int main(int argc, char** argv) {
                                     noticeTime = 8;
                                 }
                             break;
+                        case SDL_SCANCODE_H: {
+                            const ActivityContact* nearest = nullptr;
+                            for (const auto& contact : renderer.activityContacts())
+                                if (contact.body.hostile && !contact.body.disabled && !contact.occluded &&
+                                    (!nearest || contact.distance < nearest->distance))
+                                    nearest = &contact;
+                            if (nearest) {
+                                chooseActivity(nearest->body.id);
+                                notice = nearest->body.status;
+                                noticeTime = 4;
+                            } else {
+                                notice = "NO HOSTILE CONTACT IN SENSOR RANGE";
+                                noticeTime = 3;
+                            }
+                            break;
+                        }
                         case SDL_SCANCODE_F6:
                             activity.enabled = !activity.enabled;
                             if (!activity.enabled) {
@@ -1373,6 +1406,24 @@ int main(int argc, char** argv) {
                     }
                 }
                 nav.update((opt.benchmark ? 1.0 / 60 : dt) * (opt.tour ? 3 : 1));
+                if (!opt.smoke) {
+                    NpcPlayer player;
+                    player.reference = nav.anchor;
+                    player.position = nav.cameraPosition() * std::pow(10., nav.logDistance);
+                    player.velocity = universe.relative(pilot.ship().frame, nav.anchor, 0).orientation *
+                                      pilot.ship().velocity;
+                    player.forward = nav.orientation * glm::dvec3(0, 0, -1);
+                    player.size = pilot.sizeRatio();
+                    player.hull = pilot.ship().hull;
+                    player.seconds = activity.seconds;
+                    player.landed = pilot.ship().landed;
+                    player.field = pilot.instruments().fieldActive || opt.tour || !pilotEnabled ||
+                                   !activity.enabled ||
+                                   !(SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS);
+                    const auto combat = npcCombat.update(universe, player, renderer.combatBodies(), weapons,
+                                                         dt, renderer.submittedGeometry(nav.anchor).get());
+                    pilot.applyCombatDamage(combat.playerDamage);
+                }
                 if (flightProof)
                     flightProof->advance(flight, renderer);
                 if (streamingProof)
@@ -1381,6 +1432,8 @@ int main(int argc, char** argv) {
                     pilotProof->advance(renderer);
                 if (economyProof)
                     economyProof->advance(renderer);
+                if (npcProof)
+                    npcProof->advance(renderer);
                 if (uiProof)
                     uiProof->advance(renderer);
                 if (polarProof)
@@ -1398,6 +1451,7 @@ int main(int argc, char** argv) {
                 if (diversityProof)
                     diversityProof->advance(renderer);
                 auto cockpit = pilot.instruments();
+                npcCombat.annotate(cockpit);
                 weapons.annotate(cockpit,
                                  cockpit.fieldActive || cockpit.landed || marketOpen ||
                                      std::abs(pilot.ship().logSize - pilot.ship().targetLogSize) > .01);
@@ -1409,6 +1463,11 @@ int main(int argc, char** argv) {
                                     overlay && !opt.polarTest && !opt.cloudTest && !opt.celestialTest &&
                                         !opt.landingLightTest && !opt.weatherTest && !opt.diversityTest,
                                     fps, persistence.markerCount(), noticeTime > 0 ? notice : "", looking);
+                if (npcProof) {
+                    npcProof->observe(stats, renderer, opt.captures);
+                    if (npcProof->finished())
+                        running = false;
+                }
                 if (flightProof) {
                     flightProof->observe(stats, renderer, opt.captures);
                     if (flightProof->finished())
@@ -1612,7 +1671,8 @@ int main(int argc, char** argv) {
                 if (opt.frames > 0 && frame >= opt.frames)
                     running = false;
                 if (opt.smoke && std::chrono::duration<double>(now - start).count() >
-                                     (opt.economyTest                                 ? 330
+                                     (opt.npcTest                                     ? 180
+                                      : opt.economyTest                               ? 330
                                       : opt.diversityTest || opt.stellarDiversityTest ? 360
                                       : opt.celestialTest || opt.weatherTest || opt.cloudTest ||
                                               opt.polarTest || opt.surfaceTest
@@ -1648,6 +1708,8 @@ int main(int argc, char** argv) {
                 saveText(("activity-" + std::to_string(universe.seed()) + ".txt").c_str(),
                          activity.serialize());
                 saveText(("combat-" + std::to_string(universe.seed()) + ".txt").c_str(), weapons.serialize());
+                saveText(("npc-combat-" + std::to_string(universe.seed()) + ".txt").c_str(),
+                         npcCombat.serialize(universe.seed()));
                 // Rendering is fixed to Hyperion; historical display.txt preferences are ignored.
                 saveText("cockpit-motion.txt", renderer.cockpitMotionEnabled() ? "1" : "0");
             }
@@ -1669,7 +1731,10 @@ int main(int argc, char** argv) {
             std::cout << "peak_rss_bytes=" << usage.ru_maxrss * 1024 << '\n';
 #endif
 #endif
-            if (opt.cockpitMotionTest) {
+            if (opt.npcTest) {
+                if (!npcProof->finished())
+                    throw std::runtime_error("Native NPC combat validation incomplete");
+            } else if (opt.cockpitMotionTest) {
                 if (!motionProof->finished())
                     throw std::runtime_error("Native cockpit motion validation incomplete");
             } else if (opt.stellarDiversityTest) {

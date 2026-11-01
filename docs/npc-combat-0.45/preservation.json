@@ -1,0 +1,928 @@
+{
+  "baseline": "ec708a0d44b186366b06f998f556bf2e22cff54a",
+  "protected_files": 184,
+  "checks": [
+    {
+      "path": "include/infinite/Cockpit.hpp",
+      "sha256": "957091838375d251cf8092f2987632ee589532f5867a11635e3eccf9e199660d",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/CockpitMotion.hpp",
+      "sha256": "60117f7f9581a891357a512c6b5c78b885fd071e7cf5d59f9e8ec6234ac2e360",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/Continuity.hpp",
+      "sha256": "6be759dcbf5f31817e10cbad3d3d768daf56abdd214ab01a66ed02fc269053a5",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/Core.hpp",
+      "sha256": "c5ab28036b9675c25262a838871a16e12998526afb8aa0556ba7a78b7cd04975",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/Flight.hpp",
+      "sha256": "e4f46c3d0cd93e4917c647d931607d4a7279a0372130ebc8de2992e45d3203ef",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/FlightEnvironment.hpp",
+      "sha256": "7cc76e709706a159fc9ea8af15374f65e946b75262a9a93f9a4c5f94d50d2c53",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/Geometry.hpp",
+      "sha256": "2360e0268c141059cf7a5fe8901ea40e6955006ece313b663ab7f5113177d030",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/MaterialTexture.hpp",
+      "sha256": "82c9650d929fb74397ea22d206dfb43797b6345d43609ab2b95e9230c8e3e224",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/Navigation.hpp",
+      "sha256": "8cdb72bdfca28c194b828ed68aee9a9362bb97be474c515b32cc2be474126cfa",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/Planetology.hpp",
+      "sha256": "25e47a97247d3a971de1e76a330bf6d81494bd747ba2e6862af719a4a5db90a9",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/Presentation.hpp",
+      "sha256": "773097b3a681f7eda9fe69e3846e191cfdaf72a6d455782c25fd2c29c6232824",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/ShipDynamics.hpp",
+      "sha256": "2e8a6a12779f8055e9f3183e9e87874fbb6b23b366d97a4f3a6c0bc5e96d910d",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/StellarEvolution.hpp",
+      "sha256": "2b2b95de77f71204f90b0fb1fc20d2f8fa391f617ea87e533d5be12c791ac0a0",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/Streaming.hpp",
+      "sha256": "b9afc094a456d3d8ddef817345b78edff4c6774a5cb2b107ef740b3ba12f52e2",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/SurfaceLife.hpp",
+      "sha256": "0607855e47675034c2f5a1448a1480b6f1e67ae3196ca8ce45b2038e3d78ffa6",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/SurfaceShading.hpp",
+      "sha256": "a56b4ecf50cd705096ecb9cfea2c7209e3e80fbb6deac1abc29ea302a7603aab",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/Universe.hpp",
+      "sha256": "429b5d7557c997a2fa41c930690a69e8d1c159ff81f28e9c0d7a83eb64a78c1f",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/WeatherField.hpp",
+      "sha256": "022a8f37a83875ba9e840ad10c5d434b786420bd4bf0fb832fafc47229b328de",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/WindowLayout.hpp",
+      "sha256": "30eea635477095c7e0ccd25ab51656b706ea638433fd93d07b163b2d4e440cd9",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/World.hpp",
+      "sha256": "8ae780f142a7c13dbb504d73387fa5c7e0e38847a9c98aed5724f1d3d0a5dea5",
+      "unchanged": true
+    },
+    {
+      "path": "include/infinite/WorldDepth.hpp",
+      "sha256": "004dc2a833ec31030d43b82b4eb519638bf33e9eae6e204d8aba8bf3d1d21230",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/glsl/fs_hyperion.bin",
+      "sha256": "43957e027ebdf95aa0545c8b4a48ef764adcbbdde6a0f9343a0d97a1e11f51b1",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/glsl/fs_hyperion_blur.bin",
+      "sha256": "483ac4fc0053ec0ef3ab179102ff0d2c4f9f034c5f187d6e4529c6446385e12f",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/glsl/fs_hyperion_blur_solar.bin",
+      "sha256": "4be8e5ff7ce89ecfe7ee759378b1b07b2d9e09f2359437092448a7fea96b3ed4",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/glsl/fs_hyperion_cloud.bin",
+      "sha256": "ea5743ff169ae4620caef777e9567d9588fdc0ecf964e6df63be25ab160d3705",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/glsl/fs_hyperion_cloud_volume.bin",
+      "sha256": "61b01b0b7c3cc1b051cced7650f651b1b794a6a125654b249d50beea24072352",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/glsl/fs_hyperion_corona.bin",
+      "sha256": "375808bb043ef3acb7753b609f513ea481297ef2db38701f88ddfde3f7ebfc75",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/glsl/fs_hyperion_coverage.bin",
+      "sha256": "fa2eb7745c53591e45c7eb2f3a2a05524ab21ca5ecfaba60467ba4fb2419e0f4",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/glsl/fs_hyperion_flight.bin",
+      "sha256": "43957e027ebdf95aa0545c8b4a48ef764adcbbdde6a0f9343a0d97a1e11f51b1",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/glsl/fs_hyperion_flight_post.bin",
+      "sha256": "23bc2ac24483180e6640311f17b81055262df7d6d85f59eea111241b1c94f4f3",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/glsl/fs_hyperion_glow.bin",
+      "sha256": "775d17e76e0e8acf68de887da8824fe4a3ec130261b50c4eee152526648b7ecb",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/glsl/fs_hyperion_polar.bin",
+      "sha256": "815e82299f9c1ad7ad84a9809ba96fc902f4c03ed60e8cfd933d728e95a911d6",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/glsl/fs_hyperion_post.bin",
+      "sha256": "66f366f21280de34b2297226cdde5686211aaba45cd493166a2aaecc354c6861",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/glsl/fs_hyperion_shadow.bin",
+      "sha256": "b7cdfd6fd15854c1fb1d2545fde791057906eeb010c003c95000e9251de05251",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/glsl/fs_hyperion_sky.bin",
+      "sha256": "1c65b89f34465c51a3eed98a307748d9c15d9f139fea608f0fe77c0d0231237e",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/glsl/fs_hyperion_stellar.bin",
+      "sha256": "4c98db6abb5368775dd6826e2e47c6db879acdf477d3dea898e7fca92ea5cea7",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/glsl/fs_hyperion_weather_post.bin",
+      "sha256": "f16712cf94262912010b2f2f555de17f8971f12d47970f76f91243517dc59900",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/glsl/fs_planet_rings.bin",
+      "sha256": "9c3445026ce07051ea4294abef811fb2c6474dd5964a5cfbf6ac0ae7717086da",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/glsl/vs_hyperion.bin",
+      "sha256": "7419b3e03dc477f7e6ef32c1052ed483fd8203f59841a39a46ab4561a20258f9",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/glsl/vs_hyperion_screen.bin",
+      "sha256": "5e1033b635a29a467f1dbb4f4a95573ec3c28282cf0b268baaf0e75eac9ba1c3",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/glsl/vs_hyperion_shadow.bin",
+      "sha256": "e27d9bdcfc30eda8f8562cf08e8bd2ec79f0ff8267e1f5d8fe12c0841ec4c67d",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/glsl/vs_hyperion_smooth.bin",
+      "sha256": "d669da11fb9792f61efa5a655596edc0da724fe898571f9fde7c0155fa501611",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/glsl/vs_planet_rings.bin",
+      "sha256": "04ced22a1642a5e9768f3525a346121197d0320c4e38960f1361155d9cec1519",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/metal/fs_hyperion.bin",
+      "sha256": "f2961af9038a6beef4977510fe0743691419d02a5d24235e8b09a04cc54dbc0d",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/metal/fs_hyperion_blur.bin",
+      "sha256": "fb00c477dc9ef91ebe7e9514222d368631e6d028e04bc48a9ce80f0513cc2ed9",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/metal/fs_hyperion_blur_solar.bin",
+      "sha256": "938d910ef182809cdc2db520626c1a31bd9929843e401c14986f023a5477e33d",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/metal/fs_hyperion_cloud.bin",
+      "sha256": "70f0bd307b5c7deee38e42b1bc850237c3654f9e55b21355a5b39b2a9b0bc873",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/metal/fs_hyperion_cloud_volume.bin",
+      "sha256": "c8cb75dded785ded5e9d2bbbf2ef918e6215ffa73709a6aa8238e6dae6f5ad72",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/metal/fs_hyperion_corona.bin",
+      "sha256": "5c11017784e868e58a012edc6df53709564ce138a148a9c678dcb47416d8c85e",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/metal/fs_hyperion_coverage.bin",
+      "sha256": "5591feb60dd0a4d37315574451fd9f1ea293543064722af6ba71a3c3ceaf65a8",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/metal/fs_hyperion_flight.bin",
+      "sha256": "f2961af9038a6beef4977510fe0743691419d02a5d24235e8b09a04cc54dbc0d",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/metal/fs_hyperion_flight_post.bin",
+      "sha256": "4cf58dbd723d45ce5396c6a211d01699508be0def1370d677f6218eb24f073ed",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/metal/fs_hyperion_glow.bin",
+      "sha256": "e4f0ba71d091d092ac16ed7843474e350a733db24db82353d9a6c30cdca36b5d",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/metal/fs_hyperion_polar.bin",
+      "sha256": "4f76f3e1cfc45da0b72b0cc2d60f47fbb74f2076095337c6c4d12c134a3907be",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/metal/fs_hyperion_post.bin",
+      "sha256": "a687f31e14470aa3bb14f93876559059f40f18fd5d673886d579ccef13217a15",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/metal/fs_hyperion_shadow.bin",
+      "sha256": "783f66c4c5e550df63148e26ef4bf5d909c7973857fea11ee7726a3840b10831",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/metal/fs_hyperion_sky.bin",
+      "sha256": "aab95778e5d8135e8b699b4cb39f6f11304e43c56bc81fd62f207a1e8d1c72d3",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/metal/fs_hyperion_stellar.bin",
+      "sha256": "0f35419c62f3a688136e4699faf8b2559447d19ad79603bd97d02bcee950758e",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/metal/fs_hyperion_weather_post.bin",
+      "sha256": "e6d4085dbb46cc48807ff8f88c2dc5c31987a070757687c3c6f3e108454dbab6",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/metal/fs_planet_rings.bin",
+      "sha256": "34863e87f7714010ea931e9aa3e353e3af3e99df53d152dff189f629168a151e",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/metal/vs_hyperion.bin",
+      "sha256": "d7c33eac31f6ba43fc474df89e0001ee96a2660d51e03c2362af0f19ffd7bb3c",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/metal/vs_hyperion_screen.bin",
+      "sha256": "ac276f0253d3794c5a03caa8734027ca7ca2d073654f71377f902940219ac94e",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/metal/vs_hyperion_shadow.bin",
+      "sha256": "14561a109afb617768c3ea4ae14d2ac17f27c7171ea1f95d02df5fb1d4ea2b51",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/metal/vs_hyperion_smooth.bin",
+      "sha256": "d2d825a357fc5a18ba7d4d17ef8e405efc26b5b0e721e1f578b1490645960c97",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/metal/vs_planet_rings.bin",
+      "sha256": "1018216aeab084376d66e29ed00c91014eaec871b5b36c37a046a454d90a913e",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/spirv/fs_hyperion.bin",
+      "sha256": "0542c839b95a24d6c6b2b4b243c17ea093817e052b1307d615ec2c81000336fc",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/spirv/fs_hyperion_blur.bin",
+      "sha256": "55a22bf72d8a7cf61846e0bfe811a2c119671f137c6b597d7c14d2bfa034a759",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/spirv/fs_hyperion_blur_solar.bin",
+      "sha256": "989981984c7ad21ce800e663c3487c4759256f925e85167b48d817809557b87e",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/spirv/fs_hyperion_cloud.bin",
+      "sha256": "aab761ea7cb7b79a7f350562a0f7e814edbe366e35a4f391586e0b0e9a54fcf2",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/spirv/fs_hyperion_cloud_volume.bin",
+      "sha256": "149e25f968bb20e311a0ee170c2b13445a821a85794bcbd0d43b917f2752c1ce",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/spirv/fs_hyperion_corona.bin",
+      "sha256": "2e3bc5c2a28bd0e5ed27b193027b20bd39aafb35e99f8587b3009487a9116caa",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/spirv/fs_hyperion_coverage.bin",
+      "sha256": "f58082264feff74adb056bbfb6ed1f1060730c2b39df3c5d2a9807c12fe3f512",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/spirv/fs_hyperion_flight.bin",
+      "sha256": "0542c839b95a24d6c6b2b4b243c17ea093817e052b1307d615ec2c81000336fc",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/spirv/fs_hyperion_flight_post.bin",
+      "sha256": "026d1d4fd1380d5ea248561748402629474810fec922532d80fde8ba49c0cb1a",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/spirv/fs_hyperion_glow.bin",
+      "sha256": "7cb4598cdb2cba8a7fe8e421572848e8fefba314950814187ecfb2377d4c79b7",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/spirv/fs_hyperion_polar.bin",
+      "sha256": "aa66816193f4968d379268b2487a7ccd6c5f5ad22aaa1c373d23284bc6402e6b",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/spirv/fs_hyperion_post.bin",
+      "sha256": "817543dce9c2071c337e5a873471d6a399507ad66313c718cf7fcf562dc76ee5",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/spirv/fs_hyperion_shadow.bin",
+      "sha256": "15f659bae55c48f255ab2212d61070901f1fc84e1a93746a3a6ab494fc822b06",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/spirv/fs_hyperion_sky.bin",
+      "sha256": "356ba29886fb70b8d8b7520ce3a55ca7a76b39756b213f826a301891cd8a3bbb",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/spirv/fs_hyperion_stellar.bin",
+      "sha256": "5dc185feb4bdd9a00e647b079d6af9421c4c91b37c14b1cc2abef96a198447ec",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/spirv/fs_hyperion_weather_post.bin",
+      "sha256": "61ff01f934bee52e2826a05f784eebd13a2f2a4811f014d41bc7d8edf2834092",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/spirv/fs_planet_rings.bin",
+      "sha256": "808e24573fbb85ac4699ab34705839616cc728b2915cf908c1f92b81903e51b1",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/spirv/vs_hyperion.bin",
+      "sha256": "8cb49a66c5d332031e252a78185e6287367b2b4e769ca3d6f791bac3d7eb3997",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/spirv/vs_hyperion_screen.bin",
+      "sha256": "41aec7dbeccf709548dd2afbc15a3264ef668662faf9743df0650a08acfbcfb5",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/spirv/vs_hyperion_shadow.bin",
+      "sha256": "3f1855706260410acbc363f934a010b7f9e54eb7bdb8654803d2166858304ce2",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/spirv/vs_hyperion_smooth.bin",
+      "sha256": "7dfeec09b6b2b2f7fb29de9f35a4f2258794b0db070a6c571855773062f3a34b",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/bin/spirv/vs_planet_rings.bin",
+      "sha256": "472dfdc8bb5af77782059557e8fcee2940cf849e081564b57560cfd734cd0d00",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/fs_hyperion.sc",
+      "sha256": "38bf2adb4e677b12481be886da69f60e95bb000705184208d5051098423044af",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/fs_hyperion_blur.sc",
+      "sha256": "ffb55924b6a740a60463b86630d0eefac6a66058b8002383ee7586d513152c75",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/fs_hyperion_blur_solar.sc",
+      "sha256": "e8a3adde1a9bbc8bbd1af50d61ce2209d0d1ecaca935fdcf3bde10c14905c91e",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/fs_hyperion_cloud.sc",
+      "sha256": "b8f46872777bc286c737b102684e56e07eadfe3a7709aa4a4fcade64060a4085",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/fs_hyperion_cloud_volume.sc",
+      "sha256": "84927f828b4cbb7212a5ded2c72a257a46c909244f74cc2c54f69c362ece5e00",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/fs_hyperion_corona.sc",
+      "sha256": "cdd22d4390e5d33bdc4973d4719f263d5fa836e68f6f738cc5a411efdfbd5621",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/fs_hyperion_coverage.sc",
+      "sha256": "fc1ce32c942320d7ad7f463a33729b434d37338afa9c0bbfb1e435b66fc3bc47",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/fs_hyperion_flight.sc",
+      "sha256": "38bf2adb4e677b12481be886da69f60e95bb000705184208d5051098423044af",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/fs_hyperion_flight_post.sc",
+      "sha256": "2d76f1bd33cc949302c63d5f25e81096ceb380461340fc37f1bee3065b2008b5",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/fs_hyperion_glow.sc",
+      "sha256": "b6c35d64d08b8d24d7f7787d9473307847fd1cefc0a33ac24a0c1fe028d3c44a",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/fs_hyperion_polar.sc",
+      "sha256": "9fbfebd4c5e1c8c29977abbb103274a0e4cd819561d0e05ee4a514a24ff65440",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/fs_hyperion_post.sc",
+      "sha256": "e6dd0232e55a301b0beeba3948cbaaa6282a8ee59c072a9dc95184b3a884ddb3",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/fs_hyperion_shadow.sc",
+      "sha256": "56bca4e9282bc03c499c15d7e1f4d46b412cc27a5d2361da1f3d3eee561e7031",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/fs_hyperion_sky.sc",
+      "sha256": "6401780b3a47c47b83363f2c086d47d3be7d31466b817136cf282b493eb72b74",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/fs_hyperion_stellar.sc",
+      "sha256": "7ea737f162822b99a064856bf18aed940edac0931afcc6526b8c929b38b4c226",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/fs_hyperion_weather_post.sc",
+      "sha256": "d5fabc5e10a2fc9fa6a60fc779121e6a1f617d7659da033d3383f43e814da798",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/fs_planet_rings.sc",
+      "sha256": "f9daf52f85d9b2d482617664187bf40639e6c294cbdfcc667bccd11d96336d04",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/hyperion_architecture.sh",
+      "sha256": "24cc67ee8bc98ac406ab300177e173b23d2844303598a2953994a99b57c24939",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/hyperion_cloud_ray.sh",
+      "sha256": "613c6c8f14447f9d5c3dcb92ca0558cf8f2f47578321ed1152a4fc96dcebfe56",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/hyperion_cloud_resolve.sh",
+      "sha256": "ff8edf0e90e96af9b9b783fa46c17a9b3316cff0906a125f55204a905b4eba58",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/hyperion_display.sh",
+      "sha256": "804440eb05afd0aa88aa2fe200e7ed1810ccf60348d995396dde92c86bfb10a0",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/hyperion_flight_composite.sh",
+      "sha256": "1bcc5b01da0bd85e73cf78eeeafe272c7778ac50cf1b98e46d0dd93f046bc747",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/hyperion_illumination.sh",
+      "sha256": "3ac457752414cc9b6f5bea6a73b40e8bdd43afe80f3235469c846939260ca4ce",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/hyperion_material.sh",
+      "sha256": "7e5cb98a0c1f93cb16e09424bca0b0ae9122b3210fe695484f17bbde58664f6f",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/hyperion_material_detail.sh",
+      "sha256": "72c6a84fe412f5aa9812426ada63fc6e4ad3b99cea90af8bce75ecd51a9c8550",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/hyperion_noise.sh",
+      "sha256": "77512fe671a40ee9e36b8e110f84af095024ae724331423588b2a14a4a789c55",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/hyperion_optical_ray.sh",
+      "sha256": "354c19fe035564e59efa3a8a127a7f21f7823a76308b67d38207d26bce9d607f",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/hyperion_pigment.sh",
+      "sha256": "35d40d5664d47229ca0d88e5acc986b86bf6035b4968cc351c38401b32e58488",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/hyperion_planets.sh",
+      "sha256": "3acb2f25f1084886bdbfb188655bc82883bbdf0ee85fda7c6ec1f6213d4fc1ca",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/hyperion_polar.sh",
+      "sha256": "dcf0ae13ba401f9fac24188ad8b7f74245b049b30fb8da34519d2d4fa9e8acba",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/hyperion_ring_density.sh",
+      "sha256": "d6130d3a9360231e14d6ace4c3a535b64fba359ec73ca5ccd6639a59de1892e1",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/hyperion_star_types.sh",
+      "sha256": "f2a90eb7a9c7b2b9d6f3b70b3a2ee4dbe3ebaf41ff0ad841bab8cd954dc4765d",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/hyperion_stellar_optics.sh",
+      "sha256": "ddbb9a29a6f00be83c8f93d08794096d1156dd80ebe90b289b8903982407a751",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/hyperion_tone.sh",
+      "sha256": "4a3a5bbac42da9b27e563746dacc3ebb0ef61eb7a69228aa7877c02144c80025",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/hyperion_weather.sh",
+      "sha256": "72ebc1dcee44d7a7f8757ce31c5b8d143b1180445bff8686ea9822e3971682d5",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/hyperion_weather_visibility.sh",
+      "sha256": "5bc68116f5ab0f3251ee701f61cc89eb9e9eb03452a0084aac7508c833e31d4e",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/manifest.json",
+      "sha256": "42f2e806e2c105ca35e7ca310564a4879deb27847bf73767d2fe43660d4deb0d",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/varying.def.sc",
+      "sha256": "f27ace11b9d1c0ded0fa92a8f4f640e2a626da11ed1e86901600a9334f3993f3",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/vs_hyperion.sc",
+      "sha256": "4d710f7201aa6642747f0fae23d7ef1632895918ad861dca5897f8d78cf7d052",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/vs_hyperion_screen.sc",
+      "sha256": "9363d99cc5fa11b9e9c5f4cbe9eca6716ad8f15a84a89cd67faeb8a484a29f92",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/vs_hyperion_shadow.sc",
+      "sha256": "d758b947602af90863d8b7c8c9e71c48079f106504a98725e105a2ebe87afc89",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/vs_hyperion_smooth.sc",
+      "sha256": "02bfdcd97bc023a73db283e5dbe7a2e18d2f101e3f06cdecad3c905b33fd57a4",
+      "unchanged": true
+    },
+    {
+      "path": "shaders/vs_planet_rings.sc",
+      "sha256": "fb9f60517fc7afc42bf2d5672190d74e913b720c87bd52fbd37537d933505e51",
+      "unchanged": true
+    },
+    {
+      "path": "src/ActivityMeshes.cpp",
+      "sha256": "f0aa893729a22ad90845f2d1d15887ae64f20b138f3d3960b759733e1a30e4cd",
+      "unchanged": true
+    },
+    {
+      "path": "src/CelestialValidation.hpp",
+      "sha256": "f81733e422136d948d3400e5ff79436f1abb7afa974aeaade9e05a52cd7067d8",
+      "unchanged": true
+    },
+    {
+      "path": "src/City.cpp",
+      "sha256": "f4c5f1c4ccd6ff54bec592dc53d024de3bb5796dd3d47d7dd88f3f05f8a41601",
+      "unchanged": true
+    },
+    {
+      "path": "src/CityMeshes.cpp",
+      "sha256": "94e95870dc24ebf433de592ef6ba1fc6b2d01b50909aa2d2b3bcd8b916049b31",
+      "unchanged": true
+    },
+    {
+      "path": "src/CloudValidation.hpp",
+      "sha256": "2260e9c4abab22b9ef4d3c45ade64f243bd4c8e9207df1611d58ef7a5669e292",
+      "unchanged": true
+    },
+    {
+      "path": "src/CockpitMotion.cpp",
+      "sha256": "43a8830e76e469dfe7744c14aeb2a387d8b6772c5ce83d18584db3d972043cc1",
+      "unchanged": true
+    },
+    {
+      "path": "src/CockpitMotionValidation.hpp",
+      "sha256": "4dcb68795409a52d8799e343d11231dec9ca9767d3abc2c6d801f0588dce81e5",
+      "unchanged": true
+    },
+    {
+      "path": "src/Continuity.cpp",
+      "sha256": "c09a15bdb8c237eb59dc66f88ad9efef7863e93db3e957b20d120d49e152d4a8",
+      "unchanged": true
+    },
+    {
+      "path": "src/Core.cpp",
+      "sha256": "8b6e0854d8e8dfdfde2cc78494a31907cedab63d1512020d66c94f6d1d690cb9",
+      "unchanged": true
+    },
+    {
+      "path": "src/Crystallography.cpp",
+      "sha256": "1d135fa1218cea466673723063267fcacdb5c6c56d4240ab5ca00eb0eb042dab",
+      "unchanged": true
+    },
+    {
+      "path": "src/EconomicNetwork.cpp",
+      "sha256": "fc77410dd41bc7f0e2258e3927f6c110f1c8f71ef30a6169833698e108c92d72",
+      "unchanged": true
+    },
+    {
+      "path": "src/EconomyDevelopment.cpp",
+      "sha256": "44481d11bb4841c037fa9b5aa427a08a86467e019e87d428976f4373e2acfbcf",
+      "unchanged": true
+    },
+    {
+      "path": "src/EconomyPlanning.cpp",
+      "sha256": "63d8429bd26967dc022266a3e43f58703bb0178aae56f7aae33e77313728ed4b",
+      "unchanged": true
+    },
+    {
+      "path": "src/EconomyRecovery.cpp",
+      "sha256": "2b381ecc2bede9c37431481caebdedc9021bc3dfb67095fb9f26bf21098bfa8f",
+      "unchanged": true
+    },
+    {
+      "path": "src/EconomyRecoverySave.cpp",
+      "sha256": "a9023e5eaccb896da3054fbd4b08a7b71e79909f93a711b288193e4172b85fb2",
+      "unchanged": true
+    },
+    {
+      "path": "src/EconomyServices.cpp",
+      "sha256": "706f6265b8b546c4fa3cb76793ff4fef981013b68941855eeccd0ceea1a86d52",
+      "unchanged": true
+    },
+    {
+      "path": "src/EconomySignals.cpp",
+      "sha256": "ec49bf97fa792316cc9a2b1f2f0386448e63af4fca9b884ea5b0bc7f60501c4b",
+      "unchanged": true
+    },
+    {
+      "path": "src/Flight.cpp",
+      "sha256": "310f2089c2704b1a506eca9499db54d02e6762935e6664874947f372c2158783",
+      "unchanged": true
+    },
+    {
+      "path": "src/FlightEnvironment.cpp",
+      "sha256": "eb4aa60f90d1032baed783a400985a4e7737a1d1b7b445864475bb9c8a97247b",
+      "unchanged": true
+    },
+    {
+      "path": "src/FlightValidation.hpp",
+      "sha256": "d13acff9a732f1333b6610d1c96ed48becc6d4b0a23d2684b6e8f6af2388d69e",
+      "unchanged": true
+    },
+    {
+      "path": "src/Geometry.cpp",
+      "sha256": "ee2e10876440287d69ad039d002fbe2dabe869f58d46ae9b4c738891c693ab78",
+      "unchanged": true
+    },
+    {
+      "path": "src/HyperionRenderer.cpp",
+      "sha256": "44b845cc8b90e1015093b65bda0c6fca117d7a4f05956aa63f7b7a041edeaaa2",
+      "unchanged": true
+    },
+    {
+      "path": "src/HyperionRenderer.hpp",
+      "sha256": "f81dc2d0e76e0bf9da6b11b217fcaf9d971f780fd03d1fb45cd3d29c32065405",
+      "unchanged": true
+    },
+    {
+      "path": "src/LandingLightValidation.hpp",
+      "sha256": "14aeb77e6a2e8be460d59945263a0d2593f5186b31cb9ce4562a394ead22587c",
+      "unchanged": true
+    },
+    {
+      "path": "src/MaterialTexture.cpp",
+      "sha256": "dd20af2e714fe51d5dfed65047e3739f99d3d6b3c550104793bcb6d55bb56b91",
+      "unchanged": true
+    },
+    {
+      "path": "src/Navigation.cpp",
+      "sha256": "4a7cf18ebc5bb4755564fbda15a2d7943fa7ef626d5e789e83ce3f7e9a786c6e",
+      "unchanged": true
+    },
+    {
+      "path": "src/PilotValidation.hpp",
+      "sha256": "7249fc6eb12e8d0037a639acf6fb3dee18c65966ffe9ca648cb32078cf99681b",
+      "unchanged": true
+    },
+    {
+      "path": "src/PlanetDiversityValidation.hpp",
+      "sha256": "88e45ceb08d25b6fcc910f07514c00c4cb78e4da24cd8d2822c54ef5b9555551",
+      "unchanged": true
+    },
+    {
+      "path": "src/PlanetValidation.hpp",
+      "sha256": "c886490a8ef403abe6102459dcb24d040b62db251384d4398cb1606d17fce39c",
+      "unchanged": true
+    },
+    {
+      "path": "src/Planetology.cpp",
+      "sha256": "f5c862a7bb652adc5c43f98c2bf99fa1bed1bc4c9157eb9c7b868569408ef014",
+      "unchanged": true
+    },
+    {
+      "path": "src/PolarValidation.hpp",
+      "sha256": "819d9dbf3671d8e14ec3b564c68e9a149f7186e5fb43054ffbd6afca273bc901",
+      "unchanged": true
+    },
+    {
+      "path": "src/Presentation.cpp",
+      "sha256": "c8b112cfc7dc767b25c5d91fda6c83c6781ada02989b23431533bbede594a9f4",
+      "unchanged": true
+    },
+    {
+      "path": "src/Processes.cpp",
+      "sha256": "0c57a71c3e7c31928c8b777abf4abb777a3e53fb86c0cddb58238a39a1ccfb8e",
+      "unchanged": true
+    },
+    {
+      "path": "src/ShipDynamics.cpp",
+      "sha256": "f0c0c51ded13283dd9c9ed5adb857d52fb712640afea21d74081e03a8a03602d",
+      "unchanged": true
+    },
+    {
+      "path": "src/StellarDiversityValidation.hpp",
+      "sha256": "b97142c06c5f4ca0598ede8724844b66c55593dec955442884cff1776168e4fd",
+      "unchanged": true
+    },
+    {
+      "path": "src/StellarEvolution.cpp",
+      "sha256": "3b99aef93167545a452f49508da1b8c358c53d62b615441bc3103e2b83a74045",
+      "unchanged": true
+    },
+    {
+      "path": "src/StellarOptics.cpp",
+      "sha256": "05e4953926109df05a8a280068611f0e89a4ce60cf8393b6b4a60c17a199a48f",
+      "unchanged": true
+    },
+    {
+      "path": "src/Streaming.cpp",
+      "sha256": "73064638f21264848cc9273e58f61c1557ce6ce7eaefa47ee6cb495964681a2a",
+      "unchanged": true
+    },
+    {
+      "path": "src/StreamingValidation.hpp",
+      "sha256": "1fb7ca73a95b39b1fc1bb8ee9daf9ca66c5fe02f25d994391dd6e4b8f8fe8024",
+      "unchanged": true
+    },
+    {
+      "path": "src/SurfaceLife.cpp",
+      "sha256": "2e43b919df66e77d39930fcc0bcdf2571186a17cd49733ca42f14da51d8c77dc",
+      "unchanged": true
+    },
+    {
+      "path": "src/SurfaceLifeCache.cpp",
+      "sha256": "b62708aa72a4529584cd7c0301e5f2409e7119253a881db29649a950421b6b31",
+      "unchanged": true
+    },
+    {
+      "path": "src/SurfaceMeshes.cpp",
+      "sha256": "3c674d43f6eb4aadbdfa9b0eb0c63edec4d712a6248489e81b8091c8f75e88b4",
+      "unchanged": true
+    },
+    {
+      "path": "src/SurfaceRendering.hpp",
+      "sha256": "9cfbe1c96ace423d8c01010d5987be26733202e59f1616a37b17a17aa50b9077",
+      "unchanged": true
+    },
+    {
+      "path": "src/SurfaceShading.cpp",
+      "sha256": "3fa5bbede2d27a47ecd264722d12d187417bade494381f43f39831222af513d0",
+      "unchanged": true
+    },
+    {
+      "path": "src/SurfaceValidation.hpp",
+      "sha256": "03a015c506060cdc0c374067f243ba743853856a59e5254851f9a60e01d7bca9",
+      "unchanged": true
+    },
+    {
+      "path": "src/Terrain.cpp",
+      "sha256": "a9fbba49d7deef7e1c5eead2cc8c8ab20f20a8756775bd5aab3c8abe2bb438c3",
+      "unchanged": true
+    },
+    {
+      "path": "src/TerrainValidation.hpp",
+      "sha256": "0bd90103297f69d51c14b06d5f206df8c3b941456fb56ca32a681028245beee4",
+      "unchanged": true
+    },
+    {
+      "path": "src/UiValidation.hpp",
+      "sha256": "6150ba19af1f4ce79537b07dc17f89118f9921770b04c85de318ddbc593b2b24",
+      "unchanged": true
+    },
+    {
+      "path": "src/Universe.cpp",
+      "sha256": "bd3e3bff5292637763e59edc734be90b92f89075687c28a8b59efc9fd68dde97",
+      "unchanged": true
+    },
+    {
+      "path": "src/Weather.cpp",
+      "sha256": "d1cd08524047a345132cba0bc60fae4b26c14f8e421075a103df73516380a719",
+      "unchanged": true
+    },
+    {
+      "path": "src/WeatherField.cpp",
+      "sha256": "7b127e91a0896df36e0a1b9ef990f6017fb7642ca6a89c0e7e35932dfa4de0ce",
+      "unchanged": true
+    },
+    {
+      "path": "src/WeatherValidation.hpp",
+      "sha256": "09bf9d2c6fff964ea8c507a5f5f206f9a892445e018d4673eff08890ceb31b6a",
+      "unchanged": true
+    },
+    {
+      "path": "src/WindowSizing.hpp",
+      "sha256": "f43c6f2537d54f5eeb1586de432c93792c6a5a94d22da80d36c5e7531d0c56e4",
+      "unchanged": true
+    },
+    {
+      "path": "src/World.cpp",
+      "sha256": "a9bb5755250f322b75ed0e1c131e68d7b535ed8964620743f5c95a8f96572077",
+      "unchanged": true
+    }
+  ],
+  "existing_activity_generation_unchanged": true,
+  "existing_pilot_dynamics_unchanged": true
+}

@@ -1,4 +1,5 @@
 #include "infinite/Activity.hpp"
+#include "infinite/CombatActors.hpp"
 #include "infinite/Planetology.hpp"
 #include "infinite/SurfaceLife.hpp"
 #include <algorithm>
@@ -217,8 +218,7 @@ bool ActivityState::restore(std::string_view text, const Universe& u) {
                                            [&](const auto& s) { return s.slot == slot; }))
                     return false;
             } else
-                sampleActivity(u.describe(candidate.selected->home), candidate.selected->slot,
-                               candidate.seconds);
+                sampleCombatActivity(u, *candidate.selected, candidate.seconds);
         }
         in >> std::ws;
         if (!in.eof())

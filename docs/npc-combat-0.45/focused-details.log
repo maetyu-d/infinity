@@ -1,0 +1,51 @@
+Start testing: Nov 01 01:32 GMT
+----------------------------------------------------------
+1/90 Testing: npc_combat_behaviour
+1/90 Test: npc_combat_behaviour
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_npc_combat_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"npc_combat_behaviour" start time: Nov 01 01:32 GMT
+Output:
+----------------------------------------------------------
+1586 NPC attack, evasion, retreat, safety, patrol, persistence and deterministic steering checks passed
+<end of output>
+Test time =   3.93 sec
+----------------------------------------------------------
+Test Passed.
+"npc_combat_behaviour" end time: Nov 01 01:32 GMT
+"npc_combat_behaviour" time elapsed: 00:00:03
+----------------------------------------------------------
+
+23/90 Testing: cockpit_layout_and_targeting
+23/90 Test: cockpit_layout_and_targeting
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_cockpit_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"cockpit_layout_and_targeting" start time: Nov 01 01:32 GMT
+Output:
+----------------------------------------------------------
+PASS: 2144828 cockpit layout, target projection, decluttering, stable selection and SI unit checks
+<end of output>
+Test time =   1.12 sec
+----------------------------------------------------------
+Test Passed.
+"cockpit_layout_and_targeting" end time: Nov 01 01:32 GMT
+"cockpit_layout_and_targeting" time elapsed: 00:00:01
+----------------------------------------------------------
+
+2/90 Testing: weapons_combat_and_equipment
+2/90 Test: weapons_combat_and_equipment
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_weapons_tests" "/Users/user/Documents/SC tutorial/Infinite/build/economy/weapons-test"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"weapons_combat_and_equipment" start time: Nov 01 01:32 GMT
+Output:
+----------------------------------------------------------
+183 weapon, damage, heat, trade, upgrade, migration and wreck accounting checks passed
+<end of output>
+Test time =  12.87 sec
+----------------------------------------------------------
+Test Passed.
+"weapons_combat_and_equipment" end time: Nov 01 01:32 GMT
+"weapons_combat_and_equipment" time elapsed: 00:00:12
+----------------------------------------------------------
+
+End testing: Nov 01 01:32 GMT

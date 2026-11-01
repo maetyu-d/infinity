@@ -1,4 +1,5 @@
 #include "infinite/Weapons.hpp"
+#include "infinite/CombatActors.hpp"
 #include "infinite/Piloting.hpp"
 #include "infinite/Planetology.hpp"
 #include <algorithm>
@@ -100,22 +101,9 @@ void WeaponSystem::apply(ActivityBody& body) const {
         body.tint *= float(.45 + .55 * body.hull / 100);
     }
 }
-bool WeaponSystem::fire(const Universe& u, const WeaponRay& input, std::span<const ActivityBody> targets,
-                        const Geometry* geometry) {
-    if (!level_ || cooldown_ > 1e-9 || overheated_ || !finite(input.origin) || !finite(input.direction) ||
-        !finite(input.right) || !std::isfinite(input.scale) || input.scale < 1e-12 || input.scale > 1 ||
-        !std::isfinite(input.seconds) || input.seconds < 0 || input.seconds > 1e12 ||
-        glm::length(input.direction) < .99 || glm::length(input.direction) > 1.01 ||
-        shotsFired_ >= 1000000000000ULL)
-        return false;
-    WeaponRay ray = input;
-    ray.direction = glm::normalize(ray.direction);
-    const auto& spec = weaponSpec(level_);
-    if (heat_ + spec.heatPerShot > 100) {
-        overheated_ = true;
-        return false;
-    }
-    auto limit = spec.rangeMetres * ray.scale;
+WeaponTrace traceWeapon(const Universe& u, const WeaponRay& ray, double rangeMetres,
+                        std::span<const ActivityBody> targets, const Geometry* geometry) {
+    auto limit = rangeMetres;
     const auto home = u.describe(ray.reference);
     struct HomeRay {
         Address home;
@@ -150,7 +138,7 @@ bool WeaponSystem::fire(const Universe& u, const WeaponRay& input, std::span<con
             const double radius = std::pow(10., p.frame.logRadius);
             limit = std::min(limit, sphere(-local.origin, local.direction, radius));
             if (hasSolidSurface(p) &&
-                std::abs(glm::length(local.origin) - radius) < spec.rangeMetres * ray.scale + radius * .05) {
+                std::abs(glm::length(local.origin) - radius) < rangeMetres + radius * .05) {
                 auto clearance = [&](double t) {
                     const auto point = local.origin + local.direction * t;
                     return glm::length(point) - radius - u.terrainHeight(p, glm::normalize(point));
@@ -177,10 +165,9 @@ bool WeaponSystem::fire(const Universe& u, const WeaponRay& input, std::span<con
     }
     if (geometry)
         limit = meshHit(u, ray, *geometry, limit);
-    const bool surface = limit < spec.rangeMetres * ray.scale;
+    const bool surface = limit < rangeMetres;
     std::optional<ActivityBody> chosen;
     for (auto b : targets) {
-        apply(b);
         const auto& local = localRay(b.id.home);
         const auto distance = sphere(b.position - local.origin, local.direction, b.radius);
         if (distance >= ray.scale * 6 && distance < limit) {
@@ -188,6 +175,30 @@ bool WeaponSystem::fire(const Universe& u, const WeaponRay& input, std::span<con
             chosen = b;
         }
     }
+    return {limit, surface || bool(chosen), chosen};
+}
+bool WeaponSystem::fire(const Universe& u, const WeaponRay& input, std::span<const ActivityBody> targets,
+                        const Geometry* geometry) {
+    if (!level_ || cooldown_ > 1e-9 || overheated_ || !finite(input.origin) || !finite(input.direction) ||
+        !finite(input.right) || !std::isfinite(input.scale) || input.scale < 1e-12 || input.scale > 1 ||
+        !std::isfinite(input.seconds) || input.seconds < 0 || input.seconds > 1e12 ||
+        glm::length(input.direction) < .99 || glm::length(input.direction) > 1.01 ||
+        shotsFired_ >= 1000000000000ULL)
+        return false;
+    WeaponRay ray = input;
+    ray.direction = glm::normalize(ray.direction);
+    const auto& spec = weaponSpec(level_);
+    if (heat_ + spec.heatPerShot > 100) {
+        overheated_ = true;
+        return false;
+    }
+    std::vector<ActivityBody> presented(targets.begin(), targets.end());
+    for (auto& body : presented)
+        apply(body);
+    const auto trace = traceWeapon(u, ray, spec.rangeMetres * ray.scale, presented, geometry);
+    const auto limit = trace.distance;
+    const auto& chosen = trace.body;
+    const bool surface = trace.blocked;
     bool disabled = false;
     if (chosen && !chosen->disabled && chosen->kind != ActivityKind::Harbour &&
         chosen->kind != ActivityKind::SurfacePort) {
@@ -260,7 +271,7 @@ bool WeaponSystem::restore(std::string_view text, const Universe& u) {
                 !std::isfinite(glm::length(d.orientation)) || std::abs(glm::length(d.orientation) - 1) > 1e-6)
                 return false;
             d.id = ActivityId::parse(id);
-            const auto body = sampleActivity(u.describe(d.id.home), d.id.slot, d.hitSeconds);
+            const auto body = sampleCombatActivity(u, d.id, d.hitSeconds);
             if (body.kind == ActivityKind::Harbour || body.kind == ActivityKind::SurfacePort ||
                 std::any_of(p.damage_.begin(), p.damage_.end(), [&](const auto& x) { return x.id == d.id; }))
                 return false;

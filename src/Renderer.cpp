@@ -2,6 +2,7 @@
 #include "HyperionRenderer.hpp"
 #include "infinite/Cockpit.hpp"
 #include "infinite/Economy.hpp"
+#include "infinite/NpcCombat.hpp"
 #include "infinite/StellarEvolution.hpp"
 #include "infinite/Streaming.hpp"
 #include "infinite/SurfaceShading.hpp"
@@ -140,6 +141,8 @@ struct Renderer::Impl {
     std::vector<CelestialContact> skyOccluders;
     const ActivityState* activity = nullptr;
     const WeaponSystem* weapons = nullptr;
+    const NpcCombat* npcCombat = nullptr;
+    std::vector<ActivityBody> combatBodies;
     std::vector<ActivityBody> weaponTargets;
     std::shared_ptr<const EconomySnapshot> economy;
     const MarketView* market = nullptr;
@@ -790,6 +793,7 @@ struct Renderer::Impl {
     void renderActivity(const std::vector<Node>& nodes, const Navigation& nav, RegionCache& cache) {
         activityContacts.clear();
         weaponTargets.clear();
+        combatBodies.clear();
         activityPicks.clear();
         stats.activityBytes = craftBytes;
         renderSurfaceEnvironment(nodes, nav, cache);
@@ -838,11 +842,19 @@ struct Renderer::Impl {
                                 body = sampleEconomicFreight(universe, *economy->network, *it,
                                                              activity->seconds);
                         }
+                if (npcCombat && (local || pinned))
+                    bodies.push_back(sampleRaider(universe, planet.address, activity->seconds));
                 if (economy)
                     for (auto& body : bodies)
                         if (body.kind == ActivityKind::Harbour)
                             annotateEconomicPort(body, *economy);
                 for (auto body : bodies) {
+                    if (npcCombat) {
+                        const auto range = glm::length(body.position - planetEye);
+                        if (range < 30000 && combatBodies.size() < 512)
+                            combatBodies.push_back(body);
+                        npcCombat->apply(body);
+                    }
                     if (weapons)
                         weapons->apply(body);
                     ++stats.activityBodies;
@@ -882,7 +894,8 @@ struct Renderer::Impl {
                         if (auto screen = project(shell))
                             activityPicks.emplace_back(body.id, *screen);
                     const double pixels = angular * height / std::tan(fieldOfView * .5);
-                    const auto role = size_t(body.kind);
+                    const auto role =
+                        size_t(body.kind == ActivityKind::Raider ? ActivityKind::Patrol : body.kind);
                     const unsigned detail = pixels > 48 ? 2 : pixels > 8 ? 1 : 0;
                     if (pixels > 1.6 && -cameraSpace(point).z > .00005 && distance / units < 8000) {
                         auto model = glm::translate(glm::dmat4(1), deltaSI / units) *
@@ -1416,6 +1429,12 @@ void Renderer::setEconomy(std::shared_ptr<const EconomySnapshot> economy, const 
     impl_->economy = std::move(economy);
     impl_->market = market;
 }
+void Renderer::setNpcCombat(const NpcCombat* combat) {
+    impl_->npcCombat = combat;
+}
+std::span<const ActivityBody> Renderer::combatBodies() const {
+    return impl_->combatBodies;
+}
 void Renderer::setWeapons(const WeaponSystem* weapons) {
     impl_->weapons = weapons;
 }
@@ -1898,14 +1917,14 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                 }
         p.transient(trails, p.worldView(), true, true);
     }
-    if (p.weapons && !p.weapons->shots().empty()) {
+    if ((p.weapons && !p.weapons->shots().empty()) || (p.npcCombat && !p.npcCombat->shots().empty())) {
         Mesh beams;
         const auto rotation = glm::mat4_cast(glm::quat(p.cameraInverse));
         const glm::mat4 projection(p.projection);
         bgfx::setViewTransform(63, glm::value_ptr(rotation), glm::value_ptr(projection));
         bgfx::setViewRect(63, 0, 0, uint16_t(p.width), uint16_t(p.height));
         const double units = std::pow(10., nav.logDistance);
-        for (const auto& shot : p.weapons->shots()) {
+        auto drawShot = [&](const WeaponShot& shot) {
             const auto source = p.universe.describe(shot.reference);
             const double sourceUnits = std::pow(10., source.frame.logRadius);
             const auto a = p.universe.pointRelative(shot.reference, shot.from / sourceUnits, nav.anchor,
@@ -1914,7 +1933,8 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
             const auto b =
                 p.universe.pointRelative(shot.reference, shot.to / sourceUnits, nav.anchor, nav.logDistance) -
                 p.eye;
-            const auto colour = weaponSpec(shot.level).colour * float(1 - shot.age / .17);
+            const auto colour = (shot.enemy ? glm::vec3(1, .22, .12) : weaponSpec(shot.level).colour) *
+                                float(1 - shot.age / .17);
             const auto right = nav.orientation * glm::dvec3(1, 0, 0) * (shot.scale * .1 / units);
             addLine(beams, a, b, colour * 2.f);
             addLine(beams, a + right, b + right, glm::vec3(1.5));
@@ -1928,7 +1948,13 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                     addLine(beams, b, b + direction * spread, colour * 2.f);
                 }
             }
-        }
+        };
+        if (p.weapons)
+            for (const auto& shot : p.weapons->shots())
+                drawShot(shot);
+        if (p.npcCombat)
+            for (const auto& shot : p.npcCombat->shots())
+                drawShot(shot);
         p.transient(beams, 63, true, true);
     }
     if (opticalDepth) {

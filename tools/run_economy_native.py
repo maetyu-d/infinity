@@ -32,9 +32,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('executable')
     parser.add_argument('output', type=Path)
+    parser.add_argument('--scenario', choices=('economy-test', 'npc-combat-test'), default='economy-test')
     args = parser.parse_args()
     root = args.output
-    command = [args.executable, '--economy-test', '--render-mode', 'hyperion',
+    command = [args.executable, '--' + args.scenario, '--render-mode', 'hyperion',
                '--width', '1440', '--height', '900', '--capture-dir', str(root / 'captures'),
                '--data', str(root / 'data'), '--profile', str(root / 'frames.csv')]
     process = subprocess.Popen(command)
@@ -44,7 +45,7 @@ def main():
         while process.poll() is None:
             compress(root / 'captures')
             if time.monotonic() > deadline:
-                raise TimeoutError('Native economy exceeded its capture deadline')
+                raise TimeoutError('Native gameplay exceeded its capture deadline')
             time.sleep(.5)
         compress(root / 'captures')
         return process.returncode

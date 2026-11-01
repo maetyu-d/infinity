@@ -1,5 +1,7 @@
 # INFINITE
 
+**0.45:** hostile raiders acquire, attack, evade and retreat; existing patrols respond to attacks on themselves or nearby civilians. Enemy fire damages the saved player hull. **H** selects a visible hostile; **Space** fires the fitted laser. Guarded ports, landing, cruise and extreme shrinking provide escape options. [NPC combat, controls and validation](docs/NPC_COMBAT_0_45.md).
+
 **0.44:** a starter pulse laser, Space firing with heat/recoil/impact effects, damage and persistent disabled craft, plus three tradable/upgradable weapon grades. **F2 → F5 → Weapons** buys, upgrades and sells the fitted laser using existing port parts, crews and money. Wrecked freighter cargo remains accounted for. [Weapons, controls and validation](docs/WEAPONS_0_44.md).
 
 **0.43:** funded household relief and plant recovery jobs at existing surface settlements, reserved maintenance kits, paid repair crews, and persistent delivery outcomes. **F2 → F5 → Jobs** accepts and delivers recovery supplies; **Outcomes** shows payment and actual health, power, readiness, service and production changes. Partial deliveries, crew pauses, expiry and save reloads retain their real goods and money. [Recovery jobs and delivery reports](docs/ECONOMY_0_43.md).

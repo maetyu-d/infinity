@@ -1,0 +1,466 @@
+ninja: warning: premature end of file; recovering
+[0/2] Re-checking globbed directories...
+[1/2] Re-running CMake...
+CMake Deprecation Warning at external/glm/CMakeLists.txt:1 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+
+
+CMake Deprecation Warning at external/glm/CMakeLists.txt:2 (cmake_policy):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+
+
+-- GLM: Version 1.0.1
+-- GLM: Disable -Wc++98-compat warnings
+-- GLM: Build with C++ features auto detection
+-- CPM: Adding package FastSIMD@ (/Users/user/Documents/SC tutorial/Infinite/external/FastSIMD)
+-- FastSIMD: Detected arch "ARM" "AARCH64"
+FastSIMD: "FastSIMD_FastNoise" No FEATURE_SETS specified, using default feature sets
+-- FastSIMD: Created dispatch library "FastSIMD_FastNoise" with Feature Sets: NEON;AARCH64
+CMake Deprecation Warning at external/oneTBB/CMakeLists.txt:42 (cmake_policy):
+  The OLD behavior for policy CMP0148 will be removed from a future version
+  of CMake.
+
+  The cmake-policies(7) manual explains that the OLD behaviors of all
+  policies are deprecated and that a policy should be set to OLD only under
+  specific short-term circumstances.  Projects should be ported to the NEW
+  behavior and not rely on setting a policy to OLD.
+
+
+CMake Warning at external/oneTBB/CMakeLists.txt:145 (message):
+  You are building oneTBB as a static library.  This is highly discouraged
+  and such configuration is not supported.  Consider building a dynamic
+  library to avoid unforeseen issues.
+
+
+-- TBBBind build targets are disabled due to unsupported environment
+-- ZSTD VERSION: 1.5.7
+-- CMAKE_INSTALL_PREFIX: /usr/local
+-- CMAKE_INSTALL_LIBDIR: lib
+-- ZSTD_LEGACY_SUPPORT defined!
+-- ZSTD_MULTITHREAD_SUPPORT is enabled
+-- Could NOT find PkgConfig (missing: PKG_CONFIG_EXECUTABLE)
+-- Could NOT find LibUSB (missing: LibUSB_LIBRARY LibUSB_INCLUDE_PATH) (found version "LibUSB_VERSION-NOTFOUND")
+--
+-- SDL3 was configured with the following options:
+--
+-- Platform: Darwin-25.4.0
+-- 64-bit:   TRUE
+-- Compiler: /usr/bin/cc
+-- Revision: SDL3-3.2.8-checkpoint/infinite-0.36-before-flight-physics-14-gec708a0
+-- Vendor:
+--
+-- Subsystems:
+--   Audio:    OFF
+--   Video:    ON
+--   GPU:      OFF
+--   Render:   OFF
+--   Camera:   OFF
+--   Joystick: OFF
+--   Haptic:   OFF
+--   Hidapi:   ON
+--   Power:    ON
+--   Sensor:   OFF
+--   Dialog:   ON
+--
+-- Options:
+--   SDL_ALSA                    (Wanted: OFF): OFF
+--   SDL_ALSA_SHARED             (Wanted: OFF): OFF
+--   SDL_ALTIVEC                 (Wanted: OFF): OFF
+--   SDL_ARMNEON                 (Wanted: ON): ON
+--   SDL_ASAN                    (Wanted: OFF): OFF
+--   SDL_ASSEMBLY                (Wanted: ON): ON
+--   SDL_ASSERTIONS              (Wanted: auto): auto
+--   SDL_AVX                     (Wanted: OFF): OFF
+--   SDL_AVX2                    (Wanted: OFF): OFF
+--   SDL_AVX512F                 (Wanted: OFF): OFF
+--   SDL_BACKGROUNDING_SIGNAL    (Wanted: OFF): OFF
+--   SDL_CCACHE                  (Wanted: OFF): OFF
+--   SDL_CLANG_TIDY              (Wanted: OFF): OFF
+--   SDL_CLOCK_GETTIME           (Wanted: OFF): OFF
+--   SDL_COCOA                   (Wanted: ON): ON
+--   SDL_DBUS                    (Wanted: OFF): OFF
+--   SDL_DEPS_SHARED             (Wanted: ON): OFF
+--   SDL_DIRECTX                 (Wanted: OFF): OFF
+--   SDL_DISKAUDIO               (Wanted: OFF): OFF
+--   SDL_DUMMYAUDIO              (Wanted: OFF): OFF
+--   SDL_DUMMYCAMERA             (Wanted: OFF): OFF
+--   SDL_DUMMYVIDEO              (Wanted: ON): ON
+--   SDL_EXAMPLES                (Wanted: OFF): OFF
+--   SDL_EXAMPLES_LINK_SHARED    (Wanted: OFF): OFF
+--   SDL_FOREGROUNDING_SIGNAL    (Wanted: OFF): OFF
+--   SDL_GCC_ATOMICS             (Wanted: ON): ON
+--   SDL_GPU_DXVK                (Wanted: OFF): OFF
+--   SDL_HIDAPI                  (Wanted: ON): ON
+--   SDL_HIDAPI_JOYSTICK         (Wanted: ON): OFF
+--   SDL_HIDAPI_LIBUSB           (Wanted: ON): OFF
+--   SDL_HIDAPI_LIBUSB_SHARED    (Wanted: ON): OFF
+--   SDL_IBUS                    (Wanted: OFF): OFF
+--   SDL_INSTALL                 (Wanted: OFF): OFF
+--   SDL_INSTALL_TESTS           (Wanted: OFF): OFF
+--   SDL_JACK                    (Wanted: OFF): OFF
+--   SDL_JACK_SHARED             (Wanted: OFF): OFF
+--   SDL_KMSDRM                  (Wanted: OFF): OFF
+--   SDL_KMSDRM_SHARED           (Wanted: OFF): OFF
+--   SDL_LASX                    (Wanted: OFF): OFF
+--   SDL_LIBC                    (Wanted: ON): ON
+--   SDL_LIBICONV                (Wanted: OFF): OFF
+--   SDL_LIBUDEV                 (Wanted: ON): OFF
+--   SDL_LIBURING                (Wanted: OFF): OFF
+--   SDL_LSX                     (Wanted: OFF): OFF
+--   SDL_METAL                   (Wanted: ON): ON
+--   SDL_MMX                     (Wanted: OFF): OFF
+--   SDL_OFFSCREEN               (Wanted: ON): ON
+--   SDL_OPENGL                  (Wanted: ON): ON
+--   SDL_OPENGLES                (Wanted: ON): ON
+--   SDL_OPENVR                  (Wanted: OFF): OFF
+--   SDL_OSS                     (Wanted: OFF): OFF
+--   SDL_PIPEWIRE                (Wanted: OFF): OFF
+--   SDL_PIPEWIRE_SHARED         (Wanted: OFF): OFF
+--   SDL_PTHREADS                (Wanted: ON): ON
+--   SDL_PTHREADS_SEM            (Wanted: ON): ON
+--   SDL_PULSEAUDIO              (Wanted: OFF): OFF
+--   SDL_PULSEAUDIO_SHARED       (Wanted: OFF): OFF
+--   SDL_RENDER_D3D              (Wanted: OFF): OFF
+--   SDL_RENDER_D3D11            (Wanted: OFF): OFF
+--   SDL_RENDER_D3D12            (Wanted: OFF): OFF
+--   SDL_RENDER_GPU              (Wanted: OFF): OFF
+--   SDL_RENDER_METAL            (Wanted: OFF): OFF
+--   SDL_RENDER_VULKAN           (Wanted: OFF): OFF
+--   SDL_ROCKCHIP                (Wanted: OFF): OFF
+--   SDL_RPATH                   (Wanted: ON): OFF
+--   SDL_RPI                     (Wanted: OFF): OFF
+--   SDL_SNDIO                   (Wanted: OFF): OFF
+--   SDL_SNDIO_SHARED            (Wanted: OFF): OFF
+--   SDL_SSE                     (Wanted: OFF): OFF
+--   SDL_SSE2                    (Wanted: OFF): OFF
+--   SDL_SSE3                    (Wanted: OFF): OFF
+--   SDL_SSE4_1                  (Wanted: OFF): OFF
+--   SDL_SSE4_2                  (Wanted: OFF): OFF
+--   SDL_SYSTEM_ICONV            (Wanted: OFF): OFF
+--   SDL_TESTS                   (Wanted: OFF): OFF
+--   SDL_TESTS_LINK_SHARED       (Wanted: OFF): OFF
+--   SDL_UNINSTALL               (Wanted: OFF): OFF
+--   SDL_VIRTUAL_JOYSTICK        (Wanted: ON): OFF
+--   SDL_VIVANTE                 (Wanted: OFF): OFF
+--   SDL_VULKAN                  (Wanted: ON): ON
+--   SDL_WASAPI                  (Wanted: OFF): OFF
+--   SDL_WAYLAND                 (Wanted: OFF): OFF
+--   SDL_WAYLAND_LIBDECOR        (Wanted: OFF): OFF
+--   SDL_WAYLAND_LIBDECOR_SHARED (Wanted: OFF): OFF
+--   SDL_WAYLAND_SHARED          (Wanted: OFF): OFF
+--   SDL_X11                     (Wanted: OFF): OFF
+--   SDL_X11_SHARED              (Wanted: OFF): OFF
+--   SDL_X11_XCURSOR             (Wanted: OFF): OFF
+--   SDL_X11_XDBE                (Wanted: OFF): OFF
+--   SDL_X11_XFIXES              (Wanted: OFF): OFF
+--   SDL_X11_XINPUT              (Wanted: OFF): OFF
+--   SDL_X11_XRANDR              (Wanted: OFF): OFF
+--   SDL_X11_XSCRNSAVER          (Wanted: OFF): OFF
+--   SDL_X11_XSHAPE              (Wanted: OFF): OFF
+--   SDL_X11_XSYNC               (Wanted: OFF): OFF
+--   SDL_XINPUT                  (Wanted: OFF): OFF
+--
+--  Build Shared Library: OFF
+--  Build Static Library: ON
+--  Build Static Library with Position Independent Code:
+--  Build libraries as Apple Framework: OFF
+--
+-- If something was not detected, although the libraries
+-- were installed, then make sure you have set the
+-- CMAKE_C_FLAGS and CMAKE_PREFIX_PATH CMake variables correctly.
+--
+-- Configuring done (12.2s)
+CMake Warning (dev) at CMakeLists.txt:15 (target_link_libraries):
+  The library that is being linked to, SQLite::SQLite3, is marked as being
+  deprecated by the owner.  The message provided by the developer is:
+
+  The target name SQLite::SQLite3 is deprecated.  Please use SQLite3::SQLite3
+  instead.
+
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+CMake Warning (dev) at CMakeLists.txt:15 (target_link_libraries):
+  The library that is being linked to, SQLite::SQLite3, is marked as being
+  deprecated by the owner.  The message provided by the developer is:
+
+  The target name SQLite::SQLite3 is deprecated.  Please use SQLite3::SQLite3
+  instead.
+
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+CMake Warning (dev) at CMakeLists.txt:15 (target_link_libraries):
+  The library that is being linked to, SQLite::SQLite3, is marked as being
+  deprecated by the owner.  The message provided by the developer is:
+
+  The target name SQLite::SQLite3 is deprecated.  Please use SQLite3::SQLite3
+  instead.
+
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+CMake Warning (dev) at CMakeLists.txt:15 (target_link_libraries):
+  The library that is being linked to, SQLite::SQLite3, is marked as being
+  deprecated by the owner.  The message provided by the developer is:
+
+  The target name SQLite::SQLite3 is deprecated.  Please use SQLite3::SQLite3
+  instead.
+
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+CMake Warning (dev) at CMakeLists.txt:15 (target_link_libraries):
+  The library that is being linked to, SQLite::SQLite3, is marked as being
+  deprecated by the owner.  The message provided by the developer is:
+
+  The target name SQLite::SQLite3 is deprecated.  Please use SQLite3::SQLite3
+  instead.
+
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+CMake Warning (dev) at CMakeLists.txt:15 (target_link_libraries):
+  The library that is being linked to, SQLite::SQLite3, is marked as being
+  deprecated by the owner.  The message provided by the developer is:
+
+  The target name SQLite::SQLite3 is deprecated.  Please use SQLite3::SQLite3
+  instead.
+
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+CMake Warning (dev) at CMakeLists.txt:15 (target_link_libraries):
+  The library that is being linked to, SQLite::SQLite3, is marked as being
+  deprecated by the owner.  The message provided by the developer is:
+
+  The target name SQLite::SQLite3 is deprecated.  Please use SQLite3::SQLite3
+  instead.
+
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+CMake Warning (dev) at CMakeLists.txt:15 (target_link_libraries):
+  The library that is being linked to, SQLite::SQLite3, is marked as being
+  deprecated by the owner.  The message provided by the developer is:
+
+  The target name SQLite::SQLite3 is deprecated.  Please use SQLite3::SQLite3
+  instead.
+
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+CMake Warning (dev) at CMakeLists.txt:15 (target_link_libraries):
+  The library that is being linked to, SQLite::SQLite3, is marked as being
+  deprecated by the owner.  The message provided by the developer is:
+
+  The target name SQLite::SQLite3 is deprecated.  Please use SQLite3::SQLite3
+  instead.
+
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+CMake Warning (dev) at CMakeLists.txt:15 (target_link_libraries):
+  The library that is being linked to, SQLite::SQLite3, is marked as being
+  deprecated by the owner.  The message provided by the developer is:
+
+  The target name SQLite::SQLite3 is deprecated.  Please use SQLite3::SQLite3
+  instead.
+
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+CMake Warning (dev) at CMakeLists.txt:15 (target_link_libraries):
+  The library that is being linked to, SQLite::SQLite3, is marked as being
+  deprecated by the owner.  The message provided by the developer is:
+
+  The target name SQLite::SQLite3 is deprecated.  Please use SQLite3::SQLite3
+  instead.
+
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+-- Generating done (0.8s)
+-- Build files have been written to: /Users/user/Documents/SC tutorial/Infinite/build
+ninja: warning: premature end of file; recovering
+[0/4] Re-checking globbed directories...
+[1/106] Building CXX object CMakeFiles/infinite_core.dir/src/Planetology.cpp.o
+[2/106] Building CXX object CMakeFiles/infinite_core.dir/src/Presentation.cpp.o
+[3/106] Building CXX object CMakeFiles/infinite_core.dir/src/ShipDynamics.cpp.o
+[4/106] Building CXX object CMakeFiles/infinite_core.dir/src/Piloting.cpp.o
+[5/106] Building CXX object CMakeFiles/infinite_core.dir/src/FlightEnvironment.cpp.o
+[6/106] Building CXX object CMakeFiles/infinite_core.dir/src/EconomyDevelopment.cpp.o
+[7/106] Building CXX object CMakeFiles/infinite_core.dir/src/Economy.cpp.o
+[8/106] Building CXX object CMakeFiles/infinite_core.dir/src/EconomyServices.cpp.o
+[9/106] Building CXX object CMakeFiles/infinite_core.dir/src/EconomyHauling.cpp.o
+[10/106] Building CXX object CMakeFiles/infinite_core.dir/src/EconomyWeapons.cpp.o
+[11/106] Building CXX object CMakeFiles/infinite_core.dir/src/Weapons.cpp.o
+[12/106] Building CXX object CMakeFiles/infinite_core.dir/src/CombatActors.cpp.o
+[13/106] Building CXX object CMakeFiles/infinite_core.dir/src/NpcCombat.cpp.o
+[14/106] Building CXX object CMakeFiles/infinite_core.dir/src/EconomyPlanning.cpp.o
+[15/106] Building CXX object CMakeFiles/infinite_core.dir/src/EconomySignals.cpp.o
+[16/106] Building CXX object CMakeFiles/infinite_core.dir/src/EconomyRecovery.cpp.o
+[17/106] Building CXX object CMakeFiles/infinite_core.dir/src/EconomyRecoverySave.cpp.o
+[18/106] Building CXX object CMakeFiles/infinite_core.dir/src/EconomicNetwork.cpp.o
+[19/106] Building CXX object CMakeFiles/infinite_core.dir/src/EconomyRuntime.cpp.o
+[20/106] Building CXX object CMakeFiles/infinite_core.dir/src/Activity.cpp.o
+[21/106] Building CXX object CMakeFiles/infinite_core.dir/src/Cockpit.cpp.o
+[22/106] Building CXX object CMakeFiles/infinite_core.dir/src/ActivityMeshes.cpp.o
+[23/106] Building CXX object CMakeFiles/infinite_core.dir/src/Weather.cpp.o
+[24/106] Building CXX object CMakeFiles/infinite_core.dir/src/WeatherField.cpp.o
+[25/106] Building CXX object CMakeFiles/infinite_core.dir/src/SurfaceLife.cpp.o
+[26/106] Building CXX object CMakeFiles/infinite_core.dir/src/SurfaceLifeCache.cpp.o
+[27/106] Building CXX object CMakeFiles/infinite_core.dir/src/SurfaceMeshes.cpp.o
+[28/106] Building CXX object CMakeFiles/infinite_core.dir/src/CityMeshes.cpp.o
+[29/106] Building C object external/SDL/CMakeFiles/SDL3-static.dir/src/SDL.c.o
+[30/106] Building CXX object CMakeFiles/infinite_core.dir/src/City.cpp.o
+[31/106] Linking CXX static library libinfinite_core.a
+[32/106] Building CXX object CMakeFiles/infinite_npc_combat_tests.dir/tests/NpcCombatTests.cpp.o
+[33/106] Building CXX object CMakeFiles/infinite_economy_recovery_tests.dir/tests/EconomyRecoveryTests.cpp.o
+[34/106] Building CXX object CMakeFiles/infinite_weapons_tests.dir/tests/WeaponsTests.cpp.o
+[35/106] Building CXX object CMakeFiles/infinite_economy_signals_tests.dir/tests/EconomySignalsTests.cpp.o
+[36/106] Building CXX object CMakeFiles/infinite_economy_services_tests.dir/tests/EconomyServicesTests.cpp.o
+[37/106] Building CXX object CMakeFiles/infinite_cockpit_motion_tests.dir/tests/CockpitMotionTests.cpp.o
+[38/106] Building CXX object CMakeFiles/infinite_economy_hauling_tests.dir/tests/EconomyHaulingTests.cpp.o
+[39/106] Building CXX object CMakeFiles/infinite_economy_development_tests.dir/tests/EconomyDevelopmentTests.cpp.o
+[40/106] Building CXX object CMakeFiles/infinite_economy_tests.dir/tests/EconomyTests.cpp.o
+[41/106] Building CXX object CMakeFiles/infinite_ship_physics_tests.dir/tests/ShipPhysicsTests.cpp.o
+[42/106] Building CXX object CMakeFiles/infinite_stellar_evolution_tests.dir/tests/StellarEvolutionTests.cpp.o
+[43/106] Building CXX object CMakeFiles/infinite_planet_diversity_tests.dir/tests/PlanetDiversityTests.cpp.o
+[44/106] Building CXX object CMakeFiles/infinite_weather_process_tests.dir/tests/WeatherProcessTests.cpp.o
+[45/106] Building CXX object CMakeFiles/infinite_weather_benchmark.dir/tools/WeatherBenchmark.cpp.o
+[46/106] Building CXX object CMakeFiles/infinite_stellar_optics_tests.dir/tests/StellarOpticsTests.cpp.o
+[47/106] Building CXX object CMakeFiles/infinite_weather_field_tests.dir/tests/WeatherFieldTests.cpp.o
+[48/106] Building CXX object CMakeFiles/infinite_surface_site_snapshot.dir/tools/SurfaceSiteSnapshot.cpp.o
+[49/106] Building CXX object CMakeFiles/infinite_city_tests.dir/tests/CityTests.cpp.o
+[50/106] Building CXX object CMakeFiles/infinite_surface_life_tests.dir/tests/SurfaceLifeTests.cpp.o
+[51/106] Building CXX object CMakeFiles/infinite_terrain_tests.dir/tests/TerrainTests.cpp.o
+[52/106] Building CXX object CMakeFiles/infinite_cockpit_tests.dir/tests/CockpitTests.cpp.o
+[53/106] Building CXX object CMakeFiles/infinite_activity_tests.dir/tests/ActivityTests.cpp.o
+[54/106] Building CXX object CMakeFiles/infinite_population_tests.dir/tests/PopulationTests.cpp.o
+[55/106] Building CXX object CMakeFiles/infinite_operating_tests.dir/tests/OperatingScaleTests.cpp.o
+[56/106] Building CXX object CMakeFiles/infinite_piloting_tests.dir/tests/PilotingTests.cpp.o
+[57/106] Building CXX object CMakeFiles/infinite_handling_tests.dir/tests/HandlingTests.cpp.o
+[58/106] Building CXX object CMakeFiles/infinite_presentation_tests.dir/tests/PresentationTests.cpp.o
+[59/106] Building CXX object CMakeFiles/infinite.dir/src/Renderer.cpp.o
+[60/106] Building CXX object CMakeFiles/infinite.dir/src/Main.cpp.o
+[61/106] Linking C static library external/SDL/libSDL3.a
+ranlib: warning: 'libSDL3.a(SDL_audiodev.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_keysym_to_keycode.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_keysym_to_scancode.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_scancode_tables.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(imKStoUCS.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_d3dmath.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_unsupported.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_d3d.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_d3d.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_d3d11.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_d3d11.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_d3d12.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_d3d12.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_pipeline_gpu.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_gpu.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_gpu.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_gl.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_gl.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_gles2.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_gles2.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_ps2.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_psp.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_blendfillrect.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_blendline.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_blendpoint.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_drawline.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_drawpoint.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_sw.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_rotate.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_triangle.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_vita_gxm.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_vita_gxm_memory.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_vita_gxm_tools.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_vulkan.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_vulkan.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_mslibc.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(yuv_rgb_lsx.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(yuv_rgb_sse.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_camera_dummy.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_audiodev.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_keysym_to_keycode.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_keysym_to_scancode.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_scancode_tables.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(imKStoUCS.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_d3dmath.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_unsupported.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_d3d.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_d3d.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_d3d11.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_d3d11.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_d3d12.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_d3d12.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_pipeline_gpu.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_gpu.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_gpu.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_gl.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_gl.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_gles2.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_gles2.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_ps2.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_psp.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_blendfillrect.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_blendline.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_blendpoint.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_drawline.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_drawpoint.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_sw.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_rotate.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_triangle.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_vita_gxm.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_vita_gxm_memory.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_vita_gxm_tools.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_render_vulkan.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_shaders_vulkan.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_mslibc.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(yuv_rgb_lsx.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(yuv_rgb_sse.c.o)' has no symbols
+ranlib: warning: 'libSDL3.a(SDL_camera_dummy.c.o)' has no symbols
+[62/106] Linking CXX executable infinite_tests
+[63/106] Linking CXX executable infinite_benchmark
+[64/106] Linking CXX executable infinite_continuity_tests
+[65/106] Linking CXX executable infinite_process_tests
+[66/106] Linking CXX executable infinite_performance_tests
+[67/106] Linking CXX executable infinite_npc_combat_tests
+[68/106] Linking CXX executable infinite_weapons_tests
+[69/106] Linking CXX executable infinite_economy_recovery_tests
+[70/106] Linking CXX executable infinite_economy_signals_tests
+[71/106] Linking CXX executable infinite_economy_services_tests
+[72/106] Linking CXX executable infinite_cockpit_motion_tests
+[73/106] Linking CXX executable infinite_economy_hauling_tests
+[74/106] Linking CXX executable infinite_economy_development_tests
+[75/106] Building CXX object CMakeFiles/infinite.dir/src/HyperionRenderer.cpp.o
+[76/106] Linking CXX executable infinite_economy_tests
+[77/106] Linking CXX executable infinite_ship_physics_tests
+[78/106] Linking CXX executable infinite_stellar_evolution_tests
+[79/106] Linking CXX executable infinite_planet_diversity_tests
+[80/106] Linking CXX executable infinite_weather_process_tests
+[81/106] Linking CXX executable infinite_weather_benchmark
+[82/106] Linking CXX executable infinite_stellar_optics_tests
+[83/106] Linking CXX executable infinite_weather_field_tests
+[84/106] Linking CXX executable infinite_window_tests
+[85/106] Linking CXX executable infinite_depth_tests
+[86/106] Linking CXX executable infinite_surface_site_snapshot
+[87/106] Linking CXX executable infinite_city_tests
+[88/106] Linking CXX executable infinite_surface_life_tests
+[89/106] Linking CXX executable infinite_terrain_tests
+[90/106] Linking CXX executable infinite_cockpit_tests
+[91/106] Linking CXX executable infinite_population_tests
+[92/106] Linking CXX executable infinite_population_snapshot
+[93/106] Linking CXX executable infinite_activity_tests
+[94/106] Linking CXX executable infinite_operating_tests
+[95/106] Linking CXX executable infinite_piloting_tests
+[96/106] Linking CXX executable infinite_handling_tests
+[97/106] Linking CXX executable infinite_streaming_tests
+[98/106] Linking CXX executable infinite_flight_tests
+[99/106] Linking CXX executable infinite_navigation_tests
+[100/106] Linking CXX executable infinite_presentation_tests
+[101/106] Linking CXX executable infinite_shading_tests
+[102/106] Linking CXX executable infinite_material_tests
+[103/106] Linking CXX executable infinite

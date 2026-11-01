@@ -13,6 +13,7 @@ struct CockpitViewport;
 struct EconomySnapshot;
 struct MarketView;
 class WeaponSystem;
+class NpcCombat;
 struct FrameStats {
     double cpuMs = 0, gpuMs = 0, submitMs = 0;
     double cockpitMotionDegrees = 0, cockpitMotionMetres = 0;
@@ -63,6 +64,8 @@ class Renderer {
     std::shared_ptr<const SurfaceWorld> surfaceWorld(const Address&) const;
     uint64_t terrainGeometryDigest() const;
     CockpitViewport cockpitViewport() const;
+    void setNpcCombat(const NpcCombat*);
+    std::span<const ActivityBody> combatBodies() const;
     void setWeapons(const WeaponSystem*);
     void setActivity(const ActivityState*);
     void setEconomy(std::shared_ptr<const EconomySnapshot>, const MarketView*);

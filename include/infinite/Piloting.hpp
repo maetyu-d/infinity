@@ -49,6 +49,9 @@ struct FlightInstruments {
     std::string phase = "MANUAL", drive = "CRUISE", destination = "SELECT A DESTINATION / J NAVIGATE";
     std::string weapon, weaponStatus;
     double weaponHeat = 0;
+    std::string combatStatus;
+    unsigned hostileContacts = 0;
+    double incomingFire = 0;
     std::string weather;
     std::string weatherDetail;
     double weatherSeverity = 0;
@@ -78,6 +81,7 @@ class Pilot {
             ship_.gear = !ship_.gear;
     }
     void setCargoMass(double kg);
+    void applyCombatDamage(double points);
     void applyPortRepairs(uint64_t purchasedPoints);
     double cargoMass() const {
         return cargoMassKg_;

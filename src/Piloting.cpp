@@ -188,6 +188,12 @@ void Pilot::setCargoMass(double kg) {
     if (std::isfinite(kg) && kg >= 0 && kg <= maxShipPayloadKg)
         cargoMassKg_ = kg;
 }
+void Pilot::applyCombatDamage(double points) {
+    if (!std::isfinite(points) || points <= 0)
+        return;
+    ship_.hull = std::max(0., ship_.hull - std::min(100., points));
+    instrument();
+}
 void Pilot::applyPortRepairs(uint64_t purchasedPoints) {
     if (purchasedPoints <= ship_.appliedRepairPoints || purchasedPoints > 1000000000000ULL)
         return;

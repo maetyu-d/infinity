@@ -20,7 +20,15 @@ struct WeaponShot {
     double age = 0, scale = 1;
     bool hit = false, disabled = false;
     unsigned level = 1;
+    bool enemy = false;
 };
+struct WeaponTrace {
+    double distance = 0;
+    bool blocked = false;
+    std::optional<ActivityBody> body;
+};
+WeaponTrace traceWeapon(const Universe&, const WeaponRay&, double rangeMetres, std::span<const ActivityBody>,
+                        const Geometry* = nullptr);
 struct WeaponDamage {
     ActivityId id;
     double hull = 100, hitSeconds = 0;

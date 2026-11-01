@@ -1,0 +1,13 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 50: native_economic_loop
+    Start 45: native_npc_combat_loop
+1/4 Test #45: native_npc_combat_loop ...........   Passed   58.59 sec
+    Start 46: native_npc_combat_images
+2/4 Test #46: native_npc_combat_images .........   Passed    4.16 sec
+3/4 Test #50: native_economic_loop .............   Passed  146.41 sec
+    Start 51: native_economic_images
+4/4 Test #51: native_economic_images ...........   Passed   13.97 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) = 160.40 sec

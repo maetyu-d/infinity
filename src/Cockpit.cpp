@@ -575,12 +575,24 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     quantity("FLIGHT " + duration(t.flightSeconds) + " / " + flightQuantity(t.travelMetres),
              std::max(178., center - 180), 887, std::max(180., w - 490), 9, muted);
     label("TAB HUD", w - 200, 887, 178, muted);
-    if (!t.weapon.empty() && !(market && market->open)) {
-        const CockpitRect armament{center - 158, 697, 316, 48};
-        card(h, armament, t.weaponHeat > 80 ? amber : mint);
+    if (!t.weapon.empty() && !(market && market->open) && !help) {
+        const CockpitRect armament{center - 158, 665, 316, 80};
+        const auto danger = glm::vec3(1, .3, .2);
+        card(h, armament, t.incomingFire > .2 ? danger : t.weaponHeat > 80 ? amber : mint);
         fitted(h.lettering, t.weapon + " / HEAT " + std::to_string(int(t.weaponHeat)) + "%", armament.x + 12,
-               707, 292, 9.5, pearl);
-        fitted(h.lettering, t.weaponStatus, armament.x + 12, 725, 292, 8.8, t.weaponHeat > 80 ? amber : ice);
+               675, 292, 9.5, pearl);
+        fitted(h.lettering, t.weaponStatus, armament.x + 12, 693, 292, 8.8, t.weaponHeat > 80 ? amber : ice);
+        const auto target =
+            std::find_if(activity.begin(), activity.end(), [](const auto& c) { return c.selected; });
+        if (target != activity.end())
+            fitted(h.lettering,
+                   "TARGET HULL " + std::to_string(int(std::ceil(target->body.hull))) + "% / " +
+                       flightQuantity(target->distance),
+                   armament.x + 12, 711, 292, 8.8, target->body.hostile ? danger : ice);
+        else
+            fitted(h.lettering, "H TARGET NEAREST HOSTILE", armament.x + 12, 711, 292, 8.8, muted);
+        fitted(h.lettering, t.combatStatus, armament.x + 12, 729, 292, 8.8,
+               t.hostileContacts ? danger : muted);
     }
     if (market && market->open) {
         const auto& m = *market;
@@ -681,7 +693,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
         return h;
     }
     if (help) {
-        const CockpitRect guide{center - std::min(700., w - 80) * .5, 193, std::min(700., w - 80), 490};
+        const CockpitRect guide{center - std::min(700., w - 80) * .5, 180, std::min(700., w - 80), 520};
         card(h, guide, mint);
         fitted(h.lettering, "FLIGHT CONTROLS", guide.x + 22, guide.y + 22, guide.w - 44, 17.5, pearl);
         const std::pair<const char*, const char*> controls[]{
@@ -701,6 +713,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             {"F6 / TAB", "TRAFFIC / HUD"},
             {"F7", "COCKPIT MOTION"},
             {"SPACE", "FIRE FITTED LASER"},
+            {"H", "TARGET NEAREST HOSTILE"},
             {"F2 / F5", "MARKET PAGES / JOBS / SERVICES / DELIVERY REPORTS"},
             {"F1 / ESC", "CLOSE GUIDE / RELEASE HELM"}};
         for (size_t i = 0; i < std::size(controls); ++i) {
@@ -721,9 +734,10 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             if (c.selected)
                 rect(h.panels, 28, y - 5, 266, 33, amber * .16f, .8f);
             fitted(h.lettering, (c.selected ? "+ " : "  ") + c.body.name, 36, y, 246, 10.5,
-                   c.selected   ? amber
-                   : c.occluded ? muted
-                                : pearl);
+                   c.body.hostile ? glm::vec3(1, .3, .2)
+                   : c.selected   ? amber
+                   : c.occluded   ? muted
+                                  : pearl);
             auto status = c.body.economicBrief.empty() ? c.body.status.substr(0, c.body.status.find(" / "))
                                                        : c.body.economicBrief;
             if (c.occluded)

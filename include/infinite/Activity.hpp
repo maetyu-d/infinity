@@ -12,7 +12,7 @@ struct ActivityId {
     std::string str() const;
     static ActivityId parse(std::string_view);
 };
-enum class ActivityKind : uint8_t { Harbour, Freighter, Ferry, Patrol, Survey, Debris, SurfacePort };
+enum class ActivityKind : uint8_t { Harbour, Freighter, Ferry, Patrol, Survey, Debris, SurfacePort, Raider };
 struct ActivityBody {
     ActivityId id;
     ActivityKind kind = ActivityKind::Harbour;
@@ -22,7 +22,7 @@ struct ActivityBody {
     glm::vec3 tint{1};
     double radius = 1, phase = 0;
     double hull = 100;
-    bool disabled = false;
+    bool disabled = false, hostile = false;
     uint64_t seed = 0;
     std::string name, status;
     // Read-only ledger presentation. Empty while the economy is unavailable.

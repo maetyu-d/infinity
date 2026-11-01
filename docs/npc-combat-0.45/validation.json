@@ -1,0 +1,19 @@
+{
+  "version": "0.45.0",
+  "build": 50,
+  "build_sha256": "be6d6ccf4d206d7e5f01d080c26d32efe510252589e6690bc315c4e478f4a85b",
+  "build_bytes": 8593192,
+  "npc_native_sha256": "be6d6ccf4d206d7e5f01d080c26d32efe510252589e6690bc315c4e478f4a85b",
+  "core_tests_passed": 44,
+  "focused_tests_passed": 3,
+  "npc_assertions": 1586,
+  "npc_captures": 6,
+  "native_combat_frames": 476,
+  "native_combat_median_wall_ms": 68.3939,
+  "native_combat_p95_wall_ms": 121.662,
+  "native_combat_peak_rss_bytes": 139149312,
+  "economy_native_sha256": "be6d6ccf4d206d7e5f01d080c26d32efe510252589e6690bc315c4e478f4a85b",
+  "native_tests_passed": 4,
+  "economy_captures": 33,
+  "total_native_captures": 39
+}
