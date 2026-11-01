@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Infinite VERSION 0.46.0 LANGUAGES C CXX)
+project(Infinite VERSION 0.47.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -40,6 +40,11 @@ else()
 endif()
 enable_testing()
 target_sources(infinite_core PRIVATE src/Crew.cpp)
+target_sources(infinite_core PRIVATE src/EconomyCrew.cpp)
+add_executable(infinite_crew_trade_tests tests/CrewTradeTests.cpp)
+target_link_libraries(infinite_crew_trade_tests PRIVATE infinite_core)
+add_test(NAME crew_commodity_market COMMAND infinite_crew_trade_tests "${CMAKE_BINARY_DIR}/crew/trade-test")
+set_tests_properties(crew_commodity_market PROPERTIES TIMEOUT 180)
 add_executable(infinite_crew_tests tests/CrewTests.cpp)
 target_link_libraries(infinite_crew_tests PRIVATE infinite_core)
 add_test(NAME player_crew_and_damage_control COMMAND infinite_crew_tests "${CMAKE_BINARY_DIR}/crew/runtime-test")
@@ -215,6 +220,13 @@ if(INFINITE_VIEWER)
   endif()
   if(INFINITE_GPU_TESTS)
     find_package(Python3 3.9 COMPONENTS Interpreter REQUIRED)
+    add_test(NAME native_crew_trade_loop COMMAND "${CMAKE_COMMAND}"
+      "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/crew-trade/native"
+      -P "${PROJECT_SOURCE_DIR}/cmake/RunCrewTrade.cmake")
+    set_tests_properties(native_crew_trade_loop PROPERTIES FIXTURES_SETUP crew_trade_captures TIMEOUT 300)
+    add_test(NAME native_crew_trade_images COMMAND "${Python3_EXECUTABLE}"
+      "${PROJECT_SOURCE_DIR}/tools/check_crew_trade_captures.py" "${CMAKE_BINARY_DIR}/crew-trade/native")
+    set_tests_properties(native_crew_trade_images PROPERTIES FIXTURES_REQUIRED crew_trade_captures TIMEOUT 60)
     add_test(NAME native_crew_loop COMMAND "${CMAKE_COMMAND}"
       "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/crew/native"
       -P "${PROJECT_SOURCE_DIR}/cmake/RunCrew.cmake")

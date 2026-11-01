@@ -27,6 +27,10 @@ std::string_view EconomyPlayer::carrierRank() const {
                           : "NEW CARRIER";
 }
 bool Economy::reconcilePlayer(EconomyPlayer& player) const {
+    for (const auto& market : crewMarkets_)
+        for (const auto& m : market.offers)
+            if (crewOwned(player, m.id))
+                return false;
     const auto owned = std::count_if(hauls_.begin(), hauls_.end(), [](const auto& h) {
         return h.phase == HaulPhase::Reserved || h.phase == HaulPhase::InTransit;
     });

@@ -1,5 +1,7 @@
 # Player ship crew — Infinite 0.46
 
+Version 0.47 adds a [crew market](CREW_TRADE_0_47.md): **Backspace now sells** the selected person at a connected port, and **Shift + Backspace** releases them without payment. The port section below records the original 0.46 controls.
+
 Six named crew join the existing player ship, with room for eight. **F8** opens a live crew deck with a compartment schematic, moving crew tokens, roster, health, fatigue, morale, station skills, stores and incident reports. The player remains the captain and flies the ship directly. The external hull, restored manual handling, roll, universe generators and every scientific scale remain intact.
 
 The design takes its broad emphasis on ship emergencies and crew choices from [Subset Games’ FTL](https://www.subsetgames.com/ftl.html), and distinct onboard roles from [MicroProse’s B-17 Flying Fortress](https://store.steampowered.com/app/2000800/B17_Flying_Fortress_The_Mighty_8th_Redux/). Infinite uses its own names, rules, deck diagram and native vector UI. Its seven abstract compartments are a crew-management simulation, rather than a new walkable 3D interior or a replacement for the ship mesh.

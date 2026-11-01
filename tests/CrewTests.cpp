@@ -198,11 +198,12 @@ int main(int argc, char** argv) {
         EconomyPlayer loaded;
         check(loaded.restore(player.serialize()) && loaded.serialize() == player.serialize(),
               "Crew wallet failed persistence");
-        auto legacy = player.serialize();
-        legacy.replace(0, std::string("INFINITE_WALLET 5").size(), "INFINITE_WALLET 4");
-        for (unsigned i = 0; i < 3; ++i)
-            legacy.erase(legacy.find_last_of(' '));
-        check(loaded.restore(legacy) && loaded.crew.hired == 0 && loaded.crew.supplied == 0,
+        std::ostringstream legacy;
+        legacy << "INFINITE_WALLET 4 " << player.credits << ' ' << player.lastCommand;
+        for (auto kg : player.cargo)
+            legacy << ' ' << kg;
+        legacy << " 0 0 0 0 0 0 0 1";
+        check(loaded.restore(legacy.str()) && loaded.crew.hired == 0 && loaded.crew.supplied == 0,
               "Legacy wallet migration granted paid receipts");
         auto bad = player.serialize();
         bad += " corrupt";

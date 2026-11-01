@@ -1,5 +1,7 @@
 # INFINITE
 
+**0.47:** named crew can be bought and sold at connected ports. **F2 → F5 → Crew Market** shows individual offers, skills, condition and bid/ask prices; **Enter** buys, **Backspace** sells. People retain their identity and experience through sale, repurchase and reload. **F8** retains stations and damage control, with direct crew trading shortcuts. [Crew market controls and validation](docs/CREW_TRADE_0_47.md).
+
 **0.46:** six named ship crew, connected stations, skills, fatigue, injuries and casualties, fires, oxygen/breaches and finite damage-control stores. **F8** opens the crew deck: assign stations, dispatch repairs/firefighters/first aid, rest relief crew and vent compartments. Connected ports sell recruitment contracts, supplies and shore treatment through the existing economy. [Crew controls and validation](docs/CREW_0_46.md).
 
 **0.45:** hostile raiders acquire, attack, evade and retreat; existing patrols respond to attacks on themselves or nearby civilians. Enemy fire damages the saved player hull. **H** selects a visible hostile; **Space** fires the fitted laser. Guarded ports, landing, cruise and extreme shrinking provide escape options. [NPC combat, controls and validation](docs/NPC_COMBAT_0_45.md).

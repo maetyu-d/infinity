@@ -3,6 +3,7 @@
 #include <charconv>
 #include <iomanip>
 #include <numeric>
+#include <set>
 #include <sstream>
 namespace infinite {
 namespace {
@@ -124,7 +125,7 @@ int64_t EconomyPlayer::volumeLitres() const {
 }
 std::string EconomyPlayer::serialize() const {
     std::ostringstream o;
-    o << "INFINITE_WALLET 5 " << credits << ' ' << lastCommand;
+    o << "INFINITE_WALLET 6 " << credits << ' ' << lastCommand;
     writeStock(o, cargo);
     o << ' ' << deliveries << ' ' << lateDeliveries << ' ' << returnedHauls << ' ' << freightEarnings << ' '
       << bool(haul);
@@ -137,6 +138,14 @@ std::string EconomyPlayer::serialize() const {
     }
     o << ' ' << cargoLevel << ' ' << repairPoints << ' ' << weaponLevel;
     o << ' ' << crew.hired << ' ' << crew.supplied << ' ' << crew.treated;
+    o << ' ' << crewRevision << ' ' << crewTitles.size();
+    for (const auto& t : crewTitles)
+        o << ' ' << t.id << ' ' << t.aboard;
+    o << ' ' << crewBoarding.size();
+    for (const auto& b : crewBoarding) {
+        o << ' ' << b.revision << ' ';
+        writeCrewPerson(o, b.member);
+    }
     return o.str();
 }
 bool EconomyPlayer::restore(std::string_view text) {
@@ -144,7 +153,7 @@ bool EconomyPlayer::restore(std::string_view text) {
     std::istringstream in{std::string(text)};
     std::string h;
     unsigned v;
-    if (!(in >> h >> v >> p.credits >> p.lastCommand) || h != "INFINITE_WALLET" || (v < 1 || v > 5) ||
+    if (!(in >> h >> v >> p.credits >> p.lastCommand) || h != "INFINITE_WALLET" || (v < 1 || v > 6) ||
         p.credits < 0 || p.credits > 1000000000000000LL || !readStock(in, p.cargo))
         return false;
     if (v >= 2) {
@@ -188,6 +197,33 @@ bool EconomyPlayer::restore(std::string_view text) {
     if (v >= 5 && (!(in >> p.crew.hired >> p.crew.supplied >> p.crew.treated) || p.crew.hired > 1000000 ||
                    p.crew.supplied > 1000000 || p.crew.treated > 1000000))
         return false;
+    if (v >= 6) {
+        size_t count;
+        std::set<uint64_t> ids;
+        if (!(in >> p.crewRevision >> count) || p.crewRevision > 1000000000000ULL || count > maxCrewTitles)
+            return false;
+        for (size_t i = 0; i < count; ++i) {
+            CrewTitle t;
+            unsigned held;
+            if (!(in >> t.id >> held) || !t.id || held > 1 || !ids.insert(t.id).second)
+                return false;
+            t.aboard = held;
+            p.crewTitles.push_back(t);
+        }
+        if (!(in >> count) || count > maxShipCrew)
+            return false;
+        ids.clear();
+        uint64_t previous = 0;
+        for (size_t i = 0; i < count; ++i) {
+            CrewBoarding b;
+            if (!(in >> b.revision) || !b.revision || b.revision <= previous || b.revision > p.crewRevision ||
+                !readCrewPerson(in, b.member) || b.member.health <= 0 || !ids.insert(b.member.id).second ||
+                !crewOwned(p, b.member.id))
+                return false;
+            previous = b.revision;
+            p.crewBoarding.push_back(std::move(b));
+        }
+    }
     p.capacityKg = holdCapacityKg(p.cargoLevel);
     p.capacityLitres = holdCapacityLitres(p.cargoLevel);
     in >> std::ws;
@@ -600,10 +636,13 @@ std::string Economy::execute(const EconomicCommand& c, EconomyPlayer& player) {
     auto index = siteIndex(c.port);
     if (!index)
         return "PORT HAS NO MARKET";
-    if (unsigned(c.action) > unsigned(EconomicAction::TreatCrew))
+    if (unsigned(c.action) > unsigned(EconomicAction::ReleaseCrew))
         return "INVALID ECONOMIC ACTION";
     if (!reconcilePlayer(player))
         return "HAUL SAVE MISMATCH / TRADING PAUSED";
+    if (c.action == EconomicAction::BuyCrew || c.action == EconomicAction::SellCrew ||
+        c.action == EconomicAction::ReleaseCrew)
+        return crewTrade(c, player, *index);
     if (c.action == EconomicAction::FitWeapon || c.action == EconomicAction::SellWeapon)
         return weaponTrade(c, player, *index);
     if (c.action == EconomicAction::AcceptRecovery || c.action == EconomicAction::DeliverRecovery)
@@ -735,14 +774,21 @@ Stock Economy::externalGoodsDelta() const {
     return n;
 }
 size_t Economy::residentBytes() const {
+    size_t crewBytes = crewMarkets_.capacity() * sizeof(PortCrewMarket);
+    for (const auto& market : crewMarkets_) {
+        crewBytes += market.offers.capacity() * sizeof(CrewMember);
+        for (const auto& m : market.offers)
+            crewBytes += m.name.capacity();
+    }
     return network_->residentBytes() + sites_.capacity() * sizeof(EconomicSiteState) +
            freight_.capacity() * sizeof(EconomicFreight) + contracts_.capacity() * sizeof(EconomicContract) +
            events_.capacity() * sizeof(EconomicEvent) + hauls_.capacity() * sizeof(HaulContract) +
-           recoveries_.capacity() * sizeof(RecoveryJob) + outcomes_.capacity() * sizeof(EconomicOutcome);
+           recoveries_.capacity() * sizeof(RecoveryJob) + outcomes_.capacity() * sizeof(EconomicOutcome) +
+           crewBytes;
 }
 std::string Economy::serialize() const {
     std::ostringstream o;
-    o << "INFINITE_ECONOMY 6 " << network_->fingerprint << ' ' << tick_ << ' ' << nextContract_ << ' '
+    o << "INFINITE_ECONOMY 7 " << network_->fingerprint << ' ' << tick_ << ' ' << nextContract_ << ' '
       << treasury_ << ' ' << carrierCash_ << ' ' << externalMoneyDelta_ << ' ' << sites_.size() << '\n';
     for (const auto& s : sites_) {
         o << s.cash << ' ' << s.householdCash << ' ' << s.condition << ' ' << s.health << ' '
@@ -787,6 +833,7 @@ std::string Economy::serialize() const {
     for (size_t i = 0; i < freight_.size(); ++i)
         if (freight_[i].disabledAt >= 0)
             o << i << ' ' << freight_[i].disabledAt << '\n';
+    writeCrewMarkets(o);
     return o.str();
 }
 bool Economy::restore(std::string_view text) {
@@ -798,7 +845,7 @@ bool Economy::restore(std::string_view text) {
     size_t count;
     if (!(in >> header >> version >> fingerprint >> candidate.tick_ >> candidate.nextContract_ >>
           candidate.treasury_ >> candidate.carrierCash_ >> candidate.externalMoneyDelta_ >> count) ||
-        header != "INFINITE_ECONOMY" || (version < 1 || version > 6) ||
+        header != "INFINITE_ECONOMY" || (version < 1 || version > 7) ||
         fingerprint != network_->fingerprint || count != sites_.size() || candidate.treasury_ < 0 ||
         candidate.carrierCash_ < 0 || candidate.treasury_ > 1000000000000000LL ||
         candidate.carrierCash_ > 1000000000000000LL || candidate.externalMoneyDelta_ < -1000000000000000LL ||
@@ -944,6 +991,8 @@ bool Economy::restore(std::string_view text) {
             candidate.freight_[i].disabledAt = time;
         }
     }
+    if (version >= 7 && !candidate.readCrewMarkets(in))
+        return false;
     in >> std::ws;
     if (!in.eof())
         return false;
@@ -1049,6 +1098,17 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
     if (s->catchingUp) {
         v.connected = false;
         v.message = "ECONOMY CATCHING UP / TRADING PAUSED";
+    }
+    if (page == MarketPage::Crew) {
+        v.crewRows = economicCrewRows(*s, *i, context.crew);
+        v.selected = v.crewRows.empty() ? 0 : std::min(selected, v.crewRows.size() - 1);
+        v.summary = "CREW " +
+                    std::to_string(std::count_if(context.crew.begin(), context.crew.end(),
+                                                 [](const auto& m) { return m.health > 0; })) +
+                    "/8 / PORT STOCK " + std::to_string(economicCrewOffers(*s, *i).size()) +
+                    "/16 / PEOPLE, NOT KG";
+        v.bottleneck = "NAMED CREW RETAIN SKILLS, HEALTH AND IDENTITY WHEN BOUGHT OR SOLD";
+        return v;
     }
     if (page == MarketPage::Weapons) {
         v.selected = std::min<size_t>(selected, maxWeaponLevel - 1);

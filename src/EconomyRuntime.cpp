@@ -221,6 +221,7 @@ struct EconomyRuntime::Impl {
             s->hauls = e->hauls();
             s->recoveries = e->recoveries();
             s->outcomes = e->outcomes();
+            s->crewMarkets = e->crewMarkets();
             s->events = e->events();
             s->tick = e->tick();
             s->catchingUp = e->tick() < goal;
@@ -281,6 +282,8 @@ struct EconomyRuntime::Impl {
         size_t bytes = 0;
         for (const auto& [_, economy] : active)
             bytes += economy->residentBytes();
+        bytes += player.crewTitles.capacity() * sizeof(CrewTitle) +
+                 player.crewBoarding.capacity() * sizeof(CrewBoarding);
         workerBytes = bytes;
         std::lock_guard lock(mutex);
         published = std::move(s);

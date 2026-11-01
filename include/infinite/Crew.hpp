@@ -1,6 +1,7 @@
 #pragma once
 #include "Core.hpp"
 #include <array>
+#include <iosfwd>
 #include <span>
 #include <string>
 #include <utility>
@@ -33,6 +34,17 @@ struct CrewMember {
     std::array<double, 6> experience{};
     bool automatic = false;
 };
+// Tradable person data excludes ship-local duty, orders and walking state.
+void writeCrewPerson(std::ostream&, const CrewMember&);
+bool readCrewPerson(std::istream&, CrewMember&);
+struct CrewTitle {
+    uint64_t id = 0;
+    bool aboard = false;
+};
+struct CrewBoarding {
+    uint64_t revision = 0;
+    CrewMember member;
+};
 struct CrewRoom {
     double integrity = 100, oxygen = 100, fire = 0, breach = 0;
     bool vented = false;
@@ -44,7 +56,7 @@ struct CrewView {
     std::vector<CrewMember> members;
     std::array<CrewRoom, crewRoomCount> rooms;
     double spares = 0, medical = 0;
-    std::string summary, message, port, recruit, supply, care, selectedSkill;
+    std::string summary, message, port, recruit, sell, supply, care, selectedSkill;
     std::vector<std::string> events;
 };
 struct CrewReceipts {
@@ -84,6 +96,7 @@ class ShipCrew {
     void observeHull(double hull);
     void advance(double seconds, double properG = 0, bool combat = false, bool firing = false);
     void reconcile(CrewReceipts);
+    void reconcileMarket(uint64_t revision, std::span<const CrewTitle>, std::span<const CrewBoarding>);
     double efficiency(CrewStation) const;
     double weaponReadiness() const;
     CrewMember recruit(uint64_t ordinal) const;
@@ -93,7 +106,7 @@ class ShipCrew {
     size_t residentBytes() const;
 
   private:
-    uint64_t seed_ = 0, impacts_ = 0;
+    uint64_t seed_ = 0, impacts_ = 0, marketRevision_ = 0;
     CrewReceipts receipts_;
     std::vector<CrewMember> members_;
     std::array<CrewRoom, crewRoomCount> rooms_{};

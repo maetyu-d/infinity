@@ -22,6 +22,27 @@ double skill(const CrewMember& m, CrewStation s) {
 std::span<const std::pair<unsigned, unsigned>> crewCorridors() {
     return corridors;
 }
+void writeCrewPerson(std::ostream& o, const CrewMember& m) {
+    o << std::setprecision(17) << m.id << ' ' << std::quoted(m.name) << ' ' << m.trait << ' ' << m.health
+      << ' ' << m.fatigue << ' ' << m.morale;
+    for (auto xp : m.experience)
+        o << ' ' << xp;
+}
+bool readCrewPerson(std::istream& in, CrewMember& person) {
+    CrewMember m;
+    if (!(in >> m.id >> std::quoted(m.name) >> m.trait >> m.health >> m.fatigue >> m.morale) || !m.id ||
+        m.name.empty() || m.name.size() > 48 || m.trait > 2 ||
+        m.name.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789-") != std::string::npos)
+        return false;
+    for (auto x : {m.health, m.fatigue, m.morale})
+        if (!std::isfinite(x) || x < 0 || x > 100)
+            return false;
+    for (auto& xp : m.experience)
+        if (!(in >> xp) || !std::isfinite(xp) || xp < 0 || xp > 3600)
+            return false;
+    person = std::move(m);
+    return true;
+}
 std::string_view crewStationName(CrewStation s) {
     constexpr std::array<std::string_view, 7> names{"BRIDGE",       "NAVIGATION", "WEAPONS", "ENGINEERING",
                                                     "LIFE SUPPORT", "MEDBAY",     "BUNKS"};
@@ -409,11 +430,56 @@ CrewView ShipCrew::view(size_t selected, CrewStation station) const {
     }
     return v;
 }
+void ShipCrew::reconcileMarket(uint64_t revision, std::span<const CrewTitle> titles,
+                               std::span<const CrewBoarding> incoming) {
+    if (revision < marketRevision_ || revision > 1000000000000ULL)
+        return;
+    std::erase_if(members_, [&](const auto& m) {
+        const auto title =
+            std::find_if(titles.begin(), titles.end(), [&](const auto& t) { return t.id == m.id; });
+        if (title == titles.end() || title->aboard)
+            return false;
+        event(m.name + " / TRANSFERRED OFF SHIP");
+        return true;
+    });
+    for (const auto& boarding : incoming) {
+        if (boarding.revision <= marketRevision_)
+            continue;
+        const auto title = std::find_if(titles.begin(), titles.end(), [&](const auto& t) {
+            return t.id == boarding.member.id && t.aboard;
+        });
+        if (title == titles.end())
+            continue;
+        auto found = std::find_if(members_.begin(), members_.end(),
+                                  [&](const auto& m) { return m.id == boarding.member.id; });
+        if (found == members_.end() && living() >= maxShipCrew)
+            return; // retain the paid boarding receipt until a berth opens
+        auto m = boarding.member;
+        m.duty = m.room = m.target = m.walkTo = CrewStation::Bunks;
+        m.order = CrewOrder::Duty;
+        m.travel = m.travelDuration = 0;
+        m.automatic = false;
+        event(m.name + " / CREW PURCHASE BOARDED");
+        if (found != members_.end())
+            *found = std::move(m);
+        else {
+            auto dead =
+                std::find_if(members_.begin(), members_.end(), [](const auto& p) { return p.health <= 0; });
+            if (dead != members_.end())
+                *dead = std::move(m);
+            else
+                members_.push_back(std::move(m));
+        }
+        marketRevision_ = boarding.revision;
+    }
+    marketRevision_ = revision;
+}
 std::string ShipCrew::serialize() const {
     std::ostringstream o;
-    o << std::setprecision(17) << "INFINITE_CREW 1 " << seed_ << ' ' << impacts_ << ' ' << receipts_.hired
+    o << std::setprecision(17) << "INFINITE_CREW 2 " << seed_ << ' ' << impacts_ << ' ' << receipts_.hired
       << ' ' << receipts_.supplied << ' ' << receipts_.treated << ' ' << spares_ << ' ' << medical_ << ' '
-      << previousHull_ << ' ' << accumulator_ << ' ' << automatic_ << ' ' << members_.size();
+      << previousHull_ << ' ' << accumulator_ << ' ' << automatic_ << ' ' << marketRevision_ << ' '
+      << members_.size();
     for (const auto& m : members_) {
         o << ' ' << m.id << ' ' << std::quoted(m.name) << ' ' << m.trait << ' ' << unsigned(m.duty) << ' '
           << unsigned(m.room) << ' ' << unsigned(m.target) << ' ' << unsigned(m.walkTo) << ' '
@@ -441,13 +507,16 @@ bool ShipCrew::restore(std::string_view text) {
     auto range = [](double x, double lo, double hi) { return std::isfinite(x) && x >= lo && x <= hi; };
     uint64_t seed;
     if (!(in >> h >> v >> seed >> c.impacts_ >> c.receipts_.hired >> c.receipts_.supplied >>
-          c.receipts_.treated >> c.spares_ >> c.medical_ >> c.previousHull_ >> c.accumulator_ >> automatic >>
-          count) ||
-        h != "INFINITE_CREW" || v != 1 || seed != seed_ || count > maxShipCrew || automatic > 1 ||
+          c.receipts_.treated >> c.spares_ >> c.medical_ >> c.previousHull_ >> c.accumulator_ >> automatic) ||
+        h != "INFINITE_CREW" || (v != 1 && v != 2) || seed != seed_ || automatic > 1 ||
         c.impacts_ > 1000000000000ULL || c.receipts_.hired > 1000000 || c.receipts_.supplied > 1000000 ||
         c.receipts_.treated > 1000000 || !range(c.spares_, 0, 100) || !range(c.medical_, 0, 50) ||
         !range(c.previousHull_, -1, 100) || !range(c.accumulator_, 0, .25) ||
         (c.previousHull_ < 0 && c.previousHull_ != -1))
+        return false;
+    if (v >= 2 && (!(in >> c.marketRevision_) || c.marketRevision_ > 1000000000000ULL))
+        return false;
+    if (!(in >> count) || count > maxShipCrew)
         return false;
     c.automatic_ = automatic;
     std::set<uint64_t> ids;
@@ -457,7 +526,7 @@ bool ShipCrew::restore(std::string_view text) {
         unsigned duty, room, target, walk, order, autoOrder;
         if (!(in >> m.id >> std::quoted(m.name) >> m.trait >> duty >> room >> target >> walk >> order >>
               m.health >> m.fatigue >> m.morale >> m.travel >> m.travelDuration >> autoOrder) ||
-            !m.id || m.id > 1000100 || m.name.empty() || m.name.size() > 48 ||
+            !m.id || m.name.empty() || m.name.size() > 48 ||
             m.name.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789-") != std::string::npos ||
             m.trait > 2 || duty >= crewRoomCount || room >= crewRoomCount || target >= crewRoomCount ||
             walk >= crewRoomCount || order > unsigned(CrewOrder::Rest) || autoOrder > 1 ||

@@ -1,6 +1,7 @@
 #include "CelestialValidation.hpp"
 #include "CloudValidation.hpp"
 #include "CockpitMotionValidation.hpp"
+#include "CrewTradeValidation.hpp"
 #include "CrewValidation.hpp"
 #include "EconomyValidation.hpp"
 #include "FlightValidation.hpp"
@@ -54,7 +55,8 @@ struct Options {
          diversityTest = false, stellarDiversityTest = false;
     bool streamingTest = false;
     bool terrainQuality = false, terrainSurfaceFrame = false, sunShadows = true;
-    bool economyTest = false, cockpitMotionTest = false, npcTest = false, crewTest = false;
+    bool economyTest = false, cockpitMotionTest = false, npcTest = false, crewTest = false,
+         crewTradeTest = false;
     bool pilotTest = false, terrainTest = false, surfaceTest = false;
 };
 static Options options(int argc, char** argv) {
@@ -74,7 +76,10 @@ static Options options(int argc, char** argv) {
             o.smoke = o.tour = o.fresh = true;
         else if (arg == "--benchmark-tour")
             o.benchmark = o.smoke = o.tour = o.fresh = true;
-        else if (arg == "--crew-test") {
+        else if (arg == "--crew-trade-test") {
+            o.smoke = o.fresh = o.crewTradeTest = o.benchmark = true;
+            o.tour = false;
+        } else if (arg == "--crew-test") {
             o.smoke = o.fresh = o.crewTest = o.benchmark = true;
             o.tour = false;
         } else if (arg == "--npc-combat-test") {
@@ -208,7 +213,8 @@ static Options options(int argc, char** argv) {
         unsigned(o.terrainTest) + unsigned(o.surfaceTest) + unsigned(o.planetTest) + unsigned(o.uiFitTest) +
         unsigned(o.polarTest) + unsigned(o.cloudTest) + unsigned(o.celestialTest) +
         unsigned(o.landingLightTest) + unsigned(o.weatherTest) + unsigned(o.diversityTest) +
-        unsigned(o.stellarDiversityTest) + unsigned(o.npcTest) + unsigned(o.crewTest);
+        unsigned(o.stellarDiversityTest) + unsigned(o.npcTest) + unsigned(o.crewTest) +
+        unsigned(o.crewTradeTest);
     if (validationModes > 1 || (validationModes && o.tour))
         throw std::invalid_argument("Choose one automated validation mode");
     if (o.width < 320 || o.height < 240 || o.width > 7680 || o.height > 4320 || o.frames < 0)
@@ -251,7 +257,7 @@ int main(int argc, char** argv) {
                             opt.terrainTest || opt.surfaceTest || opt.planetTest || opt.uiFitTest ||
                             opt.polarTest || opt.cloudTest || opt.celestialTest || opt.landingLightTest ||
                             opt.weatherTest || opt.diversityTest || opt.stellarDiversityTest ||
-                            opt.cockpitMotionTest || opt.npcTest || opt.crewTest;
+                            opt.cockpitMotionTest || opt.npcTest || opt.crewTest || opt.crewTradeTest;
         std::unique_ptr<FlightValidation> flightProof;
         if (opt.flightTest)
             flightProof = std::make_unique<FlightValidation>(universe, nav);
@@ -376,7 +382,7 @@ int main(int argc, char** argv) {
             renderer.setWeapons(&weapons);
             renderer.setActivity(&activity);
             std::unique_ptr<EconomyRuntime> economy;
-            if (!opt.smoke || opt.economyTest)
+            if (!opt.smoke || opt.economyTest || opt.crewTradeTest)
                 economy = std::make_unique<EconomyRuntime>(universe, data);
             if (!opt.smoke)
                 weapons.setLevel(0); // wait for the authoritative saved mount
@@ -385,6 +391,7 @@ int main(int argc, char** argv) {
             bool marketOpen = false;
             bool crewOpen = false;
             size_t crewSelected = 0;
+            size_t crewOffer = 0;
             CrewStation crewStation = CrewStation::Bridge;
             CrewView crewView;
             std::string crewFeedback;
@@ -403,6 +410,14 @@ int main(int argc, char** argv) {
                        : marketPage == MarketPage::Industry ? facilityModuleCount
                        : marketPage == MarketPage::Services ? 2
                        : marketPage == MarketPage::Weapons  ? maxWeaponLevel
+                       : marketPage == MarketPage::Crew
+                           ? std::max<size_t>(
+                                 1, economicSnapshot && marketPort && economicSnapshot->siteIndex(*marketPort)
+                                        ? economicCrewOffers(*economicSnapshot,
+                                                             *economicSnapshot->siteIndex(*marketPort))
+                                                  .size() +
+                                              crew.members().size()
+                                        : 0)
                        : marketPage == MarketPage::Outcomes
                            ? std::max<size_t>(1, economicSnapshot ? economicSnapshot->outcomes.size() : 0)
                        : marketPage == MarketPage::Jobs
@@ -428,6 +443,7 @@ int main(int argc, char** argv) {
                 MarketContext context;
                 context.hull = pilot.ship().hull;
                 context.cruiseSpeed = pilot.ship().cruiseSpeed;
+                context.crew = crew.members();
                 if (economicSnapshot && economicSnapshot->network &&
                     economicSnapshot->network->system.ancestorOf(nav.anchor)) {
                     const auto home = universe.describe(nav.anchor);
@@ -508,13 +524,73 @@ int main(int argc, char** argv) {
                 } else
                     crewFeedback = "PORT QUEUE BUSY / TRY AGAIN";
             };
+            auto tradeCrew = [&](EconomicAction action, const CrewMember& person,
+                                 std::optional<size_t> port) {
+                if (!port || !economy || !economicSnapshot || economicSnapshot->catchingUp ||
+                    !economicTradeAccess(universe, nav, pilot, economicSnapshot->network->sites[*port])) {
+                    crewFeedback = "BERTH OR LAND AT THIS PORT / FULL SIZE AND STOPPED";
+                    marketSay(crewFeedback);
+                    return;
+                }
+                if (pendingCrewSequence > economicSnapshot->player.lastCommand ||
+                    pendingEconomicSequence > economicSnapshot->player.lastCommand) {
+                    crewFeedback = "WAIT FOR PORT ORDER";
+                    marketSay(crewFeedback);
+                    return;
+                }
+                const bool buy = action == EconomicAction::BuyCrew;
+                const auto quote = economicCrewQuote(*economicSnapshot, *port, person, buy, crew.living());
+                if (action != EconomicAction::ReleaseCrew && !quote.available) {
+                    crewFeedback = quote.status;
+                    marketSay(crewFeedback);
+                    return;
+                }
+                EconomicCommand c;
+                c.port = economicSnapshot->network->sites[*port].id;
+                c.action = action;
+                c.crewId = person.id;
+                c.crewAboard = unsigned(crew.living());
+                if (!buy)
+                    c.person = person;
+                else {
+                    const auto lost = std::find_if(crew.members().begin(), crew.members().end(),
+                                                   [](const auto& m) { return m.health <= 0; });
+                    if (lost != crew.members().end())
+                        c.person = *lost;
+                }
+                c.limitCents = buy ? quote.buyCents : quote.sellCents;
+                c.sequence = economicSequence =
+                    std::max(economicSequence, economicSnapshot->player.lastCommand) + 1;
+                if (economy->command(c)) {
+                    pendingCrewSequence = c.sequence;
+                    crewFeedback = "CREW TRANSFER PENDING";
+                    marketSay(crewFeedback);
+                }
+            };
+            auto tradeMarketCrew = [&](EconomicAction action) {
+                if (!economicSnapshot || !marketPort)
+                    return;
+                const auto port = economicSnapshot->siteIndex(*marketPort);
+                if (!port)
+                    return;
+                const auto rows = economicCrewRows(*economicSnapshot, *port, crew.members());
+                if (marketGood >= rows.size())
+                    return;
+                const auto& row = rows[marketGood];
+                if ((action == EconomicAction::BuyCrew) != row.buy) {
+                    marketSay(row.buy ? "ENTER BUYS A PORT OFFER" : "BACKSPACE SELLS ABOARD CREW");
+                    return;
+                }
+                tradeCrew(action, row.person, port);
+            };
             auto submitMarket = [&](EconomicAction action, const EconomySnapshot::Job* job = nullptr) {
                 if (!economy || !economicSnapshot || !marketPort || economicSnapshot->catchingUp)
                     return;
                 auto i = economicSnapshot->siteIndex(*marketPort);
                 if (!i)
                     return;
-                if (pendingEconomicSequence > economicSnapshot->player.lastCommand)
+                if (pendingEconomicSequence > economicSnapshot->player.lastCommand ||
+                    pendingCrewSequence > economicSnapshot->player.lastCommand)
                     return;
                 EconomicCommand command;
                 command.port = *marketPort;
@@ -620,6 +696,10 @@ int main(int argc, char** argv) {
             std::unique_ptr<CrewValidation> crewProof;
             if (opt.crewTest)
                 crewProof = std::make_unique<CrewValidation>(universe, nav, pilot, crew, window);
+            std::unique_ptr<CrewTradeValidation> crewTradeProof;
+            if (opt.crewTradeTest)
+                crewTradeProof =
+                    std::make_unique<CrewTradeValidation>(universe, nav, pilot, crew, *economy, window);
             std::unique_ptr<SurfaceValidation> surfaceProof;
             if (opt.surfaceTest)
                 surfaceProof = std::make_unique<SurfaceValidation>(universe, nav, pilot, activity);
@@ -979,7 +1059,32 @@ int main(int argc, char** argv) {
                                 crew.toggleAutomatic();
                                 break;
                             case SDL_SCANCODE_H:
-                                submitCrew(ShipService::CrewHire);
+                                if (auto port = crewPort()) {
+                                    auto offers = economicCrewOffers(*economicSnapshot, *port);
+                                    if (!offers.empty())
+                                        tradeCrew(EconomicAction::BuyCrew, offers[crewOffer % offers.size()],
+                                                  port);
+                                    else
+                                        crewFeedback = "NO CREW LEFT FOR SALE AT THIS PORT";
+                                } else
+                                    crewFeedback = "BERTH OR LAND AT A PORT TO BUY CREW";
+                                break;
+                            case SDL_SCANCODE_LEFTBRACKET:
+                                if (auto port = crewPort()) {
+                                    auto list = economicCrewOffers(*economicSnapshot, *port);
+                                    if (!list.empty())
+                                        crewOffer = (crewOffer + list.size() - 1) % list.size();
+                                }
+                                break;
+                            case SDL_SCANCODE_RIGHTBRACKET:
+                                ++crewOffer;
+                                break;
+                            case SDL_SCANCODE_F2:
+                                crewOpen = false;
+                                marketOpen = true;
+                                selectMarket();
+                                marketPage = MarketPage::Crew;
+                                marketGood = 0;
                                 break;
                             case SDL_SCANCODE_S:
                                 submitCrew(ShipService::CrewSupplies);
@@ -988,11 +1093,10 @@ int main(int argc, char** argv) {
                                 submitCrew(ShipService::CrewCare);
                                 break;
                             case SDL_SCANCODE_BACKSPACE:
-                                if (crewPort() && !pendingCrewSequence) {
-                                    crew.dismiss(crewSelected);
-                                    crewSelected = 0;
-                                } else
-                                    crewFeedback = "DISMISS ONLY AT A CONNECTED PORT";
+                                if (crewSelected < crew.members().size())
+                                    tradeCrew(event.key.mod & SDL_KMOD_SHIFT ? EconomicAction::ReleaseCrew
+                                                                             : EconomicAction::SellCrew,
+                                              crew.members()[crewSelected], crewPort());
                                 break;
                             default:
                                 break;
@@ -1023,10 +1127,14 @@ int main(int argc, char** argv) {
                                 marketQuantity = std::min<int64_t>(maxShipPayloadKg, marketQuantity * 10);
                                 break;
                             case SDL_SCANCODE_F5:
-                                marketPage = MarketPage((unsigned(marketPage) + 1) % 7);
+                                marketPage = MarketPage((unsigned(marketPage) + 1) % 8);
                                 marketGood = 0;
                                 break;
                             case SDL_SCANCODE_RETURN:
+                                if (marketPage == MarketPage::Crew) {
+                                    tradeMarketCrew(EconomicAction::BuyCrew);
+                                    break;
+                                }
                                 if (marketPage == MarketPage::Jobs) {
                                     if (auto job = selectedJob()) {
                                         if (job->working) {
@@ -1059,6 +1167,12 @@ int main(int argc, char** argv) {
                                                                                     : EconomicAction::Buy);
                                 break;
                             case SDL_SCANCODE_BACKSPACE:
+                                if (marketPage == MarketPage::Crew) {
+                                    tradeMarketCrew(event.key.mod & SDL_KMOD_SHIFT
+                                                        ? EconomicAction::ReleaseCrew
+                                                        : EconomicAction::SellCrew);
+                                    break;
+                                }
                                 if (marketPage == MarketPage::Weapons)
                                     submitMarket(EconomicAction::SellWeapon);
                                 else if (marketPage == MarketPage::Jobs) {
@@ -1446,8 +1560,12 @@ int main(int argc, char** argv) {
                         economy->request(system, activity.seconds);
                     economicSnapshot = economy->snapshot();
                     if (economicSnapshot) {
-                        if (!opt.smoke)
+                        if (!opt.smoke) {
                             crew.reconcile(economicSnapshot->player.crew);
+                            crew.reconcileMarket(economicSnapshot->player.crewRevision,
+                                                 economicSnapshot->player.crewTitles,
+                                                 economicSnapshot->player.crewBoarding);
+                        }
                         if (pendingCrewSequence &&
                             economicSnapshot->player.lastCommand >= pendingCrewSequence) {
                             crewFeedback = economicSnapshot->message;
@@ -1509,6 +1627,8 @@ int main(int argc, char** argv) {
                         marketView =
                             economicMarketView(economicSnapshot.get(), marketPort, marketGood, marketQuantity,
                                                connectedMarket(), marketPage, marketContext());
+                        if (marketPage == MarketPage::Crew)
+                            marketGood = marketView.selected;
                         if (marketPage == MarketPage::Goods && tradeBuyer)
                             marketView.summary = tradeHint;
                         marketFeedbackSeconds = std::max(0., marketFeedbackSeconds - dt);
@@ -1608,7 +1728,7 @@ int main(int argc, char** argv) {
                                                          dt, renderer.submittedGeometry(nav.anchor).get());
                     pilot.applyCombatDamage(combat.playerDamage);
                     crew.observeHull(pilot.ship().hull);
-                    if (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS)
+                    if ((SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) && !pendingCrewSequence)
                         crew.advance(dt, pilot.instruments().properG, !npcCombat.shots().empty(),
                                      !weapons.shots().empty());
                 }
@@ -1624,6 +1744,8 @@ int main(int argc, char** argv) {
                     npcProof->advance(renderer);
                 if (crewProof)
                     crewProof->advance(renderer);
+                if (crewTradeProof)
+                    crewTradeProof->advance(renderer);
                 if (uiProof)
                     uiProof->advance(renderer);
                 if (polarProof)
@@ -1646,6 +1768,7 @@ int main(int argc, char** argv) {
                     renderer.setCrew(&crewView);
                 } else if (!opt.smoke) {
                     crewView = crew.view(crewSelected, crewStation);
+                    crewSelected = crewView.selected;
                     crewView.open = crewOpen;
                     crewView.message = crewFeedback;
                     crewView.pending = pendingCrewSequence != 0;
@@ -1659,9 +1782,22 @@ int main(int argc, char** argv) {
                                 return label + " / " + std::to_string(q.totalCents() / 100) + " CR / " +
                                        q.status;
                             };
-                            crewView.recruit = describe(
-                                ShipService::CrewHire,
-                                "H HIRE " + crew.recruit(economicSnapshot->player.crew.hired + 1).name);
+                            auto offers = economicCrewOffers(*economicSnapshot, *i);
+                            if (!offers.empty()) {
+                                const auto& person = offers[crewOffer % offers.size()];
+                                const auto q =
+                                    economicCrewQuote(*economicSnapshot, *i, person, true, crew.living());
+                                crewView.recruit = "H BUY " + person.name + " / " + crewMoney(q.buyCents) +
+                                                   " CR / BRACKETS CYCLE / " + q.status;
+                            } else
+                                crewView.recruit = "PORT CREW STOCK EMPTY";
+                            if (crewView.selected < crew.members().size()) {
+                                const auto& person = crew.members()[crewView.selected];
+                                const auto q =
+                                    economicCrewQuote(*economicSnapshot, *i, person, false, crew.living());
+                                crewView.sell = "BACKSPACE SELL " + person.name + " / " +
+                                                crewMoney(q.sellCents) + " CR / " + q.status;
+                            }
                             crewView.supply =
                                 describe(ShipService::CrewSupplies, "S +10 SPARES / +5 MEDICAL");
                             crewView.care = describe(ShipService::CrewCare, "L SHORE CLINIC / SURVIVORS");
@@ -1669,6 +1805,11 @@ int main(int argc, char** argv) {
                             crewView.port = "PORT SERVICES OFFLINE / BERTH OR LAND / FULL SIZE AND STOPPED";
                     }
                     renderer.setCrew(&crewView);
+                }
+                if (crewTradeProof) {
+                    crewTradeProof->observe(renderer, opt.captures);
+                    if (crewTradeProof->finished())
+                        running = false;
                 }
                 npcCombat.annotate(cockpit);
                 weapons.annotate(cockpit,
@@ -1895,7 +2036,7 @@ int main(int argc, char** argv) {
                 if (opt.frames > 0 && frame >= opt.frames)
                     running = false;
                 if (opt.smoke && std::chrono::duration<double>(now - start).count() >
-                                     (opt.crewTest                                    ? 240
+                                     (opt.crewTest || opt.crewTradeTest               ? 240
                                       : opt.npcTest                                   ? 180
                                       : opt.economyTest                               ? 330
                                       : opt.diversityTest || opt.stellarDiversityTest ? 360
@@ -1957,7 +2098,10 @@ int main(int argc, char** argv) {
             std::cout << "peak_rss_bytes=" << usage.ru_maxrss * 1024 << '\n';
 #endif
 #endif
-            if (opt.crewTest) {
+            if (opt.crewTradeTest) {
+                if (!crewTradeProof->finished())
+                    throw std::runtime_error("Native crew trading incomplete");
+            } else if (opt.crewTest) {
                 if (!crewProof->finished())
                     throw std::runtime_error("Native crew validation incomplete");
             } else if (opt.npcTest) {

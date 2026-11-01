@@ -663,18 +663,22 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                p.x + 18, p.y + 365, p.w - 36, 9.5, pearl);
         fitted(h.lettering, crew->port, p.x + 18, p.y + 385, p.w - 36, 8.5, crew->connected ? mint : muted);
         fitted(h.lettering, crew->recruit, p.x + 18, p.y + 403, p.w - 36, 8.5, ice);
-        fitted(h.lettering, crew->supply, p.x + 18, p.y + 421, p.w - 36, 8.5, ice);
-        fitted(h.lettering, crew->care, p.x + 18, p.y + 439, p.w - 36, 8.5, ice);
-        fitted(h.lettering, crew->pending ? "PORT ORDER PENDING" : crew->message, p.x + 18, p.y + 459,
-               p.w - 36, 9, amber);
-        if (!crew->events.empty())
+        const bool trading = !crew->sell.empty();
+        if (trading)
+            fitted(h.lettering, crew->sell, p.x + 18, p.y + 421, p.w - 36, 8.5, mint);
+        fitted(h.lettering, crew->supply, p.x + 18, p.y + (trading ? 439 : 421), p.w - 36, 8.5, ice);
+        fitted(h.lettering, crew->care, p.x + 18, p.y + (trading ? 457 : 439), p.w - 36, 8.5, ice);
+        fitted(h.lettering, crew->pending ? "PORT ORDER PENDING" : crew->message, p.x + 18,
+               p.y + (trading ? 478 : 459), p.w - 36, 9, amber);
+        if (!crew->events.empty() && !trading)
             fitted(h.lettering, crew->events.back(), p.x + 18, p.y + 478, p.w - 36, 8.5, trafficInk);
         fitted(h.lettering, "CLICK CREW THEN ROOM / UP-DOWN CREW / LEFT-RIGHT ROOM / ENTER ASSIGN", p.x + 18,
                p.y + 502, p.w - 36, 8.3, pearl);
         fitted(h.lettering, "R REPAIR / F FIRE / M FIRST AID / T REST / V VENT / D RECALL / A AUTO", p.x + 18,
                p.y + 521, p.w - 36, 8.3, ice);
-        fitted(h.lettering, "AT PORT: H HIRE / S STORES / L CLINIC / BACKSPACE DISMISS", p.x + 18, p.y + 540,
-               p.w - 36, 8.3, mint);
+        fitted(h.lettering,
+               "PORT: H BUY / BRACKETS CYCLE / BACKSPACE SELL / SHIFT-BACKSPACE RELEASE / F2 MARKET",
+               p.x + 18, p.y + 540, p.w - 36, 8.3, mint);
         fitted(h.lettering, "F8 OR ESC CLOSE / FLIGHT CONTINUES / MANUAL HELM SUSPENDED", p.x + 18, p.y + 559,
                p.w - 36, 8.3, muted);
         return h;
@@ -710,6 +714,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                               : m.page == MarketPage::Jobs     ? "JOBS"
                               : m.page == MarketPage::Outcomes ? "OUTCOMES"
                               : m.page == MarketPage::Weapons  ? "WEAPONS"
+                              : m.page == MarketPage::Crew     ? "CREW MARKET"
                                                                : "SERVICES") +
                   " / ECON " + std::to_string(m.tick * 5 / 60) + "H",
               panel.x + 18, panel.y + 16, panel.w - 36, mint);
@@ -740,6 +745,32 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                   panel.w - 36, pearl);
             fitted(h.lettering, m.summary.empty() ? m.contract : m.summary, panel.x + 18, panel.y + 512,
                    panel.w - 36, 8.4, amber);
+        } else if (m.page == MarketPage::Crew) {
+            fitted(h.lettering, m.summary, panel.x + 18, panel.y + 112, panel.w - 36, 9.5, mint);
+            const size_t first = m.selected >= 12 ? m.selected - 11 : 0;
+            for (size_t row = first; row < std::min(first + 12, m.crewRows.size()); ++row) {
+                const auto& offer = m.crewRows[row];
+                const auto& person = offer.person;
+                const double y = panel.y + 135 + (row - first) * 25;
+                if (row == m.selected)
+                    rect(h.panels, panel.x + 12, y - 3, panel.w - 24, 24, mint * .16f);
+                const auto skill = std::max_element(person.experience.begin(), person.experience.end());
+                const auto specialty = CrewStation(skill - person.experience.begin());
+                fitted(h.lettering,
+                       std::string(offer.buy ? "BUY  " : "SELL ") + person.name + " / " +
+                           std::string(crewStationName(specialty)) + " / " +
+                           crewMoney(offer.buy ? offer.quote.buyCents : offer.quote.sellCents) + " CR",
+                       panel.x + 18, y, panel.w - 36, 9, row == m.selected ? pearl : ice);
+                fitted(h.lettering,
+                       "HP " + std::to_string(int(person.health)) + " / FAT " +
+                           std::to_string(int(person.fatigue)) + " / MOR " +
+                           std::to_string(int(person.morale)) + " / " + offer.quote.status,
+                       panel.x + 18, y + 12, panel.w - 36, 8, row == m.selected ? mint : muted);
+            }
+            fitted(h.lettering, "ENTER BUY PORT CREW / BACKSPACE SELL ABOARD CREW", panel.x + 18,
+                   panel.y + 461, panel.w - 36, 9, pearl);
+            fitted(h.lettering, "SHIFT-BACKSPACE RELEASE / UP-DOWN SELECT / F8 CREW STATIONS", panel.x + 18,
+                   panel.y + 480, panel.w - 36, 8.5, ice);
         } else if (m.page == MarketPage::Outcomes) {
             label("DELIVERY REPORT / UP-DOWN HISTORY / BEFORE / LAST OBSERVED", panel.x + 18, panel.y + 112,
                   panel.w - 36, mint);

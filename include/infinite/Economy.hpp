@@ -177,6 +177,9 @@ struct EconomyPlayer {
     unsigned cargoLevel = 0;
     uint64_t repairPoints = 0; // durable cumulative receipt; the ship applies each point once
     CrewReceipts crew;
+    uint64_t crewRevision = 0;
+    std::vector<CrewTitle> crewTitles;
+    std::vector<CrewBoarding> crewBoarding;
     int64_t massKg() const;
     int64_t volumeLitres() const;
     int64_t availableCargo(Good) const;
@@ -208,7 +211,10 @@ enum class EconomicAction : uint8_t {
     DisableVessel,
     HireCrew,
     SupplyCrew,
-    TreatCrew
+    TreatCrew,
+    BuyCrew,
+    SellCrew,
+    ReleaseCrew
 };
 struct EconomicCommand {
     uint64_t sequence = 0;
@@ -220,7 +226,32 @@ struct EconomicCommand {
     FacilityModule module = FacilityModule::Storage;
     unsigned serviceUnits = 0; // repair hull points, cargo level or weapon grade
     double impactSeconds = 0;
+    uint64_t crewId = 0;
+    unsigned crewAboard = maxShipCrew;
+    std::optional<CrewMember> person; // sale/release snapshot, or casualty whose berth a purchase fills
 };
+inline constexpr size_t maxPortCrew = 16, maxCrewMarkets = 128, maxCrewTitles = 8192;
+struct PortCrewMarket {
+    unsigned site = 0;
+    std::vector<CrewMember> offers;
+};
+struct CrewTradeQuote {
+    int64_t buyCents = 0, sellCents = 0;
+    bool available = false;
+    std::string status;
+};
+struct CrewTradeRow {
+    CrewMember person;
+    bool buy = true;
+    CrewTradeQuote quote;
+};
+bool crewOwned(const EconomyPlayer&, uint64_t);
+std::vector<CrewMember> economicCrewOffers(const struct EconomySnapshot&, size_t site);
+CrewTradeQuote economicCrewQuote(const struct EconomySnapshot&, size_t site, const CrewMember&, bool buy,
+                                 size_t aboard);
+std::vector<CrewTradeRow> economicCrewRows(const struct EconomySnapshot&, size_t site,
+                                           std::span<const CrewMember>);
+std::string crewMoney(int64_t cents);
 inline constexpr unsigned maxCargoLevel = 3;
 inline int64_t holdCapacityKg(unsigned level) {
     return 4000 + 2000 * int64_t(level);
@@ -278,6 +309,9 @@ class Economy {
     const std::vector<EconomicOutcome>& outcomes() const {
         return outcomes_;
     }
+    const std::vector<PortCrewMarket>& crewMarkets() const {
+        return crewMarkets_;
+    }
     uint64_t tick() const {
         return tick_;
     }
@@ -304,6 +338,7 @@ class Economy {
     std::vector<HaulContract> hauls_;
     std::vector<RecoveryJob> recoveries_;
     std::vector<EconomicOutcome> outcomes_;
+    std::vector<PortCrewMarket> crewMarkets_;
     uint64_t nextRecovery_ = 1, nextOutcome_ = 1;
     uint64_t nextHaul_ = 1;
     uint64_t tick_ = 0, nextContract_ = 1;
@@ -330,6 +365,9 @@ class Economy {
     std::string weaponTrade(const EconomicCommand&, EconomyPlayer&, size_t);
     std::string disableVessel(const EconomicCommand&);
     std::string service(const EconomicCommand&, EconomyPlayer&, size_t);
+    std::string crewTrade(const EconomicCommand&, EconomyPlayer&, size_t);
+    void writeCrewMarkets(std::ostream&) const;
+    bool readCrewMarkets(std::istream&);
     uint64_t travelTicks(size_t, size_t) const;
     int64_t unitPrice(size_t, Good, int64_t available, bool buy) const;
 };
@@ -361,6 +399,7 @@ struct EconomySnapshot {
     std::vector<HaulContract> hauls;
     std::vector<RecoveryJob> recoveries;
     std::vector<EconomicOutcome> outcomes;
+    std::vector<PortCrewMarket> crewMarkets;
     std::vector<EconomicPortSignal> portSignals; // same ordering as network->sites
     EconomyPlayer player;
     uint64_t tick = 0;
@@ -399,6 +438,7 @@ ShipServiceQuote economicServiceQuote(const EconomySnapshot&, size_t, ShipServic
 struct MarketContext {
     double hull = 100, cruiseSpeed = 9.4607304725808e17;
     std::optional<glm::dvec3> systemPosition;
+    std::span<const CrewMember> crew;
 };
 struct EconomicJobPlan {
     double pickupMetres = 0, deliveryMetres = 0, seconds = 0, slackSeconds = 0;
@@ -425,7 +465,7 @@ class EconomyRuntime {
 class Pilot;
 class Navigation;
 bool economicTradeAccess(const Universe&, const Navigation&, const Pilot&, const EconomicSite&);
-enum class MarketPage : uint8_t { Goods, Routes, Industry, Jobs, Services, Outcomes, Weapons };
+enum class MarketPage : uint8_t { Goods, Routes, Industry, Jobs, Services, Outcomes, Weapons, Crew };
 struct MarketView {
     bool open = false, connected = false, ready = false;
     std::string site, role, message, bottleneck, contract;
@@ -435,6 +475,7 @@ struct MarketView {
     uint64_t tick = 0;
     MarketPage page = MarketPage::Goods;
     std::vector<std::string> detail;
+    std::vector<CrewTradeRow> crewRows;
     std::string summary;
     std::string activeJob;
     int64_t capacityKg = 4000, capacityLitres = 8000;
