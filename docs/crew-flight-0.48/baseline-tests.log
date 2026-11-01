@@ -1,0 +1,9 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 1: crew_commodity_market
+    Start 2: player_crew_and_damage_control
+1/2 Test #2: player_crew_and_damage_control ...   Passed    3.49 sec
+2/2 Test #1: crew_commodity_market ............   Passed   13.34 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =  13.38 sec

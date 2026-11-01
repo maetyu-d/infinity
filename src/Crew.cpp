@@ -175,6 +175,9 @@ double ShipCrew::efficiency(CrewStation s) const {
             best = std::max(best, skill(m, s));
     return best * rooms_[size_t(s)].integrity / 100.;
 }
+double ShipCrew::stationFit(size_t i, CrewStation s) const {
+    return i < members_.size() && valid(s) && members_[i].health >= 20 ? skill(members_[i], s) : 0;
+}
 double ShipCrew::weaponReadiness() const {
     return std::clamp((.65 + .35 * rooms_[size_t(CrewStation::Weapons)].integrity / 100.) *
                           (1 + .12 * efficiency(CrewStation::Weapons)),
@@ -254,13 +257,15 @@ void ShipCrew::step(double g, bool combat, bool firing) {
             m.travel = 0;
             continue;
         }
-        if (m.automatic && ((m.order == CrewOrder::Rest && m.fatigue < 20) ||
-                            (m.order == CrewOrder::Aid &&
-                             std::none_of(members_.begin(), members_.end(),
-                                          [](const auto& c) { return c.health > 0 && c.health < 99; })) ||
-                            (m.order == CrewOrder::Firefight && rooms_[size_t(m.target)].fire < .01) ||
-                            (m.order == CrewOrder::Repair && rooms_[size_t(m.target)].integrity >= 99.99 &&
-                             rooms_[size_t(m.target)].breach <= .01))) {
+        const bool finishedAid =
+            m.order == CrewOrder::Aid && std::none_of(members_.begin(), members_.end(), [&](const auto& c) {
+                return c.health > 0 && c.health < 99.99 && (m.automatic || c.room == m.target);
+            });
+        if ((m.automatic && m.order == CrewOrder::Rest && m.fatigue < 20) || finishedAid ||
+            (m.order == CrewOrder::Firefight && rooms_[size_t(m.target)].fire < .01) ||
+            (m.order == CrewOrder::Repair && rooms_[size_t(m.target)].integrity >= 99.99 &&
+             rooms_[size_t(m.target)].breach <= .01)) {
+            event(m.name + " / " + std::string(crewOrderName(m.order)) + " COMPLETE / RETURNING TO DUTY");
             m.order = CrewOrder::Duty;
             m.target = m.duty;
             m.automatic = false;
@@ -270,7 +275,7 @@ void ShipCrew::step(double g, bool combat, bool firing) {
                 std::min_element(members_.begin(), members_.end(), [](const auto& a, const auto& b) {
                     return (a.health > 0 ? a.health : 101) < (b.health > 0 ? b.health : 101);
                 });
-            if (patient != members_.end() && patient->health < 99)
+            if (patient != members_.end() && patient->health < 99.99)
                 m.target = patient->room;
         }
         if (automatic_ && m.order == CrewOrder::Duty && m.health >= 20) {
@@ -410,6 +415,8 @@ void ShipCrew::reconcile(CrewReceipts r) {
 CrewView ShipCrew::view(size_t selected, CrewStation station) const {
     CrewView v;
     v.members = members_;
+    for (size_t i = 0; i < members_.size(); ++i)
+        v.tasks.push_back(task(i));
     v.rooms = rooms_;
     v.spares = spares_;
     v.medical = medical_;
@@ -417,9 +424,38 @@ CrewView ShipCrew::view(size_t selected, CrewStation station) const {
     v.events = events_;
     v.selected = members_.empty() ? 0 : std::min(selected, members_.size() - 1);
     v.station = valid(station) ? station : CrewStation::Bridge;
-    v.summary = "CREW " + std::to_string(living()) + "/8 / F8 STATIONS";
+    v.summary = "CREW " + std::to_string(living()) + "/8 / F9 ORDERS / F8 DECK";
+    v.alert = "CREW STATIONS NORMAL / MANUAL FLIGHT LIVE";
     if (std::any_of(rooms_.begin(), rooms_.end(), [](const auto& r) { return r.fire > 1 || r.oxygen < 25; }))
-        v.summary = "CREW EMERGENCY / FIRE OR LOW OXYGEN / F8";
+        v.summary = "CREW EMERGENCY / FIRE OR LOW OXYGEN / F9 ORDERS";
+    for (size_t i = 0; i < rooms_.size(); ++i)
+        if (rooms_[i].fire > 1 || rooms_[i].oxygen < 25) {
+            v.alert = std::string(crewStationName(CrewStation(i))) +
+                      (rooms_[i].fire > 1 ? " / FIRE " + std::to_string(int(rooms_[i].fire))
+                                          : " / OXYGEN " + std::to_string(int(rooms_[i].oxygen))) +
+                      " / RESPONSE REQUIRED";
+            break;
+        }
+    if (v.alert == "CREW STATIONS NORMAL / MANUAL FLIGHT LIVE") {
+        for (size_t i = 0; i < rooms_.size(); ++i)
+            if (rooms_[i].breach > 1 || rooms_[i].integrity < 70) {
+                v.alert = std::string(crewStationName(CrewStation(i))) + " / DAMAGE / REPAIR REQUIRED";
+                break;
+            }
+    }
+    if (v.alert == "CREW STATIONS NORMAL / MANUAL FLIGHT LIVE") {
+        for (const auto& m : members_)
+            if (m.health < 80 || m.fatigue > 80) {
+                v.alert = m.name + (m.health <= 0   ? " / CREW LOST / PORT REPLACEMENT"
+                                    : m.health < 20 ? " / INCAPACITATED / FIRST AID"
+                                    : m.health < 80 ? " / INJURED / FIRST AID"
+                                                    : " / EXHAUSTED / REST REQUIRED");
+                break;
+            }
+    }
+    if (v.summary.find("EMERGENCY") == std::string::npos &&
+        v.alert != "CREW STATIONS NORMAL / MANUAL FLIGHT LIVE")
+        v.summary = "F9 CREW ALERT / " + v.alert;
     if (!members_.empty()) {
         const auto& m = members_[v.selected];
         v.selectedSkill = (m.trait == 0 ? "CALM" : m.trait == 1 ? "AGILE" : "HARDY");

@@ -1,5 +1,7 @@
 # INFINITE
 
+**0.48:** **F9** opens a compact in-flight crew console while the helm, roll and weapons remain live. Select crew and rooms, assign stations, repair, fight fires, give first aid, rest relief crew, or dispatch emergency responders. Best Stations matches skills and condition to duties; live task reports show travel and blocked work. **F8** retains the full deck and port services. [In-flight crew controls and validation](docs/CREW_FLIGHT_0_48.md).
+
 **0.47:** named crew can be bought and sold at connected ports. **F2 → F5 → Crew Market** shows individual offers, skills, condition and bid/ask prices; **Enter** buys, **Backspace** sells. People retain their identity and experience through sale, repurchase and reload. **F8** retains stations and damage control, with direct crew trading shortcuts. [Crew market controls and validation](docs/CREW_TRADE_0_47.md).
 
 **0.46:** six named ship crew, connected stations, skills, fatigue, injuries and casualties, fires, oxygen/breaches and finite damage-control stores. **F8** opens the crew deck: assign stations, dispatch repairs/firefighters/first aid, rest relief crew and vent compartments. Connected ports sell recruitment contracts, supplies and shore treatment through the existing economy. [Crew controls and validation](docs/CREW_0_46.md).

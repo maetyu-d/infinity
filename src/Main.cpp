@@ -1,6 +1,7 @@
 #include "CelestialValidation.hpp"
 #include "CloudValidation.hpp"
 #include "CockpitMotionValidation.hpp"
+#include "CrewFlightValidation.hpp"
 #include "CrewTradeValidation.hpp"
 #include "CrewValidation.hpp"
 #include "EconomyValidation.hpp"
@@ -56,7 +57,7 @@ struct Options {
     bool streamingTest = false;
     bool terrainQuality = false, terrainSurfaceFrame = false, sunShadows = true;
     bool economyTest = false, cockpitMotionTest = false, npcTest = false, crewTest = false,
-         crewTradeTest = false;
+         crewTradeTest = false, crewFlightTest = false;
     bool pilotTest = false, terrainTest = false, surfaceTest = false;
 };
 static Options options(int argc, char** argv) {
@@ -76,7 +77,10 @@ static Options options(int argc, char** argv) {
             o.smoke = o.tour = o.fresh = true;
         else if (arg == "--benchmark-tour")
             o.benchmark = o.smoke = o.tour = o.fresh = true;
-        else if (arg == "--crew-trade-test") {
+        else if (arg == "--crew-flight-test") {
+            o.smoke = o.fresh = o.crewFlightTest = o.benchmark = true;
+            o.tour = false;
+        } else if (arg == "--crew-trade-test") {
             o.smoke = o.fresh = o.crewTradeTest = o.benchmark = true;
             o.tour = false;
         } else if (arg == "--crew-test") {
@@ -214,7 +218,7 @@ static Options options(int argc, char** argv) {
         unsigned(o.polarTest) + unsigned(o.cloudTest) + unsigned(o.celestialTest) +
         unsigned(o.landingLightTest) + unsigned(o.weatherTest) + unsigned(o.diversityTest) +
         unsigned(o.stellarDiversityTest) + unsigned(o.npcTest) + unsigned(o.crewTest) +
-        unsigned(o.crewTradeTest);
+        unsigned(o.crewTradeTest) + unsigned(o.crewFlightTest);
     if (validationModes > 1 || (validationModes && o.tour))
         throw std::invalid_argument("Choose one automated validation mode");
     if (o.width < 320 || o.height < 240 || o.width > 7680 || o.height > 4320 || o.frames < 0)
@@ -257,7 +261,8 @@ int main(int argc, char** argv) {
                             opt.terrainTest || opt.surfaceTest || opt.planetTest || opt.uiFitTest ||
                             opt.polarTest || opt.cloudTest || opt.celestialTest || opt.landingLightTest ||
                             opt.weatherTest || opt.diversityTest || opt.stellarDiversityTest ||
-                            opt.cockpitMotionTest || opt.npcTest || opt.crewTest || opt.crewTradeTest;
+                            opt.cockpitMotionTest || opt.npcTest || opt.crewTest || opt.crewTradeTest ||
+                            opt.crewFlightTest;
         std::unique_ptr<FlightValidation> flightProof;
         if (opt.flightTest)
             flightProof = std::make_unique<FlightValidation>(universe, nav);
@@ -390,11 +395,15 @@ int main(int argc, char** argv) {
             MarketView marketView;
             bool marketOpen = false;
             bool crewOpen = false;
+            bool crewFlightOpen = false;
             size_t crewSelected = 0;
             size_t crewOffer = 0;
             CrewStation crewStation = CrewStation::Bridge;
             CrewView crewView;
             std::string crewFeedback;
+            auto crewCommand = [&](CrewCommand command) {
+                crewFeedback = crew.command(command, crewSelected, crewStation);
+            };
             uint64_t pendingCrewSequence = 0;
             std::optional<ActivityId> marketPort;
             size_t marketGood = 1;
@@ -700,6 +709,9 @@ int main(int argc, char** argv) {
             if (opt.crewTradeTest)
                 crewTradeProof =
                     std::make_unique<CrewTradeValidation>(universe, nav, pilot, crew, *economy, window);
+            std::unique_ptr<CrewFlightValidation> crewFlightProof;
+            if (opt.crewFlightTest)
+                crewFlightProof = std::make_unique<CrewFlightValidation>(universe, nav, pilot, crew, window);
             std::unique_ptr<SurfaceValidation> surfaceProof;
             if (opt.surfaceTest)
                 surfaceProof = std::make_unique<SurfaceValidation>(universe, nav, pilot, activity);
@@ -937,6 +949,30 @@ int main(int argc, char** argv) {
                         renderer.resize(w, h);
                     }
                     if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+                        if (crewFlightOpen && !crewOpen && !marketOpen && pilotEnabled &&
+                            event.button.button == SDL_BUTTON_LEFT) {
+                            int w, h, pw, ph;
+                            SDL_GetWindowSize(window, &w, &h);
+                            SDL_GetWindowSizeInPixels(window, &pw, &ph);
+                            const auto viewport = renderer.cockpitViewport();
+                            const auto point =
+                                viewport.toCanvas({event.button.x * pw / w, event.button.y * ph / h});
+                            const CrewFlightLayout layout(viewport.aspect());
+                            if (layout.panel.contains(point)) {
+                                for (size_t i = 0; i < crew.members().size(); ++i)
+                                    if (layout.roster[i].contains(point))
+                                        crewSelected = i;
+                                for (size_t i = 0; i < crewRoomCount; ++i)
+                                    if (layout.rooms[i].contains(point))
+                                        crewStation = CrewStation(i);
+                                for (size_t i = 0; i < layout.actions.size(); ++i)
+                                    if (layout.actions[i].contains(point))
+                                        crewCommand(CrewCommand(i));
+                                if (layout.automatic.contains(point))
+                                    crewCommand(CrewCommand::Automatic);
+                                continue;
+                            }
+                        }
                         if (crewOpen) {
                             if (event.button.button == SDL_BUTTON_LEFT) {
                                 int w, h, pw, ph;
@@ -998,6 +1034,23 @@ int main(int argc, char** argv) {
                     }
                     if (crewOpen && event.type == SDL_EVENT_MOUSE_WHEEL)
                         continue;
+                    if (crewFlightOpen && !marketOpen && pilotEnabled &&
+                        event.type == SDL_EVENT_MOUSE_WHEEL) {
+                        float x, y;
+                        int w, h, pw, ph;
+                        SDL_GetMouseState(&x, &y);
+                        SDL_GetWindowSize(window, &w, &h);
+                        SDL_GetWindowSizeInPixels(window, &pw, &ph);
+                        const auto viewport = renderer.cockpitViewport();
+                        if (CrewFlightLayout(viewport.aspect())
+                                .panel.contains(viewport.toCanvas({x * pw / w, y * ph / h}))) {
+                            if (!crew.members().empty() && event.wheel.y != 0)
+                                crewSelected =
+                                    (crewSelected + crew.members().size() + (event.wheel.y > 0 ? -1 : 1)) %
+                                    crew.members().size();
+                            continue;
+                        }
+                    }
                     if (marketOpen && event.type == SDL_EVENT_MOUSE_WHEEL && event.wheel.y != 0) {
                         marketGood =
                             (marketGood + marketRows() + (event.wheel.y > 0 ? -1 : 1)) % marketRows();
@@ -1012,6 +1065,64 @@ int main(int argc, char** argv) {
                         opt.tour = false;
                     }
                     if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat) {
+                        if (event.key.scancode == SDL_SCANCODE_F9 && pilotEnabled) {
+                            crewFlightOpen = crewOpen || marketOpen || !crewFlightOpen;
+                            crewOpen = marketOpen = false;
+                            crewFeedback.clear();
+                            overlay = true;
+                            continue;
+                        }
+                        if (crewFlightOpen && !crewOpen && !marketOpen && pilotEnabled) {
+                            if (event.key.scancode == SDL_SCANCODE_ESCAPE) {
+                                crewFlightOpen = false;
+                                continue;
+                            }
+                            if (event.key.scancode >= SDL_SCANCODE_1 &&
+                                event.key.scancode <= SDL_SCANCODE_8) {
+                                const auto index = size_t(event.key.scancode - SDL_SCANCODE_1);
+                                if (event.key.mod & SDL_KMOD_ALT) {
+                                    if (index < crewRoomCount)
+                                        crewStation = CrewStation(index);
+                                } else if (index < crew.members().size())
+                                    crewSelected = index;
+                                continue;
+                            }
+                            if (event.key.mod & SDL_KMOD_CTRL) {
+                                std::optional<CrewCommand> command;
+                                switch (event.key.scancode) {
+                                case SDL_SCANCODE_RETURN:
+                                    command = CrewCommand::Assign;
+                                    break;
+                                case SDL_SCANCODE_R:
+                                    command = CrewCommand::Repair;
+                                    break;
+                                case SDL_SCANCODE_F:
+                                    command = CrewCommand::Firefight;
+                                    break;
+                                case SDL_SCANCODE_M:
+                                    command = CrewCommand::Aid;
+                                    break;
+                                case SDL_SCANCODE_T:
+                                    command = CrewCommand::Rest;
+                                    break;
+                                case SDL_SCANCODE_G:
+                                    command = CrewCommand::Return;
+                                    break;
+                                case SDL_SCANCODE_J:
+                                    command = CrewCommand::BestStations;
+                                    break;
+                                case SDL_SCANCODE_H:
+                                    command = CrewCommand::Emergency;
+                                    break;
+                                default:
+                                    break;
+                                }
+                                if (command) {
+                                    crewCommand(*command);
+                                    continue;
+                                }
+                            }
+                        }
                         if (crewOpen) {
                             const auto count = crew.members().size();
                             switch (event.key.scancode) {
@@ -1108,6 +1219,7 @@ int main(int argc, char** argv) {
                             case SDL_SCANCODE_F8:
                                 marketOpen = false;
                                 crewOpen = true;
+                                crewFlightOpen = false;
                                 releaseLook();
                                 break;
                             case SDL_SCANCODE_ESCAPE:
@@ -1253,6 +1365,7 @@ int main(int argc, char** argv) {
                         case SDL_SCANCODE_F8:
                             if (pilotEnabled) {
                                 crewOpen = true;
+                                crewFlightOpen = false;
                                 marketOpen = false;
                                 releaseLook();
                             }
@@ -1504,6 +1617,8 @@ int main(int argc, char** argv) {
                             break;
                         case SDL_SCANCODE_TAB:
                             overlay = !overlay;
+                            if (!overlay)
+                                crewFlightOpen = false;
                             break;
                         case SDL_SCANCODE_R:
                             activity.selected.reset();
@@ -1746,6 +1861,8 @@ int main(int argc, char** argv) {
                     crewProof->advance(renderer);
                 if (crewTradeProof)
                     crewTradeProof->advance(renderer);
+                if (crewFlightProof)
+                    crewFlightProof->advance(renderer);
                 if (uiProof)
                     uiProof->advance(renderer);
                 if (polarProof)
@@ -1770,6 +1887,7 @@ int main(int argc, char** argv) {
                     crewView = crew.view(crewSelected, crewStation);
                     crewSelected = crewView.selected;
                     crewView.open = crewOpen;
+                    crewView.flightOpen = crewFlightOpen && pilotEnabled;
                     crewView.message = crewFeedback;
                     crewView.pending = pendingCrewSequence != 0;
                     if (crewOpen) {
@@ -1809,6 +1927,13 @@ int main(int argc, char** argv) {
                 if (crewTradeProof) {
                     crewTradeProof->observe(renderer, opt.captures);
                     if (crewTradeProof->finished())
+                        running = false;
+                }
+                if (crewFlightProof) {
+                    crewView = crewFlightProof->view();
+                    renderer.setCrew(&crewView);
+                    crewFlightProof->observe(renderer, opt.captures);
+                    if (crewFlightProof->finished())
                         running = false;
                 }
                 npcCombat.annotate(cockpit);
@@ -2036,10 +2161,10 @@ int main(int argc, char** argv) {
                 if (opt.frames > 0 && frame >= opt.frames)
                     running = false;
                 if (opt.smoke && std::chrono::duration<double>(now - start).count() >
-                                     (opt.crewTest || opt.crewTradeTest               ? 240
-                                      : opt.npcTest                                   ? 180
-                                      : opt.economyTest                               ? 330
-                                      : opt.diversityTest || opt.stellarDiversityTest ? 360
+                                     (opt.crewTest || opt.crewTradeTest || opt.crewFlightTest ? 240
+                                      : opt.npcTest                                           ? 180
+                                      : opt.economyTest                                       ? 330
+                                      : opt.diversityTest || opt.stellarDiversityTest         ? 360
                                       : opt.celestialTest || opt.weatherTest || opt.cloudTest ||
                                               opt.polarTest || opt.surfaceTest
                                           ? 210
@@ -2098,7 +2223,10 @@ int main(int argc, char** argv) {
             std::cout << "peak_rss_bytes=" << usage.ru_maxrss * 1024 << '\n';
 #endif
 #endif
-            if (opt.crewTradeTest) {
+            if (opt.crewFlightTest) {
+                if (!crewFlightProof->finished())
+                    throw std::runtime_error("Native crew flight validation incomplete");
+            } else if (opt.crewTradeTest) {
                 if (!crewTradeProof->finished())
                     throw std::runtime_error("Native crew trading incomplete");
             } else if (opt.crewTest) {

@@ -191,6 +191,21 @@ CrewPanelLayout::CrewPanelLayout(double aspect) {
     for (size_t i = 0; i < maxShipCrew; ++i)
         roster[i] = {panel.x + map + 12, panel.y + 66 + i * 31, pw - map - 28, 29};
 }
+CrewFlightLayout::CrewFlightLayout(double aspect) {
+    const double width = 900 * aspect;
+    panel = {24, 176, std::clamp(width * .5 - 64, 160., 316.), 570};
+    automatic = {panel.x + panel.w - 72, panel.y + 8, 60, 18};
+    weapon = {std::max(width * .5 - 158, panel.x + panel.w + 12), 665, 316, 80};
+    const double noticeWidth = std::clamp(width - 656, 24., 650.);
+    notice = {(width - noticeWidth) * .5, 126, noticeWidth, 29};
+    const auto col = (panel.w - 30) * .5;
+    for (size_t i = 0; i < maxShipCrew; ++i)
+        roster[i] = {panel.x + 10, panel.y + 68 + i * 27, panel.w - 20, 25};
+    for (size_t i = 0; i < crewRoomCount; ++i)
+        rooms[i] = {panel.x + 10 + (i % 2) * (col + 10), panel.y + 321 + (i / 2) * 22, col, 20};
+    for (size_t i = 0; i < actions.size(); ++i)
+        actions[i] = {panel.x + 10 + (i % 2) * (col + 10), panel.y + 416 + (i / 2) * 26, col, 24};
+}
 namespace {
 std::optional<size_t> contactRow(glm::dvec2 p, CockpitRect r, size_t count, size_t capacity) {
     if (!r.contains(p) || p.y < 205 || p.y >= 205 + 34 * std::min(count, capacity))
@@ -361,6 +376,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                               const MarketView* market, glm::dquat headInShip, const CrewView* crew) {
     CockpitOverlay h;
     std::optional<CockpitRect> economicPanel;
+    std::optional<CockpitRect> crewCommandPanel;
     const CockpitLayout l(aspect);
     const double w = l.width, center = w * .5;
     const auto eyeFromShip = glm::inverse(headInShip);
@@ -369,6 +385,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     const double ratio = std::max(1e-12, t.hullMetres / 12);
     const bool surface = t.altitude >= 0 && (t.gear || t.altitude < 5000 * ratio);
     const bool catalogues = !t.shrinking || t.hullMetres >= .001;
+    const bool flightCommands = crew && crew->flightOpen && !crew->open && !(market && market->open) && !help;
     const auto living = std::count_if(contacts.begin(), contacts.end(), hasSurfaceLife);
     const auto scanning = std::count_if(contacts.begin(), contacts.end(), [](const auto& c) {
         return c.address.kind() == Kind::Planet &&
@@ -587,7 +604,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     quantity("FLIGHT " + duration(t.flightSeconds) + " / " + flightQuantity(t.travelMetres),
              std::max(178., center - 180), 887, std::max(180., w - 490), 9, muted);
     label("TAB HUD", w - 200, 887, 178, muted);
-    if (crew && !crew->open && !(market && market->open) && !help) {
+    if (crew && !crew->open && !flightCommands && !(market && market->open) && !help) {
         card(h, {center - 205, 639, 410, 20}, ice);
         fitted(h.lettering, crew->summary, center - 195, 645, 390, 8.2,
                crew->summary.find("EMERGENCY") != std::string::npos ? amber : ice);
@@ -684,7 +701,8 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
         return h;
     }
     if (!t.weapon.empty() && !(market && market->open) && !help) {
-        const CockpitRect armament{center - 158, 665, 316, 80};
+        const CockpitRect armament =
+            flightCommands ? CrewFlightLayout(aspect).weapon : CockpitRect{center - 158, 665, 316, 80};
         const auto danger = glm::vec3(1, .3, .2);
         card(h, armament, t.incomingFire > .2 ? danger : t.weaponHeat > 80 ? amber : mint);
         fitted(h.lettering, t.weapon + " / HEAT " + std::to_string(int(t.weaponHeat)) + "%", armament.x + 12,
@@ -848,18 +866,87 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             {"F6 / TAB", "TRAFFIC / HUD"},
             {"F7", "COCKPIT MOTION"},
             {"F8", "CREW / STATIONS / DAMAGE CONTROL"},
+            {"F9", "IN-FLIGHT CREW ORDERS / HELM LIVE"},
             {"SPACE", "FIRE FITTED LASER"},
             {"H", "TARGET NEAREST HOSTILE"},
             {"F2 / F5", "MARKET PAGES / JOBS / SERVICES / DELIVERY REPORTS"},
             {"F1 / ESC", "CLOSE GUIDE / RELEASE HELM"}};
         for (size_t i = 0; i < std::size(controls); ++i) {
-            label(controls[i].first, guide.x + 22, guide.y + 65 + i * 24, guide.w * .42, ice);
-            label(controls[i].second, guide.x + guide.w * .46, guide.y + 65 + i * 24, guide.w * .50, pearl);
+            const auto y = guide.y + 65 + i * ((guide.h - 90) / std::size(controls));
+            label(controls[i].first, guide.x + 22, y, guide.w * .42, ice);
+            label(controls[i].second, guide.x + guide.w * .46, y, guide.w * .50, pearl);
         }
         return h;
     }
 
-    if (catalogues && !activity.empty()) {
+    if (flightCommands) {
+        const CrewFlightLayout layout(aspect);
+        const auto p = layout.panel;
+        crewCommandPanel = p;
+        card(h, p, mint);
+        fitted(h.lettering, "CREW / F9 ORDERS", p.x + 12, p.y + 12, p.w - 94, 12, pearl);
+        card(h, layout.automatic, crew->autoDamageControl ? mint : amber);
+        fitted(h.lettering, crew->autoDamageControl ? "AUTO ON" : "AUTO OFF", layout.automatic.x + 5,
+               layout.automatic.y + 5, layout.automatic.w - 10, 7, crew->autoDamageControl ? mint : amber);
+        fitted(h.lettering, crew->alert, p.x + 12, p.y + 33, p.w - 24, 8.2,
+               crew->summary.find("EMERGENCY") != std::string::npos ? amber : ice);
+        fitted(h.lettering,
+               "CREW " +
+                   std::to_string(std::count_if(crew->members.begin(), crew->members.end(),
+                                                [](const auto& m) { return m.health > 0; })) +
+                   "/8 / SPARES " + std::to_string(int(crew->spares)) + " / MED " +
+                   std::to_string(int(crew->medical)),
+               p.x + 12, p.y + 50, p.w - 24, 8.2, mint);
+        for (size_t i = 0; i < crew->members.size() && i < maxShipCrew; ++i) {
+            const auto& m = crew->members[i];
+            const auto r = layout.roster[i];
+            const auto task = i < crew->tasks.size() ? crew->tasks[i] : CrewTaskView{};
+            const auto colour = m.health <= 0         ? muted
+                                : task.blocked        ? amber
+                                : i == crew->selected ? mint
+                                                      : ice;
+            if (i == crew->selected)
+                rect(h.panels, r.x, r.y, r.w, r.h, mint * .16f);
+            fitted(h.lettering,
+                   std::to_string(i + 1) + " " + m.name + " / " + std::string(crewStationName(m.duty)),
+                   r.x + 4, r.y + 3, r.w - 8, 8.6, colour);
+            fitted(h.lettering,
+                   task.status + " / HP " + std::to_string(int(m.health)) + " FAT " +
+                       std::to_string(int(m.fatigue)),
+                   r.x + 4, r.y + 15, r.w - 8, 7.5, colour);
+        }
+        if (crew->selected < crew->tasks.size()) {
+            const auto& task = crew->tasks[crew->selected];
+            fitted(h.lettering, task.detail, p.x + 12, p.y + 287, p.w - 24, 8.1,
+                   task.blocked ? amber : pearl);
+        }
+        fitted(h.lettering, "ROOM / " + std::string(crewStationName(crew->station)), p.x + 12, p.y + 305,
+               p.w - 24, 8.4, mint);
+        for (size_t i = 0; i < crewRoomCount; ++i) {
+            const auto r = layout.rooms[i];
+            const auto& room = crew->rooms[i];
+            const auto colour = room.fire > 1 || room.oxygen < 25 ? amber
+                                : crew->station == CrewStation(i) ? mint
+                                                                  : ice;
+            card(h, r, colour);
+            fitted(h.lettering, std::to_string(i + 1) + " " + std::string(crewStationName(CrewStation(i))),
+                   r.x + 4, r.y + 6, r.w - 8, 7.4, colour);
+        }
+        constexpr std::array<std::string_view, 8> labels{"ASSIGN",        "REPAIR",   "FIGHT FIRE",
+                                                         "FIRST AID",     "REST",     "RETURN TO DUTY",
+                                                         "BEST STATIONS", "EMERGENCY"};
+        for (size_t i = 0; i < labels.size(); ++i) {
+            const auto r = layout.actions[i];
+            card(h, r, i == 7 ? amber : ice);
+            fitted(h.lettering, labels[i], r.x + 5, r.y + 8, r.w - 10, 8.2, i == 7 ? amber : pearl);
+        }
+        fitted(h.lettering, crew->message.empty() ? "MANUAL HELM AND WEAPONS REMAIN LIVE" : crew->message,
+               p.x + 12, p.y + 529, p.w - 24, 7.8, amber);
+        fitted(h.lettering, "1-8 CREW / ALT 1-7 ROOM / C CURSOR", p.x + 12, p.y + 547, p.w - 24, 7.6, ice);
+        fitted(h.lettering, "CTRL R/F/M/T ORDERS / F8 DECK / F9 CLOSE", p.x + 12, p.y + 560, p.w - 24, 7.4,
+               muted);
+    }
+    if (catalogues && !flightCommands && !activity.empty()) {
         card(h, l.traffic, trafficInk);
         label("PORTS / TRAFFIC", 38, 188, 160, trafficInk);
         label("K / I", 238, 188, 56, muted);
@@ -985,6 +1072,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             r.x = std::clamp(r.x, l.windscreen.x, l.windscreen.x + l.windscreen.w - width);
             r.y = std::clamp(r.y, l.windscreen.y, l.windscreen.y + l.windscreen.h - r.h);
             if (r.overlaps(aim) || (economicPanel && r.overlaps(*economicPanel)) ||
+                (crewCommandPanel && r.overlaps(*crewCommandPanel)) ||
                 std::any_of(h.worldLabels.begin(), h.worldLabels.end(),
                             [&](auto other) { return r.overlaps(other); }))
                 continue;
@@ -1101,8 +1189,10 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     }
     if (!notice.empty()) {
         const double width = std::min(650., w - 80);
-        card(h, {center - width * .5, 714, width, 29}, ice);
-        fitted(h.lettering, notice, center - width * .5 + 12, 723, width - 24, 10.5, ice);
+        const auto r = flightCommands ? CrewFlightLayout(aspect).notice
+                                      : CockpitRect{center - width * .5, 714, width, 29};
+        card(h, r, ice);
+        fitted(h.lettering, notice, r.x + 12, r.y + 9, r.w - 24, 10.5, ice);
     }
     return h;
 }

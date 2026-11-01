@@ -18,6 +18,17 @@ enum class CrewStation : uint8_t {
     Count
 };
 enum class CrewOrder : uint8_t { Duty, Repair, Firefight, Aid, Rest };
+enum class CrewCommand : uint8_t {
+    Assign,
+    Repair,
+    Firefight,
+    Aid,
+    Rest,
+    Return,
+    BestStations,
+    Emergency,
+    Automatic
+};
 inline constexpr size_t crewRoomCount = size_t(CrewStation::Count), maxShipCrew = 8;
 std::string_view crewStationName(CrewStation);
 std::string_view crewOrderName(CrewOrder);
@@ -49,14 +60,20 @@ struct CrewRoom {
     double integrity = 100, oxygen = 100, fire = 0, breach = 0;
     bool vented = false;
 };
+struct CrewTaskView {
+    std::string status, detail;
+    double travelSeconds = 0;
+    bool blocked = false;
+};
 struct CrewView {
-    bool open = false, autoDamageControl = true, connected = false, pending = false;
+    bool open = false, flightOpen = false, autoDamageControl = true, connected = false, pending = false;
     size_t selected = 0;
     CrewStation station = CrewStation::Bridge;
     std::vector<CrewMember> members;
+    std::vector<CrewTaskView> tasks;
     std::array<CrewRoom, crewRoomCount> rooms;
     double spares = 0, medical = 0;
-    std::string summary, message, port, recruit, sell, supply, care, selectedSkill;
+    std::string summary, alert, message, port, recruit, sell, supply, care, selectedSkill;
     std::vector<std::string> events;
 };
 struct CrewReceipts {
@@ -90,6 +107,11 @@ class ShipCrew {
     }
     std::string assign(size_t member, CrewStation);
     std::string order(size_t member, CrewOrder, CrewStation);
+    std::string command(CrewCommand, size_t member, CrewStation);
+    std::string bestStations();
+    std::string respond();
+    CrewTaskView task(size_t member) const;
+    double stationFit(size_t member, CrewStation) const;
     void recall();
     void vent(CrewStation);
     bool dismiss(size_t); // caller enforces port access

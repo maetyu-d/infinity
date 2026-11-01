@@ -1,5 +1,7 @@
 # Player ship crew — Infinite 0.46
 
+Version 0.48 adds an [in-flight F9 command console](CREW_FLIGHT_0_48.md), station matching, emergency dispatch and completed-task return to duty. F8 retains this detailed deck.
+
 Version 0.47 adds a [crew market](CREW_TRADE_0_47.md): **Backspace now sells** the selected person at a connected port, and **Shift + Backspace** releases them without payment. The port section below records the original 0.46 controls.
 
 Six named crew join the existing player ship, with room for eight. **F8** opens a live crew deck with a compartment schematic, moving crew tokens, roster, health, fatigue, morale, station skills, stores and incident reports. The player remains the captain and flies the ship directly. The external hull, restored manual handling, roll, universe generators and every scientific scale remain intact.

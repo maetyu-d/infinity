@@ -1,0 +1,307 @@
+{
+  "temporarily_compressed": 43,
+  "restored": true,
+  "files": [
+    {
+      "name": "infinite_activity_tests",
+      "mode": 493,
+      "sha256": "dfef76108365e5439f1b706192c6aaafc67cca7ff03163505ce63a70ec92961b",
+      "bytes": 3216872,
+      "compressed_bytes": 931627
+    },
+    {
+      "name": "infinite_benchmark",
+      "mode": 493,
+      "sha256": "ef800b27320d33d84079caad18b4a0b0e3310e70673aa98169b1a41300854aa1",
+      "bytes": 1874736,
+      "compressed_bytes": 408955
+    },
+    {
+      "name": "infinite_city_tests",
+      "mode": 493,
+      "sha256": "7253b1cbee8159d0da82e1bfb86c159ff6eb523d7f9f7e39d54e1d8940337d49",
+      "bytes": 318976,
+      "compressed_bytes": 144636
+    },
+    {
+      "name": "infinite_cockpit_motion_tests",
+      "mode": 493,
+      "sha256": "aac33352d9cfda7df90357ba137ebc296bbf83498dcd9eea4d2a0d34ec507bcd",
+      "bytes": 3741424,
+      "compressed_bytes": 1186601
+    },
+    {
+      "name": "infinite_cockpit_tests",
+      "mode": 493,
+      "sha256": "22fcace7fbf43b70654d990cf378e6ecd0372a5301036fc0bb2c48e35f8ac38f",
+      "bytes": 2546248,
+      "compressed_bytes": 738984
+    },
+    {
+      "name": "infinite_continuity_tests",
+      "mode": 493,
+      "sha256": "d311fa507daa5010fb65892510ab3f9dc3aba79dc043f3e7871f7203c2c6572f",
+      "bytes": 3009944,
+      "compressed_bytes": 819082
+    },
+    {
+      "name": "infinite_crew_flight_tests",
+      "mode": 493,
+      "sha256": "ba0033d4841d9a82e816997d46b1917ed54fa5055a44c65771e7b91e51873ed5",
+      "bytes": 2546008,
+      "compressed_bytes": 737177
+    },
+    {
+      "name": "infinite_crew_tests",
+      "mode": 493,
+      "sha256": "8855ff0f5c3e8b06b4413afca9e1a70b71a8ae0a8b9d825b8129d03fd797e905",
+      "bytes": 2633856,
+      "compressed_bytes": 776419
+    },
+    {
+      "name": "infinite_crew_trade_tests",
+      "mode": 493,
+      "sha256": "781626b6303478294dd643314fa2cc647d164ac6412e274c04e46dba75903b43",
+      "bytes": 822984,
+      "compressed_bytes": 392190
+    },
+    {
+      "name": "infinite_depth_tests",
+      "mode": 493,
+      "sha256": "f2933c4ac07e0f856817ee58ff48d072eaa12340dbfc3b466cadf230f896c981",
+      "bytes": 36376,
+      "compressed_bytes": 3977
+    },
+    {
+      "name": "infinite_economy_development_tests",
+      "mode": 493,
+      "sha256": "80840e765db5c62eea50acdfe112718b9fa399be2029ad51843f7e234ce2b11c",
+      "bytes": 2633568,
+      "compressed_bytes": 781872
+    },
+    {
+      "name": "infinite_economy_hauling_tests",
+      "mode": 493,
+      "sha256": "bb395df205cd5a9b7270a9896aa79478038f15f818e45e3f62a505f0b5ca80fb",
+      "bytes": 2651152,
+      "compressed_bytes": 784200
+    },
+    {
+      "name": "infinite_economy_recovery_tests",
+      "mode": 493,
+      "sha256": "c4fecad2616d217fb514a0be617a5da8181cd6719c9d4084f6cbb08d9466e1c1",
+      "bytes": 2567200,
+      "compressed_bytes": 750838
+    },
+    {
+      "name": "infinite_economy_services_tests",
+      "mode": 493,
+      "sha256": "115539befbb8a1d746bf95349e692564794050656a6327d74617cc4713715522",
+      "bytes": 3806928,
+      "compressed_bytes": 1218076
+    },
+    {
+      "name": "infinite_economy_signals_tests",
+      "mode": 493,
+      "sha256": "ccbd3e4f7d9ec85bedefd438e0bcea8138d255309685006376b949a2c8e5f0e2",
+      "bytes": 2616688,
+      "compressed_bytes": 772224
+    },
+    {
+      "name": "infinite_economy_tests",
+      "mode": 493,
+      "sha256": "432ba46676575e581cb88646feb25ae3bfbc98137fe663d185cda7865542fbe8",
+      "bytes": 3805096,
+      "compressed_bytes": 1212469
+    },
+    {
+      "name": "infinite_flight_tests",
+      "mode": 493,
+      "sha256": "83732654e57491d85c90cc73d39f0eed8d003ac8a7c4c345ca6f1071aafd0bd4",
+      "bytes": 2988408,
+      "compressed_bytes": 811938
+    },
+    {
+      "name": "infinite_handling_tests",
+      "mode": 493,
+      "sha256": "023e30895c5ebebf1d67c2b683b919858c46693fc2775b04e0d5c40eaf7ebe42",
+      "bytes": 3196856,
+      "compressed_bytes": 916391
+    },
+    {
+      "name": "infinite_material_tests",
+      "mode": 493,
+      "sha256": "cbbe944a14ae3cb8a668e6074f13ee6fec171eb7e69da1c03155ad8c0d591627",
+      "bytes": 53592,
+      "compressed_bytes": 10600
+    },
+    {
+      "name": "infinite_navigation_tests",
+      "mode": 493,
+      "sha256": "277147d2b4dd5bf09c4446f92bd3cb367c5369edd89c1ec9893fcf0e3ebb6558",
+      "bytes": 228504,
+      "compressed_bytes": 96843
+    },
+    {
+      "name": "infinite_npc_combat_tests",
+      "mode": 493,
+      "sha256": "7a3f595207e1d6d9afda12a4ec7599eb549f8a34616b138d24925ab1546dfd91",
+      "bytes": 2586600,
+      "compressed_bytes": 756883
+    },
+    {
+      "name": "infinite_operating_tests",
+      "mode": 493,
+      "sha256": "d61549a1192aaaaea7a34a3b51c36426d8acca057505c9731f5277442d6005fb",
+      "bytes": 3179496,
+      "compressed_bytes": 912973
+    },
+    {
+      "name": "infinite_performance_tests",
+      "mode": 493,
+      "sha256": "74c7618ddf7ebdaee0010932deb1015cad75e6bbcbda15531a13baef215f5491",
+      "bytes": 2945512,
+      "compressed_bytes": 790239
+    },
+    {
+      "name": "infinite_piloting_tests",
+      "mode": 493,
+      "sha256": "e9caa79fec6affd05d0678eb23db82b86e2d87623e53700deeaced09ec555990",
+      "bytes": 3720152,
+      "compressed_bytes": 1176929
+    },
+    {
+      "name": "infinite_planet_diversity_tests",
+      "mode": 493,
+      "sha256": "9e8130e0419d859009c7ce407b153674ff4b680b7865128d201e529b37454d08",
+      "bytes": 336896,
+      "compressed_bytes": 151043
+    },
+    {
+      "name": "infinite_population_snapshot",
+      "mode": 493,
+      "sha256": "a1a6a51cfd86f82d627d9cf51d83b8632961d12d9660bd956cd49e5084b1f0be",
+      "bytes": 1893424,
+      "compressed_bytes": 411741
+    },
+    {
+      "name": "infinite_population_tests",
+      "mode": 493,
+      "sha256": "8db66744b604c4f3ede97b686c6225218e843a85c74674e50d2484dd6cd1a57d",
+      "bytes": 3181320,
+      "compressed_bytes": 916555
+    },
+    {
+      "name": "infinite_presentation_tests",
+      "mode": 493,
+      "sha256": "786f91aab56fbf8a599356c90b98beef4e3af532e9760a7457008fdbc70546f2",
+      "bytes": 1953784,
+      "compressed_bytes": 440433
+    },
+    {
+      "name": "infinite_process_tests",
+      "mode": 493,
+      "sha256": "d465fa000d84d213316b5299e2753bdd9152517b03c03135eb51ad17c80965c8",
+      "bytes": 2216648,
+      "compressed_bytes": 501810
+    },
+    {
+      "name": "infinite_shading_tests",
+      "mode": 493,
+      "sha256": "d8ab653d606d7c8d6daf02e26add9cbc7421d54a5c6fd074f43d6e98c6ad4948",
+      "bytes": 81720,
+      "compressed_bytes": 31059
+    },
+    {
+      "name": "infinite_ship_physics_tests",
+      "mode": 493,
+      "sha256": "fbe557255c4824d7d69a42ad5a58d3ee11c0132b11d30495e2d24ea328b8bf0b",
+      "bytes": 3199112,
+      "compressed_bytes": 918961
+    },
+    {
+      "name": "infinite_stellar_evolution_tests",
+      "mode": 493,
+      "sha256": "66e9c459f51a5fc36d9fe79712de51c984c0380afd22d62335ad02c53eca6604",
+      "bytes": 3184048,
+      "compressed_bytes": 914773
+    },
+    {
+      "name": "infinite_stellar_optics_tests",
+      "mode": 493,
+      "sha256": "03dab03a7d679d64ac711a9d31d0c5871f1b9e59038e42f288a3a9997a3c53bb",
+      "bytes": 1937408,
+      "compressed_bytes": 435752
+    },
+    {
+      "name": "infinite_streaming_tests",
+      "mode": 493,
+      "sha256": "741659a7f39b3069c077f45fb9a54848e4034020927c952cf251ce12c3fb7e2f",
+      "bytes": 2989032,
+      "compressed_bytes": 808148
+    },
+    {
+      "name": "infinite_surface_life_tests",
+      "mode": 493,
+      "sha256": "93a69984e09a8f2dda118c8636c5f8564c5c50b3ce62e7c81726f43964a813c3",
+      "bytes": 3258552,
+      "compressed_bytes": 950203
+    },
+    {
+      "name": "infinite_surface_site_snapshot",
+      "mode": 493,
+      "sha256": "b5949901b7e83af7ec599f0833c0b9933fc1830b2ab764a9766b1fae7b8dcae2",
+      "bytes": 299600,
+      "compressed_bytes": 134056
+    },
+    {
+      "name": "infinite_terrain_tests",
+      "mode": 493,
+      "sha256": "4a56bc1788e7b9f5f6712033d8d3df8dce03d017a5b941c9f83ae32d09ffc4b2",
+      "bytes": 3180792,
+      "compressed_bytes": 916141
+    },
+    {
+      "name": "infinite_tests",
+      "mode": 493,
+      "sha256": "748d273203de3a98790eec5ccce6ee6c99acc6e912d0a9847c7b2f55c85fa986",
+      "bytes": 2972064,
+      "compressed_bytes": 804836
+    },
+    {
+      "name": "infinite_weapons_tests",
+      "mode": 493,
+      "sha256": "18bd68c62430f2d5d684c6de6c3a837ad71d9820320f2118a79128d7ac51d973",
+      "bytes": 2634088,
+      "compressed_bytes": 778785
+    },
+    {
+      "name": "infinite_weather_benchmark",
+      "mode": 493,
+      "sha256": "c60c1bb709c26444f4b7ff70f4612cb723680d9fa87d071d0b4103bba519c3cc",
+      "bytes": 518472,
+      "compressed_bytes": 164341
+    },
+    {
+      "name": "infinite_weather_field_tests",
+      "mode": 493,
+      "sha256": "75da2e911c7049e36caef8b294b7e1a157bd763c599b8193067433ddf9944c37",
+      "bytes": 515392,
+      "compressed_bytes": 162793
+    },
+    {
+      "name": "infinite_weather_process_tests",
+      "mode": 493,
+      "sha256": "bfd1f4605ae0f760609eb5cfdb808db0f120ff552771e00414ad9d566f7b69c7",
+      "bytes": 186080,
+      "compressed_bytes": 77137
+    },
+    {
+      "name": "infinite_window_tests",
+      "mode": 493,
+      "sha256": "296c854a14d10c15db32844752348a18a1e0048737f53f0e567c588f551be12b",
+      "bytes": 36344,
+      "compressed_bytes": 4251
+    }
+  ]
+}

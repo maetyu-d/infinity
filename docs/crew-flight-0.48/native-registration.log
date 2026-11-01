@@ -1,0 +1,13 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+  Test #48: native_crew_flight_loop
+  Test #49: native_crew_flight_images
+  Test #50: native_crew_trade_loop
+  Test #51: native_crew_trade_images
+  Test #52: native_crew_loop
+  Test #53: native_crew_images
+  Test #54: native_npc_combat_loop
+  Test #55: native_npc_combat_images
+  Test #59: native_economic_loop
+  Test #60: native_economic_images
+
+Total Tests: 10
