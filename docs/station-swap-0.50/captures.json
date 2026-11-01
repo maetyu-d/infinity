@@ -1,0 +1,58 @@
+[
+  {
+    "path": "swap-gun-aim.png",
+    "width": 1440,
+    "height": 900,
+    "rgb_sha256": "48acf6870f39075ec81c458ecb34da6652f4ff1686b4f1e3849027397b4c6720",
+    "png_sha256": "57c19101ebb7d20c8ca3aae9d4bf26af956c2d078e8c978d279665167ce4239a"
+  },
+  {
+    "path": "swap-gun-fire.png",
+    "width": 1440,
+    "height": 900,
+    "rgb_sha256": "813189cf7885484cc9536f959a34351872a36fc6b766a59253e21bb2fb4b303e",
+    "png_sha256": "d1f00e3f12c5e008671dcd6f5b099f9c5a04ba226939f9307a3c9211616c7607"
+  },
+  {
+    "path": "swap-gun-ready.png",
+    "width": 1440,
+    "height": 900,
+    "rgb_sha256": "9477de101869d35d1b6108fac3ecc2738909a3549ccfe315bcefbad269b34907",
+    "png_sha256": "eb6091e1fa2c78bc9e593963cecd2ffee2eeacf3d21558961a2e9eb8f25c566e"
+  },
+  {
+    "path": "swap-helm.png",
+    "width": 1440,
+    "height": 900,
+    "rgb_sha256": "308564d81e6c9e99eb00ef1cfa2bc75a24fae43f9d05c759363de9a2c9cf34f7",
+    "png_sha256": "4f1c6d9fb730ce61ff4ccc99751907a5930ec5918e5543b68b43581b0be2e93c"
+  },
+  {
+    "path": "swap-pilot-unavailable.png",
+    "width": 960,
+    "height": 1280,
+    "rgb_sha256": "843700b6f8e90d981f8d673332733949873e830f6a0a235e98d589560cd201b2",
+    "png_sha256": "3988681c755339b56f9cc1d040f99026c2dfe771d4d3410c9ebb7903ba5fbafd"
+  },
+  {
+    "path": "swap-portrait.png",
+    "width": 960,
+    "height": 1280,
+    "rgb_sha256": "d2350b2e09496beab9cdcb71cb6d24c7bacb3f5acf918f37c6e8b3c1ab6e8bb8",
+    "png_sha256": "10d363e235e0cb97d7aa9ebf2e289eb85b6536d293dbc5790fb7cd845ebd8b14"
+  },
+  {
+    "path": "swap-relief-walking.png",
+    "width": 1440,
+    "height": 900,
+    "rgb_sha256": "05a12ea2c339247c22e7185b222a3ca792a05b276105098dcc18a67dfc82c821",
+    "png_sha256": "9caaab0b70d3f70e8f34912ee7d1d412947bca2879e07012342106c47402032d"
+  },
+  {
+    "path": "swap-returned-helm.png",
+    "width": 1440,
+    "height": 900,
+    "rgb_sha256": "14fd07e295096214a6857edee8ce20f98c7781d8518e8d8b0e436620843e3a17",
+    "png_sha256": "bffe6f5fa0cff41411d589c350d926e6c46e7efd3702acc7abda054299d271a0"
+  }
+]

@@ -70,6 +70,7 @@ struct CrewTaskView {
     bool blocked = false;
 };
 struct CrewView {
+    uint64_t reliefHelmId = 0;
     bool open = false, flightOpen = false, autoDamageControl = true, connected = false, pending = false;
     size_t selected = 0;
     CrewStation station = CrewStation::Bridge;
@@ -114,6 +115,16 @@ class ShipCrew {
     }
     std::string assign(size_t member, CrewStation);
     std::string manWeapon(size_t member, unsigned mount);
+    bool beginGunRelief(unsigned mount);
+    void endGunRelief();
+    bool gunReliefValid() const;
+    double reliefHelmReadiness() const;
+    uint64_t reliefHelmId() const {
+        return reliefHelmId_;
+    }
+    unsigned playerGun() const {
+        return playerGun_;
+    }
     void setWeaponLevels(const std::array<unsigned, maxWeaponMounts>& levels) {
         for (unsigned i = 0; i < maxWeaponMounts; ++i)
             weaponLevels_[i] = std::min(levels[i], 3u);
@@ -151,6 +162,9 @@ class ShipCrew {
     double spares_ = 30, medical_ = 12, previousHull_ = -1, accumulator_ = 0;
     bool automatic_ = true;
     std::array<unsigned, maxWeaponMounts> weaponLevels_{1, 0, 0}; // read-only loadout supplied by the wallet
+    // Temporary captain/gunner exchange. Saved duty stays bound to the original gun.
+    uint64_t reliefHelmId_ = 0;
+    unsigned playerGun_ = noWeaponMount;
     void step(double properG, bool combat, unsigned firingMounts);
     void event(std::string);
     CrewStation nextRoom(CrewStation from, CrewStation to) const;

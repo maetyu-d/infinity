@@ -1,5 +1,7 @@
 # INFINITE
 
+**0.50:** swap with a ready gunner using **F10**. In **F9**, select the gunner first; outside the console, F10 chooses a staffed extra gun. You retain the helm while relief walks to the bridge, then **mouse/arrows** aim that gun and **Space** fires it. The relief pilot holds course or continues the current approach, with skill and condition affecting control. **F10** returns the helm; **B** returns and brakes. [Station swapping and controls](docs/STATION_SWAP_0_50.md).
+
 **0.49:** two optional extra laser mounts with separate crew consoles, heat and reload state. **F2 → F5 → Weapons**, then **Left/Right** selects nose, port or starboard; **Enter** fits/upgrades and **Backspace** sells that mount. In **F9**, select crew and click a gun button or press **Ctrl+1/2/3** to assign a console. **Space** fires the nose gun and each ready, manned auxiliary. [Crewed guns, controls and validation](docs/CREW_GUNS_0_49.md).
 
 **0.48:** **F9** opens a compact in-flight crew console while the helm, roll and weapons remain live. Select crew and rooms, assign stations, repair, fight fires, give first aid, rest relief crew, or dispatch emergency responders. Best Stations matches skills and condition to duties; live task reports show travel and blocked work. **F8** retains the full deck and port services. [In-flight crew controls and validation](docs/CREW_FLIGHT_0_48.md).

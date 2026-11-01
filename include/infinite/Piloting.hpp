@@ -1,4 +1,5 @@
 #pragma once
+#include "Armament.hpp"
 #include "Flight.hpp"
 #include "FlightEnvironment.hpp"
 #include "ShipDynamics.hpp"
@@ -49,6 +50,10 @@ struct FlightInstruments {
     std::string phase = "MANUAL", drive = "CRUISE", destination = "SELECT A DESTINATION / J NAVIGATE";
     std::string weapon, weaponStatus;
     bool weaponBattery = false;
+    unsigned playerGun = noWeaponMount;
+    glm::dquat gunAim{1, 0, 0, 0}; // read-only camera/weapon aim in physical ship axes
+    std::string stationStatus, reliefHelm;
+    double helmQuality = 0, gunYaw = 0, gunPitch = 0;
     double weaponHeat = 0;
     std::string combatStatus;
     unsigned hostileContacts = 0;
@@ -72,6 +77,8 @@ class Pilot {
         return instruments_;
     }
     void update(const HelmInput&, double dt, const std::shared_ptr<const Geometry>& visible = {});
+    void updateCrew(const Address& courseFrame, glm::dquat course, double quality, double dt,
+                    const std::shared_ptr<const Geometry>& visible = {});
     void synchronizeFrame();
     void brake();
     void toggleAssist();
@@ -141,6 +148,9 @@ class Pilot {
     bool fieldBraking_ = false;
     bool growthBlocked_ = false;
     double cargoMassKg_ = 0;
+    double crewQuality_ = 0;
+    Address crewCourseFrame_;
+    glm::dquat crewCourse_{1, 0, 0, 0};
     double launchTime_ = 0, lastLog_ = 0, scaleRate_ = 0, precisionScale_ = 1;
     glm::dvec3 assistCapture_{};
     double assistCaptureTime_ = 0;

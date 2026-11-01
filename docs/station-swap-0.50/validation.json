@@ -1,0 +1,33 @@
+{
+  "version": "0.50.0",
+  "build": 55,
+  "baseline": "701243aed3db0c4e2b242bb864477f6a0bc0372f",
+  "build_sha256": "f6a37065b44d9278f5779e245e53809a715d31f1a9e7cbf1bf9050284a2fb342",
+  "native_executable_hashes": {
+    "station-swap": "f6a37065b44d9278f5779e245e53809a715d31f1a9e7cbf1bf9050284a2fb342",
+    "crew-guns": "f6a37065b44d9278f5779e245e53809a715d31f1a9e7cbf1bf9050284a2fb342",
+    "crew-flight": "f6a37065b44d9278f5779e245e53809a715d31f1a9e7cbf1bf9050284a2fb342",
+    "npc-combat": "f6a37065b44d9278f5779e245e53809a715d31f1a9e7cbf1bf9050284a2fb342"
+  },
+  "core_tests_passed": 49,
+  "native_tests_passed": 8,
+  "capture_counts": {
+    "station-swap": 8,
+    "crew-guns": 9,
+    "crew-flight": 5,
+    "npc-combat": 6
+  },
+  "total_captures": 28,
+  "protected_files": 188,
+  "protected_definitions": 3,
+  "native_station_frames": 217,
+  "native_station_median_ms": 34.1111,
+  "native_station_p95_ms": 91.4836,
+  "peak_rss_bytes": 149864448,
+  "metrics_note": "Native fixture diagnostics including loading, captures and resizing; not a matched performance comparison.",
+  "skill_heading_error_radians": {
+    "novice": 0.477816,
+    "expert": 0.121218
+  },
+  "visual_qa": "Initial portrait overlap found during manual screenshot review; corrected, covered by non-overlap layout checks and all final tests rerun."
+}

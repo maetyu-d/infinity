@@ -144,14 +144,17 @@ double ShipCrew::gunnerReadiness(unsigned mount) const {
     if (room.integrity <= 0 || room.oxygen < 18 || room.fire >= 25)
         return 0;
     for (const auto& m : members_)
-        if (m.health >= 20 && m.duty == CrewStation::Weapons && m.weaponMount == mount &&
-            m.order == CrewOrder::Duty && m.room == CrewStation::Weapons && m.travel <= 0)
+        if (m.id != reliefHelmId_ && m.health >= 20 && m.duty == CrewStation::Weapons &&
+            m.weaponMount == mount && m.order == CrewOrder::Duty && m.room == CrewStation::Weapons &&
+            m.travel <= 0)
             return std::clamp(skill(m, CrewStation::Weapons) * room.integrity / 100., .2, 1.2);
     return 0;
 }
 std::string ShipCrew::gunnerStatus(unsigned mount) const {
     if (mount >= maxWeaponMounts || !weaponLevels_[mount])
         return "EMPTY";
+    if (mount == playerGun_ && reliefHelmId_)
+        return "CAPTAIN / RELIEF HELM";
     for (const auto& m : members_)
         if (m.health > 0 && m.duty == CrewStation::Weapons && m.weaponMount == mount) {
             if (m.health < 20)
@@ -163,6 +166,57 @@ std::string ShipCrew::gunnerStatus(unsigned mount) const {
             return gunnerReadiness(mount) > 0 ? "READY" : "BAY UNSAFE";
         }
     return "UNMANNED";
+}
+bool ShipCrew::beginGunRelief(unsigned mount) {
+    if (reliefHelmId_ || mount >= maxWeaponMounts || gunnerReadiness(mount) <= 0 ||
+        std::count_if(weaponLevels_.begin(), weaponLevels_.end(), [](unsigned level) { return level > 0; }) <
+            2)
+        return false;
+    const auto& bridge = rooms_[size_t(CrewStation::Bridge)];
+    if (bridge.integrity <= 0 || bridge.oxygen < 18 || bridge.fire >= 25)
+        return false;
+    for (auto& m : members_)
+        if (m.duty == CrewStation::Weapons && m.weaponMount == mount && m.health >= 20 &&
+            m.room == CrewStation::Weapons && m.travel <= 0 && m.order == CrewOrder::Duty) {
+            reliefHelmId_ = m.id;
+            playerGun_ = mount;
+            m.target = CrewStation::Bridge;
+            m.automatic = false;
+            event(m.name + " / RELIEVING CAPTAIN AT HELM");
+            return true;
+        }
+    return false;
+}
+bool ShipCrew::gunReliefValid() const {
+    if (!reliefHelmId_ || playerGun_ >= maxWeaponMounts || !weaponLevels_[playerGun_] ||
+        std::count_if(weaponLevels_.begin(), weaponLevels_.end(), [](unsigned level) { return level > 0; }) <
+            2)
+        return false;
+    for (auto station : {CrewStation::Bridge, CrewStation::Weapons}) {
+        const auto& r = rooms_[size_t(station)];
+        if (r.integrity <= 0 || r.oxygen < 18 || r.fire >= 25)
+            return false;
+    }
+    return std::any_of(members_.begin(), members_.end(), [&](const auto& m) {
+        return m.id == reliefHelmId_ && m.health >= 20 && m.duty == CrewStation::Weapons &&
+               m.weaponMount == playerGun_ && m.order == CrewOrder::Duty && m.target == CrewStation::Bridge;
+    });
+}
+double ShipCrew::reliefHelmReadiness() const {
+    if (!gunReliefValid())
+        return 0;
+    for (const auto& m : members_)
+        if (m.id == reliefHelmId_ && m.room == CrewStation::Bridge && m.travel <= 0)
+            return std::clamp(skill(m, CrewStation::Bridge) * rooms_[0].integrity / 100., .2, 1.4);
+    return 0;
+}
+void ShipCrew::endGunRelief() {
+    for (auto& m : members_)
+        if (m.id == reliefHelmId_ && m.order == CrewOrder::Duty && m.target == CrewStation::Bridge &&
+            m.duty == CrewStation::Weapons && m.weaponMount == playerGun_)
+            m.target = m.duty;
+    reliefHelmId_ = 0;
+    playerGun_ = noWeaponMount;
 }
 std::string ShipCrew::order(size_t i, CrewOrder o, CrewStation s) {
     if (i >= members_.size() || !valid(s) || unsigned(o) > unsigned(CrewOrder::Rest) ||
@@ -400,8 +454,9 @@ void ShipCrew::step(double g, bool combat, unsigned firingMounts) {
             m.travel = m.travelDuration;
             continue;
         }
+        const auto duty = m.id == reliefHelmId_ ? CrewStation::Bridge : m.duty;
         const double ability = skill(m, m.order == CrewOrder::Aid    ? CrewStation::Medbay
-                                        : m.order == CrewOrder::Duty ? m.duty
+                                        : m.order == CrewOrder::Duty ? duty
                                                                      : CrewStation::Engineering);
         bool worked = false;
         if (m.order == CrewOrder::Firefight && room.fire > 0) {
@@ -424,12 +479,12 @@ void ShipCrew::step(double g, bool combat, unsigned firingMounts) {
                     medical_ = std::max(0., medical_ - heal / 20.);
                     worked |= heal > 0;
                 }
-        } else if (m.order == CrewOrder::Duty && size_t(m.duty) < 6)
-            worked = m.duty != CrewStation::Weapons ||
+        } else if (m.order == CrewOrder::Duty && size_t(duty) < 6)
+            worked = duty != CrewStation::Weapons ||
                      (m.weaponMount < maxWeaponMounts && (firingMounts & (1u << m.weaponMount)));
         if (worked) {
             const auto job = m.order == CrewOrder::Aid    ? CrewStation::Medbay
-                             : m.order == CrewOrder::Duty ? m.duty
+                             : m.order == CrewOrder::Duty ? duty
                                                           : CrewStation::Engineering;
             m.experience[size_t(job)] =
                 std::min(3600., m.experience[size_t(job)] + dt * (m.order == CrewOrder::Duty ? .03 : .3));
@@ -472,6 +527,7 @@ void ShipCrew::reconcile(CrewReceipts r) {
 }
 CrewView ShipCrew::view(size_t selected, CrewStation station) const {
     CrewView v;
+    v.reliefHelmId = reliefHelmId_;
     v.members = members_;
     for (size_t i = 0; i < members_.size(); ++i)
         v.tasks.push_back(task(i));
@@ -519,6 +575,10 @@ CrewView ShipCrew::view(size_t selected, CrewStation station) const {
     if (v.summary.find("EMERGENCY") == std::string::npos &&
         v.alert != "CREW STATIONS NORMAL / MANUAL FLIGHT LIVE")
         v.summary = "F9 CREW ALERT / " + v.alert;
+    if (reliefHelmId_ && v.alert == "CREW STATIONS NORMAL / MANUAL FLIGHT LIVE")
+        v.alert = reliefHelmReadiness() > 0
+                      ? "RELIEF HELM / CAPTAIN AT " + std::string(weaponMountName(playerGun_))
+                      : "HELM HANDOVER / RELIEF WALKING TO BRIDGE";
     if (!members_.empty()) {
         const auto& m = members_[v.selected];
         v.selectedSkill = (m.trait == 0 ? "CALM" : m.trait == 1 ? "AGILE" : "HARDY");
@@ -580,7 +640,11 @@ std::string ShipCrew::serialize() const {
       << ' ' << receipts_.supplied << ' ' << receipts_.treated << ' ' << spares_ << ' ' << medical_ << ' '
       << previousHull_ << ' ' << accumulator_ << ' ' << automatic_ << ' ' << marketRevision_ << ' '
       << members_.size();
-    for (const auto& m : members_) {
+    for (auto m : members_) {
+        // Reopening a save always starts at the captain's helm. The relief
+        // returns along real corridors; no transient remote gun authority is saved.
+        if (m.id == reliefHelmId_ && m.order == CrewOrder::Duty && m.target == CrewStation::Bridge)
+            m.target = m.duty;
         o << ' ' << m.id << ' ' << std::quoted(m.name) << ' ' << m.trait << ' ' << unsigned(m.duty) << ' '
           << unsigned(m.room) << ' ' << unsigned(m.target) << ' ' << unsigned(m.walkTo) << ' '
           << unsigned(m.order) << ' ' << m.health << ' ' << m.fatigue << ' ' << m.morale << ' ' << m.travel

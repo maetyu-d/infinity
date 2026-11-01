@@ -21,7 +21,10 @@ CrewTaskView ShipCrew::task(size_t i) const {
     const auto& room = rooms_[size_t(m.target)];
     v.status = std::string(crewOrderName(m.order));
     v.detail = std::string(crewStationName(m.target));
-    if (m.duty == CrewStation::Weapons && m.order == CrewOrder::Duty) {
+    if (m.id == reliefHelmId_ && m.order == CrewOrder::Duty && m.target == CrewStation::Bridge) {
+        v.status = "RELIEF HELM";
+        v.detail = "RELIEF HELM / " + std::string(weaponMountName(playerGun_)) + " TO CAPTAIN";
+    } else if (m.duty == CrewStation::Weapons && m.order == CrewOrder::Duty) {
         v.detail = std::string(weaponMountName(m.weaponMount)) + " / " + gunnerStatus(m.weaponMount);
         v.blocked = m.weaponMount >= maxWeaponMounts || !weaponLevels_[m.weaponMount] ||
                     gunnerStatus(m.weaponMount) == "BAY UNSAFE";
@@ -47,7 +50,7 @@ CrewTaskView ShipCrew::task(size_t i) const {
     }
     if (v.travelSeconds > 0) {
         v.status = "MOVING " + std::to_string(int(std::ceil(v.travelSeconds))) + "S";
-        if (!v.blocked)
+        if (!v.blocked && m.id != reliefHelmId_)
             v.detail = std::string(crewOrderName(m.order)) + " / " +
                        std::string(m.order == CrewOrder::Duty ? crewDutyName(m) : crewStationName(m.target));
     } else if (!v.blocked) {

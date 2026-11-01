@@ -3,6 +3,7 @@
 #include "infinite/Cockpit.hpp"
 #include "infinite/Economy.hpp"
 #include "infinite/NpcCombat.hpp"
+#include "infinite/StationControl.hpp"
 #include "infinite/StellarEvolution.hpp"
 #include "infinite/Streaming.hpp"
 #include "infinite/SurfaceShading.hpp"
@@ -877,8 +878,9 @@ struct Renderer::Impl {
                         const auto velocity = cameraInverse * (pose.orientation * body.velocity);
                         activityContacts.push_back(
                             {body, direction, distance,
-                             instruments ? glm::length(velocity - glm::inverse(head.orientation) *
-                                                                      instruments->localVelocity)
+                             instruments ? glm::length(velocity -
+                                                       glm::inverse(instruments->gunAim * head.orientation) *
+                                                           instruments->localVelocity)
                                          : glm::length(velocity),
                              selected, occulted});
                     }
@@ -1564,9 +1566,13 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         p.frameFrames.emplace(node.address, p.anchorFrames);
     }
     cache.beginFrame();
-    p.cameraQ = nav.orientation * p.head.orientation;
+    const auto stationAim = p.instruments ? p.instruments->gunAim : glm::dquat(1, 0, 0, 0);
+    p.cameraQ = nav.orientation * stationAim * p.head.orientation;
     p.cameraInverse = glm::inverse(p.cameraQ);
     p.eye = nav.cameraPosition();
+    if (p.instruments && p.instruments->playerGun < maxWeaponMounts)
+        p.eye += nav.orientation * glm::dvec3(weaponMountLateralMetres(p.instruments->playerGun), 0, 0) *
+                 (p.instruments->hullMetres / 12 / std::pow(10., nav.logDistance));
     p.view = glm::mat4_cast(p.cameraInverse) * glm::translate(glm::dmat4(1), -p.eye);
     const double fov = p.instruments ? 70. * std::numbers::pi / 180. : 1.;
     p.fieldOfView = fov;
@@ -1624,7 +1630,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     p.stellarExposure = 1;
     {
         auto sky = extractSpectralSky(p.universe, nav);
-        sky.cameraToField = sky.cameraToField * p.head.orientation;
+        sky.cameraToField = sky.cameraToField * stationAim * p.head.orientation;
         for (const auto& planet : nodes)
             if (planet.address.kind() == Kind::Planet && hasSolidSurface(planet)) {
                 const auto climate = planetClimate(planet);
@@ -1653,7 +1659,8 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     for (const auto& system : nodes)
         if (system.address.kind() == Kind::System)
             if (auto planets = cache.catalog(system)) {
-                p.contacts = extractCelestialContacts(p.universe, nav, system, *planets, p.head.orientation);
+                p.contacts = extractCelestialContacts(p.universe, nav, system, *planets,
+                                                      stationAim * p.head.orientation);
                 for (const auto& planet : *planets) {
                     auto contact = std::find_if(p.contacts.begin(), p.contacts.end(),
                                                 [&](const auto& c) { return c.address == planet.address; });
@@ -1683,7 +1690,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         if (contact.angularRadius > pixelAngle * .125)
             p.skyOccluders.push_back(contact);
     if (p.instruments && !p.instruments->shrinking && p.stellarOptics)
-        p.hyperion->stellar(extractStellarImage(p.universe, nav, p.contacts, p.head.orientation),
+        p.hyperion->stellar(extractStellarImage(p.universe, nav, p.contacts, stationAim * p.head.orientation),
                             float(p.width) / p.height, float(std::tan(fov * .5)), p.visualTime);
     p.stats.celestialContacts = p.contacts.size();
     p.stats.lifeWorlds = std::count_if(p.contacts.begin(), p.contacts.end(), hasSurfaceLife);
@@ -2020,7 +2027,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
             const ScenePresentation presentation{
                 source, nav.anchor,  {.38f, .55f, .20f, 0}, hyperionPhase(p.universe.seed()),
                 1.f,    {5, 0, 0, 0}};
-            const auto sun = glm::inverse(nav.orientation) * p.lightAt(nav.anchor, nav);
+            const auto sun = glm::inverse(nav.orientation * stationAim) * p.lightAt(nav.anchor, nav);
             p.hyperion->bind(presentation, {}, glm::vec3(sun), glm::mat4(1), 0, p.visualTime);
             bgfx::setInstanceDataBuffer(&instance);
             bgfx::submit(84, p.hyperion->geometryProgram());
@@ -2037,9 +2044,9 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         cockpit.weather = p.weatherReport;
         cockpit.weatherDetail = p.weatherDetail;
         cockpit.weatherSeverity = p.weatherSeverity;
-        const auto hud =
-            cockpitOverlay(cockpit, aspect, renderModeName(p.mode), notice, p.contacts, p.activityContacts,
-                           p.cockpitHelp, viewport.projectionScale, p.market, p.head.orientation, p.crew);
+        const auto hud = cockpitOverlay(cockpit, aspect, renderModeName(p.mode), notice, p.contacts,
+                                        p.activityContacts, p.cockpitHelp, viewport.projectionScale, p.market,
+                                        stationAim * p.head.orientation, p.crew);
         p.cockpitHitRegions = hud.hitRegions;
         const auto projection = bgfx::getCaps()->homogeneousDepth
                                     ? glm::orthoRH_NO(0.f, float(900 * aspect), 900.f, 0.f, -1.f, 1.f)

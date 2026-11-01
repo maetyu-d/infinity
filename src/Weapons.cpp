@@ -234,7 +234,7 @@ bool WeaponSystem::fireMount(unsigned mount, const Universe& u, const WeaponRay&
     std::vector<ActivityBody> presented(targets.begin(), targets.end());
     for (auto& body : presented)
         apply(body);
-    if (mount) {
+    if (mount && !input.direct) {
         // A crewed console aligns its own muzzle with the captain's sight line.
         // Trace again from that muzzle so nearby cover can still block the shot.
         const auto sight = traceWeapon(u, input, spec.rangeMetres * ray.scale, presented, geometry);

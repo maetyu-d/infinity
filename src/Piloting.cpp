@@ -833,6 +833,8 @@ void Pilot::step(const HelmInput& input, double dt) {
         if (!landing_ && distance < arrival)
             speed = 0;
         wanted = direction * speed + referenceVelocity;
+        if (crewQuality_ > 0)
+            wanted = direction * speed * std::clamp(.4 + .5 * crewQuality_, .5, 1.) + referenceVelocity;
         ship_.throttle = std::clamp(glm::length(wanted) / limit, 0., 1.);
         phase_ = landing_                                 ? "LANDING / CONTROLLED DESCENT"
                  : distance < std::max(10000., limit * 4) ? "APPROACH / BRAKING"
@@ -846,6 +848,15 @@ void Pilot::step(const HelmInput& input, double dt) {
             wanted = {};
             phase_ = "ARRIVED / L SELECTS LANDING SITE";
         }
+    }
+    if (crewQuality_ > 0) {
+        if (!autopilot_ && launchTime_ <= 0) {
+            const auto course =
+                universe_.relative(crewCourseFrame_, nav_.anchor, 0).orientation * crewCourse_;
+            spin =
+                angularTarget(nav_.orientation, course * glm::dvec3(0, 0, -1), course * glm::dvec3(0, 1, 0));
+        }
+        spin *= std::clamp(.25 + .55 * crewQuality_, .35, 1.);
     }
     if (ship_.assist && assistCaptureTime_ > 0 && !autopilot_) {
         const double t = std::clamp(1 - assistCaptureTime_ / .8, 0., 1.);
@@ -1159,6 +1170,20 @@ void Pilot::update(const HelmInput& input, double dt, const std::shared_ptr<cons
     scaleRate_ = (nav_.logDistance - initialLog) / dt;
     lastLog_ = nav_.logDistance;
     instrument();
+}
+void Pilot::updateCrew(const Address& frame, glm::dquat course, double quality, double dt,
+                       const std::shared_ptr<const Geometry>& visible) {
+    if (!std::isfinite(quality) || quality <= 0 || !std::isfinite(glm::length(course)) ||
+        std::abs(glm::length(course) - 1) > .01)
+        return;
+    crewQuality_ = std::clamp(quality, .2, 1.4);
+    crewCourseFrame_ = frame;
+    crewCourse_ = course;
+    const bool assist = ship_.assist;
+    ship_.assist = true;
+    update({}, dt, visible);
+    ship_.assist = assist;
+    crewQuality_ = 0;
 }
 void Pilot::instrument() {
     synchronizeFrame();

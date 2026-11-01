@@ -58,6 +58,7 @@ struct CrewFlightLayout {
     std::array<CockpitRect, maxWeaponMounts> guns;
     explicit CrewFlightLayout(double aspect);
 };
+CockpitRect weaponStationCard(double aspect, bool flightConsole);
 // Port of Hyperion's CabinMesh / rebuildCockpit beveled screen-framed cabin.
 Mesh cockpitMesh(double aspect);
 CockpitOverlay cockpitOverlay(const FlightInstruments&, double aspect, std::string_view mode,

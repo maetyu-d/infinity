@@ -1,0 +1,21 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 50: native_station_swap_loop
+1/8 Test #50: native_station_swap_loop .........   Passed   17.43 sec
+    Start 51: native_station_swap_images
+2/8 Test #51: native_station_swap_images .......   Passed    2.18 sec
+    Start 52: native_crew_guns_loop
+3/8 Test #52: native_crew_guns_loop ............   Passed   16.66 sec
+    Start 53: native_crew_guns_images
+4/8 Test #53: native_crew_guns_images ..........   Passed    3.00 sec
+    Start 54: native_crew_flight_loop
+5/8 Test #54: native_crew_flight_loop ..........   Passed   12.41 sec
+    Start 55: native_crew_flight_images
+6/8 Test #55: native_crew_flight_images ........   Passed    1.00 sec
+    Start 60: native_npc_combat_loop
+7/8 Test #60: native_npc_combat_loop ...........   Passed   19.76 sec
+    Start 61: native_npc_combat_images
+8/8 Test #61: native_npc_combat_images .........   Passed    1.25 sec
+
+100% tests passed, 0 tests failed out of 8
+
+Total Test time (real) =  73.71 sec

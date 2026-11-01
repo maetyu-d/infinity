@@ -13,6 +13,7 @@
 #include "PlanetDiversityValidation.hpp"
 #include "PlanetValidation.hpp"
 #include "PolarValidation.hpp"
+#include "StationSwapValidation.hpp"
 #include "StellarDiversityValidation.hpp"
 #include "StreamingValidation.hpp"
 #include "SurfaceValidation.hpp"
@@ -28,6 +29,7 @@
 #include "infinite/NpcCombat.hpp"
 #include "infinite/Piloting.hpp"
 #include "infinite/Renderer.hpp"
+#include "infinite/StationControl.hpp"
 #include "infinite/Weapons.hpp"
 #include <SDL3/SDL.h>
 #include <algorithm>
@@ -58,7 +60,7 @@ struct Options {
     bool streamingTest = false;
     bool terrainQuality = false, terrainSurfaceFrame = false, sunShadows = true;
     bool economyTest = false, cockpitMotionTest = false, npcTest = false, crewTest = false,
-         crewTradeTest = false, crewFlightTest = false, crewGunsTest = false;
+         crewTradeTest = false, crewFlightTest = false, crewGunsTest = false, stationSwapTest = false;
     bool pilotTest = false, terrainTest = false, surfaceTest = false;
 };
 static Options options(int argc, char** argv) {
@@ -78,7 +80,10 @@ static Options options(int argc, char** argv) {
             o.smoke = o.tour = o.fresh = true;
         else if (arg == "--benchmark-tour")
             o.benchmark = o.smoke = o.tour = o.fresh = true;
-        else if (arg == "--crew-guns-test") {
+        else if (arg == "--station-swap-test") {
+            o.smoke = o.fresh = o.stationSwapTest = o.benchmark = true;
+            o.visualTime = 12;
+        } else if (arg == "--crew-guns-test") {
             o.smoke = o.fresh = o.crewGunsTest = o.benchmark = true;
             o.tour = false;
         } else if (arg == "--crew-flight-test") {
@@ -181,14 +186,16 @@ static Options options(int argc, char** argv) {
                    "assist, "
                    "J navigate, L land, Enter launch, G gear, N long cruise, Z shrink, comma/period "
                    "size, Y planets, Shift-Y moons, V explorer. "
-                   "Space fire laser, C mouse helm, arrows pitch/yaw, right-drag look, "
+                   "Space fire laser, F9 crew console, F10 swap with gunner / return helm, "
+                   "C mouse helm, arrows pitch/yaw or gun aim, right-drag look, "
                    "-/+ speed, Shift boost, Ctrl fine, scroll scale, click select, F focus, "
                    "Backspace parent, F1 controls, F7 cockpit motion, Tab overlay, R reset, M marker, P "
                    "screenshot, T tour, Esc "
                    "release mouse / quit.\nCLI: --fresh --tour --smoke-test --frames N --width N "
                    "--height N --seed N "
                    "--benchmark-tour --flight-test --streaming-test --pilot-test --planet-stability-test "
-                   "--economy-test --cockpit-motion-test --ui-fit-test --polar-optics-test "
+                   "--economy-test --station-swap-test --cockpit-motion-test --ui-fit-test "
+                   "--polar-optics-test "
                    "--cloud-volume-test "
                    "--celestial-graphics-test "
                    "--stellar-diversity-test --stellar-sun-test --landing-light-test "
@@ -222,7 +229,8 @@ static Options options(int argc, char** argv) {
         unsigned(o.polarTest) + unsigned(o.cloudTest) + unsigned(o.celestialTest) +
         unsigned(o.landingLightTest) + unsigned(o.weatherTest) + unsigned(o.diversityTest) +
         unsigned(o.stellarDiversityTest) + unsigned(o.npcTest) + unsigned(o.crewTest) +
-        unsigned(o.crewTradeTest) + unsigned(o.crewFlightTest) + unsigned(o.crewGunsTest);
+        unsigned(o.crewTradeTest) + unsigned(o.crewFlightTest) + unsigned(o.crewGunsTest) +
+        unsigned(o.stationSwapTest);
     if (validationModes > 1 || (validationModes && o.tour))
         throw std::invalid_argument("Choose one automated validation mode");
     if (o.width < 320 || o.height < 240 || o.width > 7680 || o.height > 4320 || o.frames < 0)
@@ -266,7 +274,7 @@ int main(int argc, char** argv) {
                             opt.polarTest || opt.cloudTest || opt.celestialTest || opt.landingLightTest ||
                             opt.weatherTest || opt.diversityTest || opt.stellarDiversityTest ||
                             opt.cockpitMotionTest || opt.npcTest || opt.crewTest || opt.crewTradeTest ||
-                            opt.crewFlightTest || opt.crewGunsTest;
+                            opt.crewFlightTest || opt.crewGunsTest || opt.stationSwapTest;
         std::unique_ptr<FlightValidation> flightProof;
         if (opt.flightTest)
             flightProof = std::make_unique<FlightValidation>(universe, nav);
@@ -365,6 +373,7 @@ int main(int argc, char** argv) {
                 activity.seconds = opt.visualTime >= 0 ? opt.visualTime : 12;
             WeaponSystem weapons;
             ShipCrew crew(universe.seed());
+            StationControl stationControl;
             if (!opt.smoke) {
                 std::ifstream file(data / ("crew-" + std::to_string(universe.seed()) + ".txt"));
                 if (file) {
@@ -723,6 +732,10 @@ int main(int argc, char** argv) {
             if (opt.crewGunsTest)
                 crewGunsProof = std::make_unique<CrewGunsValidation>(universe, nav, pilot, crew, weapons,
                                                                      *economy, activity, window);
+            std::unique_ptr<StationSwapValidation> stationSwapProof;
+            if (opt.stationSwapTest)
+                stationSwapProof = std::make_unique<StationSwapValidation>(
+                    universe, nav, pilot, crew, weapons, stationControl, activity, window);
             std::unique_ptr<SurfaceValidation> surfaceProof;
             if (opt.surfaceTest)
                 surfaceProof = std::make_unique<SurfaceValidation>(universe, nav, pilot, activity);
@@ -1071,6 +1084,8 @@ int main(int argc, char** argv) {
                         continue;
                     }
                     if (event.type == SDL_EVENT_MOUSE_WHEEL && event.wheel.y != 0) {
+                        if (stationControl.requested())
+                            stationControl.returnToHelm(crew);
                         nav.zoom(event.wheel.y);
                         if (pilotEnabled) {
                             pilotEnabled = false;
@@ -1079,6 +1094,28 @@ int main(int argc, char** argv) {
                         opt.tour = false;
                     }
                     if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat) {
+                        if (event.key.scancode == SDL_SCANCODE_F10 && pilotEnabled && !crewOpen &&
+                            !marketOpen) {
+                            if (stationControl.requested())
+                                stationControl.returnToHelm(crew);
+                            else {
+                                unsigned gun = noWeaponMount;
+                                if (crewFlightOpen && crewSelected < crew.members().size() &&
+                                    crew.members()[crewSelected].duty == CrewStation::Weapons)
+                                    gun = crew.members()[crewSelected].weaponMount;
+                                else
+                                    for (unsigned i : {1u, 2u, 0u})
+                                        if (crew.gunnerReadiness(i) > 0) {
+                                            gun = i;
+                                            break;
+                                        }
+                                stationControl.request(gun, crew, pilot, nav);
+                            }
+                            notice = stationControl.status();
+                            noticeTime = 7;
+                            mouseX = mouseY = 0;
+                            continue;
+                        }
                         if (event.key.scancode == SDL_SCANCODE_F9 && pilotEnabled) {
                             crewFlightOpen = crewOpen || marketOpen || !crewFlightOpen;
                             crewOpen = marketOpen = false;
@@ -1389,6 +1426,36 @@ int main(int argc, char** argv) {
                                 break;
                             }
                             continue;
+                        }
+                        // These commands require the captain's helm. B always
+                        // takes it back immediately, even during a handover.
+                        if (stationControl.requested()) {
+                            switch (event.key.scancode) {
+                            case SDL_SCANCODE_B:
+                            case SDL_SCANCODE_X:
+                            case SDL_SCANCODE_N:
+                            case SDL_SCANCODE_Z:
+                            case SDL_SCANCODE_COMMA:
+                            case SDL_SCANCODE_PERIOD:
+                            case SDL_SCANCODE_V:
+                            case SDL_SCANCODE_BACKSPACE:
+                            case SDL_SCANCODE_R:
+                            case SDL_SCANCODE_T:
+                            case SDL_SCANCODE_F:
+                            case SDL_SCANCODE_F2:
+                            case SDL_SCANCODE_F8:
+                            case SDL_SCANCODE_L:
+                            case SDL_SCANCODE_RETURN:
+                                stationControl.returnToHelm(crew);
+                                break;
+                            case SDL_SCANCODE_ESCAPE:
+                                stationControl.returnToHelm(crew);
+                                notice = stationControl.status();
+                                noticeTime = 5;
+                                continue;
+                            default:
+                                break;
+                            }
                         }
                         switch (event.key.scancode) {
                         case SDL_SCANCODE_F8:
@@ -1801,6 +1868,17 @@ int main(int argc, char** argv) {
                 pilot.setSurfaceWorld(
                     surfaceFrame.kind() == Kind::Planet ? renderer.surfaceWorld(surfaceFrame) : nullptr);
                 const bool* keys = SDL_GetKeyboardState(nullptr);
+                const bool stationWasRequested = stationControl.requested();
+                const bool stationWasActive = stationControl.active();
+                if (stationControl.requested() && (crewOpen || marketOpen || !pilotEnabled || opt.tour))
+                    stationControl.returnToHelm(crew);
+                stationControl.synchronize(crew, pilot, nav);
+                if ((stationWasRequested && !stationControl.requested()) ||
+                    (!stationWasActive && stationControl.active())) {
+                    notice = stationControl.status();
+                    noticeTime = 7;
+                    mouseX = mouseY = 0;
+                }
                 flight.observeGalaxy(renderer.galaxySamples());
                 if (!opt.smoke && (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS)) {
                     const glm::dvec3 axes{static_cast<double>(keys[SDL_SCANCODE_D]) - keys[SDL_SCANCODE_A],
@@ -1821,10 +1899,15 @@ int main(int argc, char** argv) {
                         helm.brake = keys[SDL_SCANCODE_B];
                         if (marketOpen || crewOpen)
                             helm = {};
-                        helm = resolveHelmInput(
-                            helm, marketOpen || crewOpen ? glm::dvec2(0) : glm::dvec2(mouseX, mouseY), dt,
-                            keys[SDL_SCANCODE_LALT] || keys[SDL_SCANCODE_RALT]);
-                        pilot.update(helm, dt, renderer.submittedGeometry(nav.anchor));
+                        if (stationControl.active()) {
+                            stationControl.aim(helm.pitch, helm.yaw, {mouseX, mouseY}, dt);
+                            stationControl.fly(pilot, crew, dt, renderer.submittedGeometry(nav.anchor));
+                        } else {
+                            helm = resolveHelmInput(
+                                helm, marketOpen || crewOpen ? glm::dvec2(0) : glm::dvec2(mouseX, mouseY), dt,
+                                keys[SDL_SCANCODE_LALT] || keys[SDL_SCANCODE_RALT]);
+                            pilot.update(helm, dt, renderer.submittedGeometry(nav.anchor));
+                        }
                     } else if (!opt.tour)
                         flight.update(axes, dt, keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT],
                                       keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL],
@@ -1835,25 +1918,23 @@ int main(int argc, char** argv) {
                     pilot.update({}, dt, renderer.submittedGeometry(nav.anchor));
                 if (!opt.smoke) {
                     weapons.advance(dt);
-                    weapons.setCrewReadiness(crew.weaponReadiness());
-                    for (unsigned mount = 1; mount < maxWeaponMounts; ++mount)
-                        weapons.setMountReadiness(mount, crew.gunnerReadiness(mount));
+                    stationControl.prepareWeapons(weapons, crew);
                     const bool inhibit = !pilotEnabled || marketOpen || crewOpen ||
                                          pilot.instruments().fieldActive || pilot.ship().landed ||
                                          pilot.ship().hull <= 0 ||
                                          std::abs(pilot.ship().logSize - pilot.ship().targetLogSize) > .01;
                     if (!inhibit && !opt.tour && (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) &&
                         keys[SDL_SCANCODE_SPACE]) {
-                        WeaponRay ray;
-                        ray.reference = nav.anchor;
-                        ray.origin = nav.cameraPosition() * std::pow(10., nav.logDistance);
-                        ray.direction = nav.orientation * glm::dvec3(0, 0, -1);
-                        ray.right = nav.orientation * glm::dvec3(1, 0, 0);
-                        ray.scale = pilot.sizeRatio();
-                        ray.seconds = activity.seconds;
-                        if (const auto fired =
-                                weapons.fireBattery(universe, ray, renderer.weaponTargets(),
-                                                    renderer.submittedGeometry(nav.anchor).get()))
+                        const auto ray = stationControl.ray(nav, pilot, activity.seconds);
+                        const auto geometry = renderer.submittedGeometry(nav.anchor);
+                        const auto fired = stationControl.active()
+                                               ? (weapons.fireMount(stationControl.mount(), universe, ray,
+                                                                    renderer.weaponTargets(), geometry.get())
+                                                      ? 1u << stationControl.mount()
+                                                      : 0u)
+                                               : weapons.fireBattery(universe, ray, renderer.weaponTargets(),
+                                                                     geometry.get());
+                        if (fired)
                             renderer.cockpitImpulse(
                                 CockpitImpulse::Recoil,
                                 .35 + weapons.level() * .12 +
@@ -1902,6 +1983,8 @@ int main(int argc, char** argv) {
                     crewFlightProof->advance(renderer);
                 if (crewGunsProof)
                     crewGunsProof->advance(renderer);
+                if (stationSwapProof)
+                    stationSwapProof->advance(renderer);
                 if (uiProof)
                     uiProof->advance(renderer);
                 if (polarProof)
@@ -1980,10 +2063,16 @@ int main(int argc, char** argv) {
                     if (crewGunsProof->finished())
                         running = false;
                 }
+                if (stationSwapProof) {
+                    stationSwapProof->observe(renderer, opt.captures);
+                    if (stationSwapProof->finished())
+                        running = false;
+                }
                 npcCombat.annotate(cockpit);
                 weapons.annotate(cockpit,
                                  cockpit.fieldActive || cockpit.landed || marketOpen || crewOpen ||
                                      std::abs(pilot.ship().logSize - pilot.ship().targetLogSize) > .01);
+                stationControl.annotate(cockpit, crew, weapons);
                 renderer.setCockpit(pilotEnabled ? &cockpit : nullptr);
                 if (motionProof)
                     motionProof->apply(renderer);
@@ -2204,17 +2293,18 @@ int main(int argc, char** argv) {
                 }
                 if (opt.frames > 0 && frame >= opt.frames)
                     running = false;
-                if (opt.smoke &&
-                    std::chrono::duration<double>(now - start).count() >
-                        (opt.crewTest || opt.crewTradeTest || opt.crewFlightTest || opt.crewGunsTest ? 240
-                         : opt.npcTest                                                               ? 180
-                         : opt.economyTest                                                           ? 330
-                         : opt.diversityTest || opt.stellarDiversityTest                             ? 360
-                         : opt.celestialTest || opt.weatherTest || opt.cloudTest || opt.polarTest ||
-                                 opt.surfaceTest
-                             ? 210
-                         : opt.pilotTest ? 180
-                                         : 100))
+                if (opt.smoke && std::chrono::duration<double>(now - start).count() >
+                                     (opt.crewTest || opt.crewTradeTest || opt.crewFlightTest ||
+                                              opt.crewGunsTest || opt.stationSwapTest
+                                          ? 240
+                                      : opt.npcTest                                   ? 180
+                                      : opt.economyTest                               ? 330
+                                      : opt.diversityTest || opt.stellarDiversityTest ? 360
+                                      : opt.celestialTest || opt.weatherTest || opt.cloudTest ||
+                                              opt.polarTest || opt.surfaceTest
+                                          ? 210
+                                      : opt.pilotTest ? 180
+                                                      : 100))
                     throw std::runtime_error("Native GPU tour timed out before completion");
                 if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED)
                     std::this_thread::sleep_for(std::chrono::milliseconds(25));
@@ -2268,7 +2358,10 @@ int main(int argc, char** argv) {
             std::cout << "peak_rss_bytes=" << usage.ru_maxrss * 1024 << '\n';
 #endif
 #endif
-            if (opt.crewGunsTest) {
+            if (opt.stationSwapTest) {
+                if (!stationSwapProof->finished())
+                    throw std::runtime_error("Native station swap validation incomplete");
+            } else if (opt.crewGunsTest) {
                 if (!crewGunsProof->finished())
                     throw std::runtime_error("Native crewed guns validation incomplete");
             } else if (opt.crewFlightTest) {

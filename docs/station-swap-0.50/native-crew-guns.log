@@ -1,0 +1,14 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+CREW_GUNS_CAPTURE gun-station-shop credits=250000 crew=6 shots=0
+CREW_GUNS_CAPTURE gun-stations-unmanned credits=149490 crew=8 shots=0
+CREW_GUNS_CAPTURE gun-stations-moving credits=149490 crew=8 shots=0
+CREW_GUNS_CAPTURE gun-stations-manned credits=149490 crew=8 shots=0
+CREW_GUNS_CAPTURE gun-battery-ready credits=149490 crew=8 shots=0
+CREW_GUNS_CAPTURE gun-battery-fire credits=149490 crew=8 shots=3
+CREW_GUNS_CAPTURE gun-battery-relief credits=149490 crew=8 shots=5
+CREW_GUNS_CAPTURE gun-battery-disabled credits=149490 crew=8 shots=10
+CREW_GUNS_CAPTURE gun-stations-portrait credits=149490 crew=8 shots=10
+PASS: native paid extra mounts and gunner purchases, walking crew, linked three-gun damage, relief stops its gun, shared disable record, persistence and portrait stations
+FRAME median_ms=38.0553 p95_ms=72.8216 frames=383 cache_bytes=11291368
+peak_rss_bytes=154042368

@@ -14,6 +14,7 @@ struct WeaponRay {
     Address reference;
     glm::dvec3 origin{}, direction{0, 0, -1}, right{1, 0, 0}; // SI in reference axes
     double scale = 1, seconds = 0;
+    bool direct = false; // player at a turret: sight originates at that mount, no nose convergence
 };
 struct WeaponShot {
     Address reference;

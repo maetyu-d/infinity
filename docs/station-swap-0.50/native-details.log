@@ -1,0 +1,127 @@
+Start testing: Nov 01 20:04 GMT
+----------------------------------------------------------
+50/105 Testing: native_station_swap_loop
+50/105 Test: native_station_swap_loop
+Command: "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake" "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite" "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/station-swap/native" "-P" "/Users/user/Documents/SC tutorial/Infinite/cmake/RunStationSwap.cmake"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_station_swap_loop" start time: Nov 01 20:04 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =  13.23 sec
+----------------------------------------------------------
+Test Passed.
+"native_station_swap_loop" end time: Nov 01 20:05 GMT
+"native_station_swap_loop" time elapsed: 00:00:13
+----------------------------------------------------------
+
+51/105 Testing: native_station_swap_images
+51/105 Test: native_station_swap_images
+Command: "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9" "/Users/user/Documents/SC tutorial/Infinite/tools/check_station_swap_captures.py" "/Users/user/Documents/SC tutorial/Infinite/build/station-swap/native"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_station_swap_images" start time: Nov 01 20:05 GMT
+Output:
+----------------------------------------------------------
+PASS: eight native helm, handover, turret, selected fire, independent view, portrait and return frames
+<end of output>
+Test time =   2.29 sec
+----------------------------------------------------------
+Test Passed.
+"native_station_swap_images" end time: Nov 01 20:05 GMT
+"native_station_swap_images" time elapsed: 00:00:02
+----------------------------------------------------------
+
+52/105 Testing: native_crew_guns_loop
+52/105 Test: native_crew_guns_loop
+Command: "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake" "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite" "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/crew-guns/native" "-P" "/Users/user/Documents/SC tutorial/Infinite/cmake/RunCrewGuns.cmake"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_crew_guns_loop" start time: Nov 01 20:05 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =  18.01 sec
+----------------------------------------------------------
+Test Passed.
+"native_crew_guns_loop" end time: Nov 01 20:05 GMT
+"native_crew_guns_loop" time elapsed: 00:00:18
+----------------------------------------------------------
+
+53/105 Testing: native_crew_guns_images
+53/105 Test: native_crew_guns_images
+Command: "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9" "/Users/user/Documents/SC tutorial/Infinite/tools/check_crew_guns_captures.py" "/Users/user/Documents/SC tutorial/Infinite/build/crew-guns/native"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_crew_guns_images" start time: Nov 01 20:05 GMT
+Output:
+----------------------------------------------------------
+PASS: nine real mount purchase, crew movement, linked battery, relief, disabled target and portrait frames
+<end of output>
+Test time =   2.21 sec
+----------------------------------------------------------
+Test Passed.
+"native_crew_guns_images" end time: Nov 01 20:05 GMT
+"native_crew_guns_images" time elapsed: 00:00:02
+----------------------------------------------------------
+
+54/105 Testing: native_crew_flight_loop
+54/105 Test: native_crew_flight_loop
+Command: "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake" "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite" "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/crew-flight/native" "-P" "/Users/user/Documents/SC tutorial/Infinite/cmake/RunCrewFlight.cmake"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_crew_flight_loop" start time: Nov 01 20:05 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =  14.12 sec
+----------------------------------------------------------
+Test Passed.
+"native_crew_flight_loop" end time: Nov 01 20:05 GMT
+"native_crew_flight_loop" time elapsed: 00:00:14
+----------------------------------------------------------
+
+55/105 Testing: native_crew_flight_images
+55/105 Test: native_crew_flight_images
+Command: "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9" "/Users/user/Documents/SC tutorial/Infinite/tools/check_crew_flight_captures.py" "/Users/user/Documents/SC tutorial/Infinite/build/crew-flight/native"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_crew_flight_images" start time: Nov 01 20:05 GMT
+Output:
+----------------------------------------------------------
+PASS: five live-flight crew console, orders, emergency, response and portrait frames
+<end of output>
+Test time =   1.44 sec
+----------------------------------------------------------
+Test Passed.
+"native_crew_flight_images" end time: Nov 01 20:05 GMT
+"native_crew_flight_images" time elapsed: 00:00:01
+----------------------------------------------------------
+
+60/105 Testing: native_npc_combat_loop
+60/105 Test: native_npc_combat_loop
+Command: "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake" "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite" "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/npc-combat/native" "-P" "/Users/user/Documents/SC tutorial/Infinite/cmake/RunNpcCombat.cmake"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_npc_combat_loop" start time: Nov 01 20:05 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =  23.39 sec
+----------------------------------------------------------
+Test Passed.
+"native_npc_combat_loop" end time: Nov 01 20:06 GMT
+"native_npc_combat_loop" time elapsed: 00:00:23
+----------------------------------------------------------
+
+61/105 Testing: native_npc_combat_images
+61/105 Test: native_npc_combat_images
+Command: "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9" "/Users/user/Documents/SC tutorial/Infinite/tools/check_npc_captures.py" "/Users/user/Documents/SC tutorial/Infinite/build/npc-combat/native"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_npc_combat_images" start time: Nov 01 20:06 GMT
+Output:
+----------------------------------------------------------
+PASS: six native attack, evasion, retreat, patrol response and fitted combat HUD images
+<end of output>
+Test time =   1.46 sec
+----------------------------------------------------------
+Test Passed.
+"native_npc_combat_images" end time: Nov 01 20:06 GMT
+"native_npc_combat_images" time elapsed: 00:00:01
+----------------------------------------------------------
+
+End testing: Nov 01 20:06 GMT

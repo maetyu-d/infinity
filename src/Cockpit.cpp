@@ -209,6 +209,11 @@ CrewFlightLayout::CrewFlightLayout(double aspect) {
     for (unsigned i = 0; i < maxWeaponMounts; ++i)
         guns[i] = {panel.x + 10 + i * (gunWidth + 10), panel.y + 286, gunWidth, 18};
 }
+CockpitRect weaponStationCard(double aspect, bool flightConsole) {
+    const auto weapon =
+        flightConsole ? CrewFlightLayout(aspect).weapon : CockpitRect{450 * aspect - 158, 665, 316, 80};
+    return {weapon.x, 603, 316, 50};
+}
 namespace {
 std::optional<size_t> contactRow(glm::dvec2 p, CockpitRect r, size_t count, size_t capacity) {
     if (!r.contains(p) || p.y < 205 || p.y >= 205 + 34 * std::min(count, capacity))
@@ -380,11 +385,12 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     CockpitOverlay h;
     std::optional<CockpitRect> economicPanel;
     std::optional<CockpitRect> crewCommandPanel;
+    std::optional<CockpitRect> stationPanel;
     const CockpitLayout l(aspect);
     const double w = l.width, center = w * .5;
     const auto eyeFromShip = glm::inverse(headInShip);
     const auto aimPoint =
-        cockpitTargetMarker(eyeFromShip * glm::dvec3(0, 0, -1), aspect, projectionScale).point;
+        cockpitTargetMarker(eyeFromShip * (t.gunAim * glm::dvec3(0, 0, -1)), aspect, projectionScale).point;
     const double ratio = std::max(1e-12, t.hullMetres / 12);
     const bool surface = t.altitude >= 0 && (t.gear || t.altitude < 5000 * ratio);
     const bool catalogues = !t.shrinking || t.hullMetres >= .001;
@@ -426,7 +432,12 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     rect(h.panels, 0, 0, w, 46, ink, .98f);
     h.hitRegions.push_back({0, 0, w, 46});
     text(h.lettering, "INFINITE", 26, 15, 17.5, pearl);
-    fitted(h.lettering, t.drive, center - 160, 19, 320, 10.5, t.shrinking ? amber : ice);
+    fitted(h.lettering,
+           t.playerGun < maxWeaponMounts ? std::string(weaponMountName(t.playerGun)) + " / CAPTAIN" : t.drive,
+           center - 160, 19, 320, 10.5,
+           t.playerGun < maxWeaponMounts ? mint
+           : t.shrinking                 ? amber
+                                         : ice);
     line(h.strokes, 24, 45, w - 24, 45, muted * .3f);
 
     // Scale changes and physical ship size share one backed instrument. They
@@ -574,7 +585,9 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                            activity[i].selected, false);
     }
     if (!surface && t.targetVisible && glm::length(t.localTarget) > 1e-30)
-        scopePoint(glm::normalize(t.localTarget), amber, true, true);
+        scopePoint(t.playerGun < maxWeaponMounts ? eyeFromShip * glm::normalize(t.localTarget)
+                                                 : glm::normalize(t.localTarget),
+                   amber, true, true);
     if (surface) {
         const double shift = std::clamp(t.pitch * 38, -18., 18.);
         for (int side : {-1, 1}) {
@@ -607,7 +620,8 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     quantity("FLIGHT " + duration(t.flightSeconds) + " / " + flightQuantity(t.travelMetres),
              std::max(178., center - 180), 887, std::max(180., w - 490), 9, muted);
     label("TAB HUD", w - 200, 887, 178, muted);
-    if (crew && !crew->open && !flightCommands && !(market && market->open) && !help) {
+    if (crew && !crew->open && !flightCommands && !(market && market->open) && !help &&
+        t.stationStatus.empty()) {
         card(h, {center - 205, 639, 410, 20}, ice);
         fitted(h.lettering, crew->summary, center - 195, 645, 390, 8.2,
                crew->summary.find("EMERGENCY") != std::string::npos ? amber : ice);
@@ -704,6 +718,23 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
         return h;
     }
     if (!t.weapon.empty() && !(market && market->open) && !help) {
+        if (!t.stationStatus.empty()) {
+            const auto station = weaponStationCard(aspect, flightCommands);
+            stationPanel = station;
+            card(h, station, mint);
+            fitted(h.lettering, t.stationStatus, station.x + 12, 612, 292, 8.5, mint);
+            fitted(h.lettering,
+                   t.reliefHelm.empty()
+                       ? "HELM REMAINS YOURS UNTIL RELIEF ARRIVES"
+                       : "HELM " + t.reliefHelm + " / FIT " + std::to_string(int(t.helmQuality * 100)) + "%",
+                   station.x + 12, 626, 292, 8.5, ice);
+            fitted(h.lettering,
+                   t.playerGun < maxWeaponMounts
+                       ? "AIM " + std::to_string(int(t.gunYaw)) + " / " + std::to_string(int(t.gunPitch)) +
+                             " DEG / MOUSE OR ARROWS"
+                       : "F10 CANCEL / KEEP FLYING DURING HANDOVER",
+                   station.x + 12, 640, 292, 8.5, pearl);
+        }
         const CockpitRect armament =
             flightCommands ? CrewFlightLayout(aspect).weapon : CockpitRect{center - 158, 665, 316, 80};
         const auto danger = glm::vec3(1, .3, .2);
@@ -872,6 +903,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             {"F7", "COCKPIT MOTION"},
             {"F8", "CREW / STATIONS / DAMAGE CONTROL"},
             {"F9", "IN-FLIGHT CREW ORDERS / HELM LIVE"},
+            {"F10", "SWAP WITH READY GUNNER / RETURN TO HELM"},
             {"SPACE", "FIRE FITTED LASER"},
             {"H", "TARGET NEAREST HOSTILE"},
             {"F2 / F5", "MARKET PAGES / JOBS / SERVICES / DELIVERY REPORTS"},
@@ -912,7 +944,9 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                                                       : ice;
             if (i == crew->selected)
                 rect(h.panels, r.x, r.y, r.w, r.h, mint * .16f);
-            fitted(h.lettering, std::to_string(i + 1) + " " + m.name + " / " + std::string(crewDutyName(m)),
+            fitted(h.lettering,
+                   std::to_string(i + 1) + " " + m.name + " / " +
+                       std::string(m.id == crew->reliefHelmId ? "RELIEF HELM" : crewDutyName(m)),
                    r.x + 4, r.y + 3, r.w - 8, 8.6, colour);
             fitted(h.lettering,
                    task.status + " / HP " + std::to_string(int(m.health)) + " FAT " +
@@ -954,7 +988,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
         fitted(h.lettering, crew->message.empty() ? "MANUAL HELM AND WEAPONS REMAIN LIVE" : crew->message,
                p.x + 12, p.y + 529, p.w - 24, 7.8, amber);
         fitted(h.lettering, "1-8 CREW / ALT 1-7 ROOM / C CURSOR", p.x + 12, p.y + 547, p.w - 24, 7.6, ice);
-        fitted(h.lettering, "CTRL1-3 MAN GUN / F8 DECK / F9 CLOSE", p.x + 12, p.y + 560, p.w - 24, 7.4,
+        fitted(h.lettering, "CTRL1-3 MAN GUN / F10 SWAP / F9 CLOSE", p.x + 12, p.y + 560, p.w - 24, 7.4,
                muted);
     }
     if (catalogues && !flightCommands && !activity.empty()) {
@@ -1084,6 +1118,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             r.y = std::clamp(r.y, l.windscreen.y, l.windscreen.y + l.windscreen.h - r.h);
             if (r.overlaps(aim) || (economicPanel && r.overlaps(*economicPanel)) ||
                 (crewCommandPanel && r.overlaps(*crewCommandPanel)) ||
+                (stationPanel && r.overlaps(*stationPanel)) ||
                 std::any_of(h.worldLabels.begin(), h.worldLabels.end(),
                             [&](auto other) { return r.overlaps(other); }))
                 continue;
@@ -1198,12 +1233,14 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             fitted(h.lettering, warning, center - width * .5 + 10, 674, width - 20, 10.5, amber);
         }
     }
-    if (!notice.empty()) {
+    if (!notice.empty() || !t.stationStatus.empty()) {
         const double width = std::min(650., w - 80);
-        const auto r = flightCommands ? CrewFlightLayout(aspect).notice
-                                      : CockpitRect{center - width * .5, 714, width, 29};
+        const auto r = flightCommands || !t.stationStatus.empty()
+                           ? CrewFlightLayout(aspect).notice
+                           : CockpitRect{center - width * .5, 714, width, 29};
         card(h, r, ice);
-        fitted(h.lettering, notice, r.x + 12, r.y + 9, r.w - 24, 10.5, ice);
+        fitted(h.lettering, t.stationStatus.empty() ? notice : t.stationStatus, r.x + 12, r.y + 9, r.w - 24,
+               10.5, ice);
     }
     return h;
 }

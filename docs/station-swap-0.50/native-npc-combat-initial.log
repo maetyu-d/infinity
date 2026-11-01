@@ -1,0 +1,12 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+NPC_CAPTURE npc-attack hull=96 target=100
+NPC_CAPTURE npc-evade hull=96 target=90
+NPC_CAPTURE npc-retreat hull=92 target=30
+NPC_PROOF attack_shots=2 player_damage=8 retreat_hull=30
+NPC_CAPTURE npc-patrol-friendly hull=92 target=100
+NPC_CAPTURE npc-patrol-response hull=86 target=90
+NPC_CAPTURE npc-patrol-portrait hull=86 target=90
+PASS: native NPC acquisition, incoming damage, evasion, low-hull retreat, patrol retaliation, persistent IDs and portrait combat HUD
+FRAME median_ms=35.7507 p95_ms=69.6379 frames=476 cache_bytes=11297320
+peak_rss_bytes=150470656
