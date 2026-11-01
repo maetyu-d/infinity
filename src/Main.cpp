@@ -2165,7 +2165,7 @@ int main(int argc, char** argv) {
                                                  (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS);
                     const bool recovered =
                         recovery.update(universe, player, recoveryTarget, dt, holdingRecovery,
-                                        renderer.submittedGeometry(nav.anchor).get());
+                                        renderer.submittedGeometry(nav.anchor).get(), renderer.weaponTargets());
                     if (holdingRecovery && recoveryTarget && economicSnapshot && economy &&
                         !economicSnapshot->catchingUp && !pendingRecoverySequence &&
                         !pendingEconomicSequence && !pendingCrewSequence && !pendingSecuritySequence &&

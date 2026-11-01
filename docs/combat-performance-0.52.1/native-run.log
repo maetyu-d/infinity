@@ -1,0 +1,15 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+COMBAT_OPS_CAPTURE ops-hold-fire
+COMBAT_OPS_CAPTURE ops-autonomous-gunners
+COMBAT_OPS_CAPTURE ops-targeted-engines
+COMBAT_OPS_CAPTURE ops-component-damage
+COMBAT_OPS_CAPTURE ops-crew-repaired
+COMBAT_OPS_CAPTURE ops-wreck-approach
+COMBAT_OPS_CAPTURE ops-recovery-progress
+COMBAT_OPS_CAPTURE ops-salvage-rescued
+COMBAT_OPS_CAPTURE ops-rescue-port
+COMBAT_OPS_CAPTURE ops-rescue-crew-office
+PASS: native autonomous guns, targeted engines, crew repairs, physical salvage, rescued identity and port handover
+FRAME median_ms=22.5069 p95_ms=78.9136 frames=419 cache_bytes=11291368
+peak_rss_bytes=128843776

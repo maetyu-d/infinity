@@ -1,0 +1,42 @@
+[
+  {
+    "name": "ops-autonomous-gunners.ppm.z",
+    "sha256": "85c11f8fbbf0f64a1fbd4ee4a75dd68c768929c5bfc28c48bf3559b7b482ec86"
+  },
+  {
+    "name": "ops-component-damage.ppm.z",
+    "sha256": "1eada08bc112018622a0927990302647e5406bf96069d9aacff1bf5651b83f8f"
+  },
+  {
+    "name": "ops-crew-repaired.ppm.z",
+    "sha256": "f9fd15cc247a73de8be7b27cae101c1c6aef05e8678c4cadf2d94d9a61b9cfc7"
+  },
+  {
+    "name": "ops-hold-fire.ppm.z",
+    "sha256": "f0111bfc80a9edad38a6347c90685a9b9915c11c72c84bb98368665b7d18a418"
+  },
+  {
+    "name": "ops-recovery-progress.ppm.z",
+    "sha256": "eb0af465d7f2e5103ac148b4522b0cc763eb96aa29d486052f2839d885e1ce75"
+  },
+  {
+    "name": "ops-rescue-crew-office.ppm.z",
+    "sha256": "08acd9e377ad61ee27d0b17bffebf14e9ba67607fd2d7902d21080ab875020da"
+  },
+  {
+    "name": "ops-rescue-port.ppm.z",
+    "sha256": "44203978ac895a6da115ece16c7fc52c73571ec96c194e9a343ab02c708746d6"
+  },
+  {
+    "name": "ops-salvage-rescued.ppm.z",
+    "sha256": "6110846e1e6b383b58d2561c250b501dfa3cf244e5397404d417a98156c25f4d"
+  },
+  {
+    "name": "ops-targeted-engines.ppm.z",
+    "sha256": "93d58e0f378583a2c7c6a8d017c69f172210b599734fc2c49ce0388c153efd04"
+  },
+  {
+    "name": "ops-wreck-approach.ppm.z",
+    "sha256": "bd653a824f28d0263551bf6336216a73d3db8fa0f9f3c6c3d76168437f42a89e"
+  }
+]

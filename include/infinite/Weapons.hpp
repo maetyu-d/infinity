@@ -89,7 +89,7 @@ class WeaponSystem {
     void advance(double seconds);
     bool fire(const Universe&, const WeaponRay&, std::span<const ActivityBody>, const Geometry* = nullptr);
     bool fireMount(unsigned, const Universe&, const WeaponRay&, std::span<const ActivityBody>,
-                   const Geometry* = nullptr);
+                   const Geometry* = nullptr, const ActivityId* requiredTarget = nullptr);
     unsigned fireBattery(const Universe&, const WeaponRay&, std::span<const ActivityBody>,
                          const Geometry* = nullptr);
     void apply(ActivityBody&) const;

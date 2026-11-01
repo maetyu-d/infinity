@@ -155,22 +155,24 @@ void WeaponSystem::apply(ActivityBody& body) const {
 WeaponTrace traceWeapon(const Universe& u, const WeaponRay& ray, double rangeMetres,
                         std::span<const ActivityBody> targets, const Geometry* geometry) {
     auto limit = rangeMetres;
-    const auto home = u.describe(ray.reference);
     struct HomeRay {
         Address home;
         glm::dvec3 origin, direction;
     };
     std::vector<HomeRay> frames;
-    frames.reserve(8);
+    const HomeRay identity{{}, ray.origin, ray.direction};
+    std::optional<double> referenceUnits;
     auto localRay = [&](const Address& address) -> const HomeRay& {
+        if (address == ray.reference)
+            return identity;
         const auto it =
             std::find_if(frames.begin(), frames.end(), [&](const auto& f) { return f.home == address; });
         if (it != frames.end())
             return *it;
-        frames.push_back(
-            {address,
-             u.pointRelative(ray.reference, ray.origin / std::pow(10., home.frame.logRadius), address, 0),
-             u.relative(ray.reference, address, 0).orientation * ray.direction});
+        if (!referenceUnits)
+            referenceUnits = std::pow(10., u.describe(ray.reference).frame.logRadius);
+        frames.push_back({address, u.pointRelative(ray.reference, ray.origin / *referenceUnits, address, 0),
+                          u.relative(ray.reference, address, 0).orientation * ray.direction});
         return frames.back();
     };
     if (ray.scale >= .01) {
@@ -217,16 +219,16 @@ WeaponTrace traceWeapon(const Universe& u, const WeaponRay& ray, double rangeMet
     if (geometry)
         limit = meshHit(u, ray, *geometry, limit);
     const bool surface = limit < rangeMetres;
-    std::optional<ActivityBody> chosen;
-    for (auto b : targets) {
+    const ActivityBody* chosen = nullptr;
+    for (const auto& b : targets) {
         const auto& local = localRay(b.id.home);
         const auto distance = sphere(b.position - local.origin, local.direction, b.radius);
         if (distance >= ray.scale * 6 && distance < limit) {
             limit = distance;
-            chosen = b;
+            chosen = &b;
         }
     }
-    return {limit, surface || bool(chosen), chosen};
+    return {limit, surface || bool(chosen), chosen ? std::optional<ActivityBody>(*chosen) : std::nullopt};
 }
 bool WeaponSystem::fire(const Universe& u, const WeaponRay& input, std::span<const ActivityBody> targets,
                         const Geometry* geometry) {
@@ -241,7 +243,8 @@ unsigned WeaponSystem::fireBattery(const Universe& u, const WeaponRay& ray,
     return fired;
 }
 bool WeaponSystem::fireMount(unsigned mount, const Universe& u, const WeaponRay& input,
-                             std::span<const ActivityBody> targets, const Geometry* geometry) {
+                             std::span<const ActivityBody> targets, const Geometry* geometry,
+                             const ActivityId* requiredTarget) {
     if (mount >= maxWeaponMounts)
         return false;
     auto& m = mounts_[mount];
@@ -276,6 +279,8 @@ bool WeaponSystem::fireMount(unsigned mount, const Universe& u, const WeaponRay&
     const auto limit = trace.distance;
     const auto& chosen = trace.body;
     const bool surface = trace.blocked;
+    if (requiredTarget && (!chosen || chosen->id != *requiredTarget || chosen->disabled))
+        return false;
     bool disabled = false;
     if (chosen && !chosen->disabled && chosen->kind != ActivityKind::Harbour &&
         chosen->kind != ActivityKind::SurfacePort) {

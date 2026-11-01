@@ -4,7 +4,7 @@ namespace infinite {
 class RecoveryController {
   public:
     bool update(const Universe&, const NpcPlayer&, const std::optional<ActivityBody>&, double dt,
-                bool holding, const Geometry* = nullptr);
+                bool holding, const Geometry* = nullptr, std::span<const ActivityBody> nearby = {});
     void reset() {
         progress_ = 0;
         target_.reset();

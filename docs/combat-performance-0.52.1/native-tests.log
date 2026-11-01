@@ -1,0 +1,9 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 59: native_combat_operations_loop
+1/2 Test #59: native_combat_operations_loop .....   Passed   44.26 sec
+    Start 60: native_combat_operations_images
+2/2 Test #60: native_combat_operations_images ...   Passed    5.35 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =  49.62 sec

@@ -1,0 +1,29 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+      Start  5: physical_wreck_salvage_and_rescue
+ 1/12 Test  #5: physical_wreck_salvage_and_rescue ....   Passed    2.54 sec
+      Start  6: crew_fire_control_and_ship_systems
+ 2/12 Test  #6: crew_fire_control_and_ship_systems ...   Passed    0.69 sec
+      Start  7: economic_security_contracts
+ 3/12 Test  #7: economic_security_contracts ..........   Passed    3.67 sec
+      Start  8: captain_gunner_station_swap
+ 4/12 Test  #8: captain_gunner_station_swap ..........   Passed    0.98 sec
+      Start  9: crewed_weapon_stations
+ 5/12 Test  #9: crewed_weapon_stations ...............   Passed    2.89 sec
+      Start 13: npc_combat_behaviour
+ 6/12 Test #13: npc_combat_behaviour .................   Passed    0.79 sec
+      Start 14: weapons_combat_and_equipment
+ 7/12 Test #14: weapons_combat_and_equipment .........   Passed    5.77 sec
+      Start 35: cockpit_layout_and_targeting
+ 8/12 Test #35: cockpit_layout_and_targeting .........   Passed    0.99 sec
+      Start 42: ship_handling_and_roll
+ 9/12 Test #42: ship_handling_and_roll ...............   Passed    1.93 sec
+      Start 54: cross_scale_round_trip
+10/12 Test #54: cross_scale_round_trip ...............   Passed   12.55 sec
+      Start 55: continuity_restart_write
+11/12 Test #55: continuity_restart_write .............   Passed    2.78 sec
+      Start 56: continuity_restart_read
+12/12 Test #56: continuity_restart_read ..............   Passed    1.45 sec
+
+100% tests passed, 0 tests failed out of 12
+
+Total Test time (real) =  37.08 sec

@@ -1,5 +1,7 @@
 # INFINITE
 
+**0.52.1:** lower CPU/allocation costs for crew targeting, weapon traces and idle recovery. All nearby ships now obstruct autonomous fire and physical recovery. [Measured results and checks](docs/COMBAT_PERFORMANCE_0_52_1.md).
+
 **0.52.0:** autonomous crew gunners, targetable ship systems and crew repairs, plus physical wreck salvage and survivor rescue. [Controls and validation](docs/CREW_COMBAT_RECOVERY_0_52.md).
 
 **0.51.0:** crew combat orders, distinct port/starboard gun stations with visible arcs, and funded escort/bounty contracts with persistent outcomes and salvage. [Controls and details](docs/COMBAT_OPERATIONS_0_51.md).

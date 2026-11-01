@@ -1,0 +1,13 @@
+{
+  "version": "0.52.1",
+  "build": "59",
+  "baseline": "ebe984a",
+  "regression_suites_passed": 12,
+  "native_checks_passed": 2,
+  "native_frames": 10,
+  "sanitizers": "AddressSanitizer and UndefinedBehaviorSanitizer on modified FireControl, Weapons and Recovery translation units plus CombatOperationsTests; remaining core library is Release",
+  "unchanged_runtime_sources_and_shaders": 220,
+  "matching_signed_package_sections": 28,
+  "tested_binary_sha256": "e1ed9124a959c0f1e7ab47197bf85d4505fae169ca334d1f2fe4df608a337c54",
+  "normal_flight": "Existing saved flight and saves left untouched; packaged update applies at next launch."
+}

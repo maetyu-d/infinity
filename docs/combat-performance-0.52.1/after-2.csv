@@ -1,0 +1,6 @@
+scenario,median_us_per_update,worst_batch_us_per_update,allocations_per_update,checksum
+hold_128_contacts_2048_receipts,0.167,0.278,1.000,0
+defend_128_contacts_128_receipts,103.723,154.520,27.517,44
+focus_128_contacts_128_receipts,8.907,11.358,27.517,44
+weapon_trace_128_contacts,5.159,7.326,25.000,396000
+recovery_idle_near_wreck,0.169,0.189,2.033,0

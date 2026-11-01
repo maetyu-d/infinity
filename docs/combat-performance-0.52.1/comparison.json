@@ -1,0 +1,54 @@
+{
+  "baseline_commit": "ebe984a",
+  "machine": "macOS-26.4.1-arm64-arm-64bit",
+  "method": "Release O3; 3 alternating runs per executable; 11 batches of 60 updates per run; median of the 3 run medians; fixture checksums match; setup/CSV outside measurement. Allocations count operator new on the calling thread. CPU microbenchmark, not whole-game FPS.",
+  "baseline_benchmark_sha256": "0fda3f752f2042b46d36836aae02b8888127cda830b4b4db0d142d49212f1836",
+  "after_benchmark_sha256": "4028eb81c7d88470982098e05a3377d71fe2255e403dfbbe65f6acfd383a8053",
+  "results": [
+    {
+      "scenario": "hold_128_contacts_2048_receipts",
+      "before_us": 1851.42,
+      "after_us": 0.167,
+      "reduction_percent": 99.99097989651187,
+      "before_allocations": 1537.0,
+      "after_allocations": 1.0,
+      "checksum": "0"
+    },
+    {
+      "scenario": "defend_128_contacts_128_receipts",
+      "before_us": 852.012,
+      "after_us": 103.723,
+      "reduction_percent": 87.82611043036952,
+      "before_allocations": 9197.8,
+      "after_allocations": 27.517,
+      "checksum": "44"
+    },
+    {
+      "scenario": "focus_128_contacts_128_receipts",
+      "before_us": 183.057,
+      "after_us": 8.907,
+      "reduction_percent": 95.13430243039053,
+      "before_allocations": 1679.4,
+      "after_allocations": 27.517,
+      "checksum": "44"
+    },
+    {
+      "scenario": "weapon_trace_128_contacts",
+      "before_us": 48.482,
+      "after_us": 5.159,
+      "reduction_percent": 89.35893733756858,
+      "before_allocations": 856.0,
+      "after_allocations": 25.0,
+      "checksum": "396000"
+    },
+    {
+      "scenario": "recovery_idle_near_wreck",
+      "before_us": 12.051,
+      "after_us": 0.169,
+      "reduction_percent": 98.59762675296656,
+      "before_allocations": 160.033,
+      "after_allocations": 2.033,
+      "checksum": "0"
+    }
+  ]
+}

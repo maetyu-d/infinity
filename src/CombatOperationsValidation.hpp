@@ -172,7 +172,7 @@ class CombatOperationsValidation {
             ship.position = nav_.cameraPosition() * 1000.;
             ship.hull = pilot_.ship().hull;
             if (recovery_.update(u_, ship, b, .1, stage_ == 6,
-                                 renderer.submittedGeometry(nav_.anchor).get())) {
+                                 renderer.submittedGeometry(nav_.anchor).get(), renderer.weaponTargets())) {
                 EconomicCommand c;
                 c.sequence = player_.lastCommand + 1;
                 c.action = EconomicAction::RecoverWreck;
