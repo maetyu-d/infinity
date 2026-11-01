@@ -205,6 +205,9 @@ CrewFlightLayout::CrewFlightLayout(double aspect) {
         rooms[i] = {panel.x + 10 + (i % 2) * (col + 10), panel.y + 321 + (i / 2) * 22, col, 20};
     for (size_t i = 0; i < actions.size(); ++i)
         actions[i] = {panel.x + 10 + (i % 2) * (col + 10), panel.y + 416 + (i / 2) * 26, col, 24};
+    const auto gunWidth = (panel.w - 40) / maxWeaponMounts;
+    for (unsigned i = 0; i < maxWeaponMounts; ++i)
+        guns[i] = {panel.x + 10 + i * (gunWidth + 10), panel.y + 286, gunWidth, 18};
 }
 namespace {
 std::optional<size_t> contactRow(glm::dvec2 p, CockpitRect r, size_t count, size_t capacity) {
@@ -655,7 +658,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             const auto c = m.health <= 0 ? muted : m.health < 40 ? amber : i == crew->selected ? mint : pearl;
             if (i == crew->selected)
                 rect(h.panels, row.x, row.y, row.w, row.h, mint * .16f);
-            fitted(h.lettering, m.name + " / " + std::string(crewStationName(m.duty)), row.x + 6, row.y + 4,
+            fitted(h.lettering, m.name + " / " + std::string(crewDutyName(m)), row.x + 6, row.y + 4,
                    row.w - 12, 9, c);
             const std::string state = m.health <= 0   ? "LOST"
                                       : m.travel > 0  ? "MOVING"
@@ -691,8 +694,8 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             fitted(h.lettering, crew->events.back(), p.x + 18, p.y + 478, p.w - 36, 8.5, trafficInk);
         fitted(h.lettering, "CLICK CREW THEN ROOM / UP-DOWN CREW / LEFT-RIGHT ROOM / ENTER ASSIGN", p.x + 18,
                p.y + 502, p.w - 36, 8.3, pearl);
-        fitted(h.lettering, "R REPAIR / F FIRE / M FIRST AID / T REST / V VENT / D RECALL / A AUTO", p.x + 18,
-               p.y + 521, p.w - 36, 8.3, ice);
+        fitted(h.lettering, "R REPAIR / F FIRE / M AID / T REST / V VENT / D RECALL / A AUTO / CTRL1-3 GUN",
+               p.x + 18, p.y + 521, p.w - 36, 8.3, ice);
         fitted(h.lettering,
                "PORT: H BUY / BRACKETS CYCLE / BACKSPACE SELL / SHIFT-BACKSPACE RELEASE / F2 MARKET",
                p.x + 18, p.y + 540, p.w - 36, 8.3, mint);
@@ -705,8 +708,9 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             flightCommands ? CrewFlightLayout(aspect).weapon : CockpitRect{center - 158, 665, 316, 80};
         const auto danger = glm::vec3(1, .3, .2);
         card(h, armament, t.incomingFire > .2 ? danger : t.weaponHeat > 80 ? amber : mint);
-        fitted(h.lettering, t.weapon + " / HEAT " + std::to_string(int(t.weaponHeat)) + "%", armament.x + 12,
-               675, 292, 9.5, pearl);
+        fitted(h.lettering,
+               t.weapon + (t.weaponBattery ? "" : " / HEAT " + std::to_string(int(t.weaponHeat)) + "%"),
+               armament.x + 12, 675, 292, 9.5, pearl);
         fitted(h.lettering, t.weaponStatus, armament.x + 12, 693, 292, 8.8, t.weaponHeat > 80 ? amber : ice);
         const auto target =
             std::find_if(activity.begin(), activity.end(), [](const auto& c) { return c.selected; });
@@ -805,7 +809,8 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             const bool jobs = m.page == MarketPage::Jobs;
             const bool services = m.page == MarketPage::Services;
             const bool weapons = m.page == MarketPage::Weapons;
-            label(weapons    ? "SHIP WEAPONS / UP-DOWN SELECT / ONE FITTED LASER"
+            label(weapons
+                      ? std::string(weaponMountName(m.weaponMount)) + " / LEFT-RIGHT MOUNT / UP-DOWN GRADE"
                   : services ? "PORT SERVICES / UP-DOWN SELECT / ENTER PURCHASE"
                   : jobs     ? "FUNDED LOCAL JOBS / UP-DOWN SELECT / ONE ACTIVE HAUL"
                   : industry ? "EXISTING FACILITY REFITS / DELIVER CARGO TO BUILD"
@@ -828,13 +833,13 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             }
             fitted(h.lettering, m.summary, panel.x + 18, panel.y + (jobs ? 480 : 472), panel.w - 36, 8.4,
                    mint);
-            label(weapons    ? "ENTER BUY / UPGRADE / BACKSPACE SELL FITTED LASER / F4 PORT"
+            label(weapons    ? "ENTER FIT / UPGRADE / BACKSPACE SELL SELECTED MOUNT / F4 PORT"
                   : services ? "ENTER PURCHASE SELECTED SERVICE / F4 TARGET PORT / J APPROACH"
                   : jobs     ? "ENTER ACCEPT / PICKUP / DELIVER / F4 TARGET / J APPROACH"
                   : industry ? "ENTER FUND / DELIVER PARTS / BACKSPACE COLLECT DIVIDENDS"
                              : "ENTER TARGET SOURCE / F4 TARGET BUYER / J APPROACH",
                   panel.x + 18, panel.y + 492, panel.w - 36, pearl);
-            label(weapons    ? "SPACE FIRE / REAL PARTS AND PAYMENTS / LASER MUST COOL BETWEEN BURSTS"
+            label(weapons    ? "SPACE LINKED FIRE / F9 CTRL1-3 ASSIGNS GUNNERS / INDEPENDENT HEAT"
                   : services ? "REPAIRS USE PORT STOCK / CARGO UPGRADES KEEP SEALED CONSIGNMENTS"
                   : jobs     ? "BACKSPACE WITHDRAW HAUL / SHIFT-F4 RETURN SOURCE / LATE FEE HALVED"
                   : industry ? "DELETE CANCEL PROJECT / UNUSED FEES AND PARTS RETURNED"
@@ -907,21 +912,27 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                                                       : ice;
             if (i == crew->selected)
                 rect(h.panels, r.x, r.y, r.w, r.h, mint * .16f);
-            fitted(h.lettering,
-                   std::to_string(i + 1) + " " + m.name + " / " + std::string(crewStationName(m.duty)),
+            fitted(h.lettering, std::to_string(i + 1) + " " + m.name + " / " + std::string(crewDutyName(m)),
                    r.x + 4, r.y + 3, r.w - 8, 8.6, colour);
             fitted(h.lettering,
                    task.status + " / HP " + std::to_string(int(m.health)) + " FAT " +
                        std::to_string(int(m.fatigue)),
                    r.x + 4, r.y + 15, r.w - 8, 7.5, colour);
         }
-        if (crew->selected < crew->tasks.size()) {
-            const auto& task = crew->tasks[crew->selected];
-            fitted(h.lettering, task.detail, p.x + 12, p.y + 287, p.w - 24, 8.1,
-                   task.blocked ? amber : pearl);
+        constexpr std::array<std::string_view, 3> mountNames{"NOSE", "PORT", "STBD"};
+        for (unsigned i = 0; i < maxWeaponMounts; ++i) {
+            const auto r = layout.guns[i];
+            const auto colour = !crew->weaponLevels[i] ? muted : crew->gunReadiness[i] > 0 ? mint : amber;
+            card(h, r, colour);
+            fitted(h.lettering,
+                   std::to_string(i + 1) + " " + std::string(mountNames[i]) + " " +
+                       std::string(weaponGrade(crew->weaponLevels[i])),
+                   r.x + 4, r.y + 5, r.w - 8, 7, colour);
         }
-        fitted(h.lettering, "ROOM / " + std::string(crewStationName(crew->station)), p.x + 12, p.y + 305,
-               p.w - 24, 8.4, mint);
+        const auto detail =
+            crew->selected < crew->tasks.size() ? crew->tasks[crew->selected] : CrewTaskView{};
+        fitted(h.lettering, "ROOM " + std::string(crewStationName(crew->station)) + " / " + detail.detail,
+               p.x + 12, p.y + 307, p.w - 24, 8, detail.blocked ? amber : mint);
         for (size_t i = 0; i < crewRoomCount; ++i) {
             const auto r = layout.rooms[i];
             const auto& room = crew->rooms[i];
@@ -943,7 +954,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
         fitted(h.lettering, crew->message.empty() ? "MANUAL HELM AND WEAPONS REMAIN LIVE" : crew->message,
                p.x + 12, p.y + 529, p.w - 24, 7.8, amber);
         fitted(h.lettering, "1-8 CREW / ALT 1-7 ROOM / C CURSOR", p.x + 12, p.y + 547, p.w - 24, 7.6, ice);
-        fitted(h.lettering, "CTRL R/F/M/T ORDERS / F8 DECK / F9 CLOSE", p.x + 12, p.y + 560, p.w - 24, 7.4,
+        fitted(h.lettering, "CTRL1-3 MAN GUN / F8 DECK / F9 CLOSE", p.x + 12, p.y + 560, p.w - 24, 7.4,
                muted);
     }
     if (catalogues && !flightCommands && !activity.empty()) {

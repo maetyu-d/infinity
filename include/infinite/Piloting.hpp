@@ -48,6 +48,7 @@ struct FlightInstruments {
     bool targetVisible = false, safe = false;
     std::string phase = "MANUAL", drive = "CRUISE", destination = "SELECT A DESTINATION / J NAVIGATE";
     std::string weapon, weaponStatus;
+    bool weaponBattery = false;
     double weaponHeat = 0;
     std::string combatStatus;
     unsigned hostileContacts = 0;

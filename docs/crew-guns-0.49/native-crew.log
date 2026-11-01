@@ -1,0 +1,10 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+CREW_CAPTURE crew-stations spares=30 medical=12
+CREW_CAPTURE crew-emergency spares=30 medical=12
+CREW_CAPTURE crew-responders spares=30 medical=12
+CREW_CAPTURE crew-recovered spares=20.7281 medical=9.86264
+CREW_CAPTURE crew-portrait spares=20.7281 medical=9.86264
+PASS: native crew stations, hull-hit fire and injuries, walking responders, finite repair and medical stores, persistence, unchanged camera and fitted portrait panel
+FRAME median_ms=102.651 p95_ms=220.239 frames=319 cache_bytes=9935560
+peak_rss_bytes=140918784

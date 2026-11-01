@@ -1,5 +1,7 @@
 # In-flight crew management — Infinite 0.48
 
+Version 0.49 adds [individual gun consoles](CREW_GUNS_0_49.md): click a gun button or use Ctrl+1/2/3 to assign the selected crew member. Best Stations now includes installed auxiliaries after the normal duties.
+
 **F9** opens a compact crew command console on the left of the cockpit. Manual steering, roll, throttle, weapon fire, autopilot, hazards and crew simulation continue. The forward aim point, flight instruments and weapon panel remain visible. The full **F8** deck remains available for its compartment map, venting, detailed skills and port services.
 
 The console uses the existing named crew and simulation. It adds orders and feedback above the same ship, coordinates and universe. Crew trading remains available through **F8 → F2** or the normal market pages.

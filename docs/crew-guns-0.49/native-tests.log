@@ -1,0 +1,28 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+      Start 62: native_economic_loop
+      Start 57: native_npc_combat_loop
+ 1/12 Test #57: native_npc_combat_loop ...........   Passed   71.88 sec
+      Start 55: native_crew_loop
+ 2/12 Test #55: native_crew_loop .................   Passed   38.24 sec
+      Start 53: native_crew_trade_loop
+ 3/12 Test #53: native_crew_trade_loop ...........   Passed   34.34 sec
+      Start 51: native_crew_flight_loop
+ 4/12 Test #51: native_crew_flight_loop ..........   Passed   26.61 sec
+      Start 49: native_crew_guns_loop
+ 5/12 Test #49: native_crew_guns_loop ............   Passed   44.01 sec
+      Start 58: native_npc_combat_images
+ 6/12 Test #58: native_npc_combat_images .........   Passed    3.50 sec
+      Start 56: native_crew_images
+ 7/12 Test #56: native_crew_images ...............   Passed    2.77 sec
+      Start 52: native_crew_flight_images
+ 8/12 Test #52: native_crew_flight_images ........   Passed    3.23 sec
+      Start 54: native_crew_trade_images
+ 9/12 Test #54: native_crew_trade_images .........   Passed    1.69 sec
+      Start 50: native_crew_guns_images
+10/12 Test #50: native_crew_guns_images ..........   Passed    4.31 sec
+11/12 Test #62: native_economic_loop .............***Failed  312.47 sec
+CMake Error: Cannot open file for write: /Users/user/Documents/SC tutorial/Infinite/build/Testing/Temporary/LastTestsFailed.log.tmp16dc8
+CMake Error: : System Error: No space left on device
+Problem opening file: /Users/user/Documents/SC tutorial/Infinite/build/Testing/Temporary/LastTestsFailed.log
+Cannot create log file: LastTestsFailed.log
+Errors while running CTest

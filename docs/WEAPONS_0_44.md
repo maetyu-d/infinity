@@ -1,5 +1,7 @@
 # Ship weapons and equipment trade — Infinite 0.44
 
+Version 0.49 adds [individually fitted, crewed port/starboard mounts](CREW_GUNS_0_49.md). Left/Right selects a mount at the armourer; F9 Ctrl+1/2/3 assigns gun crew. The single-mount controls below describe the original 0.44 release.
+
 The player starts with a **Pulse Laser I**. **Hold Space** to fire along the ship's forward axis. Shots have finite range, rate of fire and heat; sustained fire overheats the laser, which must cool before firing resumes. Firing uses the existing cockpit recoil hook and adds bounded beam/impact geometry to the existing colourful rendering pipeline. Steering, roll and thrust response are unchanged.
 
 Firing is inhibited while landed, in a market, during an active cruise/braking field, during a hull-size transition or with a depleted player hull. A steady shrunken ship can fire: muzzle offset and range scale with the physical hull, independently of render magnification. The authoritative saved weapon mount must load before firing is enabled.

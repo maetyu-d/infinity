@@ -152,6 +152,7 @@ int main() {
             controls.insert(controls.end(), l.roster.begin(), l.roster.end());
             controls.insert(controls.end(), l.rooms.begin(), l.rooms.end());
             controls.insert(controls.end(), l.actions.begin(), l.actions.end());
+            controls.insert(controls.end(), l.guns.begin(), l.guns.end());
             for (const auto& r : controls) {
                 check(r.x >= l.panel.x && r.y >= l.panel.y && r.x + r.w <= l.panel.x + l.panel.w &&
                           r.y + r.h <= l.panel.y + l.panel.h,

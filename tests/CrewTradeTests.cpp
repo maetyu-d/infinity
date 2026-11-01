@@ -1,6 +1,7 @@
 #include "infinite/Cockpit.hpp"
 #include "infinite/Economy.hpp"
 #include <chrono>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <thread>
@@ -233,18 +234,25 @@ int main(int argc, char** argv) {
                       economicCrewOffers(snapshot(restored, wallet), 0).empty(),
                   "Empty crew market did not persist");
         }
-        auto oldShip = ShipCrew(47).serialize();
-        std::istringstream header(oldShip);
-        std::string token;
-        for (unsigned i = 0; i < 12; ++i)
-            header >> token;
-        auto begin = header.tellg();
-        header >> token;
-        auto end = header.tellg();
-        oldShip.erase(size_t(begin), size_t(end - begin));
-        oldShip.replace(0, 15, "INFINITE_CREW 1");
+        ShipCrew historical(47);
+        std::ostringstream oldCrew;
+        oldCrew << std::setprecision(17) << "INFINITE_CREW 1 47 0 0 0 0 30 12 -1 0 1 6";
+        for (const auto& m : historical.members()) {
+            oldCrew << ' ' << m.id << ' ' << std::quoted(m.name) << ' ' << m.trait << ' ' << unsigned(m.duty)
+                    << ' ' << unsigned(m.room) << ' ' << unsigned(m.target) << ' ' << unsigned(m.walkTo)
+                    << ' ' << unsigned(m.order) << ' ' << m.health << ' ' << m.fatigue << ' ' << m.morale
+                    << ' ' << m.travel << ' ' << m.travelDuration << ' ' << m.automatic;
+            for (auto xp : m.experience)
+                oldCrew << ' ' << xp;
+        }
+        for (const auto& r : historical.rooms())
+            oldCrew << ' ' << r.integrity << ' ' << r.oxygen << ' ' << r.fire << ' ' << r.breach << ' '
+                    << r.vented;
+        oldCrew << " 0";
+        auto oldShip = oldCrew.str();
         ShipCrew migrated(47);
         check(migrated.restore(oldShip), "Crew v1 save no longer loads");
+        check(migrated.members()[2].weaponMount == 0, "Legacy gunner lost primary console assignment");
         auto legacy = e.serialize();
         legacy.erase(legacy.find("CREW_MARKETS"));
         legacy.replace(0, 18, "INFINITE_ECONOMY 6");

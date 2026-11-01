@@ -1,5 +1,7 @@
 #pragma once
+#include "Armament.hpp"
 #include "Core.hpp"
+#include <algorithm>
 #include <array>
 #include <iosfwd>
 #include <span>
@@ -44,7 +46,9 @@ struct CrewMember {
     double health = 100, fatigue = 0, morale = 85, travel = 0, travelDuration = 0;
     std::array<double, 6> experience{};
     bool automatic = false;
+    unsigned weaponMount = noWeaponMount;
 };
+std::string_view crewDutyName(const CrewMember&);
 // Tradable person data excludes ship-local duty, orders and walking state.
 void writeCrewPerson(std::ostream&, const CrewMember&);
 bool readCrewPerson(std::istream&, CrewMember&);
@@ -72,6 +76,9 @@ struct CrewView {
     std::vector<CrewMember> members;
     std::vector<CrewTaskView> tasks;
     std::array<CrewRoom, crewRoomCount> rooms;
+    std::array<unsigned, maxWeaponMounts> weaponLevels{1, 0, 0};
+    std::array<double, maxWeaponMounts> gunReadiness{};
+    std::array<std::string, maxWeaponMounts> gunStatus;
     double spares = 0, medical = 0;
     std::string summary, alert, message, port, recruit, sell, supply, care, selectedSkill;
     std::vector<std::string> events;
@@ -106,6 +113,13 @@ class ShipCrew {
         automatic_ = !automatic_;
     }
     std::string assign(size_t member, CrewStation);
+    std::string manWeapon(size_t member, unsigned mount);
+    void setWeaponLevels(const std::array<unsigned, maxWeaponMounts>& levels) {
+        for (unsigned i = 0; i < maxWeaponMounts; ++i)
+            weaponLevels_[i] = std::min(levels[i], 3u);
+    }
+    double gunnerReadiness(unsigned mount) const;
+    std::string gunnerStatus(unsigned mount) const;
     std::string order(size_t member, CrewOrder, CrewStation);
     std::string command(CrewCommand, size_t member, CrewStation);
     std::string bestStations();
@@ -116,7 +130,8 @@ class ShipCrew {
     void vent(CrewStation);
     bool dismiss(size_t); // caller enforces port access
     void observeHull(double hull);
-    void advance(double seconds, double properG = 0, bool combat = false, bool firing = false);
+    void advance(double seconds, double properG = 0, bool combat = false, bool firing = false,
+                 unsigned firingMounts = 1);
     void reconcile(CrewReceipts);
     void reconcileMarket(uint64_t revision, std::span<const CrewTitle>, std::span<const CrewBoarding>);
     double efficiency(CrewStation) const;
@@ -135,7 +150,8 @@ class ShipCrew {
     std::vector<std::string> events_;
     double spares_ = 30, medical_ = 12, previousHull_ = -1, accumulator_ = 0;
     bool automatic_ = true;
-    void step(double properG, bool combat, bool firing);
+    std::array<unsigned, maxWeaponMounts> weaponLevels_{1, 0, 0}; // read-only loadout supplied by the wallet
+    void step(double properG, bool combat, unsigned firingMounts);
     void event(std::string);
     CrewStation nextRoom(CrewStation from, CrewStation to) const;
 };

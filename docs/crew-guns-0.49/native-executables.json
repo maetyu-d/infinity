@@ -1,0 +1,20 @@
+{
+  "build_sha256": "f86a9baeed648758b92edff9e9fcf96f79cc2b8e402553a41a17e1400b9a2e29",
+  "copies": {
+    "npc-combat": "f86a9baeed648758b92edff9e9fcf96f79cc2b8e402553a41a17e1400b9a2e29",
+    "crew-flight": "f86a9baeed648758b92edff9e9fcf96f79cc2b8e402553a41a17e1400b9a2e29",
+    "crew-trade": "f86a9baeed648758b92edff9e9fcf96f79cc2b8e402553a41a17e1400b9a2e29",
+    "crew": "f86a9baeed648758b92edff9e9fcf96f79cc2b8e402553a41a17e1400b9a2e29",
+    "crew-guns": "f86a9baeed648758b92edff9e9fcf96f79cc2b8e402553a41a17e1400b9a2e29",
+    "economy": "f86a9baeed648758b92edff9e9fcf96f79cc2b8e402553a41a17e1400b9a2e29"
+  },
+  "note": "Each immutable native executable was verified against the final build after its gameplay fixture passed, then removed to reclaim test storage. Separate image checks validate the retained captures.",
+  "archived_capture_counts": {
+    "crew-flight": 5,
+    "crew-trade": 4,
+    "crew": 5,
+    "npc-combat": 6,
+    "crew-guns": 9,
+    "economy": 33
+  }
+}

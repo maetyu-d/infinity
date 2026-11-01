@@ -125,7 +125,7 @@ int64_t EconomyPlayer::volumeLitres() const {
 }
 std::string EconomyPlayer::serialize() const {
     std::ostringstream o;
-    o << "INFINITE_WALLET 6 " << credits << ' ' << lastCommand;
+    o << "INFINITE_WALLET 7 " << credits << ' ' << lastCommand;
     writeStock(o, cargo);
     o << ' ' << deliveries << ' ' << lateDeliveries << ' ' << returnedHauls << ' ' << freightEarnings << ' '
       << bool(haul);
@@ -146,6 +146,8 @@ std::string EconomyPlayer::serialize() const {
         o << ' ' << b.revision << ' ';
         writeCrewPerson(o, b.member);
     }
+    for (auto level : extraWeapons)
+        o << ' ' << level;
     return o.str();
 }
 bool EconomyPlayer::restore(std::string_view text) {
@@ -153,7 +155,7 @@ bool EconomyPlayer::restore(std::string_view text) {
     std::istringstream in{std::string(text)};
     std::string h;
     unsigned v;
-    if (!(in >> h >> v >> p.credits >> p.lastCommand) || h != "INFINITE_WALLET" || (v < 1 || v > 6) ||
+    if (!(in >> h >> v >> p.credits >> p.lastCommand) || h != "INFINITE_WALLET" || (v < 1 || v > 7) ||
         p.credits < 0 || p.credits > 1000000000000000LL || !readStock(in, p.cargo))
         return false;
     if (v >= 2) {
@@ -224,6 +226,10 @@ bool EconomyPlayer::restore(std::string_view text) {
             p.crewBoarding.push_back(std::move(b));
         }
     }
+    if (v >= 7)
+        for (auto& level : p.extraWeapons)
+            if (!(in >> level) || level > maxWeaponLevel)
+                return false;
     p.capacityKg = holdCapacityKg(p.cargoLevel);
     p.capacityLitres = holdCapacityLitres(p.cargoLevel);
     in >> std::ws;
@@ -1111,6 +1117,8 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
         return v;
     }
     if (page == MarketPage::Weapons) {
+        v.weaponMount = std::min(context.weaponMount, maxWeaponMounts - 1);
+        const auto fitted = s->player.weaponAt(v.weaponMount);
         v.selected = std::min<size_t>(selected, maxWeaponLevel - 1);
         auto money = [](int64_t cents) {
             std::ostringstream o;
@@ -1119,8 +1127,8 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
         };
         for (unsigned level = 1; level <= maxWeaponLevel; ++level) {
             const auto& spec = weaponSpec(level);
-            auto q = economicWeaponQuote(*s, *i, level);
-            v.detail.push_back(std::string(spec.name) + (s->player.weaponLevel == level ? " / FITTED" : ""));
+            auto q = economicWeaponQuote(*s, *i, level, false, v.weaponMount);
+            v.detail.push_back(std::string(spec.name) + (fitted == level ? " / FITTED" : ""));
             v.detail.push_back("DAMAGE " + std::to_string(int(spec.damage)) + " / RANGE " +
                                std::to_string(int(spec.rangeMetres / 1000)) + " KM / " +
                                std::to_string(int(1 / spec.interval * 10) / 10.) + " SHOTS/S");
@@ -1133,10 +1141,11 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
             v.detail.push_back(parts);
             v.detail.push_back(q.status);
         }
-        const auto sale = economicWeaponQuote(*s, *i, s->player.weaponLevel, true);
-        v.summary = s->player.weaponLevel ? "FITTED " + std::string(weaponSpec(s->player.weaponLevel).name) +
-                                                " / BUYBACK " + money(sale.sellCents) + " CR"
-                                          : "WEAPON MOUNT EMPTY / SELECT A LASER TO BUY";
+        const auto sale = economicWeaponQuote(*s, *i, fitted, true, v.weaponMount);
+        v.summary = fitted ? std::string(weaponMountName(v.weaponMount)) + " / " +
+                                 std::string(weaponSpec(fitted).name) + " / BUYBACK " +
+                                 money(sale.sellCents) + " CR"
+                           : std::string(weaponMountName(v.weaponMount)) + " EMPTY / SELECT A LASER TO BUY";
         v.bottleneck =
             "ENTER FITS SELECTED GRADE / BACKSPACE SELLS CURRENT WEAPON / PHYSICAL TRADE LINK REQUIRED";
         return v;

@@ -55,6 +55,7 @@ struct CrewFlightLayout {
     std::array<CockpitRect, maxShipCrew> roster;
     std::array<CockpitRect, crewRoomCount> rooms;
     std::array<CockpitRect, 8> actions;
+    std::array<CockpitRect, maxWeaponMounts> guns;
     explicit CrewFlightLayout(double aspect);
 };
 // Port of Hyperion's CabinMesh / rebuildCockpit beveled screen-framed cabin.

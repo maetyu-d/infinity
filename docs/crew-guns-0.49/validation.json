@@ -1,0 +1,74 @@
+{
+  "version": "0.49.0",
+  "build": 54,
+  "build_sha256": "f86a9baeed648758b92edff9e9fcf96f79cc2b8e402553a41a17e1400b9a2e29",
+  "native_executable_hashes": {
+    "crew-guns": "f86a9baeed648758b92edff9e9fcf96f79cc2b8e402553a41a17e1400b9a2e29",
+    "crew-flight": "f86a9baeed648758b92edff9e9fcf96f79cc2b8e402553a41a17e1400b9a2e29",
+    "crew-trade": "f86a9baeed648758b92edff9e9fcf96f79cc2b8e402553a41a17e1400b9a2e29",
+    "crew": "f86a9baeed648758b92edff9e9fcf96f79cc2b8e402553a41a17e1400b9a2e29",
+    "npc-combat": "f86a9baeed648758b92edff9e9fcf96f79cc2b8e402553a41a17e1400b9a2e29",
+    "economy": "f86a9baeed648758b92edff9e9fcf96f79cc2b8e402553a41a17e1400b9a2e29"
+  },
+  "tested_code_and_data_sections": {
+    "__TEXT/__text": "8b2d8dd258f8e9ad8ce26e2246e8fd3176eea4d0e414a52bc3f7d37e16e9ca1b",
+    "__TEXT/__stubs": "140b63034beda07ae492ff21153b6dac8d1bf0b2316a90f0875f98acbc2b76c4",
+    "__TEXT/__objc_stubs": "5e1bef10208fe60624f9b70f3c6ba89e2d7bfed2fe6856cf8adeb28deedd6408",
+    "__TEXT/__init_offsets": "351a032dda43612a06496ec0cd2ede20357c74662f7c7766f9a688e611b52432",
+    "__TEXT/__objc_methlist": "22b6a0092ad86260714df9c6e44bcda36e7c866b6d857a2e83e547904631b123",
+    "__TEXT/__const": "ca4d1bec9518447c686bf4ee552c680abd7ca364f1aa9b52fde77e991317d79d",
+    "__TEXT/__gcc_except_tab": "d015cbf1414d3634ca479060b4f0f6f52d00d1345e756c5db6f54495c2e6f959",
+    "__TEXT/__cstring": "c3c98ee7fdcac94dd9bb5e96b58690b0a55fc27218b11dc76dde33c9af794185",
+    "__TEXT/__objc_methname": "38f0b1f9bde09276dd6c8f38fa4521b9d467fa81ab0346cc5e20a94414aab10d",
+    "__TEXT/__objc_classname": "38da07fddad8bb5f208b42d222264a4394dd03a0c2feb71918042fb4f19700c9",
+    "__TEXT/__objc_methtype": "7e054045efa3246866b3c56d64336d1cf935e7277cd455d33bac83131403be3a",
+    "__TEXT/__ustring": "75beedfd54663d2f3fe3805bd220b9172e7f170c7c93db4bdc16fdbfc5e5d3e1",
+    "__TEXT/__unwind_info": "155052ccb8a50b19c93af8df7b837784c6bff6c69f070043400b724b7d97bd2c",
+    "__TEXT/__eh_frame": "430d2a451c98041d739ae148d22e7cd0f649fbade0b88e70c533c386e151fa0a",
+    "__DATA_CONST/__got": "c10c0b868e61c492e389b54b5f692527d15230f35404492147953534b6b00a96",
+    "__DATA_CONST/__const": "5dcde16224089517fc60a5a88bdea811f9d7e3cd1d440605866d9eee40b0ff07",
+    "__DATA_CONST/__cfstring": "75db6fe5055ead6234bd3fcbe00e3d850ee7bd75911c514ab44c753136aaaf2e",
+    "__DATA_CONST/__objc_classlist": "0eeee8cefc4dbc86333a23e8763f5c68cf0e6a57fddcde68cfaa38aeb25db0d6",
+    "__DATA_CONST/__objc_catlist": "3f27c76297639b52e5c069383b088e5730970fb6ac158f42eaba34d0594975d0",
+    "__DATA_CONST/__objc_protolist": "ddb69a62b29240293a7b14891d305d9fe79cc79d9c61988a1e9fb863d7f0d6cb",
+    "__DATA_CONST/__objc_imageinfo": "94039884329d3732c577860f40d0dfdf883ff89dac332f87216e692c08892fa2",
+    "__DATA_CONST/__objc_superrefs": "7b279f1fd9aa5452f2dd0b76e718f8a72bf3dd7b8a41ea8b5c9154ba3a28dbdd",
+    "__DATA/__objc_const": "559c1e84935a685381b0f1a5475fb15d2e53316540e099fba3f6bcb08b546013",
+    "__DATA/__objc_selrefs": "cecdc8ab969daf49bbdcae304298000b3129991637bb37f7d870e06bdc764812",
+    "__DATA/__objc_ivar": "7d6e583742d2efbc84016de1ee3830ccb925e17dc1950ded248d91e1164dd6c0",
+    "__DATA/__objc_data": "f330f5ba5d517c2dc4f4822c1ac3866250ca6b4b2ffd57986d334c9d32d486b5",
+    "__DATA/__data": "66c0891dd91ac299a43cea30c4b8ddaf735cdd504f4598da3d413f46c045c0ca",
+    "__DATA/__thread_vars": "af3564beb3005325ac2b46adc86f4ce0c6c1a74b950c38909efedc8bd15c77ef"
+  },
+  "core_tests_passed": 48,
+  "crewed_weapon_checks": 209,
+  "crew_management_checks": 2119,
+  "crew_market_checks": 206,
+  "unique_native_tests_passed": 12,
+  "native_capture_counts": {
+    "crew-guns": 9,
+    "crew-flight": 5,
+    "crew-trade": 4,
+    "crew": 5,
+    "npc-combat": 6,
+    "economy": 33
+  },
+  "total_native_captures": 62,
+  "native_crew_guns_frames": 349,
+  "native_crew_guns_median_wall_ms": 82.8072,
+  "native_crew_guns_p95_wall_ms": 266.402,
+  "native_crew_guns_peak_rss_bytes": 148799488,
+  "native_runs": [
+    {
+      "log": "native-tests.log",
+      "passed": 10,
+      "retry_required": "The economy completed its gameplay assertions but failed final profiling CSV output due to exhausted test storage; its image check did not run."
+    },
+    {
+      "log": "native-economy-retry.log",
+      "passed": 2,
+      "note": "Same executable, economy fixture and image checks rerun alone after storage cleanup."
+    }
+  ],
+  "metrics_note": "Shared-machine diagnostics including loading, captures, resizing and concurrent fixtures; not a matched performance comparison."
+}

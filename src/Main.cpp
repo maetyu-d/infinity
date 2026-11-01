@@ -2,6 +2,7 @@
 #include "CloudValidation.hpp"
 #include "CockpitMotionValidation.hpp"
 #include "CrewFlightValidation.hpp"
+#include "CrewGunsValidation.hpp"
 #include "CrewTradeValidation.hpp"
 #include "CrewValidation.hpp"
 #include "EconomyValidation.hpp"
@@ -57,7 +58,7 @@ struct Options {
     bool streamingTest = false;
     bool terrainQuality = false, terrainSurfaceFrame = false, sunShadows = true;
     bool economyTest = false, cockpitMotionTest = false, npcTest = false, crewTest = false,
-         crewTradeTest = false, crewFlightTest = false;
+         crewTradeTest = false, crewFlightTest = false, crewGunsTest = false;
     bool pilotTest = false, terrainTest = false, surfaceTest = false;
 };
 static Options options(int argc, char** argv) {
@@ -77,7 +78,10 @@ static Options options(int argc, char** argv) {
             o.smoke = o.tour = o.fresh = true;
         else if (arg == "--benchmark-tour")
             o.benchmark = o.smoke = o.tour = o.fresh = true;
-        else if (arg == "--crew-flight-test") {
+        else if (arg == "--crew-guns-test") {
+            o.smoke = o.fresh = o.crewGunsTest = o.benchmark = true;
+            o.tour = false;
+        } else if (arg == "--crew-flight-test") {
             o.smoke = o.fresh = o.crewFlightTest = o.benchmark = true;
             o.tour = false;
         } else if (arg == "--crew-trade-test") {
@@ -218,7 +222,7 @@ static Options options(int argc, char** argv) {
         unsigned(o.polarTest) + unsigned(o.cloudTest) + unsigned(o.celestialTest) +
         unsigned(o.landingLightTest) + unsigned(o.weatherTest) + unsigned(o.diversityTest) +
         unsigned(o.stellarDiversityTest) + unsigned(o.npcTest) + unsigned(o.crewTest) +
-        unsigned(o.crewTradeTest) + unsigned(o.crewFlightTest);
+        unsigned(o.crewTradeTest) + unsigned(o.crewFlightTest) + unsigned(o.crewGunsTest);
     if (validationModes > 1 || (validationModes && o.tour))
         throw std::invalid_argument("Choose one automated validation mode");
     if (o.width < 320 || o.height < 240 || o.width > 7680 || o.height > 4320 || o.frames < 0)
@@ -262,7 +266,7 @@ int main(int argc, char** argv) {
                             opt.polarTest || opt.cloudTest || opt.celestialTest || opt.landingLightTest ||
                             opt.weatherTest || opt.diversityTest || opt.stellarDiversityTest ||
                             opt.cockpitMotionTest || opt.npcTest || opt.crewTest || opt.crewTradeTest ||
-                            opt.crewFlightTest;
+                            opt.crewFlightTest || opt.crewGunsTest;
         std::unique_ptr<FlightValidation> flightProof;
         if (opt.flightTest)
             flightProof = std::make_unique<FlightValidation>(universe, nav);
@@ -387,10 +391,10 @@ int main(int argc, char** argv) {
             renderer.setWeapons(&weapons);
             renderer.setActivity(&activity);
             std::unique_ptr<EconomyRuntime> economy;
-            if (!opt.smoke || opt.economyTest || opt.crewTradeTest)
+            if (!opt.smoke || opt.economyTest || opt.crewTradeTest || opt.crewGunsTest)
                 economy = std::make_unique<EconomyRuntime>(universe, data);
             if (!opt.smoke)
-                weapons.setLevel(0); // wait for the authoritative saved mount
+                weapons.setLoadout({0, 0, 0}); // wait for the authoritative saved mounts
             std::shared_ptr<const EconomySnapshot> economicSnapshot;
             MarketView marketView;
             bool marketOpen = false;
@@ -408,6 +412,7 @@ int main(int argc, char** argv) {
             std::optional<ActivityId> marketPort;
             size_t marketGood = 1;
             MarketPage marketPage = MarketPage::Goods;
+            unsigned marketWeaponMount = 0;
             std::optional<ActivityId> tradeBuyer;
             Good tradeGood = Good::Water;
             int64_t tradeKg = 0;
@@ -450,6 +455,7 @@ int main(int argc, char** argv) {
             };
             auto marketContext = [&] {
                 MarketContext context;
+                context.weaponMount = marketWeaponMount;
                 context.hull = pilot.ship().hull;
                 context.cruiseSpeed = pilot.ship().cruiseSpeed;
                 context.crew = crew.members();
@@ -656,11 +662,12 @@ int main(int argc, char** argv) {
                                       economicSnapshot->sites[*i].modules[size_t(command.module)] + 1)
                             .labourCents;
                 if (action == EconomicAction::FitWeapon || action == EconomicAction::SellWeapon) {
+                    command.weaponMount = marketWeaponMount;
                     command.serviceUnits = action == EconomicAction::SellWeapon
-                                               ? economicSnapshot->player.weaponLevel
+                                               ? economicSnapshot->player.weaponAt(marketWeaponMount)
                                                : unsigned(marketGood + 1);
                     auto q = economicWeaponQuote(*economicSnapshot, *i, command.serviceUnits,
-                                                 action == EconomicAction::SellWeapon);
+                                                 action == EconomicAction::SellWeapon, marketWeaponMount);
                     if (!q.available) {
                         marketSay(q.status);
                         return;
@@ -712,6 +719,10 @@ int main(int argc, char** argv) {
             std::unique_ptr<CrewFlightValidation> crewFlightProof;
             if (opt.crewFlightTest)
                 crewFlightProof = std::make_unique<CrewFlightValidation>(universe, nav, pilot, crew, window);
+            std::unique_ptr<CrewGunsValidation> crewGunsProof;
+            if (opt.crewGunsTest)
+                crewGunsProof = std::make_unique<CrewGunsValidation>(universe, nav, pilot, crew, weapons,
+                                                                     *economy, activity, window);
             std::unique_ptr<SurfaceValidation> surfaceProof;
             if (opt.surfaceTest)
                 surfaceProof = std::make_unique<SurfaceValidation>(universe, nav, pilot, activity);
@@ -968,6 +979,9 @@ int main(int argc, char** argv) {
                                 for (size_t i = 0; i < layout.actions.size(); ++i)
                                     if (layout.actions[i].contains(point))
                                         crewCommand(CrewCommand(i));
+                                for (unsigned i = 0; i < maxWeaponMounts; ++i)
+                                    if (layout.guns[i].contains(point))
+                                        crewFeedback = crew.manWeapon(crewSelected, i);
                                 if (layout.automatic.contains(point))
                                     crewCommand(CrewCommand::Automatic);
                                 continue;
@@ -1080,7 +1094,9 @@ int main(int argc, char** argv) {
                             if (event.key.scancode >= SDL_SCANCODE_1 &&
                                 event.key.scancode <= SDL_SCANCODE_8) {
                                 const auto index = size_t(event.key.scancode - SDL_SCANCODE_1);
-                                if (event.key.mod & SDL_KMOD_ALT) {
+                                if ((event.key.mod & SDL_KMOD_CTRL) && index < maxWeaponMounts) {
+                                    crewFeedback = crew.manWeapon(crewSelected, unsigned(index));
+                                } else if (event.key.mod & SDL_KMOD_ALT) {
                                     if (index < crewRoomCount)
                                         crewStation = CrewStation(index);
                                 } else if (index < crew.members().size())
@@ -1125,6 +1141,12 @@ int main(int argc, char** argv) {
                         }
                         if (crewOpen) {
                             const auto count = crew.members().size();
+                            if ((event.key.mod & SDL_KMOD_CTRL) && event.key.scancode >= SDL_SCANCODE_1 &&
+                                event.key.scancode <= SDL_SCANCODE_3) {
+                                crewFeedback = crew.manWeapon(crewSelected,
+                                                              unsigned(event.key.scancode - SDL_SCANCODE_1));
+                                continue;
+                            }
                             switch (event.key.scancode) {
                             case SDL_SCANCODE_ESCAPE:
                             case SDL_SCANCODE_F8:
@@ -1233,10 +1255,17 @@ int main(int argc, char** argv) {
                                 marketGood = (marketGood + 1) % marketRows();
                                 break;
                             case SDL_SCANCODE_LEFT:
-                                marketQuantity = std::max<int64_t>(1, marketQuantity / 10);
+                                if (marketPage == MarketPage::Weapons)
+                                    marketWeaponMount =
+                                        (marketWeaponMount + maxWeaponMounts - 1) % maxWeaponMounts;
+                                else
+                                    marketQuantity = std::max<int64_t>(1, marketQuantity / 10);
                                 break;
                             case SDL_SCANCODE_RIGHT:
-                                marketQuantity = std::min<int64_t>(maxShipPayloadKg, marketQuantity * 10);
+                                if (marketPage == MarketPage::Weapons)
+                                    marketWeaponMount = (marketWeaponMount + 1) % maxWeaponMounts;
+                                else
+                                    marketQuantity = std::min<int64_t>(maxShipPayloadKg, marketQuantity * 10);
                                 break;
                             case SDL_SCANCODE_F5:
                                 marketPage = MarketPage((unsigned(marketPage) + 1) % 8);
@@ -1686,8 +1715,10 @@ int main(int argc, char** argv) {
                             crewFeedback = economicSnapshot->message;
                             pendingCrewSequence = 0;
                         }
-                        if (!opt.economyTest)
-                            weapons.setLevel(economicSnapshot->player.weaponLevel);
+                        if (!opt.economyTest) {
+                            weapons.setLoadout(economicSnapshot->player.weaponLoadout());
+                            crew.setWeaponLevels(economicSnapshot->player.weaponLoadout());
+                        }
                         if (pendingWreck && economicSnapshot->player.lastCommand >= pendingWreck)
                             pendingWreck = 0;
                         if (!pendingWreck && !economicSnapshot->catchingUp && !opt.smoke)
@@ -1805,6 +1836,8 @@ int main(int argc, char** argv) {
                 if (!opt.smoke) {
                     weapons.advance(dt);
                     weapons.setCrewReadiness(crew.weaponReadiness());
+                    for (unsigned mount = 1; mount < maxWeaponMounts; ++mount)
+                        weapons.setMountReadiness(mount, crew.gunnerReadiness(mount));
                     const bool inhibit = !pilotEnabled || marketOpen || crewOpen ||
                                          pilot.instruments().fieldActive || pilot.ship().landed ||
                                          pilot.ship().hull <= 0 ||
@@ -1818,9 +1851,13 @@ int main(int argc, char** argv) {
                         ray.right = nav.orientation * glm::dvec3(1, 0, 0);
                         ray.scale = pilot.sizeRatio();
                         ray.seconds = activity.seconds;
-                        if (weapons.fire(universe, ray, renderer.weaponTargets(),
-                                         renderer.submittedGeometry(nav.anchor).get()))
-                            renderer.cockpitImpulse(CockpitImpulse::Recoil, .35 + weapons.level() * .12);
+                        if (const auto fired =
+                                weapons.fireBattery(universe, ray, renderer.weaponTargets(),
+                                                    renderer.submittedGeometry(nav.anchor).get()))
+                            renderer.cockpitImpulse(
+                                CockpitImpulse::Recoil,
+                                .35 + weapons.level() * .12 +
+                                    .08 * (unsigned(bool(fired & 2)) + unsigned(bool(fired & 4))));
                     }
                 }
                 nav.update((opt.benchmark ? 1.0 / 60 : dt) * (opt.tour ? 3 : 1));
@@ -1845,7 +1882,7 @@ int main(int argc, char** argv) {
                     crew.observeHull(pilot.ship().hull);
                     if ((SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) && !pendingCrewSequence)
                         crew.advance(dt, pilot.instruments().properG, !npcCombat.shots().empty(),
-                                     !weapons.shots().empty());
+                                     weapons.firingMask() != 0, weapons.firingMask());
                 }
                 if (flightProof)
                     flightProof->advance(flight, renderer);
@@ -1863,6 +1900,8 @@ int main(int argc, char** argv) {
                     crewTradeProof->advance(renderer);
                 if (crewFlightProof)
                     crewFlightProof->advance(renderer);
+                if (crewGunsProof)
+                    crewGunsProof->advance(renderer);
                 if (uiProof)
                     uiProof->advance(renderer);
                 if (polarProof)
@@ -1934,6 +1973,11 @@ int main(int argc, char** argv) {
                     renderer.setCrew(&crewView);
                     crewFlightProof->observe(renderer, opt.captures);
                     if (crewFlightProof->finished())
+                        running = false;
+                }
+                if (crewGunsProof) {
+                    crewGunsProof->observe(renderer, opt.captures);
+                    if (crewGunsProof->finished())
                         running = false;
                 }
                 npcCombat.annotate(cockpit);
@@ -2160,16 +2204,17 @@ int main(int argc, char** argv) {
                 }
                 if (opt.frames > 0 && frame >= opt.frames)
                     running = false;
-                if (opt.smoke && std::chrono::duration<double>(now - start).count() >
-                                     (opt.crewTest || opt.crewTradeTest || opt.crewFlightTest ? 240
-                                      : opt.npcTest                                           ? 180
-                                      : opt.economyTest                                       ? 330
-                                      : opt.diversityTest || opt.stellarDiversityTest         ? 360
-                                      : opt.celestialTest || opt.weatherTest || opt.cloudTest ||
-                                              opt.polarTest || opt.surfaceTest
-                                          ? 210
-                                      : opt.pilotTest ? 180
-                                                      : 100))
+                if (opt.smoke &&
+                    std::chrono::duration<double>(now - start).count() >
+                        (opt.crewTest || opt.crewTradeTest || opt.crewFlightTest || opt.crewGunsTest ? 240
+                         : opt.npcTest                                                               ? 180
+                         : opt.economyTest                                                           ? 330
+                         : opt.diversityTest || opt.stellarDiversityTest                             ? 360
+                         : opt.celestialTest || opt.weatherTest || opt.cloudTest || opt.polarTest ||
+                                 opt.surfaceTest
+                             ? 210
+                         : opt.pilotTest ? 180
+                                         : 100))
                     throw std::runtime_error("Native GPU tour timed out before completion");
                 if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED)
                     std::this_thread::sleep_for(std::chrono::milliseconds(25));
@@ -2223,7 +2268,10 @@ int main(int argc, char** argv) {
             std::cout << "peak_rss_bytes=" << usage.ru_maxrss * 1024 << '\n';
 #endif
 #endif
-            if (opt.crewFlightTest) {
+            if (opt.crewGunsTest) {
+                if (!crewGunsProof->finished())
+                    throw std::runtime_error("Native crewed guns validation incomplete");
+            } else if (opt.crewFlightTest) {
                 if (!crewFlightProof->finished())
                     throw std::runtime_error("Native crew flight validation incomplete");
             } else if (opt.crewTradeTest) {

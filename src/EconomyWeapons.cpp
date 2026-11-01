@@ -12,14 +12,15 @@ Stock weaponMaterials(unsigned level) {
     s[size_t(Good::Machinery)] = level;
     return s;
 }
-WeaponQuote economicWeaponQuote(const EconomySnapshot& s, size_t i, unsigned level, bool sell) {
+WeaponQuote economicWeaponQuote(const EconomySnapshot& s, size_t i, unsigned level, bool sell,
+                                unsigned mount) {
     WeaponQuote q;
-    if (!s.network || i >= s.sites.size() || !level || level > maxWeaponLevel) {
+    if (!s.network || i >= s.sites.size() || !level || level > maxWeaponLevel || mount >= maxWeaponMounts) {
         q.status = "INVALID WEAPON GRADE";
         return q;
     }
     const auto& site = s.sites[i];
-    const auto current = s.player.weaponLevel;
+    const auto current = s.player.weaponAt(mount);
     if (sell && (!current || current != level)) {
         q.status = "NO MATCHING WEAPON FITTED";
         return q;
@@ -66,12 +67,13 @@ std::string Economy::weaponTrade(const EconomicCommand& c, EconomyPlayer& player
     snapshot.tick = tick_;
     snapshot.player = player;
     const bool sell = c.action == EconomicAction::SellWeapon;
-    const auto q = economicWeaponQuote(snapshot, i, c.serviceUnits, sell);
+    const auto q = economicWeaponQuote(snapshot, i, c.serviceUnits, sell, c.weaponMount);
     if (!q.available)
         return q.status;
     if (sell ? q.sellCents < c.limitCents : q.totalCents() > c.limitCents)
         return "WEAPON QUOTE CHANGED / REVIEW PRICE";
     auto& site = sites_[i];
+    auto& fitted = c.weaponMount == 0 ? player.weaponLevel : player.extraWeapons[c.weaponMount - 1];
     for (size_t g = 0; g < goodCount; ++g) {
         site.stock[g] += (sell ? 1 : -1) * q.materials[g];
         (sell ? site.imported[g] : site.exported[g]) += q.materials[g];
@@ -80,9 +82,10 @@ std::string Economy::weaponTrade(const EconomicCommand& c, EconomyPlayer& player
         site.cash -= q.sellCents;
         player.credits += q.sellCents;
         externalMoneyDelta_ -= q.sellCents;
-        player.weaponLevel = 0;
+        fitted = 0;
         event(network_->sites[i].name + " / PLAYER WEAPON BUYBACK");
-        return "WEAPON SOLD / " + std::to_string(q.sellCents / 100) + " CR / MOUNT EMPTY";
+        return "WEAPON SOLD / " + std::to_string(q.sellCents / 100) + " CR / " +
+               std::string(weaponMountName(c.weaponMount)) + " EMPTY";
     }
     player.credits -= q.totalCents();
     externalMoneyDelta_ += q.totalCents();
@@ -91,9 +94,12 @@ std::string Economy::weaponTrade(const EconomicCommand& c, EconomyPlayer& player
         carrierCash_ += q.labourCents;
     else
         site.householdCash += q.labourCents;
-    player.weaponLevel = c.serviceUnits;
-    event(network_->sites[i].name + " / FITTED " + std::string(weaponSpec(player.weaponLevel).name));
-    return "WEAPON FITTED / " + std::string(weaponSpec(player.weaponLevel).name) + " / SPACE FIRE";
+    fitted = c.serviceUnits;
+    event(network_->sites[i].name + " / " + std::string(weaponMountName(c.weaponMount)) + " FITTED " +
+          std::string(weaponSpec(fitted).name));
+    return "WEAPON FITTED / " + std::string(weaponMountName(c.weaponMount)) + " / " +
+           std::string(weaponSpec(fitted).name) +
+           (c.weaponMount ? " / ASSIGN GUNNER IN F9" : " / SPACE FIRE");
 }
 std::string Economy::disableVessel(const EconomicCommand& c) {
     auto f = std::find_if(freight_.begin(), freight_.end(), [&](const auto& f) { return f.id == c.port; });

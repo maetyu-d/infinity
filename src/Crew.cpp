@@ -53,6 +53,9 @@ std::string_view crewOrderName(CrewOrder o) {
                                                     "REST"};
     return size_t(o) < names.size() ? names[size_t(o)] : "UNKNOWN";
 }
+std::string_view crewDutyName(const CrewMember& m) {
+    return m.duty == CrewStation::Weapons ? weaponMountName(m.weaponMount) : crewStationName(m.duty);
+}
 glm::dvec2 crewRoomPosition(CrewStation s) {
     const std::array<glm::dvec2, 7> positions{
         {{0, -4}, {-2, -1.5}, {2, -1.5}, {-2, 1.5}, {2, 1.5}, {-1, 4}, {1, 4}}};
@@ -63,6 +66,8 @@ ShipCrew::ShipCrew(uint64_t seed) : seed_(seed) {
         auto m = recruit(10001 + i);
         m.id = i + 1;
         m.duty = m.room = m.target = m.walkTo = CrewStation(i);
+        if (m.duty == CrewStation::Weapons)
+            m.weaponMount = 0;
         m.experience[i] = 120;
         members_.push_back(m);
     }
@@ -96,17 +101,68 @@ void ShipCrew::event(std::string s) {
 std::string ShipCrew::assign(size_t i, CrewStation s) {
     if (i >= members_.size() || !valid(s) || members_[i].health <= 0)
         return "NO FIT CREW SELECTED";
+    if (s == CrewStation::Weapons)
+        return manWeapon(i, 0);
     auto& m = members_[i];
     if (s != CrewStation::Bunks)
         for (size_t j = 0; j < members_.size(); ++j)
             if (j != i && members_[j].health > 0 && members_[j].duty == s) {
                 members_[j].duty = m.duty;
+                members_[j].weaponMount = m.duty == CrewStation::Weapons ? m.weaponMount : noWeaponMount;
                 members_[j].order = CrewOrder::Duty;
                 members_[j].target = m.duty;
                 members_[j].automatic = false;
             }
     m.duty = s;
+    m.weaponMount = noWeaponMount;
     return order(i, CrewOrder::Duty, s);
+}
+std::string ShipCrew::manWeapon(size_t i, unsigned mount) {
+    if (i >= members_.size() || members_[i].health <= 0 || mount >= maxWeaponMounts)
+        return "NO FIT CREW OR INVALID GUN CONSOLE";
+    if (mount && !weaponLevels_[mount])
+        return "EMPTY GUN MOUNT / FIT A LASER AT A PORT";
+    auto& m = members_[i];
+    for (size_t j = 0; j < members_.size(); ++j)
+        if (j != i && members_[j].health > 0 && members_[j].duty == CrewStation::Weapons &&
+            members_[j].weaponMount == mount) {
+            members_[j].duty = m.duty;
+            members_[j].weaponMount = m.duty == CrewStation::Weapons ? m.weaponMount : noWeaponMount;
+            members_[j].order = CrewOrder::Duty;
+            members_[j].target = m.duty;
+            members_[j].automatic = false;
+        }
+    m.duty = CrewStation::Weapons;
+    m.weaponMount = mount;
+    order(i, CrewOrder::Duty, CrewStation::Weapons);
+    return m.name + " / MAN " + std::string(weaponMountName(mount)) + " / WALK TO WEAPONS BAY";
+}
+double ShipCrew::gunnerReadiness(unsigned mount) const {
+    if (mount >= maxWeaponMounts || !weaponLevels_[mount])
+        return 0;
+    const auto& room = rooms_[size_t(CrewStation::Weapons)];
+    if (room.integrity <= 0 || room.oxygen < 18 || room.fire >= 25)
+        return 0;
+    for (const auto& m : members_)
+        if (m.health >= 20 && m.duty == CrewStation::Weapons && m.weaponMount == mount &&
+            m.order == CrewOrder::Duty && m.room == CrewStation::Weapons && m.travel <= 0)
+            return std::clamp(skill(m, CrewStation::Weapons) * room.integrity / 100., .2, 1.2);
+    return 0;
+}
+std::string ShipCrew::gunnerStatus(unsigned mount) const {
+    if (mount >= maxWeaponMounts || !weaponLevels_[mount])
+        return "EMPTY";
+    for (const auto& m : members_)
+        if (m.health > 0 && m.duty == CrewStation::Weapons && m.weaponMount == mount) {
+            if (m.health < 20)
+                return "INCAPACITATED";
+            if (m.order != CrewOrder::Duty)
+                return "CREW BUSY";
+            if (m.travel > 0 || m.room != CrewStation::Weapons)
+                return "CREW MOVING";
+            return gunnerReadiness(mount) > 0 ? "READY" : "BAY UNSAFE";
+        }
+    return "UNMANNED";
 }
 std::string ShipCrew::order(size_t i, CrewOrder o, CrewStation s) {
     if (i >= members_.size() || !valid(s) || unsigned(o) > unsigned(CrewOrder::Rest) ||
@@ -171,7 +227,8 @@ double ShipCrew::efficiency(CrewStation s) const {
         return 0;
     double best = 0;
     for (const auto& m : members_)
-        if (m.health >= 20 && m.travel <= 0 && m.room == s && m.order == CrewOrder::Duty)
+        if (m.health >= 20 && m.travel <= 0 && m.room == s && m.order == CrewOrder::Duty &&
+            (s != CrewStation::Weapons || m.weaponMount == 0))
             best = std::max(best, skill(m, s));
     return best * rooms_[size_t(s)].integrity / 100.;
 }
@@ -216,18 +273,18 @@ CrewStation ShipCrew::nextRoom(CrewStation from, CrewStation to) const {
         b = previous[b];
     return CrewStation(b);
 }
-void ShipCrew::advance(double seconds, double g, bool combat, bool firing) {
+void ShipCrew::advance(double seconds, double g, bool combat, bool firing, unsigned firingMounts) {
     if (!std::isfinite(seconds) || seconds <= 0 || seconds > 10 || !std::isfinite(g))
         return;
     accumulator_ += seconds;
     while (accumulator_ + 1e-10 >= .25) {
         accumulator_ = std::max(0., accumulator_ - .25);
-        step(std::clamp(g, 0., 20.), combat, firing);
+        step(std::clamp(g, 0., 20.), combat, firing ? (firingMounts & 7u) : 0);
     }
     if (accumulator_ < 1e-9)
         accumulator_ = 0;
 }
-void ShipCrew::step(double g, bool combat, bool firing) {
+void ShipCrew::step(double g, bool combat, unsigned firingMounts) {
     constexpr double dt = .25;
     const auto life = efficiency(CrewStation::LifeSupport);
     const auto coordination =
@@ -368,7 +425,8 @@ void ShipCrew::step(double g, bool combat, bool firing) {
                     worked |= heal > 0;
                 }
         } else if (m.order == CrewOrder::Duty && size_t(m.duty) < 6)
-            worked = m.duty != CrewStation::Weapons || firing;
+            worked = m.duty != CrewStation::Weapons ||
+                     (m.weaponMount < maxWeaponMounts && (firingMounts & (1u << m.weaponMount)));
         if (worked) {
             const auto job = m.order == CrewOrder::Aid    ? CrewStation::Medbay
                              : m.order == CrewOrder::Duty ? m.duty
@@ -418,6 +476,11 @@ CrewView ShipCrew::view(size_t selected, CrewStation station) const {
     for (size_t i = 0; i < members_.size(); ++i)
         v.tasks.push_back(task(i));
     v.rooms = rooms_;
+    v.weaponLevels = weaponLevels_;
+    for (unsigned i = 0; i < maxWeaponMounts; ++i) {
+        v.gunReadiness[i] = gunnerReadiness(i);
+        v.gunStatus[i] = gunnerStatus(i);
+    }
     v.spares = spares_;
     v.medical = medical_;
     v.autoDamageControl = automatic_;
@@ -492,6 +555,7 @@ void ShipCrew::reconcileMarket(uint64_t revision, std::span<const CrewTitle> tit
             return; // retain the paid boarding receipt until a berth opens
         auto m = boarding.member;
         m.duty = m.room = m.target = m.walkTo = CrewStation::Bunks;
+        m.weaponMount = noWeaponMount;
         m.order = CrewOrder::Duty;
         m.travel = m.travelDuration = 0;
         m.automatic = false;
@@ -512,7 +576,7 @@ void ShipCrew::reconcileMarket(uint64_t revision, std::span<const CrewTitle> tit
 }
 std::string ShipCrew::serialize() const {
     std::ostringstream o;
-    o << std::setprecision(17) << "INFINITE_CREW 2 " << seed_ << ' ' << impacts_ << ' ' << receipts_.hired
+    o << std::setprecision(17) << "INFINITE_CREW 3 " << seed_ << ' ' << impacts_ << ' ' << receipts_.hired
       << ' ' << receipts_.supplied << ' ' << receipts_.treated << ' ' << spares_ << ' ' << medical_ << ' '
       << previousHull_ << ' ' << accumulator_ << ' ' << automatic_ << ' ' << marketRevision_ << ' '
       << members_.size();
@@ -520,7 +584,7 @@ std::string ShipCrew::serialize() const {
         o << ' ' << m.id << ' ' << std::quoted(m.name) << ' ' << m.trait << ' ' << unsigned(m.duty) << ' '
           << unsigned(m.room) << ' ' << unsigned(m.target) << ' ' << unsigned(m.walkTo) << ' '
           << unsigned(m.order) << ' ' << m.health << ' ' << m.fatigue << ' ' << m.morale << ' ' << m.travel
-          << ' ' << m.travelDuration << ' ' << m.automatic;
+          << ' ' << m.travelDuration << ' ' << m.automatic << ' ' << m.weaponMount;
         for (auto x : m.experience)
             o << ' ' << x;
     }
@@ -535,6 +599,7 @@ bool ShipCrew::restore(std::string_view text) {
     if (text.size() > 65536)
         return false;
     ShipCrew c(seed_);
+    c.weaponLevels_ = weaponLevels_;
     c.members_.clear();
     std::istringstream in{std::string(text)};
     std::string h;
@@ -544,7 +609,7 @@ bool ShipCrew::restore(std::string_view text) {
     uint64_t seed;
     if (!(in >> h >> v >> seed >> c.impacts_ >> c.receipts_.hired >> c.receipts_.supplied >>
           c.receipts_.treated >> c.spares_ >> c.medical_ >> c.previousHull_ >> c.accumulator_ >> automatic) ||
-        h != "INFINITE_CREW" || (v != 1 && v != 2) || seed != seed_ || automatic > 1 ||
+        h != "INFINITE_CREW" || (v < 1 || v > 3) || seed != seed_ || automatic > 1 ||
         c.impacts_ > 1000000000000ULL || c.receipts_.hired > 1000000 || c.receipts_.supplied > 1000000 ||
         c.receipts_.treated > 1000000 || !range(c.spares_, 0, 100) || !range(c.medical_, 0, 50) ||
         !range(c.previousHull_, -1, 100) || !range(c.accumulator_, 0, .25) ||
@@ -556,7 +621,7 @@ bool ShipCrew::restore(std::string_view text) {
         return false;
     c.automatic_ = automatic;
     std::set<uint64_t> ids;
-    std::set<unsigned> duties;
+    std::set<std::pair<unsigned, unsigned>> duties;
     for (size_t i = 0; i < count; ++i) {
         CrewMember m;
         unsigned duty, room, target, walk, order, autoOrder;
@@ -570,7 +635,16 @@ bool ShipCrew::restore(std::string_view text) {
             !range(m.travel, 0, 20) || !range(m.travelDuration, 0, 20) || m.travel > m.travelDuration ||
             !ids.insert(m.id).second)
             return false;
-        if (m.health > 0 && duty != unsigned(CrewStation::Bunks) && !duties.insert(duty).second)
+        if (v >= 3) {
+            if (!(in >> m.weaponMount))
+                return false;
+        } else
+            m.weaponMount = duty == unsigned(CrewStation::Weapons) ? 0 : noWeaponMount;
+        if ((duty == unsigned(CrewStation::Weapons) && m.weaponMount >= maxWeaponMounts) ||
+            (duty != unsigned(CrewStation::Weapons) && m.weaponMount != noWeaponMount))
+            return false;
+        if (m.health > 0 && duty != unsigned(CrewStation::Bunks) &&
+            !duties.insert({duty, m.weaponMount}).second)
             return false;
         if (m.travel > 0 &&
             (m.health <= 0 || std::none_of(corridors.begin(), corridors.end(), [&](const auto& edge) {

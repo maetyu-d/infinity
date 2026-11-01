@@ -198,6 +198,7 @@ std::string Economy::crewTrade(const EconomicCommand& c, EconomyPlayer& player, 
         std::erase_if(player.crewBoarding, [&](const auto& b) { return b.member.id == lost->id; });
     }
     person.duty = person.room = person.target = person.walkTo = CrewStation::Bunks;
+    person.weaponMount = noWeaponMount;
     person.order = CrewOrder::Duty;
     person.travel = person.travelDuration = 0;
     person.automatic = false;

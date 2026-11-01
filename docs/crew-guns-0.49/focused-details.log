@@ -1,0 +1,19 @@
+Start testing: Nov 01 18:16 GMT
+----------------------------------------------------------
+1/102 Testing: crewed_weapon_stations
+1/102 Test: crewed_weapon_stations
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_crew_guns_tests" "/Users/user/Documents/SC tutorial/Infinite/build/crew-guns/runtime-test"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"crewed_weapon_stations" start time: Nov 01 18:16 GMT
+Output:
+----------------------------------------------------------
+209 crewed weapon mount, manning, heat, damage, trading, migration and restart checks passed
+<end of output>
+Test time =   3.87 sec
+----------------------------------------------------------
+Test Passed.
+"crewed_weapon_stations" end time: Nov 01 18:16 GMT
+"crewed_weapon_stations" time elapsed: 00:00:03
+----------------------------------------------------------
+
+End testing: Nov 01 18:16 GMT

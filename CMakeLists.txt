@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Infinite VERSION 0.48.0 LANGUAGES C CXX)
+project(Infinite VERSION 0.49.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -39,6 +39,10 @@ else()
   target_compile_options(infinite_performance_tests PRIVATE -ffp-contract=off)
 endif()
 enable_testing()
+add_executable(infinite_crew_guns_tests tests/CrewGunTests.cpp)
+target_link_libraries(infinite_crew_guns_tests PRIVATE infinite_core)
+add_test(NAME crewed_weapon_stations COMMAND infinite_crew_guns_tests "${CMAKE_BINARY_DIR}/crew-guns/runtime-test")
+set_tests_properties(crewed_weapon_stations PROPERTIES TIMEOUT 180)
 target_sources(infinite_core PRIVATE src/Crew.cpp)
 target_sources(infinite_core PRIVATE src/CrewOperations.cpp)
 target_sources(infinite_core PRIVATE src/EconomyCrew.cpp)
@@ -224,6 +228,13 @@ if(INFINITE_VIEWER)
   endif()
   if(INFINITE_GPU_TESTS)
     find_package(Python3 3.9 COMPONENTS Interpreter REQUIRED)
+    add_test(NAME native_crew_guns_loop COMMAND "${CMAKE_COMMAND}"
+      "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/crew-guns/native"
+      -P "${PROJECT_SOURCE_DIR}/cmake/RunCrewGuns.cmake")
+    set_tests_properties(native_crew_guns_loop PROPERTIES FIXTURES_SETUP crew_guns_captures TIMEOUT 300)
+    add_test(NAME native_crew_guns_images COMMAND "${Python3_EXECUTABLE}"
+      "${PROJECT_SOURCE_DIR}/tools/check_crew_guns_captures.py" "${CMAKE_BINARY_DIR}/crew-guns/native")
+    set_tests_properties(native_crew_guns_images PROPERTIES FIXTURES_REQUIRED crew_guns_captures TIMEOUT 60)
     add_test(NAME native_crew_flight_loop COMMAND "${CMAKE_COMMAND}"
       "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/crew-flight/native"
       -P "${PROJECT_SOURCE_DIR}/cmake/RunCrewFlight.cmake")

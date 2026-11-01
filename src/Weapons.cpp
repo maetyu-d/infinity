@@ -71,14 +71,36 @@ double meshHit(const Universe& u, const WeaponRay& ray, const Geometry& g, doubl
 const WeaponSpec& weaponSpec(unsigned level) {
     return specs.at(std::clamp(level, 1u, maxWeaponLevel) - 1);
 }
+void WeaponSystem::setLoadout(const std::array<unsigned, maxWeaponMounts>& levels) {
+    for (unsigned i = 0; i < maxWeaponMounts; ++i)
+        mounts_[i].level = std::min(levels[i], maxWeaponLevel);
+}
+void WeaponSystem::setMountReadiness(unsigned mount, double readiness) {
+    if (mount >= maxWeaponMounts || !std::isfinite(readiness))
+        return;
+    if (mount == 0) {
+        setCrewReadiness(readiness);
+        return;
+    }
+    mounts_[mount].crewReadiness = readiness <= 0 ? 0 : std::clamp(readiness, .2, 1.2);
+}
+unsigned WeaponSystem::firingMask() const {
+    unsigned mask = 0;
+    for (const auto& s : shots_)
+        if (!s.enemy && s.mount < maxWeaponMounts)
+            mask |= 1u << s.mount;
+    return mask;
+}
 void WeaponSystem::advance(double dt) {
     if (!std::isfinite(dt) || dt <= 0)
         return;
     dt = std::min(dt, 60.);
-    cooldown_ = std::max(0., cooldown_ - dt);
-    heat_ = std::max(0., heat_ - weaponSpec(level_).cooling * crewReadiness_ * dt);
-    if (heat_ <= 35)
-        overheated_ = false;
+    for (auto& m : mounts_) {
+        m.cooldown = std::max(0., m.cooldown - dt);
+        m.heat = std::max(0., m.heat - weaponSpec(m.level).cooling * std::max(.65, m.crewReadiness) * dt);
+        if (m.heat <= 35)
+            m.overheated = false;
+    }
     for (auto& s : shots_)
         s.age += dt;
     std::erase_if(shots_, [](const auto& s) { return s.age > .16; });
@@ -179,22 +201,47 @@ WeaponTrace traceWeapon(const Universe& u, const WeaponRay& ray, double rangeMet
 }
 bool WeaponSystem::fire(const Universe& u, const WeaponRay& input, std::span<const ActivityBody> targets,
                         const Geometry* geometry) {
-    if (!level_ || cooldown_ > 1e-9 || overheated_ || !finite(input.origin) || !finite(input.direction) ||
-        !finite(input.right) || !std::isfinite(input.scale) || input.scale < 1e-12 || input.scale > 1 ||
-        !std::isfinite(input.seconds) || input.seconds < 0 || input.seconds > 1e12 ||
-        glm::length(input.direction) < .99 || glm::length(input.direction) > 1.01 ||
-        shotsFired_ >= 1000000000000ULL)
+    return fireMount(0, u, input, targets, geometry);
+}
+unsigned WeaponSystem::fireBattery(const Universe& u, const WeaponRay& ray,
+                                   std::span<const ActivityBody> targets, const Geometry* geometry) {
+    unsigned fired = 0;
+    for (unsigned i = 0; i < maxWeaponMounts; ++i)
+        if (fireMount(i, u, ray, targets, geometry))
+            fired |= 1u << i;
+    return fired;
+}
+bool WeaponSystem::fireMount(unsigned mount, const Universe& u, const WeaponRay& input,
+                             std::span<const ActivityBody> targets, const Geometry* geometry) {
+    if (mount >= maxWeaponMounts)
+        return false;
+    auto& m = mounts_[mount];
+    if (!m.level || m.crewReadiness <= 0 || m.cooldown > 1e-9 || m.overheated || !finite(input.origin) ||
+        !finite(input.direction) || !finite(input.right) || !std::isfinite(input.scale) ||
+        input.scale < 1e-12 || input.scale > 1 || !std::isfinite(input.seconds) || input.seconds < 0 ||
+        input.seconds > 1e12 || glm::length(input.direction) < .99 || glm::length(input.direction) > 1.01 ||
+        m.shotsFired >= 1000000000000ULL || (mount && std::abs(glm::length(input.right) - 1) > .01))
         return false;
     WeaponRay ray = input;
+    if (mount)
+        ray.origin += ray.right * ((mount == 1 ? -4. : 4.) * ray.scale);
     ray.direction = glm::normalize(ray.direction);
-    const auto& spec = weaponSpec(level_);
-    if (heat_ + spec.heatPerShot > 100) {
-        overheated_ = true;
+    const auto& spec = weaponSpec(m.level);
+    if (m.heat + spec.heatPerShot > 100) {
+        m.overheated = true;
         return false;
     }
     std::vector<ActivityBody> presented(targets.begin(), targets.end());
     for (auto& body : presented)
         apply(body);
+    if (mount) {
+        // A crewed console aligns its own muzzle with the captain's sight line.
+        // Trace again from that muzzle so nearby cover can still block the shot.
+        const auto sight = traceWeapon(u, input, spec.rangeMetres * ray.scale, presented, geometry);
+        if (sight.distance > 6 * ray.scale)
+            ray.direction =
+                glm::normalize(input.origin + glm::normalize(input.direction) * sight.distance - ray.origin);
+    }
     const auto trace = traceWeapon(u, ray, spec.rangeMetres * ray.scale, presented, geometry);
     const auto limit = trace.distance;
     const auto& chosen = trace.body;
@@ -216,30 +263,56 @@ bool WeaponSystem::fire(const Universe& u, const WeaponRay& input, std::span<con
             disabled = it->hull == 0;
         }
     }
-    ++shotsFired_;
-    heat_ += spec.heatPerShot;
-    cooldown_ = spec.interval / crewReadiness_;
+    ++m.shotsFired;
+    m.heat += spec.heatPerShot;
+    m.cooldown = spec.interval / m.crewReadiness;
     if (shots_.size() >= 12)
         shots_.erase(shots_.begin());
     shots_.push_back({ray.reference,
                       ray.origin + ray.direction * (6 * ray.scale) +
-                          ray.right * ((shotsFired_ & 1 ? 1.1 : -1.1) * ray.scale),
+                          ray.right * ((m.shotsFired & 1 ? 1.1 : -1.1) * ray.scale),
                       ray.origin + ray.direction * limit, 0, ray.scale, surface || bool(chosen), disabled,
-                      level_});
+                      m.level, false, mount});
     return true;
 }
 void WeaponSystem::annotate(FlightInstruments& t, bool inhibited) const {
-    t.weapon = level_ ? std::string(weaponSpec(level_).name) : "NO WEAPON FITTED";
-    t.weaponHeat = heat_;
-    t.weaponStatus = !level_       ? "F2 WEAPONS / BUY A LASER"
-                     : inhibited   ? "WEAPON INHIBITED"
-                     : overheated_ ? "OVERHEAT / COOLING"
-                                   : "SPACE FIRE";
+    const auto& m = mounts_[0];
+    t.weaponBattery = mounts_[1].level || mounts_[2].level;
+    t.weapon = m.level ? std::string(weaponSpec(m.level).name) : "NO WEAPON FITTED";
+    t.weaponHeat = m.heat;
+    t.weaponStatus = !m.level       ? "F2 WEAPONS / BUY A LASER"
+                     : inhibited    ? "WEAPON INHIBITED"
+                     : m.overheated ? "OVERHEAT / COOLING"
+                                    : "SPACE FIRE";
+    if (t.weaponBattery) {
+        t.weapon = "HEAT ";
+        t.weaponStatus.clear();
+        constexpr std::array<std::string_view, 3> names{"N", "P", "S"};
+        for (unsigned i = 0; i < maxWeaponMounts; ++i) {
+            const auto& s = mounts_[i];
+            if (i)
+                t.weapon += "/";
+            t.weapon += std::string(names[i]) + ":" + std::string(weaponGrade(s.level)) +
+                        (s.level ? " " + std::to_string(int(s.heat)) : "");
+            t.weaponHeat = std::max(t.weaponHeat, s.heat);
+            if (i && s.level) {
+                if (!t.weaponStatus.empty())
+                    t.weaponStatus += " / ";
+                t.weaponStatus += std::string(names[i]) + (s.crewReadiness <= 0 ? " UNMANNED"
+                                                           : s.overheated       ? " HOT"
+                                                           : s.cooldown > 0     ? " RELOAD"
+                                                                                : " READY");
+            }
+        }
+        t.weaponStatus = inhibited ? "BATTERY INHIBITED" : t.weaponStatus + " / SPACE FIRE";
+    }
 }
 std::string WeaponSystem::serialize() const {
     std::ostringstream o;
-    o << std::setprecision(17) << "INFINITE_COMBAT 1 " << heat_ << ' ' << cooldown_ << ' ' << overheated_
-      << ' ' << shotsFired_ << ' ' << damage_.size();
+    o << std::setprecision(17) << "INFINITE_COMBAT 2";
+    for (const auto& m : mounts_)
+        o << ' ' << m.heat << ' ' << m.cooldown << ' ' << m.overheated << ' ' << m.shotsFired;
+    o << ' ' << damage_.size();
     for (const auto& d : damage_)
         o << ' ' << d.id.str() << ' ' << d.hull << ' ' << d.hitSeconds << ' ' << d.position.x << ' '
           << d.position.y << ' ' << d.position.z << ' ' << d.orientation.w << ' ' << d.orientation.x << ' '
@@ -249,17 +322,24 @@ std::string WeaponSystem::serialize() const {
 bool WeaponSystem::restore(std::string_view text, const Universe& u) {
     try {
         WeaponSystem p;
-        p.level_ = level_;
+        for (unsigned i = 0; i < maxWeaponMounts; ++i)
+            p.mounts_[i].level = mounts_[i].level;
         std::istringstream in{std::string(text)};
         std::string h;
         unsigned v, hot;
         size_t count;
-        if (!(in >> h >> v >> p.heat_ >> p.cooldown_ >> hot >> p.shotsFired_ >> count) ||
-            h != "INFINITE_COMBAT" || v != 1 || !std::isfinite(p.heat_) || p.heat_ < 0 || p.heat_ > 100 ||
-            !std::isfinite(p.cooldown_) || p.cooldown_ < 0 || p.cooldown_ > 1 || hot > 1 ||
-            p.shotsFired_ > 1000000000000ULL || count > 2048)
+        if (!(in >> h >> v) || h != "INFINITE_COMBAT" || (v != 1 && v != 2))
             return false;
-        p.overheated_ = hot;
+        for (unsigned j = 0; j < (v == 1 ? 1u : maxWeaponMounts); ++j) {
+            auto& m = p.mounts_[j];
+            if (!(in >> m.heat >> m.cooldown >> hot >> m.shotsFired) || !std::isfinite(m.heat) ||
+                m.heat < 0 || m.heat > 100 || !std::isfinite(m.cooldown) || m.cooldown < 0 ||
+                m.cooldown > 2 || hot > 1 || m.shotsFired > 1000000000000ULL)
+                return false;
+            m.overheated = hot;
+        }
+        if (!(in >> count) || count > 2048)
+            return false;
         for (size_t i = 0; i < count; ++i) {
             WeaponDamage d;
             std::string id;

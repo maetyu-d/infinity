@@ -1,5 +1,7 @@
 # INFINITE
 
+**0.49:** two optional extra laser mounts with separate crew consoles, heat and reload state. **F2 → F5 → Weapons**, then **Left/Right** selects nose, port or starboard; **Enter** fits/upgrades and **Backspace** sells that mount. In **F9**, select crew and click a gun button or press **Ctrl+1/2/3** to assign a console. **Space** fires the nose gun and each ready, manned auxiliary. [Crewed guns, controls and validation](docs/CREW_GUNS_0_49.md).
+
 **0.48:** **F9** opens a compact in-flight crew console while the helm, roll and weapons remain live. Select crew and rooms, assign stations, repair, fight fires, give first aid, rest relief crew, or dispatch emergency responders. Best Stations matches skills and condition to duties; live task reports show travel and blocked work. **F8** retains the full deck and port services. [In-flight crew controls and validation](docs/CREW_FLIGHT_0_48.md).
 
 **0.47:** named crew can be bought and sold at connected ports. **F2 → F5 → Crew Market** shows individual offers, skills, condition and bid/ask prices; **Enter** buys, **Backspace** sells. People retain their identity and experience through sale, repurchase and reload. **F8** retains stations and damage control, with direct crew trading shortcuts. [Crew market controls and validation](docs/CREW_TRADE_0_47.md).

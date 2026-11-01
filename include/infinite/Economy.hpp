@@ -174,12 +174,19 @@ struct EconomyPlayer {
     uint64_t deliveries = 0, lateDeliveries = 0, returnedHauls = 0;
     int64_t freightEarnings = 0;
     unsigned weaponLevel = 1; // existing saves receive the same starter laser as new ships
+    unsigned weaponAt(unsigned mount) const {
+        return mount == 0 ? weaponLevel : mount < maxWeaponMounts ? extraWeapons[mount - 1] : 0;
+    }
+    std::array<unsigned, maxWeaponMounts> weaponLoadout() const {
+        return {weaponLevel, extraWeapons[0], extraWeapons[1]};
+    }
     unsigned cargoLevel = 0;
     uint64_t repairPoints = 0; // durable cumulative receipt; the ship applies each point once
     CrewReceipts crew;
     uint64_t crewRevision = 0;
     std::vector<CrewTitle> crewTitles;
     std::vector<CrewBoarding> crewBoarding;
+    std::array<unsigned, maxWeaponMounts - 1> extraWeapons{};
     int64_t massKg() const;
     int64_t volumeLitres() const;
     int64_t availableCargo(Good) const;
@@ -229,6 +236,7 @@ struct EconomicCommand {
     uint64_t crewId = 0;
     unsigned crewAboard = maxShipCrew;
     std::optional<CrewMember> person; // sale/release snapshot, or casualty whose berth a purchase fills
+    unsigned weaponMount = 0;
 };
 inline constexpr size_t maxPortCrew = 16, maxCrewMarkets = 128, maxCrewTitles = 8192;
 struct PortCrewMarket {
@@ -280,7 +288,8 @@ struct WeaponQuote {
     }
 };
 Stock weaponMaterials(unsigned level);
-WeaponQuote economicWeaponQuote(const struct EconomySnapshot&, size_t, unsigned level, bool sell = false);
+WeaponQuote economicWeaponQuote(const struct EconomySnapshot&, size_t, unsigned level, bool sell = false,
+                                unsigned mount = 0);
 int64_t economicPendingPayload(const EconomicCommand&, const EconomicSiteState&);
 class Economy {
   public:
@@ -439,6 +448,7 @@ struct MarketContext {
     double hull = 100, cruiseSpeed = 9.4607304725808e17;
     std::optional<glm::dvec3> systemPosition;
     std::span<const CrewMember> crew;
+    unsigned weaponMount = 0;
 };
 struct EconomicJobPlan {
     double pickupMetres = 0, deliveryMetres = 0, seconds = 0, slackSeconds = 0;
@@ -480,6 +490,7 @@ struct MarketView {
     std::string activeJob;
     int64_t capacityKg = 4000, capacityLitres = 8000;
     std::string plan, planTiming;
+    unsigned weaponMount = 0;
 };
 void economicOutcomeView(MarketView&, const EconomySnapshot&, size_t selected);
 MarketView economicMarketView(const EconomySnapshot*, const std::optional<ActivityId>&, size_t selected,

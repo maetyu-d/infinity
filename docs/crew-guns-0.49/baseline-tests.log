@@ -1,0 +1,13 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 2: crew_commodity_market
+    Start 5: weapons_combat_and_equipment
+1/4 Test #5: weapons_combat_and_equipment .....   Passed   13.31 sec
+    Start 3: player_crew_and_damage_control
+2/4 Test #3: player_crew_and_damage_control ...   Passed    6.57 sec
+    Start 1: inflight_crew_management
+3/4 Test #1: inflight_crew_management .........   Passed    0.98 sec
+4/4 Test #2: crew_commodity_market ............   Passed   25.40 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =  25.43 sec

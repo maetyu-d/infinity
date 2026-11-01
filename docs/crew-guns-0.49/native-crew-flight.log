@@ -1,0 +1,10 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+CREW_FLIGHT_CAPTURE crew-flight-stations speed=343.322 spares=30
+CREW_FLIGHT_CAPTURE crew-flight-orders speed=420.651 spares=30
+CREW_FLIGHT_CAPTURE crew-flight-emergency speed=498.939 spares=30
+CREW_FLIGHT_CAPTURE crew-flight-response speed=577.773 spares=30
+CREW_FLIGHT_CAPTURE crew-flight-portrait speed=1409.13 spares=20.7281
+PASS: native live helm and roll, crew orders, station matching, emergency response, real repair and first aid, unchanged ship at command dispatch, persistence and portrait console
+FRAME median_ms=67.388 p95_ms=142.298 frames=274 cache_bytes=9963744
+peak_rss_bytes=147259392

@@ -21,6 +21,11 @@ CrewTaskView ShipCrew::task(size_t i) const {
     const auto& room = rooms_[size_t(m.target)];
     v.status = std::string(crewOrderName(m.order));
     v.detail = std::string(crewStationName(m.target));
+    if (m.duty == CrewStation::Weapons && m.order == CrewOrder::Duty) {
+        v.detail = std::string(weaponMountName(m.weaponMount)) + " / " + gunnerStatus(m.weaponMount);
+        v.blocked = m.weaponMount >= maxWeaponMounts || !weaponLevels_[m.weaponMount] ||
+                    gunnerStatus(m.weaponMount) == "BAY UNSAFE";
+    }
     if (m.order == CrewOrder::Repair && (spares_ <= 0 || room.fire >= 5)) {
         v.detail = spares_ <= 0 ? "SPARES EMPTY / RESUPPLY AT PORT" : "FIRE TOO HOT / EXTINGUISH FIRST";
         v.blocked = true;
@@ -43,7 +48,8 @@ CrewTaskView ShipCrew::task(size_t i) const {
     if (v.travelSeconds > 0) {
         v.status = "MOVING " + std::to_string(int(std::ceil(v.travelSeconds))) + "S";
         if (!v.blocked)
-            v.detail = std::string(crewOrderName(m.order)) + " / " + std::string(crewStationName(m.target));
+            v.detail = std::string(crewOrderName(m.order)) + " / " +
+                       std::string(m.order == CrewOrder::Duty ? crewDutyName(m) : crewStationName(m.target));
     } else if (!v.blocked) {
         if (m.order == CrewOrder::Repair)
             v.detail = "SYSTEM " + std::to_string(int(room.integrity)) + "% / BREACH " +
@@ -59,15 +65,20 @@ CrewTaskView ShipCrew::task(size_t i) const {
     return v;
 }
 std::string ShipCrew::bestStations() {
-    // Six stations and at most eight people: bounded maximum-weight matching.
-    // Skipped stations stay vacant when fewer than six crew are fit for duty.
+    // Working rooms plus installed gun consoles, with at most eight people.
+    std::vector<std::pair<CrewStation, unsigned>> roles;
+    for (unsigned s = 0; s < 6; ++s)
+        roles.push_back({CrewStation(s), s == 2 ? 0u : noWeaponMount});
+    for (unsigned gun = 1; gun < maxWeaponMounts; ++gun)
+        if (weaponLevels_[gun])
+            roles.push_back({CrewStation::Weapons, gun});
     constexpr size_t masks = size_t(1) << maxShipCrew;
     std::array<double, masks> score, next;
-    std::array<std::array<unsigned, masks>, 7> parent{};
-    std::array<std::array<int, masks>, 7> worker{};
+    std::array<std::array<unsigned, masks>, maxShipCrew + 1> parent{};
+    std::array<std::array<int, masks>, maxShipCrew + 1> worker{};
     score.fill(-1e20);
     score[0] = 0;
-    for (size_t station = 0; station < 6; ++station) {
+    for (size_t station = 0; station < roles.size(); ++station) {
         next = score;
         for (size_t mask = 0; mask < masks; ++mask) {
             parent[station + 1][mask] = unsigned(mask);
@@ -76,12 +87,15 @@ std::string ShipCrew::bestStations() {
         for (size_t mask = 0; mask < masks; ++mask)
             if (score[mask] > -1e19)
                 for (size_t i = 0; i < members_.size(); ++i) {
-                    const auto fit = stationFit(i, CrewStation(station));
+                    const auto fit = stationFit(i, roles[station].first);
                     if ((mask & (size_t(1) << i)) || fit <= 0)
                         continue;
                     const auto target = mask | (size_t(1) << i);
-                    const auto value =
-                        score[mask] + fit + (members_[i].duty == CrewStation(station) ? .02 : 0);
+                    const auto value = score[mask] + fit + (station < 6 ? 2 : 0) +
+                                       (members_[i].duty == roles[station].first &&
+                                                members_[i].weaponMount == roles[station].second
+                                            ? .02
+                                            : 0);
                     if (value > next[target] + 1e-12) {
                         next[target] = value;
                         parent[station + 1][target] = unsigned(mask);
@@ -93,11 +107,14 @@ std::string ShipCrew::bestStations() {
     auto mask = size_t(std::max_element(score.begin(), score.end()) - score.begin());
     std::array<CrewStation, maxShipCrew> duties;
     duties.fill(CrewStation::Bunks);
+    std::array<unsigned, maxShipCrew> guns;
+    guns.fill(noWeaponMount);
     unsigned assigned = 0;
-    for (size_t station = 6; station > 0; --station) {
+    for (size_t station = roles.size(); station > 0; --station) {
         const auto i = worker[station][mask];
         if (i >= 0) {
-            duties[size_t(i)] = CrewStation(station - 1);
+            duties[size_t(i)] = roles[station - 1].first;
+            guns[size_t(i)] = roles[station - 1].second;
             ++assigned;
         }
         mask = parent[station][mask];
@@ -105,9 +122,11 @@ std::string ShipCrew::bestStations() {
     for (size_t i = 0; i < members_.size(); ++i)
         if (members_[i].health > 0) {
             members_[i].duty = duties[i];
+            members_[i].weaponMount = guns[i];
             order(i, duties[i] == CrewStation::Bunks ? CrewOrder::Rest : CrewOrder::Duty, duties[i]);
         }
-    const auto result = "BEST STATIONS / " + std::to_string(assigned) + "/6 STAFFED / RELIEF TO BUNKS";
+    const auto result = "BEST STATIONS / " + std::to_string(assigned) + "/" + std::to_string(roles.size()) +
+                        " STAFFED / RELIEF TO BUNKS";
     event(result);
     return result;
 }

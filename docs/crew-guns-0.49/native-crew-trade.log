@@ -1,0 +1,9 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+CREW_TRADE_CAPTURE crew-trade-buy crew=6 credits=250000
+CREW_TRADE_CAPTURE crew-trade-aboard crew=7 credits=215126
+CREW_TRADE_CAPTURE crew-trade-sold crew=6 credits=236693
+CREW_TRADE_CAPTURE crew-trade-portrait crew=7 credits=201819
+PASS: native named crew buy, paid sale, finite port stock, identical-person repurchase, durable ownership, no resale money creation and fitted portrait crew market
+FRAME median_ms=132.05 p95_ms=227.792 frames=217 cache_bytes=11291368
+peak_rss_bytes=141492224
