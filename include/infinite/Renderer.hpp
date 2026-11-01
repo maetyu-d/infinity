@@ -12,6 +12,7 @@ namespace infinite {
 struct CockpitViewport;
 struct EconomySnapshot;
 struct MarketView;
+class WeaponSystem;
 struct FrameStats {
     double cpuMs = 0, gpuMs = 0, submitMs = 0;
     double cockpitMotionDegrees = 0, cockpitMotionMetres = 0;
@@ -57,10 +58,12 @@ class Renderer {
     std::shared_ptr<const Geometry> galaxySamples() const;
     std::span<const CelestialContact> celestialContacts() const;
     std::span<const ActivityContact> activityContacts() const;
+    std::span<const ActivityBody> weaponTargets() const;
     std::optional<ActivityId> pickActivity(double x, double y) const;
     std::shared_ptr<const SurfaceWorld> surfaceWorld(const Address&) const;
     uint64_t terrainGeometryDigest() const;
     CockpitViewport cockpitViewport() const;
+    void setWeapons(const WeaponSystem*);
     void setActivity(const ActivityState*);
     void setEconomy(std::shared_ptr<const EconomySnapshot>, const MarketView*);
     void setMode(RenderMode);

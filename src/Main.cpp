@@ -21,6 +21,7 @@
 #include "infinite/Flight.hpp"
 #include "infinite/Piloting.hpp"
 #include "infinite/Renderer.hpp"
+#include "infinite/Weapons.hpp"
 #include <SDL3/SDL.h>
 #include <algorithm>
 #include <chrono>
@@ -157,7 +158,7 @@ static Options options(int argc, char** argv) {
                    "assist, "
                    "J navigate, L land, Enter launch, G gear, N long cruise, Z shrink, comma/period "
                    "size, Y planets, Shift-Y moons, V explorer. "
-                   "C mouse helm, arrows pitch/yaw, right-drag look, "
+                   "Space fire laser, C mouse helm, arrows pitch/yaw, right-drag look, "
                    "-/+ speed, Shift boost, Ctrl fine, scroll scale, click select, F focus, "
                    "Backspace parent, F1 controls, F7 cockpit motion, Tab overlay, R reset, M marker, P "
                    "screenshot, T tour, Esc "
@@ -179,7 +180,7 @@ static Options options(int argc, char** argv) {
             std::cout
                 << "Hyperion rendering. --render-mode hyperion --presentation-test --visual-time SECONDS\n";
             std::cout
-                << "F2 market, F5 goods/routes/industry/jobs/services/outcomes; arrows select, Enter "
+                << "F2 market, F5 goods/routes/industry/jobs/services/outcomes/weapons; arrows select, Enter "
                    "buy/fund/deliver, "
                    "Backspace "
                    "sell/collect; F3 supply "
@@ -337,10 +338,20 @@ int main(int argc, char** argv) {
             }
             if (opt.smoke)
                 activity.seconds = opt.visualTime >= 0 ? opt.visualTime : 12;
+            WeaponSystem weapons;
+            if (!opt.smoke) {
+                std::ifstream file(data / ("combat-" + std::to_string(universe.seed()) + ".txt"));
+                std::string text;
+                if (std::getline(file, text))
+                    weapons.restore(text, universe);
+            }
+            renderer.setWeapons(&weapons);
             renderer.setActivity(&activity);
             std::unique_ptr<EconomyRuntime> economy;
             if (!opt.smoke || opt.economyTest)
                 economy = std::make_unique<EconomyRuntime>(universe, data);
+            if (!opt.smoke)
+                weapons.setLevel(0); // wait for the authoritative saved mount
             std::shared_ptr<const EconomySnapshot> economicSnapshot;
             MarketView marketView;
             bool marketOpen = false;
@@ -357,6 +368,7 @@ int main(int argc, char** argv) {
                 return marketPage == MarketPage::Goods      ? goodCount
                        : marketPage == MarketPage::Industry ? facilityModuleCount
                        : marketPage == MarketPage::Services ? 2
+                       : marketPage == MarketPage::Weapons  ? maxWeaponLevel
                        : marketPage == MarketPage::Outcomes
                            ? std::max<size_t>(1, economicSnapshot ? economicSnapshot->outcomes.size() : 0)
                        : marketPage == MarketPage::Jobs
@@ -476,6 +488,18 @@ int main(int argc, char** argv) {
                         facilityRefit(command.module,
                                       economicSnapshot->sites[*i].modules[size_t(command.module)] + 1)
                             .labourCents;
+                if (action == EconomicAction::FitWeapon || action == EconomicAction::SellWeapon) {
+                    command.serviceUnits = action == EconomicAction::SellWeapon
+                                               ? economicSnapshot->player.weaponLevel
+                                               : unsigned(marketGood + 1);
+                    auto q = economicWeaponQuote(*economicSnapshot, *i, command.serviceUnits,
+                                                 action == EconomicAction::SellWeapon);
+                    if (!q.available) {
+                        marketSay(q.status);
+                        return;
+                    }
+                    command.limitCents = action == EconomicAction::SellWeapon ? q.sellCents : q.totalCents();
+                }
                 if (action == EconomicAction::RepairHull || action == EconomicAction::UpgradeCargo) {
                     command.serviceUnits =
                         action == EconomicAction::RepairHull
@@ -505,8 +529,8 @@ int main(int argc, char** argv) {
             };
             std::unique_ptr<EconomyValidation> economyProof;
             if (opt.economyTest)
-                economyProof =
-                    std::make_unique<EconomyValidation>(universe, nav, pilot, *economy, activity, window);
+                economyProof = std::make_unique<EconomyValidation>(universe, nav, pilot, *economy, activity,
+                                                                   window, weapons);
             std::unique_ptr<SurfaceValidation> surfaceProof;
             if (opt.surfaceTest)
                 surfaceProof = std::make_unique<SurfaceValidation>(universe, nav, pilot, activity);
@@ -520,6 +544,10 @@ int main(int argc, char** argv) {
             std::unique_ptr<PlanetDiversityValidation> diversityProof;
             if (opt.diversityTest)
                 diversityProof = std::make_unique<PlanetDiversityValidation>(universe, nav, pilot, activity);
+            auto damagedBody = [&](ActivityBody body) {
+                weapons.apply(body);
+                return body;
+            };
             auto activityBody = [&]() -> std::optional<ActivityBody> {
                 if (!activity.selected)
                     return {};
@@ -528,8 +556,8 @@ int main(int argc, char** argv) {
                         std::find_if(economicSnapshot->flights.begin(), economicSnapshot->flights.end(),
                                      [&](const auto& f) { return f.id == *activity.selected; });
                     if (flight != economicSnapshot->flights.end())
-                        return sampleEconomicFreight(universe, *economicSnapshot->network, *flight,
-                                                     activity.seconds);
+                        return damagedBody(sampleEconomicFreight(universe, *economicSnapshot->network,
+                                                                 *flight, activity.seconds));
                     if (auto i = economicSnapshot->siteIndex(*activity.selected)) {
                         const auto& site = economicSnapshot->network->sites[*i];
                         ActivityBody body;
@@ -556,8 +584,8 @@ int main(int argc, char** argv) {
                             return surfaceContact(*world, s, activity.seconds);
                     return {};
                 }
-                return sampleActivity(universe.describe(activity.selected->home), activity.selected->slot,
-                                      activity.seconds);
+                return damagedBody(sampleActivity(universe.describe(activity.selected->home),
+                                                  activity.selected->slot, activity.seconds));
             };
             auto waypointFor = [](const ActivityBody& body) {
                 const bool surface = body.kind == ActivityKind::SurfacePort;
@@ -709,6 +737,7 @@ int main(int argc, char** argv) {
                 notice = "JOB PORT TARGETED / J APPROACH / F2 JOBS";
                 noticeTime = 6;
             };
+            uint64_t pendingWreck = 0;
             while (running) {
                 auto now = std::chrono::steady_clock::now();
                 double wall = std::chrono::duration<double>(now - previous).count();
@@ -811,7 +840,7 @@ int main(int argc, char** argv) {
                                 marketQuantity = std::min<int64_t>(maxShipPayloadKg, marketQuantity * 10);
                                 break;
                             case SDL_SCANCODE_F5:
-                                marketPage = MarketPage((unsigned(marketPage) + 1) % 6);
+                                marketPage = MarketPage((unsigned(marketPage) + 1) % 7);
                                 marketGood = 0;
                                 break;
                             case SDL_SCANCODE_RETURN:
@@ -835,7 +864,9 @@ int main(int argc, char** argv) {
                                         } else
                                             submitMarket(job->action, job);
                                     }
-                                } else if (marketPage == MarketPage::Services)
+                                } else if (marketPage == MarketPage::Weapons)
+                                    submitMarket(EconomicAction::FitWeapon);
+                                else if (marketPage == MarketPage::Services)
                                     submitMarket(marketGood == 0 ? EconomicAction::RepairHull
                                                                  : EconomicAction::UpgradeCargo);
                                 else if (marketPage == MarketPage::Routes)
@@ -845,7 +876,9 @@ int main(int argc, char** argv) {
                                                                                     : EconomicAction::Buy);
                                 break;
                             case SDL_SCANCODE_BACKSPACE:
-                                if (marketPage == MarketPage::Jobs) {
+                                if (marketPage == MarketPage::Weapons)
+                                    submitMarket(EconomicAction::SellWeapon);
+                                else if (marketPage == MarketPage::Jobs) {
                                     if (auto job = selectedJob();
                                         job && job->haul && job->action != EconomicAction::AcceptHaul)
                                         submitMarket(EconomicAction::CancelHaul, job);
@@ -861,6 +894,7 @@ int main(int argc, char** argv) {
                                     submitMarket(EconomicAction::CancelProject);
                                 else if (marketPage != MarketPage::Services &&
                                          marketPage != MarketPage::Jobs &&
+                                         marketPage != MarketPage::Weapons &&
                                          marketPage != MarketPage::Outcomes) {
                                     tradeBuyer.reset();
                                     tradeHint.clear();
@@ -884,7 +918,7 @@ int main(int argc, char** argv) {
                                     }
                                     break;
                                 }
-                                if (marketPage == MarketPage::Services) {
+                                if (marketPage == MarketPage::Services || marketPage == MarketPage::Weapons) {
                                     if (marketPort) {
                                         chooseActivity(*marketPort);
                                         marketOpen = false;
@@ -1206,6 +1240,27 @@ int main(int argc, char** argv) {
                         economy->request(system, activity.seconds);
                     economicSnapshot = economy->snapshot();
                     if (economicSnapshot) {
+                        if (!opt.economyTest)
+                            weapons.setLevel(economicSnapshot->player.weaponLevel);
+                        if (pendingWreck && economicSnapshot->player.lastCommand >= pendingWreck)
+                            pendingWreck = 0;
+                        if (!pendingWreck && !economicSnapshot->catchingUp && !opt.smoke)
+                            for (const auto& f : economicSnapshot->flights) {
+                                auto d =
+                                    std::find_if(weapons.damage().begin(), weapons.damage().end(),
+                                                 [&](const auto& d) { return d.id == f.id && d.hull <= 0; });
+                                if (f.disabledAt < 0 && d != weapons.damage().end()) {
+                                    EconomicCommand c;
+                                    c.port = f.id;
+                                    c.action = EconomicAction::DisableVessel;
+                                    c.impactSeconds = d->hitSeconds;
+                                    c.sequence = economicSequence =
+                                        std::max(economicSequence, economicSnapshot->player.lastCommand) + 1;
+                                    if (economy->command(c))
+                                        pendingWreck = c.sequence;
+                                    break;
+                                }
+                            }
                         pilot.applyPortRepairs(economicSnapshot->player.repairPoints);
                         if (pendingEconomicSequence &&
                             economicSnapshot->player.lastCommand >= pendingEconomicSequence) {
@@ -1298,6 +1353,25 @@ int main(int argc, char** argv) {
                 if (!opt.smoke && !opt.tour && pilotEnabled && pilot.ship().cruise &&
                     !(SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS))
                     pilot.update({}, dt, renderer.submittedGeometry(nav.anchor));
+                if (!opt.smoke) {
+                    weapons.advance(dt);
+                    const bool inhibit = !pilotEnabled || marketOpen || pilot.instruments().fieldActive ||
+                                         pilot.ship().landed || pilot.ship().hull <= 0 ||
+                                         std::abs(pilot.ship().logSize - pilot.ship().targetLogSize) > .01;
+                    if (!inhibit && !opt.tour && (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) &&
+                        keys[SDL_SCANCODE_SPACE]) {
+                        WeaponRay ray;
+                        ray.reference = nav.anchor;
+                        ray.origin = nav.cameraPosition() * std::pow(10., nav.logDistance);
+                        ray.direction = nav.orientation * glm::dvec3(0, 0, -1);
+                        ray.right = nav.orientation * glm::dvec3(1, 0, 0);
+                        ray.scale = pilot.sizeRatio();
+                        ray.seconds = activity.seconds;
+                        if (weapons.fire(universe, ray, renderer.weaponTargets(),
+                                         renderer.submittedGeometry(nav.anchor).get()))
+                            renderer.cockpitImpulse(CockpitImpulse::Recoil, .35 + weapons.level() * .12);
+                    }
+                }
                 nav.update((opt.benchmark ? 1.0 / 60 : dt) * (opt.tour ? 3 : 1));
                 if (flightProof)
                     flightProof->advance(flight, renderer);
@@ -1323,7 +1397,11 @@ int main(int argc, char** argv) {
                     stellarDiversityProof->advance(renderer);
                 if (diversityProof)
                     diversityProof->advance(renderer);
-                renderer.setCockpit(pilotEnabled ? &pilot.instruments() : nullptr);
+                auto cockpit = pilot.instruments();
+                weapons.annotate(cockpit,
+                                 cockpit.fieldActive || cockpit.landed || marketOpen ||
+                                     std::abs(pilot.ship().logSize - pilot.ship().targetLogSize) > .01);
+                renderer.setCockpit(pilotEnabled ? &cockpit : nullptr);
                 if (motionProof)
                     motionProof->apply(renderer);
                 auto stats =
@@ -1569,6 +1647,7 @@ int main(int argc, char** argv) {
                 saveText(("ship-" + std::to_string(universe.seed()) + ".txt").c_str(), pilot.serialize());
                 saveText(("activity-" + std::to_string(universe.seed()) + ".txt").c_str(),
                          activity.serialize());
+                saveText(("combat-" + std::to_string(universe.seed()) + ".txt").c_str(), weapons.serialize());
                 // Rendering is fixed to Hyperion; historical display.txt preferences are ignored.
                 saveText("cockpit-motion.txt", renderer.cockpitMotionEnabled() ? "1" : "0");
             }

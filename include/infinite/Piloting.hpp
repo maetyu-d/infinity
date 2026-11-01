@@ -47,6 +47,8 @@ struct FlightInstruments {
     double hullMetres = 12, targetHullMetres = 12, flightSeconds = 0, travelMetres = 0, etaSeconds = -1;
     bool targetVisible = false, safe = false;
     std::string phase = "MANUAL", drive = "CRUISE", destination = "SELECT A DESTINATION / J NAVIGATE";
+    std::string weapon, weaponStatus;
+    double weaponHeat = 0;
     std::string weather;
     std::string weatherDetail;
     double weatherSeverity = 0;

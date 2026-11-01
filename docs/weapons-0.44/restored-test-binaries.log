@@ -1,0 +1,53 @@
+infinite_terrain_tests: exit 0
+
+infinite_weather_field_tests: exit 0
+
+infinite_presentation_tests: exit 0
+
+infinite_piloting_tests: exit 0
+
+infinite_material_tests: exit 0
+
+infinite_navigation_tests: exit 0
+
+infinite_handling_tests: exit 0
+
+infinite_depth_tests: exit 0
+
+infinite_stellar_evolution_tests: exit 0
+
+infinite_window_tests: exit 0
+
+infinite_shading_tests: exit 0
+
+infinite_continuity_tests: exit 0
+
+infinite_population_tests: exit 0
+
+infinite_operating_tests: exit 0
+
+infinite_stellar_optics_tests: exit 0
+
+infinite_cockpit_motion_tests: exit 0
+
+infinite_weather_process_tests: exit 0
+
+infinite_streaming_tests: exit 0
+
+infinite_activity_tests: exit 0
+
+infinite_city_tests: exit 0
+
+infinite_process_tests: exit 0
+
+infinite_surface_life_tests: exit 0
+
+infinite_flight_tests: exit 0
+
+infinite_performance_tests: exit 0
+
+infinite_cockpit_tests: exit 0
+
+infinite_planet_diversity_tests: exit 0
+
+infinite_ship_physics_tests: exit 0

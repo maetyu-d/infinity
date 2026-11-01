@@ -1,6 +1,7 @@
 #pragma once
 #include "ShipDynamics.hpp"
 #include "SurfaceLife.hpp"
+#include "Weapons.hpp"
 #include <array>
 #include <filesystem>
 #include <memory>
@@ -107,6 +108,7 @@ struct EconomicFreight {
     int64_t kg = 0; // reserved before pickup, onboard after pickup
     uint64_t startTick = 0, endTick = 0, trips = 0;
     int64_t payment = 0, fee = 0;
+    double disabledAt = -1; // canonical activity seconds; cargo remains aboard a wreck
 };
 enum class ContractPhase : uint8_t { Open, Accepted, Complete, Expired };
 struct EconomicContract {
@@ -170,6 +172,7 @@ struct EconomyPlayer {
     std::optional<PlayerHaul> haul;
     uint64_t deliveries = 0, lateDeliveries = 0, returnedHauls = 0;
     int64_t freightEarnings = 0;
+    unsigned weaponLevel = 1; // existing saves receive the same starter laser as new ships
     unsigned cargoLevel = 0;
     uint64_t repairPoints = 0; // durable cumulative receipt; the ship applies each point once
     int64_t massKg() const;
@@ -197,7 +200,10 @@ enum class EconomicAction : uint8_t {
     RepairHull,
     UpgradeCargo,
     AcceptRecovery,
-    DeliverRecovery
+    DeliverRecovery,
+    FitWeapon,
+    SellWeapon,
+    DisableVessel
 };
 struct EconomicCommand {
     uint64_t sequence = 0;
@@ -207,7 +213,8 @@ struct EconomicCommand {
     int64_t kg = 10, limitCents = 0;
     uint64_t contract = 0;
     FacilityModule module = FacilityModule::Storage;
-    unsigned serviceUnits = 0; // repair hull points, or expected next cargo level
+    unsigned serviceUnits = 0; // repair hull points, cargo level or weapon grade
+    double impactSeconds = 0;
 };
 inline constexpr unsigned maxCargoLevel = 3;
 inline int64_t holdCapacityKg(unsigned level) {
@@ -227,6 +234,17 @@ struct ShipServiceQuote {
         return partsCents + labourCents;
     }
 };
+struct WeaponQuote {
+    Stock materials{};
+    int64_t partsCents = 0, labourCents = 0, sellCents = 0;
+    bool available = false;
+    std::string status;
+    int64_t totalCents() const {
+        return partsCents + labourCents;
+    }
+};
+Stock weaponMaterials(unsigned level);
+WeaponQuote economicWeaponQuote(const struct EconomySnapshot&, size_t, unsigned level, bool sell = false);
 int64_t economicPendingPayload(const EconomicCommand&, const EconomicSiteState&);
 class Economy {
   public:
@@ -304,6 +322,8 @@ class Economy {
     bool readRecovery(std::istream&);
     void haulOffers();
     std::string haulCommand(const EconomicCommand&, EconomyPlayer&);
+    std::string weaponTrade(const EconomicCommand&, EconomyPlayer&, size_t);
+    std::string disableVessel(const EconomicCommand&);
     std::string service(const EconomicCommand&, EconomyPlayer&, size_t);
     uint64_t travelTicks(size_t, size_t) const;
     int64_t unitPrice(size_t, Good, int64_t available, bool buy) const;
@@ -317,6 +337,7 @@ struct EconomicFlight {
     int64_t kg = 0;
     FreightPhase phase = FreightPhase::Idle;
     unsigned source = 0, destination = 0, location = 0;
+    double disabledAt = -1;
     int64_t reservedKg = 0;
 };
 struct EconomicPortSignal {
@@ -399,7 +420,7 @@ class EconomyRuntime {
 class Pilot;
 class Navigation;
 bool economicTradeAccess(const Universe&, const Navigation&, const Pilot&, const EconomicSite&);
-enum class MarketPage : uint8_t { Goods, Routes, Industry, Jobs, Services, Outcomes };
+enum class MarketPage : uint8_t { Goods, Routes, Industry, Jobs, Services, Outcomes, Weapons };
 struct MarketView {
     bool open = false, connected = false, ready = false;
     std::string site, role, message, bottleneck, contract;

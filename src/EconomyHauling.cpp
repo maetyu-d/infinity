@@ -73,7 +73,7 @@ void Economy::haulOffers() {
         return;
     std::vector<Stock> inbound(sites_.size());
     for (const auto& f : freight_)
-        if (f.phase != FreightPhase::Idle)
+        if (f.phase != FreightPhase::Idle && f.disabledAt < 0)
             inbound[f.destination][size_t(f.good)] += f.kg;
     for (const auto& h : hauls_)
         if (active(h.phase) && tick_ <= h.deadline)

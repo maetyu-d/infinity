@@ -5,6 +5,7 @@
 #include "infinite/StellarEvolution.hpp"
 #include "infinite/Streaming.hpp"
 #include "infinite/SurfaceShading.hpp"
+#include "infinite/Weapons.hpp"
 #include "infinite/WorldDepth.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_metal.h>
@@ -138,6 +139,8 @@ struct Renderer::Impl {
     std::optional<Address> lifeSelection;
     std::vector<CelestialContact> skyOccluders;
     const ActivityState* activity = nullptr;
+    const WeaponSystem* weapons = nullptr;
+    std::vector<ActivityBody> weaponTargets;
     std::shared_ptr<const EconomySnapshot> economy;
     const MarketView* market = nullptr;
     std::shared_ptr<const EconomicNetwork> lightingNetwork;
@@ -786,6 +789,7 @@ struct Renderer::Impl {
 #include "SurfaceRendering.hpp"
     void renderActivity(const std::vector<Node>& nodes, const Navigation& nav, RegionCache& cache) {
         activityContacts.clear();
+        weaponTargets.clear();
         activityPicks.clear();
         stats.activityBytes = craftBytes;
         renderSurfaceEnvironment(nodes, nav, cache);
@@ -838,10 +842,19 @@ struct Renderer::Impl {
                     for (auto& body : bodies)
                         if (body.kind == ActivityKind::Harbour)
                             annotateEconomicPort(body, *economy);
-                for (const auto& body : bodies) {
+                for (auto body : bodies) {
+                    if (weapons)
+                        weapons->apply(body);
                     ++stats.activityBodies;
                     const auto deltaSI = pose.orientation * (body.position - planetEye);
                     const double distance = glm::length(deltaSI);
+                    if (distance < 10000 * (instruments ? instruments->hullMetres / 12 : 1) + body.radius &&
+                        weaponTargets.size() < 256) {
+                        auto target = body;
+                        // Position and velocity already include the wreck overlay; fire() is idempotent for
+                        // disabled actors.
+                        weaponTargets.push_back(target);
+                    }
                     if (distance <= 1e-12)
                         continue;
                     const auto direction = cameraInverse * (deltaSI / distance);
@@ -1403,6 +1416,12 @@ void Renderer::setEconomy(std::shared_ptr<const EconomySnapshot> economy, const 
     impl_->economy = std::move(economy);
     impl_->market = market;
 }
+void Renderer::setWeapons(const WeaponSystem* weapons) {
+    impl_->weapons = weapons;
+}
+std::span<const ActivityBody> Renderer::weaponTargets() const {
+    return impl_->weaponTargets;
+}
 void Renderer::setActivity(const ActivityState* state) {
     impl_->activity = state;
 }
@@ -1878,6 +1897,39 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                                 float((1 - distance / (spacing * 2)) * strength * .36));
                 }
         p.transient(trails, p.worldView(), true, true);
+    }
+    if (p.weapons && !p.weapons->shots().empty()) {
+        Mesh beams;
+        const auto rotation = glm::mat4_cast(glm::quat(p.cameraInverse));
+        const glm::mat4 projection(p.projection);
+        bgfx::setViewTransform(63, glm::value_ptr(rotation), glm::value_ptr(projection));
+        bgfx::setViewRect(63, 0, 0, uint16_t(p.width), uint16_t(p.height));
+        const double units = std::pow(10., nav.logDistance);
+        for (const auto& shot : p.weapons->shots()) {
+            const auto source = p.universe.describe(shot.reference);
+            const double sourceUnits = std::pow(10., source.frame.logRadius);
+            const auto a = p.universe.pointRelative(shot.reference, shot.from / sourceUnits, nav.anchor,
+                                                    nav.logDistance) -
+                           p.eye;
+            const auto b =
+                p.universe.pointRelative(shot.reference, shot.to / sourceUnits, nav.anchor, nav.logDistance) -
+                p.eye;
+            const auto colour = weaponSpec(shot.level).colour * float(1 - shot.age / .17);
+            const auto right = nav.orientation * glm::dvec3(1, 0, 0) * (shot.scale * .1 / units);
+            addLine(beams, a, b, colour * 2.f);
+            addLine(beams, a + right, b + right, glm::vec3(1.5));
+            addLine(beams, a - right, b - right, colour);
+            if (shot.hit) {
+                const double spread = shot.scale * (shot.disabled ? 20 : 3) / units;
+                for (unsigned j = 0; j < 12; ++j) {
+                    const double angle = j * 2 * std::numbers::pi / 12;
+                    const auto direction =
+                        nav.orientation * glm::dvec3(std::cos(angle), std::sin(angle), .35);
+                    addLine(beams, b, b + direction * spread, colour * 2.f);
+                }
+            }
+        }
+        p.transient(beams, 63, true, true);
     }
     if (opticalDepth) {
         for (const auto& planet : nodes)

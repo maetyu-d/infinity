@@ -124,7 +124,7 @@ int64_t EconomyPlayer::volumeLitres() const {
 }
 std::string EconomyPlayer::serialize() const {
     std::ostringstream o;
-    o << "INFINITE_WALLET 3 " << credits << ' ' << lastCommand;
+    o << "INFINITE_WALLET 4 " << credits << ' ' << lastCommand;
     writeStock(o, cargo);
     o << ' ' << deliveries << ' ' << lateDeliveries << ' ' << returnedHauls << ' ' << freightEarnings << ' '
       << bool(haul);
@@ -135,7 +135,7 @@ std::string EconomyPlayer::serialize() const {
           << std::quoted(h.destination.home.str()) << ' ' << h.destination.slot << ' ' << unsigned(h.good)
           << ' ' << h.kg << ' ' << h.onboard;
     }
-    o << ' ' << cargoLevel << ' ' << repairPoints;
+    o << ' ' << cargoLevel << ' ' << repairPoints << ' ' << weaponLevel;
     return o.str();
 }
 bool EconomyPlayer::restore(std::string_view text) {
@@ -143,7 +143,7 @@ bool EconomyPlayer::restore(std::string_view text) {
     std::istringstream in{std::string(text)};
     std::string h;
     unsigned v;
-    if (!(in >> h >> v >> p.credits >> p.lastCommand) || h != "INFINITE_WALLET" || (v < 1 || v > 3) ||
+    if (!(in >> h >> v >> p.credits >> p.lastCommand) || h != "INFINITE_WALLET" || (v < 1 || v > 4) ||
         p.credits < 0 || p.credits > 1000000000000000LL || !readStock(in, p.cargo))
         return false;
     if (v >= 2) {
@@ -181,6 +181,8 @@ bool EconomyPlayer::restore(std::string_view text) {
     }
     if (v >= 3 && (!(in >> p.cargoLevel >> p.repairPoints) || p.cargoLevel > maxCargoLevel ||
                    p.repairPoints > 1000000000000ULL))
+        return false;
+    if (v >= 4 && (!(in >> p.weaponLevel) || p.weaponLevel > maxWeaponLevel))
         return false;
     p.capacityKg = holdCapacityKg(p.cargoLevel);
     p.capacityLitres = holdCapacityLitres(p.cargoLevel);
@@ -377,6 +379,8 @@ void Economy::logistics() {
     if (sites_.empty())
         return;
     for (auto& f : freight_) {
+        if (f.disabledAt >= 0)
+            continue;
         auto& from = sites_[f.source];
         auto& to = sites_[f.destination];
         const auto g = size_t(f.good);
@@ -424,7 +428,7 @@ void Economy::logistics() {
     std::array<std::vector<size_t>, goodCount> suppliers;
     std::vector<Stock> inbound(sites_.size());
     for (const auto& f : freight_)
-        if (f.phase != FreightPhase::Idle)
+        if (f.phase != FreightPhase::Idle && f.disabledAt < 0)
             inbound[f.destination][size_t(f.good)] += f.kg;
     for (const auto& h : hauls_)
         if (tick_ <= h.deadline &&
@@ -444,7 +448,7 @@ void Economy::logistics() {
     unsigned dispatched = 0;
     for (size_t k = 0; k < freight_.size() && dispatched < 4; k++) {
         auto& f = freight_[(k + (tick_ / 3) * 4) % freight_.size()];
-        if (f.phase != FreightPhase::Idle)
+        if (f.phase != FreightPhase::Idle || f.disabledAt >= 0)
             continue;
         double best = 0;
         size_t source = 0, destination = 0, selected = 0;
@@ -587,13 +591,17 @@ std::string Economy::execute(const EconomicCommand& c, EconomyPlayer& player) {
     if (!c.sequence || c.sequence <= player.lastCommand)
         return "ORDER ALREADY PROCESSED";
     player.lastCommand = c.sequence;
+    if (c.action == EconomicAction::DisableVessel)
+        return disableVessel(c);
     auto index = siteIndex(c.port);
     if (!index)
         return "PORT HAS NO MARKET";
-    if (unsigned(c.action) > unsigned(EconomicAction::DeliverRecovery))
+    if (unsigned(c.action) > unsigned(EconomicAction::DisableVessel))
         return "INVALID ECONOMIC ACTION";
     if (!reconcilePlayer(player))
         return "HAUL SAVE MISMATCH / TRADING PAUSED";
+    if (c.action == EconomicAction::FitWeapon || c.action == EconomicAction::SellWeapon)
+        return weaponTrade(c, player, *index);
     if (c.action == EconomicAction::AcceptRecovery || c.action == EconomicAction::DeliverRecovery)
         return recoveryCommand(c, player, *index);
     if (c.action == EconomicAction::RepairHull || c.action == EconomicAction::UpgradeCargo)
@@ -728,7 +736,7 @@ size_t Economy::residentBytes() const {
 }
 std::string Economy::serialize() const {
     std::ostringstream o;
-    o << "INFINITE_ECONOMY 5 " << network_->fingerprint << ' ' << tick_ << ' ' << nextContract_ << ' '
+    o << "INFINITE_ECONOMY 6 " << network_->fingerprint << ' ' << tick_ << ' ' << nextContract_ << ' '
       << treasury_ << ' ' << carrierCash_ << ' ' << externalMoneyDelta_ << ' ' << sites_.size() << '\n';
     for (const auto& s : sites_) {
         o << s.cash << ' ' << s.householdCash << ' ' << s.condition << ' ' << s.health << ' '
@@ -766,6 +774,13 @@ std::string Economy::serialize() const {
           << ' ' << h.kg << ' ' << h.cost << ' ' << h.fee << ' ' << h.escrow << ' ' << unsigned(h.phase)
           << '\n';
     writeRecovery(o);
+    o << "WRECKS "
+      << std::count_if(freight_.begin(), freight_.end(), [](const auto& f) { return f.disabledAt >= 0; })
+      << '\n';
+    o << std::setprecision(17);
+    for (size_t i = 0; i < freight_.size(); ++i)
+        if (freight_[i].disabledAt >= 0)
+            o << i << ' ' << freight_[i].disabledAt << '\n';
     return o.str();
 }
 bool Economy::restore(std::string_view text) {
@@ -777,7 +792,7 @@ bool Economy::restore(std::string_view text) {
     size_t count;
     if (!(in >> header >> version >> fingerprint >> candidate.tick_ >> candidate.nextContract_ >>
           candidate.treasury_ >> candidate.carrierCash_ >> candidate.externalMoneyDelta_ >> count) ||
-        header != "INFINITE_ECONOMY" || (version < 1 || version > 5) ||
+        header != "INFINITE_ECONOMY" || (version < 1 || version > 6) ||
         fingerprint != network_->fingerprint || count != sites_.size() || candidate.treasury_ < 0 ||
         candidate.carrierCash_ < 0 || candidate.treasury_ > 1000000000000000LL ||
         candidate.carrierCash_ > 1000000000000000LL || candidate.externalMoneyDelta_ < -1000000000000000LL ||
@@ -906,6 +921,23 @@ bool Economy::restore(std::string_view text) {
     }
     if (version >= 5 && !candidate.readRecovery(in))
         return false;
+    if (version >= 6) {
+        std::string tag;
+        if (!(in >> tag >> count) || tag != "WRECKS" || count > candidate.freight_.size())
+            return false;
+        for (size_t j = 0; j < count; ++j) {
+            size_t i;
+            double time;
+            if (!(in >> i >> time) || i >= candidate.freight_.size() || !std::isfinite(time) || time < 0 ||
+                time > 1e12 || candidate.freight_[i].disabledAt >= 0 || candidate.freight_[i].payment ||
+                candidate.freight_[i].fee ||
+                ((candidate.freight_[i].phase == FreightPhase::Loading ||
+                  candidate.freight_[i].phase == FreightPhase::Reposition) &&
+                 candidate.freight_[i].kg))
+                return false;
+            candidate.freight_[i].disabledAt = time;
+        }
+    }
     in >> std::ws;
     if (!in.eof())
         return false;
@@ -1011,6 +1043,37 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
     if (s->catchingUp) {
         v.connected = false;
         v.message = "ECONOMY CATCHING UP / TRADING PAUSED";
+    }
+    if (page == MarketPage::Weapons) {
+        v.selected = std::min<size_t>(selected, maxWeaponLevel - 1);
+        auto money = [](int64_t cents) {
+            std::ostringstream o;
+            o << std::fixed << std::setprecision(2) << cents / 100.;
+            return o.str();
+        };
+        for (unsigned level = 1; level <= maxWeaponLevel; ++level) {
+            const auto& spec = weaponSpec(level);
+            auto q = economicWeaponQuote(*s, *i, level);
+            v.detail.push_back(std::string(spec.name) + (s->player.weaponLevel == level ? " / FITTED" : ""));
+            v.detail.push_back("DAMAGE " + std::to_string(int(spec.damage)) + " / RANGE " +
+                               std::to_string(int(spec.rangeMetres / 1000)) + " KM / " +
+                               std::to_string(int(1 / spec.interval * 10) / 10.) + " SHOTS/S");
+            v.detail.push_back("FIT / UPGRADE " + money(q.totalCents()) + " CR / PORT PARTS AND CREW");
+            std::string parts = "PARTS: ";
+            for (size_t g = 0; g < goodCount; ++g)
+                if (q.materials[g])
+                    parts +=
+                        std::string(goodInfo(Good(g)).name) + " " + std::to_string(q.materials[g]) + "KG ";
+            v.detail.push_back(parts);
+            v.detail.push_back(q.status);
+        }
+        const auto sale = economicWeaponQuote(*s, *i, s->player.weaponLevel, true);
+        v.summary = s->player.weaponLevel ? "FITTED " + std::string(weaponSpec(s->player.weaponLevel).name) +
+                                                " / BUYBACK " + money(sale.sellCents) + " CR"
+                                          : "WEAPON MOUNT EMPTY / SELECT A LASER TO BUY";
+        v.bottleneck =
+            "ENTER FITS SELECTED GRADE / BACKSPACE SELLS CURRENT WEAPON / PHYSICAL TRADE LINK REQUIRED";
+        return v;
     }
     if (page == MarketPage::Services) {
         v.selected = std::min<size_t>(selected, 1);

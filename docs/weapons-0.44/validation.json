@@ -1,0 +1,19 @@
+{
+  "version": "0.44.0",
+  "build": 49,
+  "build_sha256": "3246cd18eb0365060f9ca30751480473bcc4033eec2cd5c2cf683dedba294bb7",
+  "native_executable_sha256": "3246cd18eb0365060f9ca30751480473bcc4033eec2cd5c2cf683dedba294bb7",
+  "core_tests": 43,
+  "focused_tests": 3,
+  "native_tests": 2,
+  "native_captures": 33,
+  "weapon_checks": 183,
+  "frames": 1919,
+  "median_ms": 100.147,
+  "p95_ms": 221.831,
+  "peak_rss_bytes": 153632768,
+  "worker_bytes_043": 535797,
+  "worker_bytes_044": 537845,
+  "protected_files": 186,
+  "native_capture_compression": "lossless zlib; partial writes retained; decoded pixels checked"
+}

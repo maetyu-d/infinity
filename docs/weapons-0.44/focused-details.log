@@ -1,0 +1,52 @@
+Start testing: Nov 01 00:27 GMT
+----------------------------------------------------------
+1/87 Testing: weapons_combat_and_equipment
+1/87 Test: weapons_combat_and_equipment
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_weapons_tests" "/Users/user/Documents/SC tutorial/Infinite/build/economy/weapons-test"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"weapons_combat_and_equipment" start time: Nov 01 00:27 GMT
+Output:
+----------------------------------------------------------
+183 weapon, damage, heat, trade, upgrade, migration and wreck accounting checks passed
+<end of output>
+Test time =   3.83 sec
+----------------------------------------------------------
+Test Passed.
+"weapons_combat_and_equipment" end time: Nov 01 00:27 GMT
+"weapons_combat_and_equipment" time elapsed: 00:00:03
+----------------------------------------------------------
+
+5/87 Testing: cockpit_motion_and_feedback
+5/87 Test: cockpit_motion_and_feedback
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_cockpit_motion_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"cockpit_motion_and_feedback" start time: Nov 01 00:27 GMT
+Output:
+----------------------------------------------------------
+peak_recoil_degrees=0.0517353 peak_damage_degrees=0.117228 turn_lean_degrees=0.361216 turn_slide_mm=6.12243
+PASS: 6044 cockpit inertia, bounded shake, event, scale and aim checks
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"cockpit_motion_and_feedback" end time: Nov 01 00:27 GMT
+"cockpit_motion_and_feedback" time elapsed: 00:00:00
+----------------------------------------------------------
+
+22/87 Testing: cockpit_layout_and_targeting
+22/87 Test: cockpit_layout_and_targeting
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_cockpit_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"cockpit_layout_and_targeting" start time: Nov 01 00:27 GMT
+Output:
+----------------------------------------------------------
+PASS: 2127278 cockpit layout, target projection, decluttering, stable selection and SI unit checks
+<end of output>
+Test time =   0.11 sec
+----------------------------------------------------------
+Test Passed.
+"cockpit_layout_and_targeting" end time: Nov 01 00:27 GMT
+"cockpit_layout_and_targeting" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Nov 01 00:27 GMT

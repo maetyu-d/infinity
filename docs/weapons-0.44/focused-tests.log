@@ -1,0 +1,11 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start  1: weapons_combat_and_equipment
+1/3 Test  #1: weapons_combat_and_equipment .....   Passed    3.83 sec
+    Start  5: cockpit_motion_and_feedback
+2/3 Test  #5: cockpit_motion_and_feedback ......   Passed    0.04 sec
+    Start 22: cockpit_layout_and_targeting
+3/3 Test #22: cockpit_layout_and_targeting .....   Passed    0.11 sec
+
+100% tests passed, 0 tests failed out of 3
+
+Total Test time (real) =   4.00 sec

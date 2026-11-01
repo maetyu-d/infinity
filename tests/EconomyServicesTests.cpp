@@ -302,6 +302,7 @@ int main(int argc, char** argv) {
         auto v2 = old.serialize();
         v2.erase(v2.rfind(' '));
         v2.erase(v2.rfind(' '));
+        v2.erase(v2.rfind(' '));
         v2.replace(16, 1, "2");
         check(old.restore(v2) && old.cargoLevel == 0 && old.capacityKg == 4000 && !old.repairPoints,
               "Version-two migration granted upgrades or lost default capacity");

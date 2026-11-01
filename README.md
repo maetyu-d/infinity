@@ -1,5 +1,7 @@
 # INFINITE
 
+**0.44:** a starter pulse laser, Space firing with heat/recoil/impact effects, damage and persistent disabled craft, plus three tradable/upgradable weapon grades. **F2 → F5 → Weapons** buys, upgrades and sells the fitted laser using existing port parts, crews and money. Wrecked freighter cargo remains accounted for. [Weapons, controls and validation](docs/WEAPONS_0_44.md).
+
 **0.43:** funded household relief and plant recovery jobs at existing surface settlements, reserved maintenance kits, paid repair crews, and persistent delivery outcomes. **F2 → F5 → Jobs** accepts and delivers recovery supplies; **Outcomes** shows payment and actual health, power, readiness, service and production changes. Partial deliveries, crew pauses, expiry and save reloads retain their real goods and money. [Recovery jobs and delivery reports](docs/ECONOMY_0_43.md).
 
 **0.42:** economic port reports in the HUD, city lighting driven by real power and supply readiness, and detailed manifests for existing freighters. **K** selects, **I** hails, **J** approaches and **F2** opens port markets. Reports show shortages, repair stock, trade hints, cargo, routes, timing and warehouse holds. Structures, generators, save formats and flight controls remain intact. [Economic world feedback and checks](docs/ECONOMY_0_42.md).

@@ -575,6 +575,13 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     quantity("FLIGHT " + duration(t.flightSeconds) + " / " + flightQuantity(t.travelMetres),
              std::max(178., center - 180), 887, std::max(180., w - 490), 9, muted);
     label("TAB HUD", w - 200, 887, 178, muted);
+    if (!t.weapon.empty() && !(market && market->open)) {
+        const CockpitRect armament{center - 158, 697, 316, 48};
+        card(h, armament, t.weaponHeat > 80 ? amber : mint);
+        fitted(h.lettering, t.weapon + " / HEAT " + std::to_string(int(t.weaponHeat)) + "%", armament.x + 12,
+               707, 292, 9.5, pearl);
+        fitted(h.lettering, t.weaponStatus, armament.x + 12, 725, 292, 8.8, t.weaponHeat > 80 ? amber : ice);
+    }
     if (market && market->open) {
         const auto& m = *market;
         const CockpitRect panel{center - std::min(790., w - 60) * .5, 166, std::min(790., w - 60), 574};
@@ -586,6 +593,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                               : m.page == MarketPage::Industry ? "INDUSTRY"
                               : m.page == MarketPage::Jobs     ? "JOBS"
                               : m.page == MarketPage::Outcomes ? "OUTCOMES"
+                              : m.page == MarketPage::Weapons  ? "WEAPONS"
                                                                : "SERVICES") +
                   " / ECON " + std::to_string(m.tick * 5 / 60) + "H",
               panel.x + 18, panel.y + 16, panel.w - 36, mint);
@@ -631,13 +639,15 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             const bool industry = m.page == MarketPage::Industry;
             const bool jobs = m.page == MarketPage::Jobs;
             const bool services = m.page == MarketPage::Services;
-            label(services   ? "PORT SERVICES / UP-DOWN SELECT / ENTER PURCHASE"
+            const bool weapons = m.page == MarketPage::Weapons;
+            label(weapons    ? "SHIP WEAPONS / UP-DOWN SELECT / ONE FITTED LASER"
+                  : services ? "PORT SERVICES / UP-DOWN SELECT / ENTER PURCHASE"
                   : jobs     ? "FUNDED LOCAL JOBS / UP-DOWN SELECT / ONE ACTIVE HAUL"
                   : industry ? "EXISTING FACILITY REFITS / DELIVER CARGO TO BUILD"
                              : "AFFORDABLE LOCAL OPPORTUNITIES / UP-DOWN SELECT",
                   panel.x + 18, panel.y + 112, panel.w - 36, mint);
-            const size_t group = industry || services ? 5 : 2;
-            const double rowHeight = industry || services ? 21 : 13;
+            const size_t group = industry || services || weapons ? 5 : 2;
+            const double rowHeight = industry || services || weapons ? 21 : 13;
             for (size_t row = 0; row < m.detail.size(); row++) {
                 const auto y = panel.y + 140 + row * rowHeight;
                 const bool selected = row / group == m.selected;
@@ -653,12 +663,14 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             }
             fitted(h.lettering, m.summary, panel.x + 18, panel.y + (jobs ? 480 : 472), panel.w - 36, 8.4,
                    mint);
-            label(services   ? "ENTER PURCHASE SELECTED SERVICE / F4 TARGET PORT / J APPROACH"
+            label(weapons    ? "ENTER BUY / UPGRADE / BACKSPACE SELL FITTED LASER / F4 PORT"
+                  : services ? "ENTER PURCHASE SELECTED SERVICE / F4 TARGET PORT / J APPROACH"
                   : jobs     ? "ENTER ACCEPT / PICKUP / DELIVER / F4 TARGET / J APPROACH"
                   : industry ? "ENTER FUND / DELIVER PARTS / BACKSPACE COLLECT DIVIDENDS"
                              : "ENTER TARGET SOURCE / F4 TARGET BUYER / J APPROACH",
                   panel.x + 18, panel.y + 492, panel.w - 36, pearl);
-            label(services   ? "REPAIRS USE PORT STOCK / CARGO UPGRADES KEEP SEALED CONSIGNMENTS"
+            label(weapons    ? "SPACE FIRE / REAL PARTS AND PAYMENTS / LASER MUST COOL BETWEEN BURSTS"
+                  : services ? "REPAIRS USE PORT STOCK / CARGO UPGRADES KEEP SEALED CONSIGNMENTS"
                   : jobs     ? "BACKSPACE WITHDRAW HAUL / SHIFT-F4 RETURN SOURCE / LATE FEE HALVED"
                   : industry ? "DELETE CANCEL PROJECT / UNUSED FEES AND PARTS RETURNED"
                              : "QUOTES INCLUDE SPREAD / MARGINAL PRICES / NO PRICE GUARANTEE",
@@ -669,7 +681,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
         return h;
     }
     if (help) {
-        const CockpitRect guide{center - std::min(700., w - 80) * .5, 193, std::min(700., w - 80), 466};
+        const CockpitRect guide{center - std::min(700., w - 80) * .5, 193, std::min(700., w - 80), 490};
         card(h, guide, mint);
         fitted(h.lettering, "FLIGHT CONTROLS", guide.x + 22, guide.y + 22, guide.w - 44, 17.5, pearl);
         const std::pair<const char*, const char*> controls[]{
@@ -688,6 +700,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             {"SHIFT-Z / V", "FULL SIZE / EXPLORER"},
             {"F6 / TAB", "TRAFFIC / HUD"},
             {"F7", "COCKPIT MOTION"},
+            {"SPACE", "FIRE FITTED LASER"},
             {"F2 / F5", "MARKET PAGES / JOBS / SERVICES / DELIVERY REPORTS"},
             {"F1 / ESC", "CLOSE GUIDE / RELEASE HELM"}};
         for (size_t i = 0; i < std::size(controls); ++i) {

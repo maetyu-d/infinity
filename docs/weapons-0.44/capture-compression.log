@@ -1,0 +1,1 @@
+PASS: completed frames round-trip byte-for-byte; partial GPU writes remain untouched.

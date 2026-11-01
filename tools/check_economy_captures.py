@@ -2,6 +2,8 @@
 """Check native trading, industry, hauling, carrier history and portrait captures."""
 from pathlib import Path
 import sys
+import io
+import zlib
 
 root = Path(sys.argv[1])
 images = {}
@@ -13,9 +15,13 @@ for name in (
     'services-before', 'services-repaired', 'services-upgraded', 'services-portrait',
     'economic-city-powered', 'economic-city-offline', 'economic-city-restored',
     'economic-freight-hud', 'economic-freight-portrait',
+    'weapons-shop-portrait', 'weapons-upgraded-portrait', 'weapons-rearmed-portrait',
+    'weapons-idle', 'weapons-fire', 'weapons-disabled', 'weapons-disabled-portrait',
     'recovery-jobs-portrait', 'recovery-working-portrait', 'recovery-outcome', 'recovery-outcome-portrait',
 ):
-    with (root / 'captures' / (name + '.ppm')).open('rb') as f:
+    path = root / 'captures' / (name + '.ppm')
+    raw = path.read_bytes() if path.exists() else zlib.decompress(path.with_suffix('.ppm.z').read_bytes())
+    with io.BytesIO(raw) as f:
         assert f.readline().strip() == b'P6'
         w, h = map(int, f.readline().split())
         assert f.readline().strip() == b'255'
@@ -62,4 +68,8 @@ for y in range(180, 630):
 assert changed > 100 and recovered > 100, 'economic lights did not visibly dim and recover'
 assert 'PASS: native funded recovery job, real supplier procurement, paid kit, crew work and persistent outcomes' in log
 assert images['recovery-working-portrait'] != images['recovery-outcome-portrait']
-print('PASS: twenty-six native trading, services, economic city lighting, port reports and freight images / changed', changed, 'recovered', recovered)
+assert 'PASS: native weapon purchase, upgrade, buyback, repurchase, visible beam, recoil, damage, disabled target and combat persistence' in log
+assert images['weapons-shop-portrait'] != images['weapons-upgraded-portrait']
+assert images['weapons-idle'] != images['weapons-fire']
+assert images['weapons-fire'] != images['weapons-disabled']
+print('PASS: thirty-three native trading, services, economic city lighting, port reports and freight images / changed', changed, 'recovered', recovered)

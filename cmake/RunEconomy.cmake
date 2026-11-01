@@ -9,9 +9,9 @@ get_filename_component(native_name "${INFINITE_EXE}" NAME)
 set(native_exe "${OUTPUT}/${native_name}")
 file(COPY_FILE "${INFINITE_EXE}" "${native_exe}" ONLY_IF_DIFFERENT)
 file(CHMOD "${native_exe}" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-execute_process(COMMAND "${native_exe}" --economy-test --render-mode hyperion
-  --width 1440 --height 900 --capture-dir "${OUTPUT}/captures" --data "${OUTPUT}/data"
-  --profile "${OUTPUT}/frames.csv"
+find_program(capture_python NAMES python3 REQUIRED)
+execute_process(COMMAND "${capture_python}" "${CMAKE_CURRENT_LIST_DIR}/../tools/run_economy_native.py"
+  "${native_exe}" "${OUTPUT}"
   OUTPUT_FILE "${OUTPUT}/native.log" ERROR_FILE "${OUTPUT}/native.log"
   RESULT_VARIABLE result TIMEOUT 360)
 if(NOT result EQUAL 0)

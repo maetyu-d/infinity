@@ -21,6 +21,8 @@ struct ActivityBody {
     glm::dquat orientation{1, 0, 0, 0};
     glm::vec3 tint{1};
     double radius = 1, phase = 0;
+    double hull = 100;
+    bool disabled = false;
     uint64_t seed = 0;
     std::string name, status;
     // Read-only ledger presentation. Empty while the economy is unavailable.

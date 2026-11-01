@@ -28,6 +28,8 @@ struct Statement {
 } // namespace
 ActivityBody sampleEconomicFreight(const Universe& u, const EconomicNetwork& n, const EconomicFlight& f,
                                    double seconds) {
+    if (f.disabledAt >= 0)
+        seconds = std::min(seconds, f.disabledAt);
     const auto home = u.describe(f.id.home);
     auto b = sampleActivity(home, f.id.slot, seconds);
     const double duration = std::max(1., f.endSeconds - f.startSeconds),
@@ -132,6 +134,16 @@ ActivityBody sampleEconomicFreight(const Universe& u, const EconomicNetwork& n, 
                               ? "PICKUP " + endpoint(f.source) + " / THEN " + endpoint(f.destination)
                               : "TO " + endpoint(f.destination);
     b.economicAlert = f.phase == FreightPhase::Holding ? .65f : 0.f;
+    if (f.disabledAt >= 0) {
+        b.velocity = {};
+        b.disabled = true;
+        b.hull = 0;
+        b.tint *= .3f;
+        b.status = "DISABLED WRECK / CARGO RETAINED";
+        b.economicBrief = "DISABLED / " + std::to_string(f.kg) + "KG ABOARD";
+        b.economicReport[0] = "WRECK / NO DISPATCH / CARGO ACCOUNTED FOR";
+        b.economicAlert = 1;
+    }
     return b;
 }
 bool economicTradeAccess(const Universe& u, const Navigation& nav, const Pilot& pilot,
@@ -218,6 +230,7 @@ struct EconomyRuntime::Impl {
                 flight.good = f.good;
                 flight.kg = (f.phase == FreightPhase::Transit || f.phase == FreightPhase::Holding) ? f.kg : 0;
                 flight.phase = f.phase;
+                flight.disabledAt = f.disabledAt;
                 flight.source = f.source;
                 flight.destination = f.destination;
                 flight.location = f.location;
@@ -349,7 +362,7 @@ struct EconomyRuntime::Impl {
                 catching = economy.tick() < goal;
                 if (!catching)
                     for (const auto& c : orders) {
-                        if (economy.siteIndex(c.port))
+                        if (economy.siteIndex(c.port) || c.action == EconomicAction::DisableVessel)
                             message = economy.execute(c, player);
                         else {
                             message = "ORDER CANCELLED / MARKET CHANGED";

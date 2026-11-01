@@ -13,6 +13,11 @@ class EconomyValidation {
     EconomyRuntime& runtime_;
     ActivityState& activity_;
     SDL_Window* window_;
+    WeaponSystem& weapons_;
+    WeaponRay weaponRay_;
+    ActivityBody weaponTarget_;
+    bool weaponFlight_ = false;
+    std::string weaponCamera_;
     Address system_ = Address{}.child(Kind::Galaxy, 0).child(Kind::System, 9);
     std::optional<ActivityId> port_;
     MarketView view_;
@@ -162,8 +167,8 @@ class EconomyValidation {
 
   public:
     EconomyValidation(const Universe& u, Navigation& n, Pilot& p, EconomyRuntime& e, ActivityState& a,
-                      SDL_Window* window)
-        : u_(u), nav_(n), pilot_(p), runtime_(e), activity_(a), window_(window) {
+                      SDL_Window* window, WeaponSystem& weapons)
+        : u_(u), nav_(n), pilot_(p), runtime_(e), activity_(a), window_(window), weapons_(weapons) {
         place();
         activity_.seconds = 0;
         runtime_.request(system_, 0);
@@ -171,7 +176,7 @@ class EconomyValidation {
     void advance(Renderer& renderer) {
         age_++;
         if (feedback_) {
-            if (stage_ >= 100) {
+            if (stage_ >= 100 && !weaponFlight_) {
                 view_ = economicMarketView(feedback_.get(), port_, 0, 10, false, page_);
                 renderer.setEconomy(feedback_, &view_);
             } else
@@ -622,7 +627,116 @@ class EconomyValidation {
             std::cout << "PASS: native funded recovery job, real supplier procurement, paid kit, crew work "
                          "and persistent outcomes\n";
             next(107);
-        } else if (stage_ == 107 && age_ > 12)
+        } else if (stage_ == 107 && age_ > 12) {
+            page_ = MarketPage::Weapons;
+            weapons_.setLevel(recoveryPlayer_.weaponLevel);
+            next(108);
+        } else if (stage_ == 108 && age_ > 20) {
+            capture("weapons-shop-portrait");
+            next(121);
+        } else if (stage_ == 121 && age_ > 12) {
+            auto q = economicWeaponQuote(*feedback_, *feedback_->siteIndex(*port_), 2);
+            if (!q.available)
+                throw std::runtime_error("Native armourer has no upgrade: " + q.status);
+            EconomicCommand c;
+            c.sequence = recoveryPlayer_.lastCommand + 1;
+            c.port = *port_;
+            c.action = EconomicAction::FitWeapon;
+            c.serviceUnits = 2;
+            c.limitCents = q.totalCents();
+            if (!feedbackLedger_->execute(c, recoveryPlayer_).starts_with("WEAPON FITTED"))
+                throw std::runtime_error("Weapon upgrade failed");
+            refreshFeedback(s);
+            weapons_.setLevel(2);
+            next(109);
+        } else if (stage_ == 109 && age_ > 20) {
+            capture("weapons-upgraded-portrait");
+            next(110);
+        } else if (stage_ == 110 && age_ > 12) {
+            auto q = economicWeaponQuote(*feedback_, *feedback_->siteIndex(*port_), 2, true);
+            EconomicCommand c;
+            c.sequence = recoveryPlayer_.lastCommand + 1;
+            c.port = *port_;
+            c.action = EconomicAction::SellWeapon;
+            c.serviceUnits = 2;
+            c.limitCents = q.sellCents;
+            if (!feedbackLedger_->execute(c, recoveryPlayer_).starts_with("WEAPON SOLD") ||
+                recoveryPlayer_.weaponLevel)
+                throw std::runtime_error("Native weapon buyback failed");
+            refreshFeedback(s);
+            q = economicWeaponQuote(*feedback_, *feedback_->siteIndex(*port_), 3);
+            c.sequence++;
+            c.action = EconomicAction::FitWeapon;
+            c.serviceUnits = 3;
+            c.limitCents = q.totalCents();
+            if (!feedbackLedger_->execute(c, recoveryPlayer_).starts_with("WEAPON FITTED"))
+                throw std::runtime_error("Native weapon repurchase failed");
+            refreshFeedback(s);
+            weapons_.setLevel(3);
+            next(111);
+        } else if (stage_ == 111 && age_ > 20) {
+            capture("weapons-rearmed-portrait");
+            next(112);
+        } else if (stage_ == 112 && age_ > 12) {
+            weaponTarget_ = sampleActivity(u_.describe(port_->home), 300, activity_.seconds);
+            weaponRay_.reference = port_->home;
+            weaponRay_.origin = weaponTarget_.position + glm::dvec3(0, 0, 650);
+            weaponRay_.direction = {0, 0, -1};
+            weaponRay_.right = {1, 0, 0};
+            weaponRay_.seconds = activity_.seconds;
+            const auto q = glm::quatLookAtRH(weaponRay_.direction, glm::dvec3(0, 1, 0));
+            std::ostringstream camera;
+            camera.precision(17);
+            const auto offset = weaponRay_.origin / 1000. - q * glm::dvec3(0, 0, 1);
+            camera << port_->home.str() << " 3 " << q.w << ' ' << q.x << ' ' << q.y << ' ' << q.z << ' '
+                   << offset.x << ' ' << offset.y << ' ' << offset.z;
+            if (!nav_.restore(camera.str()))
+                throw std::runtime_error("Weapon test camera failed");
+            pilot_.resetMotion();
+            pilot_.setVelocity({});
+            weaponCamera_ = nav_.serialize();
+            activity_.selected = weaponTarget_.id;
+            weaponFlight_ = true;
+            SDL_SetWindowSize(window_, 720, 450);
+            next(113);
+        } else if (stage_ == 113 && age_ > 60 && stats.activityVisible) {
+            capture("weapons-idle");
+            next(120);
+        } else if (stage_ == 120 && age_ > 12) {
+            if (!weapons_.fire(u_, weaponRay_, std::span(&weaponTarget_, 1)))
+                throw std::runtime_error("Starter combat shot did not fire");
+            renderer.cockpitImpulse(CockpitImpulse::Recoil, .6);
+            next(114);
+        } else if (stage_ == 114 && age_ > 12) {
+            capture("weapons-fire");
+            next(115);
+        } else if (stage_ == 115 && age_ > 12) {
+            for (unsigned shot = 0; shot < 4; ++shot) {
+                weapons_.advance(.3);
+                if (!weapons_.fire(u_, weaponRay_, std::span(&weaponTarget_, 1)))
+                    throw std::runtime_error("Native sustained fire failed");
+            }
+            auto target = weaponTarget_;
+            weapons_.apply(target);
+            if (!target.disabled || target.hull != 0 || nav_.serialize() != weaponCamera_)
+                throw std::runtime_error("Shots failed to disable target or moved the ship");
+            WeaponSystem restored;
+            if (!restored.restore(weapons_.serialize(), u_) || restored.damage().size() != 1 ||
+                restored.damage()[0].hull != 0)
+                throw std::runtime_error("Native combat damage failed save round trip");
+            next(116);
+        } else if (stage_ == 116 && age_ > 20) {
+            capture("weapons-disabled");
+            next(117);
+        } else if (stage_ == 117 && age_ > 12) {
+            SDL_SetWindowSize(window_, 480, 640);
+            next(118);
+        } else if (stage_ == 118 && age_ > 30) {
+            capture("weapons-disabled-portrait");
+            std::cout << "PASS: native weapon purchase, upgrade, buyback, repurchase, visible beam, recoil, "
+                         "damage, disabled target and combat persistence\n";
+            next(119);
+        } else if (stage_ == 119 && age_ > 12)
             finished_ = true;
     }
     bool finished() const {
