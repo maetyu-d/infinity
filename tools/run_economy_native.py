@@ -32,7 +32,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('executable')
     parser.add_argument('output', type=Path)
-    parser.add_argument('--scenario', choices=('economy-test', 'npc-combat-test', 'crew-test','crew-trade-test','crew-flight-test','crew-guns-test','station-swap-test'), default='economy-test')
+    parser.add_argument('--scenario', choices=('economy-test', 'npc-combat-test', 'crew-test','crew-trade-test','crew-flight-test','crew-guns-test','station-swap-test','star-stability-test'), default='economy-test')
     args = parser.parse_args()
     root = args.output
     command = [args.executable, '--' + args.scenario, '--render-mode', 'hyperion',

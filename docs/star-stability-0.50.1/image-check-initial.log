@@ -1,0 +1,19 @@
+{
+  "stars_measured": 51,
+  "median_cv": {
+    "legacy": 0.08199361672197067,
+    "filtered": 0.042939441799165354
+  },
+  "improvement": 0.47630750397598354,
+  "static_frames": {
+    "legacy": {
+      "max_delta_255": 0,
+      "changed_pixels": 0
+    },
+    "filtered": {
+      "max_delta_255": 1,
+      "changed_pixels": 1
+    }
+  }
+}
+PASS: stable frozen frames within one display code value; same real-star apertures substantially steadier under idle engine vibration

@@ -1,0 +1,7 @@
+SUBPIXEL radius=0.5 before_cv=3.7986 after_cv=0.0111268
+SUBPIXEL radius=1.05 before_cv=1.60125 after_cv=0.010756
+SUBPIXEL radius=1.5 before_cv=0.987408 after_cv=0.0103272
+SUBPIXEL radius=2 before_cv=0.610745 after_cv=0.0097871
+SUBPIXEL radius=2.7 before_cv=0.290641 after_cv=0.00898763
+IDLE_ENGINE before_cv=1.35929 after_cv=0.0114033
+PASS: flux preservation, bounded optical size, invalid inputs, subpixel sweeps and stationary-engine stability; worst_cv=0.0111268

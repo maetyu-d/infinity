@@ -1,0 +1,38 @@
+Start testing: Nov 01 21:09 GMT
+----------------------------------------------------------
+2/110 Testing: desert_buggy_racing
+2/110 Test: desert_buggy_racing
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_desert_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"desert_buggy_racing" start time: Nov 01 21:09 GMT
+Output:
+----------------------------------------------------------
+RACE seed=20261101 time=136.092 place=1
+RACE seed=42 time=136.783 place=1
+RACE seed=9173 time=137.542 place=1
+PASS 54254 desert checks
+<end of output>
+Test time =   4.23 sec
+----------------------------------------------------------
+Test Passed.
+"desert_buggy_racing" end time: Nov 01 21:09 GMT
+"desert_buggy_racing" time elapsed: 00:00:04
+----------------------------------------------------------
+
+3/110 Testing: ellipsoid_geometry_and_depth
+3/110 Test: ellipsoid_geometry_and_depth
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_ellipsoid_tests" "/Users/user/Documents/SC tutorial/Infinite/build/ellipsoid-tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"ellipsoid_geometry_and_depth" start time: Nov 01 21:09 GMT
+Output:
+----------------------------------------------------------
+PASS 1814 ellipsoid checks; human_parts=42 creature_parts=35 LUT_max_depth_error=0.045238
+<end of output>
+Test time =   0.93 sec
+----------------------------------------------------------
+Test Passed.
+"ellipsoid_geometry_and_depth" end time: Nov 01 21:09 GMT
+"ellipsoid_geometry_and_depth" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Nov 01 21:09 GMT

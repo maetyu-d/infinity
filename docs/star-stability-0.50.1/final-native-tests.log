@@ -1,0 +1,13 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 53: native_star_stability_loop
+1/4 Test #53: native_star_stability_loop .......   Passed   49.20 sec
+    Start 54: native_star_stability_images
+2/4 Test #54: native_star_stability_images .....   Passed   15.92 sec
+    Start 55: native_station_swap_loop
+3/4 Test #55: native_station_swap_loop .........   Passed   26.60 sec
+    Start 56: native_station_swap_images
+4/4 Test #56: native_station_swap_images .......   Passed    4.52 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =  96.29 sec

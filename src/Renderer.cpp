@@ -3,6 +3,7 @@
 #include "infinite/Cockpit.hpp"
 #include "infinite/Economy.hpp"
 #include "infinite/NpcCombat.hpp"
+#include "infinite/PointLight.hpp"
 #include "infinite/StationControl.hpp"
 #include "infinite/StellarEvolution.hpp"
 #include "infinite/Streaming.hpp"
@@ -120,6 +121,7 @@ struct Renderer::Impl {
     uint32_t resetFlags = BGFX_RESET_VSYNC | BGFX_RESET_MAXANISOTROPY;
     std::array<GPUMesh, 4> atomSpheres;
     GPUMesh hyperionBillboardMesh;
+    GPUMesh pointLightBillboardMesh;
     GPUMesh cabin;
     double cabinAspect = 0;
     std::optional<FlightInstruments> instruments;
@@ -132,6 +134,7 @@ struct Renderer::Impl {
     bool polarLights = true;
     bool cloudVolumes = true;
     bool stellarOptics = true;
+    bool pointLightFiltering = true;
     bool landingShade = true;
     bool weatherEffects = true;
     bool planetRings = true;
@@ -184,6 +187,7 @@ struct Renderer::Impl {
     std::vector<Pick> picks;
     std::vector<Instance> billboards;
     std::vector<Instance> cosmicBillboards;
+    std::vector<Instance> pointLightBillboards;
     std::vector<Instance> stellarBillboards;
     std::vector<LocalFrame> anchorFrames;
     std::map<Address, std::vector<LocalFrame>> frameFrames;
@@ -246,6 +250,7 @@ struct Renderer::Impl {
                 destroy(mesh);
             destroy(cabin);
             destroy(hyperionBillboardMesh);
+            destroy(pointLightBillboardMesh);
             for (auto& role : craftMeshes)
                 for (auto& mesh : role)
                     destroy(mesh);
@@ -303,14 +308,25 @@ struct Renderer::Impl {
         ++stats.particles;
         if (background)
             color *= stellarExposure;
+        const bool filteredPoint = pointLightFiltering && background && opticalMaterial == 0;
+        if (filteredPoint) {
+            const double depth = -cameraSpace(p).z;
+            if (depth > 0 && radius > 0) {
+                const double radiusPixels = radius * height * .5 * projection[1][1] / depth;
+                const auto footprint = pointLightFootprint(radiusPixels);
+                radius *= footprint.radiusScale;
+                color *= float(footprint.radianceScale);
+            }
+        }
         auto right = cameraQ * glm::dvec3(radius, 0, 0), up = cameraQ * glm::dvec3(0, radius, 0);
         glm::mat4 transform(1);
         transform[0] = glm::vec4(glm::vec3(right), 0);
         transform[1] = glm::vec4(glm::vec3(up), 0);
         transform[3] = glm::vec4(glm::vec3(p), 1);
-        (opticalMaterial >= 3 ? stellarBillboards
-         : cosmic             ? cosmicBillboards
-                              : billboards)
+        (filteredPoint          ? pointLightBillboards
+         : opticalMaterial >= 3 ? stellarBillboards
+         : cosmic               ? cosmicBillboards
+                                : billboards)
             .push_back({transform, glm::vec4(color, 1.f + opticalMaterial)});
     }
     bool prepareGPU(const std::shared_ptr<const Geometry>& geometry) {
@@ -1355,6 +1371,12 @@ Renderer::Renderer(SDL_Window* window, const Universe& universe, bool benchmark)
     for (auto& vertex : quad.vertices)
         vertex.color = rgba({1, 1, 1});
     p.hyperionBillboardMesh = p.upload(quad);
+    for (size_t i = 1; i < quad.vertices.size(); ++i) {
+        quad.vertices[i].x *= float(pointLightSupport);
+        quad.vertices[i].y *= float(pointLightSupport);
+        quad.vertices[i].color = rgba({0, 0, 0});
+    }
+    p.pointLightBillboardMesh = p.upload(quad);
     p.hyperion = std::make_unique<HyperionRenderer>();
     p.instanceLayout.begin();
     for (unsigned i = 0; i < 5; ++i)
@@ -1486,6 +1508,9 @@ void Renderer::setPolarLights(bool enabled) {
 void Renderer::setStellarOptics(bool enabled) {
     impl_->stellarOptics = enabled;
 }
+void Renderer::setPointLightFiltering(bool enabled) {
+    impl_->pointLightFiltering = enabled;
+}
 void Renderer::setLandingShade(bool enabled) {
     impl_->landingShade = enabled;
 }
@@ -1537,6 +1562,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     p.picks.clear();
     p.billboards.clear();
     p.cosmicBillboards.clear();
+    p.pointLightBillboards.clear();
     p.stellarBillboards.clear();
     p.frameFrames.clear();
     p.framePoses.clear();
@@ -1857,13 +1883,14 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     p.stats.surfaceBytes = surfaceStats.bytes;
     p.stats.surfacePending = surfaceStats.pending;
     p.stats.surfaceGpuBytes = p.surfaceMeshBytes;
-    auto drawBillboards = [&](const std::vector<Instance>& instances, bool cosmic, bool stellar = false) {
+    auto drawBillboards = [&](const std::vector<Instance>& instances, bool cosmic, bool stellar = false,
+                              bool compact = false) {
         uint32_t count = bgfx::getAvailInstanceDataBuffer(static_cast<uint32_t>(instances.size()), 80);
         if (count) {
             bgfx::InstanceDataBuffer buffer;
             bgfx::allocInstanceDataBuffer(&buffer, count, 80);
             std::memcpy(buffer.data, instances.data(), count * sizeof(Instance));
-            const auto& mesh = p.hyperionBillboardMesh;
+            const auto& mesh = compact ? p.pointLightBillboardMesh : p.hyperionBillboardMesh;
             bgfx::setVertexBuffer(0, mesh.vertices);
             bgfx::setIndexBuffer(mesh.indices);
             bgfx::setInstanceDataBuffer(&buffer);
@@ -1892,6 +1919,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
                          stellar ? p.hyperion->coronaProgram() : p.hyperion->glowProgram());
         }
     };
+    drawBillboards(p.pointLightBillboards, true, false, true);
     drawBillboards(p.cosmicBillboards, true);
     drawBillboards(p.billboards, false);
     drawBillboards(p.stellarBillboards, false, true);

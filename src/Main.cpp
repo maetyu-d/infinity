@@ -12,6 +12,7 @@
 #include "PilotValidation.hpp"
 #include "PlanetDiversityValidation.hpp"
 #include "PlanetValidation.hpp"
+#include "PointLightValidation.hpp"
 #include "PolarValidation.hpp"
 #include "StationSwapValidation.hpp"
 #include "StellarDiversityValidation.hpp"
@@ -60,7 +61,8 @@ struct Options {
     bool streamingTest = false;
     bool terrainQuality = false, terrainSurfaceFrame = false, sunShadows = true;
     bool economyTest = false, cockpitMotionTest = false, npcTest = false, crewTest = false,
-         crewTradeTest = false, crewFlightTest = false, crewGunsTest = false, stationSwapTest = false;
+         crewTradeTest = false, crewFlightTest = false, crewGunsTest = false, stationSwapTest = false,
+         starStabilityTest = false;
     bool pilotTest = false, terrainTest = false, surfaceTest = false;
 };
 static Options options(int argc, char** argv) {
@@ -80,7 +82,10 @@ static Options options(int argc, char** argv) {
             o.smoke = o.tour = o.fresh = true;
         else if (arg == "--benchmark-tour")
             o.benchmark = o.smoke = o.tour = o.fresh = true;
-        else if (arg == "--station-swap-test") {
+        else if (arg == "--star-stability-test") {
+            o.smoke = o.fresh = o.starStabilityTest = o.benchmark = true;
+            o.visualTime = 12;
+        } else if (arg == "--station-swap-test") {
             o.smoke = o.fresh = o.stationSwapTest = o.benchmark = true;
             o.visualTime = 12;
         } else if (arg == "--crew-guns-test") {
@@ -230,7 +235,7 @@ static Options options(int argc, char** argv) {
         unsigned(o.landingLightTest) + unsigned(o.weatherTest) + unsigned(o.diversityTest) +
         unsigned(o.stellarDiversityTest) + unsigned(o.npcTest) + unsigned(o.crewTest) +
         unsigned(o.crewTradeTest) + unsigned(o.crewFlightTest) + unsigned(o.crewGunsTest) +
-        unsigned(o.stationSwapTest);
+        unsigned(o.stationSwapTest) + unsigned(o.starStabilityTest);
     if (validationModes > 1 || (validationModes && o.tour))
         throw std::invalid_argument("Choose one automated validation mode");
     if (o.width < 320 || o.height < 240 || o.width > 7680 || o.height > 4320 || o.frames < 0)
@@ -274,7 +279,8 @@ int main(int argc, char** argv) {
                             opt.polarTest || opt.cloudTest || opt.celestialTest || opt.landingLightTest ||
                             opt.weatherTest || opt.diversityTest || opt.stellarDiversityTest ||
                             opt.cockpitMotionTest || opt.npcTest || opt.crewTest || opt.crewTradeTest ||
-                            opt.crewFlightTest || opt.crewGunsTest || opt.stationSwapTest;
+                            opt.crewFlightTest || opt.crewGunsTest || opt.stationSwapTest ||
+                            opt.starStabilityTest;
         std::unique_ptr<FlightValidation> flightProof;
         if (opt.flightTest)
             flightProof = std::make_unique<FlightValidation>(universe, nav);
@@ -736,6 +742,9 @@ int main(int argc, char** argv) {
             if (opt.stationSwapTest)
                 stationSwapProof = std::make_unique<StationSwapValidation>(
                     universe, nav, pilot, crew, weapons, stationControl, activity, window);
+            std::unique_ptr<PointLightValidation> pointLightProof;
+            if (opt.starStabilityTest)
+                pointLightProof = std::make_unique<PointLightValidation>(universe, nav, pilot, activity);
             std::unique_ptr<SurfaceValidation> surfaceProof;
             if (opt.surfaceTest)
                 surfaceProof = std::make_unique<SurfaceValidation>(universe, nav, pilot, activity);
@@ -2076,11 +2085,19 @@ int main(int argc, char** argv) {
                 renderer.setCockpit(pilotEnabled ? &cockpit : nullptr);
                 if (motionProof)
                     motionProof->apply(renderer);
+                if (pointLightProof)
+                    pointLightProof->apply(renderer);
                 auto stats =
                     renderer.render(nav, cache,
                                     overlay && !opt.polarTest && !opt.cloudTest && !opt.celestialTest &&
                                         !opt.landingLightTest && !opt.weatherTest && !opt.diversityTest,
-                                    fps, persistence.markerCount(), noticeTime > 0 ? notice : "", looking);
+                                    fps, persistence.markerCount(),
+                                    noticeTime > 0 && !opt.starStabilityTest ? notice : "", looking);
+                if (pointLightProof) {
+                    pointLightProof->observe(stats, cache, renderer, opt.captures);
+                    if (pointLightProof->finished())
+                        running = false;
+                }
                 if (npcProof) {
                     npcProof->observe(stats, renderer, opt.captures);
                     if (npcProof->finished())
@@ -2295,7 +2312,7 @@ int main(int argc, char** argv) {
                     running = false;
                 if (opt.smoke && std::chrono::duration<double>(now - start).count() >
                                      (opt.crewTest || opt.crewTradeTest || opt.crewFlightTest ||
-                                              opt.crewGunsTest || opt.stationSwapTest
+                                              opt.crewGunsTest || opt.stationSwapTest || opt.starStabilityTest
                                           ? 240
                                       : opt.npcTest                                   ? 180
                                       : opt.economyTest                               ? 330
@@ -2358,7 +2375,10 @@ int main(int argc, char** argv) {
             std::cout << "peak_rss_bytes=" << usage.ru_maxrss * 1024 << '\n';
 #endif
 #endif
-            if (opt.stationSwapTest) {
+            if (opt.starStabilityTest) {
+                if (!pointLightProof->finished())
+                    throw std::runtime_error("Native star stability validation incomplete");
+            } else if (opt.stationSwapTest) {
                 if (!stationSwapProof->finished())
                     throw std::runtime_error("Native station swap validation incomplete");
             } else if (opt.crewGunsTest) {

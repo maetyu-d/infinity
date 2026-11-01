@@ -49,9 +49,10 @@ class Renderer {
     void screenshot(const std::string& path);
     std::string backend() const;
     void setSunShadows(bool enabled);
-    void setPolarLights(bool enabled);   // Presentation switch for native negative-control captures.
-    void setStellarOptics(bool enabled); // Native optics negative control.
-    void setLandingShade(bool enabled);  // Native contact-shading negative control.
+    void setPolarLights(bool enabled);         // Presentation switch for native negative-control captures.
+    void setStellarOptics(bool enabled);       // Native optics negative control.
+    void setPointLightFiltering(bool enabled); // Native point-light stability negative control.
+    void setLandingShade(bool enabled);        // Native contact-shading negative control.
     void setPlanetRings(bool enabled);
     void setWeatherEffects(bool enabled); // Native precipitation, visibility and discharge control.
     void setCloudVolumes(bool enabled);   // Native optical-volume negative control; weather is unchanged.

@@ -1,0 +1,30 @@
+[
+  {
+    "path": "legacy-still-0.png",
+    "width": 1440,
+    "height": 900,
+    "rgb_sha256": "ceab3a88c4743562db8ece3f012c965897cb94819adb429c6ccccfdbae15c48a",
+    "png_sha256": "fbd6fc6339d68156d346988fd6c191b9a242b5b93c4a6fbf4a9999850545fb5f"
+  },
+  {
+    "path": "filtered-still-0.png",
+    "width": 1440,
+    "height": 900,
+    "rgb_sha256": "2673267a1ca7b730f7d75f323c0f51e6abea830e2d02483fd72dffac9c33bd0d",
+    "png_sha256": "5f4fc6d6ee26fd8a8e57d47b8baa90eec6131a57c1563a2e6ee1607bc8c0465a"
+  },
+  {
+    "path": "legacy-idle-7.png",
+    "width": 1440,
+    "height": 900,
+    "rgb_sha256": "a91911d0d03774eac4f29896bcde5be954fc7ce20988608a1b7ab35dac10036f",
+    "png_sha256": "1f9063785e7b57c51ddff83214dd7a90ee0830197dd1efef9ee41ec0aa3a590b"
+  },
+  {
+    "path": "filtered-idle-7.png",
+    "width": 1440,
+    "height": 900,
+    "rgb_sha256": "60573c57d5af5f49a5d2023983a919890eb32fec79c8502314de9bd071f1d944",
+    "png_sha256": "3a662dcf62d75ec98166ee47d2946af0a5c6691be360fd34b0cfe3836527c4cf"
+  }
+]

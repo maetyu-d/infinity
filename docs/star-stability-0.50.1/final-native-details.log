@@ -1,0 +1,83 @@
+Start testing: Nov 01 21:22 GMT
+----------------------------------------------------------
+53/110 Testing: native_star_stability_loop
+53/110 Test: native_star_stability_loop
+Command: "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake" "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite" "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/star-stability/native" "-P" "/Users/user/Documents/SC tutorial/Infinite/cmake/RunStarStability.cmake"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_star_stability_loop" start time: Nov 01 21:22 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =  49.20 sec
+----------------------------------------------------------
+Test Passed.
+"native_star_stability_loop" end time: Nov 01 21:23 GMT
+"native_star_stability_loop" time elapsed: 00:00:49
+----------------------------------------------------------
+
+54/110 Testing: native_star_stability_images
+54/110 Test: native_star_stability_images
+Command: "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9" "/Users/user/Documents/SC tutorial/Infinite/tools/check_star_stability_captures.py" "/Users/user/Documents/SC tutorial/Infinite/build/star-stability/native"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_star_stability_images" start time: Nov 01 21:23 GMT
+Output:
+----------------------------------------------------------
+{
+  "stars_measured": 52,
+  "median_cv": {
+    "legacy": 0.08261802193030221,
+    "filtered": 0.056150922728328376
+  },
+  "improvement": 0.3203550337274097,
+  "static_frames": {
+    "legacy": {
+      "max_delta_255": 0,
+      "changed_pixels": 0
+    },
+    "filtered": {
+      "max_delta_255": 0,
+      "changed_pixels": 0
+    }
+  }
+}
+PASS: stable frozen frames within one display code value; same real-star apertures substantially steadier under idle engine vibration
+<end of output>
+Test time =  15.92 sec
+----------------------------------------------------------
+Test Passed.
+"native_star_stability_images" end time: Nov 01 21:23 GMT
+"native_star_stability_images" time elapsed: 00:00:15
+----------------------------------------------------------
+
+55/110 Testing: native_station_swap_loop
+55/110 Test: native_station_swap_loop
+Command: "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake" "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite" "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/station-swap/native" "-P" "/Users/user/Documents/SC tutorial/Infinite/cmake/RunStationSwap.cmake"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_station_swap_loop" start time: Nov 01 21:23 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =  26.60 sec
+----------------------------------------------------------
+Test Passed.
+"native_station_swap_loop" end time: Nov 01 21:23 GMT
+"native_station_swap_loop" time elapsed: 00:00:26
+----------------------------------------------------------
+
+56/110 Testing: native_station_swap_images
+56/110 Test: native_station_swap_images
+Command: "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9" "/Users/user/Documents/SC tutorial/Infinite/tools/check_station_swap_captures.py" "/Users/user/Documents/SC tutorial/Infinite/build/station-swap/native"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_station_swap_images" start time: Nov 01 21:23 GMT
+Output:
+----------------------------------------------------------
+PASS: eight native helm, handover, turret, selected fire, independent view, portrait and return frames
+<end of output>
+Test time =   4.52 sec
+----------------------------------------------------------
+Test Passed.
+"native_station_swap_images" end time: Nov 01 21:23 GMT
+"native_station_swap_images" time elapsed: 00:00:04
+----------------------------------------------------------
+
+End testing: Nov 01 21:23 GMT

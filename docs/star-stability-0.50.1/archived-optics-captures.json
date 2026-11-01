@@ -1,0 +1,74 @@
+[
+  {
+    "path": "sun-2.ppm",
+    "sha256": "601cc70a4a201bd2a679cd7662b6f1be0bc7cbc1856d10ad781e93cf4c1594ff"
+  },
+  {
+    "path": "partial-1.ppm",
+    "sha256": "037985e9d9fab7a37eab55a303bbb3a410a7f5c43b55879dfd6967e182a732d2"
+  },
+  {
+    "path": "partial-0.ppm",
+    "sha256": "875219dc5aaac933a90a7cbabb2aa93168b801c656b2a57f9ff6c37643b1c0b9"
+  },
+  {
+    "path": "ice-2.ppm",
+    "sha256": "521cc74869d32d69d14f173b300f6687cc47fb96045c125c1bd2d3347bb84a1c"
+  },
+  {
+    "path": "ice-0.ppm",
+    "sha256": "a7e34391115c041d07204d94deb4e006db1382040a0aff85ee787820631fc9b7"
+  },
+  {
+    "path": "sun-1.ppm",
+    "sha256": "a16e1504729ff463320064d3defede485033ca9c88b650d6667f25bdaf71cb14"
+  },
+  {
+    "path": "partial-2.ppm",
+    "sha256": "ae63fe0f835925bd98c9cff43205ebbf222b10f3cf0c5fd4c0eb00c53d8084f7"
+  },
+  {
+    "path": "sun-0.ppm",
+    "sha256": "e9f60c218ad15c44eeb8cbb2a3dbed2950c231e3a37aa9af5eba35b09476b88d"
+  },
+  {
+    "path": "ice-1.ppm",
+    "sha256": "a7e34391115c041d07204d94deb4e006db1382040a0aff85ee787820631fc9b7"
+  },
+  {
+    "path": "day-1.ppm",
+    "sha256": "7a68ba9655ef6e222377b223e11027853743f2a3101233a9ed38e56e88d0aa4e"
+  },
+  {
+    "path": "day-0.ppm",
+    "sha256": "7697613deb6a44a5b15c6ac2d55c0197ddeb635d16647aaa8f8a08b2cf9e6f7d"
+  },
+  {
+    "path": "day-2.ppm",
+    "sha256": "ac14865fcb8b0a9e2ff32d87eb717d5cb365bdf71491700c9b8878102fbd6468"
+  },
+  {
+    "path": "away-1.ppm",
+    "sha256": "478934c01e58f85462a0f4a0e9004f9c0a9afceb1232d101e26c2a8ab8241d18"
+  },
+  {
+    "path": "away-0.ppm",
+    "sha256": "478934c01e58f85462a0f4a0e9004f9c0a9afceb1232d101e26c2a8ab8241d18"
+  },
+  {
+    "path": "eclipse-2.ppm",
+    "sha256": "985be015388d02eca9c5229a4571b646dadf511986c1c340de17891c5aa63edf"
+  },
+  {
+    "path": "eclipse-0.ppm",
+    "sha256": "5d57dd5c83edca349570571a2f81401eb072696faedc49f3afd07ba55a60817e"
+  },
+  {
+    "path": "away-2.ppm",
+    "sha256": "fbae802557b0de25a707a8eecbea1d9adbf529f6d819578da14bb03a7f76ef2f"
+  },
+  {
+    "path": "eclipse-1.ppm",
+    "sha256": "5d57dd5c83edca349570571a2f81401eb072696faedc49f3afd07ba55a60817e"
+  }
+]

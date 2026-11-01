@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Infinite VERSION 0.50.0 LANGUAGES C CXX)
+project(Infinite VERSION 0.50.1 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -39,6 +39,9 @@ else()
   target_compile_options(infinite_performance_tests PRIVATE -ffp-contract=off)
 endif()
 enable_testing()
+add_executable(infinite_point_light_tests tests/PointLightTests.cpp)
+target_link_libraries(infinite_point_light_tests PRIVATE infinite_core)
+add_test(NAME stable_background_point_lights COMMAND infinite_point_light_tests)
 target_sources(infinite_core PRIVATE src/StationControl.cpp)
 add_executable(infinite_station_control_tests tests/StationControlTests.cpp)
 target_link_libraries(infinite_station_control_tests PRIVATE infinite_core)
@@ -233,6 +236,13 @@ if(INFINITE_VIEWER)
   endif()
   if(INFINITE_GPU_TESTS)
     find_package(Python3 3.9 COMPONENTS Interpreter REQUIRED)
+    add_test(NAME native_star_stability_loop COMMAND "${CMAKE_COMMAND}"
+      "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/star-stability/native"
+      -P "${PROJECT_SOURCE_DIR}/cmake/RunStarStability.cmake")
+    set_tests_properties(native_star_stability_loop PROPERTIES FIXTURES_SETUP star_stability_captures TIMEOUT 300)
+    add_test(NAME native_star_stability_images COMMAND "${Python3_EXECUTABLE}"
+      "${PROJECT_SOURCE_DIR}/tools/check_star_stability_captures.py" "${CMAKE_BINARY_DIR}/star-stability/native")
+    set_tests_properties(native_star_stability_images PROPERTIES FIXTURES_REQUIRED star_stability_captures TIMEOUT 90)
     add_test(NAME native_station_swap_loop COMMAND "${CMAKE_COMMAND}"
       "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/station-swap/native"
       -P "${PROJECT_SOURCE_DIR}/cmake/RunStationSwap.cmake")

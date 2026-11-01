@@ -1,0 +1,15 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start  1: stable_background_point_lights
+1/5 Test  #1: stable_background_point_lights ...   Passed    0.13 sec
+    Start  4: captain_gunner_station_swap
+2/5 Test  #4: captain_gunner_station_swap ......   Passed    0.45 sec
+    Start 14: cockpit_motion_and_feedback
+3/5 Test #14: cockpit_motion_and_feedback ......   Passed    0.13 sec
+    Start 23: addressed_stellar_optics
+4/5 Test #23: addressed_stellar_optics .........   Passed    0.21 sec
+    Start 44: rendering_preserves_universe
+5/5 Test #44: rendering_preserves_universe .....   Passed    3.16 sec
+
+100% tests passed, 0 tests failed out of 5
+
+Total Test time (real) =   4.17 sec

@@ -1,0 +1,53 @@
+{
+  "version": "0.50.1",
+  "build": 56,
+  "build_sha256": "5107d9207682410be6dadd1912d267375bddd1204699f4ddd9aa3030f6e448ef",
+  "native_executable_hashes": {
+    "star-stability": "5107d9207682410be6dadd1912d267375bddd1204699f4ddd9aa3030f6e448ef",
+    "station-swap": "5107d9207682410be6dadd1912d267375bddd1204699f4ddd9aa3030f6e448ef"
+  },
+  "universe_cpu_tests_passed": 50,
+  "workspace_cpu_tests_passed": 51,
+  "final_focused_tests_passed": 5,
+  "final_native_tests_passed": 4,
+  "native_frames": 686,
+  "peak_rss_bytes": 157122560,
+  "stars_measured": 52,
+  "native_brightness_cv": {
+    "legacy": 0.08261802193030221,
+    "filtered": 0.056150922728328376
+  },
+  "native_brightness_variation_reduction": 0.3203550337274097,
+  "static_frames": {
+    "legacy": {
+      "max_delta_255": 0,
+      "changed_pixels": 0
+    },
+    "filtered": {
+      "max_delta_255": 0,
+      "changed_pixels": 0
+    }
+  },
+  "core_and_halo_energy_error_bound": 0.001,
+  "protected_files": 196,
+  "sampled_performance": {
+    "legacy": {
+      "sampled_cpu_median_ms": 23.95865,
+      "sampled_gpu_median_ms": 94.388
+    },
+    "filtered": {
+      "sampled_cpu_median_ms": 24.42425,
+      "sampled_gpu_median_ms": 79.10935
+    }
+  },
+  "performance_note": "Shared-host diagnostics including capture readback, concurrent app/build activity and transient disk pressure; not a controlled performance guarantee.",
+  "extra_workspace_cpu_test": "A separate game test was present in the concurrent working tree; its files are excluded from this change.",
+  "known_baseline_failure": {
+    "test": "native_celestial_optics_images",
+    "assertion": "ice: visible celestial rendering is missing",
+    "baseline_0_50_changed_pixels_over_8": 0,
+    "initial_filter_changed_pixels_over_8": 0,
+    "baseline_executable_sha256": "f6a37065b44d9278f5779e245e53809a715d31f1a9e7cbf1bf9050284a2fb342"
+  },
+  "visual_qa": "Final compact star sprites, still and idle captures reviewed; normal saved flight reopened."
+}

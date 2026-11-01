@@ -1,0 +1,41 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+STAR_STABILITY legacy-still-0 stars=29510 geometry=14978716559484554833 gpu_ms=140.882 cpu_ms=22.3001
+STAR_STABILITY legacy-still-1 stars=29510 geometry=14978716559484554833 gpu_ms=178.883 cpu_ms=22.2361
+STAR_STABILITY legacy-idle-0 stars=29510 geometry=14978716559484554833 gpu_ms=120.226 cpu_ms=23.7053
+STAR_STABILITY legacy-idle-1 stars=29511 geometry=14978716559484554833 gpu_ms=129.615 cpu_ms=20.8776
+STAR_STABILITY legacy-idle-2 stars=29511 geometry=14978716559484554833 gpu_ms=70.9674 cpu_ms=20.9171
+STAR_STABILITY legacy-idle-3 stars=29509 geometry=14978716559484554833 gpu_ms=89.3936 cpu_ms=23.5562
+STAR_STABILITY legacy-idle-4 stars=29510 geometry=14978716559484554833 gpu_ms=117.065 cpu_ms=28.5386
+STAR_STABILITY legacy-idle-5 stars=29511 geometry=14978716559484554833 gpu_ms=97.9923 cpu_ms=24.4042
+STAR_STABILITY legacy-idle-6 stars=29510 geometry=14978716559484554833 gpu_ms=83.579 cpu_ms=26.4716
+STAR_STABILITY legacy-idle-7 stars=29509 geometry=14978716559484554833 gpu_ms=47.9057 cpu_ms=26.2782
+STAR_STABILITY legacy-idle-8 stars=29511 geometry=14978716559484554833 gpu_ms=74.01 cpu_ms=24.212
+STAR_STABILITY legacy-idle-9 stars=29510 geometry=14978716559484554833 gpu_ms=90.7837 cpu_ms=21.9034
+STAR_STABILITY legacy-idle-10 stars=29511 geometry=14978716559484554833 gpu_ms=128.843 cpu_ms=24.6437
+STAR_STABILITY legacy-idle-11 stars=29509 geometry=14978716559484554833 gpu_ms=101.316 cpu_ms=22.1701
+STAR_STABILITY legacy-idle-12 stars=29510 geometry=14978716559484554833 gpu_ms=36.0057 cpu_ms=21.2676
+STAR_STABILITY legacy-idle-13 stars=29511 geometry=14978716559484554833 gpu_ms=36.2431 cpu_ms=26.18
+STAR_STABILITY legacy-idle-14 stars=29510 geometry=14978716559484554833 gpu_ms=144.925 cpu_ms=21.7442
+STAR_STABILITY legacy-idle-15 stars=29509 geometry=14978716559484554833 gpu_ms=178.617 cpu_ms=30.1839
+STAR_STABILITY filtered-still-0 stars=29510 geometry=14978716559484554833 gpu_ms=121.369 cpu_ms=22.0813
+STAR_STABILITY filtered-still-1 stars=29510 geometry=14978716559484554833 gpu_ms=90.7434 cpu_ms=23.0134
+STAR_STABILITY filtered-idle-0 stars=29510 geometry=14978716559484554833 gpu_ms=151.155 cpu_ms=25.0688
+STAR_STABILITY filtered-idle-1 stars=29511 geometry=14978716559484554833 gpu_ms=164.512 cpu_ms=21.9465
+STAR_STABILITY filtered-idle-2 stars=29511 geometry=14978716559484554833 gpu_ms=34.6346 cpu_ms=27.0152
+STAR_STABILITY filtered-idle-3 stars=29509 geometry=14978716559484554833 gpu_ms=40.8305 cpu_ms=24.2737
+STAR_STABILITY filtered-idle-4 stars=29510 geometry=14978716559484554833 gpu_ms=24.5665 cpu_ms=22.3609
+STAR_STABILITY filtered-idle-5 stars=29511 geometry=14978716559484554833 gpu_ms=57.3145 cpu_ms=22.7465
+STAR_STABILITY filtered-idle-6 stars=29510 geometry=14978716559484554833 gpu_ms=118.721 cpu_ms=25.2941
+STAR_STABILITY filtered-idle-7 stars=29509 geometry=14978716559484554833 gpu_ms=71.2526 cpu_ms=23.3871
+STAR_STABILITY filtered-idle-8 stars=29511 geometry=14978716559484554833 gpu_ms=49.4196 cpu_ms=30.0536
+STAR_STABILITY filtered-idle-9 stars=29510 geometry=14978716559484554833 gpu_ms=81.1732 cpu_ms=27.9194
+STAR_STABILITY filtered-idle-10 stars=29511 geometry=14978716559484554833 gpu_ms=61.0201 cpu_ms=22.726
+STAR_STABILITY filtered-idle-11 stars=29509 geometry=14978716559484554833 gpu_ms=172.51 cpu_ms=24.5748
+STAR_STABILITY filtered-idle-12 stars=29510 geometry=14978716559484554833 gpu_ms=150.351 cpu_ms=23.7405
+STAR_STABILITY filtered-idle-13 stars=29511 geometry=14978716559484554833 gpu_ms=156.724 cpu_ms=36.3836
+STAR_STABILITY filtered-idle-14 stars=29510 geometry=14978716559484554833 gpu_ms=113.811 cpu_ms=22.9011
+STAR_STABILITY filtered-idle-15 stars=29509 geometry=14978716559484554833 gpu_ms=77.0455 cpu_ms=35.1579
+PASS: native fixed-ship star stability, static and real engine vibration, same addressed emitters and geometry
+FRAME median_ms=48.9117 p95_ms=200.426 frames=686 cache_bytes=9963744
+peak_rss_bytes=157122560

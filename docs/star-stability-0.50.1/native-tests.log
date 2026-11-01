@@ -1,0 +1,26 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 52: native_star_stability_loop
+1/6 Test #52: native_star_stability_loop .......   Passed   53.20 sec
+    Start 53: native_star_stability_images
+2/6 Test #53: native_star_stability_images .....   Passed   21.76 sec
+    Start 54: native_station_swap_loop
+3/6 Test #54: native_station_swap_loop .........   Passed   39.90 sec
+    Start 55: native_station_swap_images
+4/6 Test #55: native_station_swap_images .......   Passed    2.75 sec
+    Start 79: native_celestial_optics
+5/6 Test #79: native_celestial_optics ..........   Passed  143.34 sec
+    Start 80: native_celestial_optics_images
+6/6 Test #80: native_celestial_optics_images ...***Failed   28.64 sec
+Traceback (most recent call last):
+  File "/Users/user/Documents/SC tutorial/Infinite/tools/check_celestial_optics.py", line 36, in <module>
+    assert result[scene]['changed_pixels'] > 100, f'{scene}: visible celestial rendering is missing'
+AssertionError: ice: visible celestial rendering is missing
+
+
+83% tests passed, 1 tests failed out of 6
+
+Total Test time (real) = 289.65 sec
+
+The following tests FAILED:
+	 80 - native_celestial_optics_images (Failed)
+Errors while running CTest
