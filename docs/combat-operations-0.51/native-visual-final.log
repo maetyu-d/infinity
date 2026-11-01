@@ -1,0 +1,9 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 56: native_station_swap_loop
+1/2 Test #56: native_station_swap_loop .........   Passed   42.10 sec
+    Start 57: native_station_swap_images
+2/2 Test #57: native_station_swap_images .......   Passed    4.10 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =  46.21 sec

@@ -8,6 +8,10 @@ EconomicJobPlan economicPlanJob(const EconomySnapshot& s, const EconomySnapshot:
     if (!s.network || job.source >= s.network->sites.size() || job.destination >= s.network->sites.size() ||
         job.kg < 0 || job.kg > maxShipPayloadKg || size_t(job.good) >= goodCount)
         return p;
+    if (job.combat) {
+        p.fits = true;
+        return p;
+    }
     const auto& source = s.network->sites[job.source];
     const auto& destination = s.network->sites[job.destination];
     const bool loaded = job.haul && job.action == EconomicAction::DeliverHaul;

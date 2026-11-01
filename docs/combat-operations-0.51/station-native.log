@@ -1,0 +1,18 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+STATION_SWAP_CAPTURE swap-helm shots=0 helm_quality=0
+STATION_SWAP_CAPTURE swap-relief-walking shots=0 helm_quality=0
+STATION_SWAP_CAPTURE swap-gun-ready shots=0 helm_quality=0.961746
+STATION_SWAP_CAPTURE swap-gun-fire shots=1 helm_quality=0.961717
+STATION_SWAP_CAPTURE swap-gun-aim shots=1 helm_quality=0.961672
+STATION_SWAP_CAPTURE swap-portrait shots=1 helm_quality=0.961592
+STATION_SWAP_CAPTURE swap-pilot-unavailable shots=1 helm_quality=0
+STATION_SWAP_CAPTURE swap-returned-helm shots=1 helm_quality=0
+PASS: native captain/gunner handover, corridor walking, crew helm, independent aim, selected-gun hit, pilot loss, return and portrait HUD
+STATION_SWAP_CAPTURE swap-crew-circle shots=1 helm_quality=0.954427
+STATION_SWAP_CAPTURE swap-crew-evade shots=1 helm_quality=0.940082
+STATION_SWAP_CAPTURE swap-crew-retreat shots=1 helm_quality=0.924489
+STATION_SWAP_CAPTURE swap-security-jobs shots=1 helm_quality=0
+PASS: native crew circle, evade, retreat, starboard arc and funded security board
+FRAME median_ms=57.1123 p95_ms=152.217 frames=582 cache_bytes=11319552
+peak_rss_bytes=166821888

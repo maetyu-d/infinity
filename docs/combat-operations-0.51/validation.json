@@ -1,0 +1,14 @@
+{
+  "version": "0.51.0",
+  "baseline": "842b5db",
+  "core_suites_passed": 51,
+  "native_checks_passed": 4,
+  "final_station_checks_passed": 2,
+  "post_visual_fix_hud_suites_passed": 2,
+  "protected_sources": 201,
+  "station_frames": 12,
+  "tested_binary_sha256": "61f03e738f9d39c4265bc5a544857c9368f15abfb9dddb139c6bb3c64b14cbf8",
+  "native_binary_sha256": "61f03e738f9d39c4265bc5a544857c9368f15abfb9dddb139c6bb3c64b14cbf8",
+  "normal_saved_flight_verified": true,
+  "live_security_board_verified": true
+}

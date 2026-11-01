@@ -140,6 +140,22 @@ NpcCombatReport NpcCombat::update(const Universe& u, const NpcPlayer& player,
     }
     for (auto& c : local) {
         auto& a = *c.agent;
+        std::optional<ActivityId> victim;
+        if (escort_ && c.body.kind == ActivityKind::Raider && a.aggroUntil <= player.seconds) {
+            const auto it = std::find_if(input.begin(), input.end(), [&](const auto& b) {
+                return b.id == *escort_ && b.id.home == c.body.id.home;
+            });
+            if (it != input.end()) {
+                auto escorted = *it;
+                apply(escorted);
+                weapons.apply(escorted);
+                if (!escorted.disabled && glm::length(escorted.position - c.player) < 8000) {
+                    c.player = escorted.position;
+                    c.velocity = escorted.velocity;
+                    victim = escorted.id;
+                }
+            }
+        }
         if (c.body.kind == ActivityKind::Patrol)
             for (const auto& incident : incidents)
                 if (incident.home == c.body.id.home &&
@@ -260,9 +276,12 @@ NpcCombatReport NpcCombat::update(const Universe& u, const NpcPlayer& player,
                 weapons.apply(body);
                 targets.push_back(body);
             }
-        targets.push_back(proxy);
+        if (!victim)
+            targets.push_back(proxy);
         const auto trace = traceWeapon(u, ray, 2400, targets, geometry);
-        const bool hit = trace.body && trace.body->id == proxy.id;
+        const bool hit = !victim && trace.body && trace.body->id == proxy.id;
+        if (trace.body && civilian(trace.body->kind) && report_.civilianHits.size() < 24)
+            report_.civilianHits.push_back(*trace.body);
         if (hit) {
             report_.playerDamage += c.body.kind == ActivityKind::Raider ? 4. : 6.;
             damageFlash_ = 1;

@@ -850,6 +850,16 @@ void Pilot::step(const HelmInput& input, double dt) {
         }
     }
     if (crewQuality_ > 0) {
+        if (crewVelocity_) {
+            wanted = universe_.relative(crewCourseFrame_, nav_.anchor, 0).orientation * *crewVelocity_;
+            // An order cannot command a descent inside the existing stopping envelope.
+            if (beforeGround &&
+                beforeGround->altitude <
+                    std::max(200. * sizeRatio(), instruments_.stoppingDistance + 80 * sizeRatio())) {
+                wanted -= up * std::min(0., glm::dot(wanted, up));
+                wanted += up * (20 * sizeRatio());
+            }
+        }
         if (!autopilot_ && launchTime_ <= 0) {
             const auto course =
                 universe_.relative(crewCourseFrame_, nav_.anchor, 0).orientation * crewCourse_;
@@ -1184,6 +1194,18 @@ void Pilot::updateCrew(const Address& frame, glm::dquat course, double quality, 
     update({}, dt, visible);
     ship_.assist = assist;
     crewQuality_ = 0;
+}
+void Pilot::updateCrewMotion(const Address& frame, glm::dquat course, glm::dvec3 velocity, double quality,
+                             double dt, const std::shared_ptr<const Geometry>& visible) {
+    if (!std::isfinite(glm::length(velocity)))
+        return;
+    const bool navigating = autopilot_;
+    autopilot_ = false;
+    clearAssistCapture();
+    crewVelocity_ = velocity;
+    updateCrew(frame, course, quality, dt, visible);
+    crewVelocity_.reset();
+    autopilot_ = navigating && !ship_.landed && ship_.hull > 0;
 }
 void Pilot::instrument() {
     synchronizeFrame();

@@ -27,6 +27,8 @@ std::string_view EconomyPlayer::carrierRank() const {
                           : "NEW CARRIER";
 }
 bool Economy::reconcilePlayer(EconomyPlayer& player) const {
+    if (!reconcileCombat(player))
+        return false;
     for (const auto& market : crewMarkets_)
         for (const auto& m : market.offers)
             if (crewOwned(player, m.id))
@@ -260,6 +262,37 @@ std::vector<EconomySnapshot::Job> economicJobs(const EconomySnapshot& s) {
         return deadline < s.tick ? std::string("OVERDUE")
                                  : std::to_string((deadline - s.tick) * 5 / 60) + " ECON H LEFT";
     };
+    auto addCombat = [&](const CombatContract& c) {
+        EconomySnapshot::Job job;
+        job.combat = true;
+        job.id = c.id;
+        job.source = job.destination = c.site;
+        job.issuer = s.network->sites[c.site].id;
+        job.deadline = c.deadline;
+        const bool claim = c.phase == CombatJobPhase::Claimable;
+        job.target = claim ? job.issuer : c.target;
+        job.action = c.phase == CombatJobPhase::Open ? EconomicAction::AcceptCombat
+                     : claim                         ? EconomicAction::ClaimCombat
+                                                     : EconomicAction::ReportCombat;
+        job.working = c.phase == CombatJobPhase::Accepted;
+        job.title = std::string(c.kind == CombatJobKind::Escort ? "LANE ESCORT " : "NAMED BOUNTY ") +
+                    (claim         ? "CLAIM "
+                     : job.working ? "ACTIVE "
+                                   : "") +
+                    std::to_string(c.reward / 100) + "CR / " + time(c.deadline);
+        job.route = c.targetName + " / " +
+                    std::string(c.kind == CombatJobKind::Escort
+                                    ? "FERRY / 5KM / " + std::to_string(int(c.protectedSeconds)) + "/90S"
+                                    : "RAIDER / DISABLE / 22KG SALVAGE") +
+                    " / ISSUER " + s.network->sites[c.site].name;
+        jobs.push_back(std::move(job));
+    };
+    for (const auto& c : s.combatContracts)
+        if (c.phase == CombatJobPhase::Accepted || c.phase == CombatJobPhase::Claimable)
+            addCombat(c);
+    for (const auto& c : s.combatContracts)
+        if (c.phase == CombatJobPhase::Open && jobs.size() < 6)
+            addCombat(c);
     auto addHaul = [&](const HaulContract& h) {
         const auto fee = s.tick > h.deadline ? h.fee / 2 : h.fee;
         const bool mine =

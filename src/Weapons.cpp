@@ -105,6 +105,24 @@ void WeaponSystem::advance(double dt) {
         s.age += dt;
     std::erase_if(shots_, [](const auto& s) { return s.age > .16; });
 }
+void WeaponSystem::receiveNpcDamage(const ActivityBody& body, double points, double seconds) {
+    if ((body.kind != ActivityKind::Ferry && body.kind != ActivityKind::Freighter &&
+         body.kind != ActivityKind::Survey) ||
+        !std::isfinite(points) || points <= 0 || !std::isfinite(seconds) || seconds < 0 || seconds > 1e12 ||
+        body.disabled)
+        return;
+    auto it = std::find_if(damage_.begin(), damage_.end(), [&](const auto& d) { return d.id == body.id; });
+    if (it == damage_.end()) {
+        if (damage_.size() >= 2048)
+            return;
+        damage_.push_back({body.id, body.hull, seconds, body.position, body.orientation});
+        it = std::prev(damage_.end());
+    }
+    it->hull = std::max(0., std::min(it->hull, body.hull) - std::min(points, 100.));
+    it->hitSeconds = seconds;
+    it->position = body.position;
+    it->orientation = body.orientation;
+}
 void WeaponSystem::apply(ActivityBody& body) const {
     const auto it =
         std::find_if(damage_.begin(), damage_.end(), [&](const auto& d) { return d.id == body.id; });

@@ -97,6 +97,42 @@ int main() {
         check(ai.agents().at(s.raider.id).mode == NpcMode::Disabled, "Wreck continued combat decisions");
         check(weapons.restore(weapons.serialize(), s.u),
               "Raider damage ID did not persist through weapon save");
+        // An escort order gives the existing raider a civilian target; damage
+        // enters the same durable hull ledger used by player weapons.
+        Scenario convoy;
+        auto civilian = sampleActivity(convoy.u.describe(convoy.planet), 200, 100);
+        civilian.position = convoy.raider.position + glm::dvec3(0, 0, 1400);
+        civilian.velocity = {};
+        convoy.player.position = convoy.raider.position + glm::dvec3(1200, 0, 1400);
+        convoy.raider.orientation =
+            glm::quatLookAtRH(glm::normalize(civilian.position - convoy.raider.position),
+                              glm::normalize(convoy.raider.position));
+        WeaponSystem convoyGuns;
+        NpcCombat convoyAi;
+        convoyAi.setEscort(civilian.id);
+        unsigned civilianHits = 0;
+        const std::array<ActivityBody, 2> convoyBodies{convoy.raider, civilian};
+        for (unsigned i = 0; i < 600; ++i) {
+            convoy.player.seconds += 1. / 60;
+            auto report = convoyAi.update(convoy.u, convoy.player, convoyBodies, convoyGuns, 1. / 60);
+            for (const auto& hit : report.civilianHits) {
+                ++civilianHits;
+                convoyGuns.receiveNpcDamage(hit, 4, convoy.player.seconds);
+            }
+        }
+        auto damagedCivilian = civilian;
+        convoyGuns.apply(damagedCivilian);
+        check(civilianHits > 0 && damagedCivilian.hull < 100, "Raider never attacked protected civilian");
+        WeaponSystem loadedConvoy;
+        check(loadedConvoy.restore(convoyGuns.serialize(), convoy.u), "Civilian NPC damage did not persist");
+        auto loadedCivilian = civilian;
+        loadedConvoy.apply(loadedCivilian);
+        check(loadedCivilian.hull == damagedCivilian.hull && loadedCivilian.id == civilian.id,
+              "Restored escort target changed hull or identity");
+        const auto originalRaider = convoy.raider.hull;
+        convoyGuns.receiveNpcDamage(convoy.raider, 100, convoy.player.seconds);
+        convoyGuns.apply(convoy.raider);
+        check(convoy.raider.hull == originalRaider, "Civilian damage hook could forge a bounty kill");
         ActivityState activity;
         activity.seconds = s.player.seconds;
         activity.selected = s.raider.id;

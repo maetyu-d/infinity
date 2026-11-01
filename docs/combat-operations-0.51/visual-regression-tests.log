@@ -1,0 +1,9 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start  5: captain_gunner_station_swap
+1/2 Test  #5: captain_gunner_station_swap ......   Passed    1.23 sec
+    Start 32: cockpit_layout_and_targeting
+2/2 Test #32: cockpit_layout_and_targeting .....   Passed    0.89 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =   2.14 sec

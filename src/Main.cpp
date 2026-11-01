@@ -455,6 +455,8 @@ int main(int argc, char** argv) {
             };
             int64_t marketQuantity = 10;
             uint64_t economicSequence = 0, pendingEconomicSequence = 0;
+            uint64_t pendingSecuritySequence = 0;
+            double lastSecurityReport = -1;
             int64_t pendingCargoKg = 0;
             std::string marketFeedback;
             double marketFeedbackSeconds = 0;
@@ -635,6 +637,26 @@ int main(int argc, char** argv) {
                     command.contract = job->id;
                     command.good = job->good;
                     command.kg = job->kg;
+                    if (job->combat) {
+                        action =
+                            action == EconomicAction::CancelHaul ? EconomicAction::CancelCombat : job->action;
+                        command.action = action;
+                        command.port = job->issuer;
+                        if (action == EconomicAction::ReportCombat) {
+                            marketSay(job->route + " / F4 CONTACT / KEEP PROTECTING");
+                            return;
+                        }
+                        auto contract = std::find_if(economicSnapshot->combatContracts.begin(),
+                                                     economicSnapshot->combatContracts.end(),
+                                                     [&](const auto& c) { return c.id == job->id; });
+                        if (contract == economicSnapshot->combatContracts.end())
+                            return;
+                        auto body = sampleCombatActivity(universe, contract->target, activity.seconds);
+                        weapons.apply(body);
+                        command.combatTarget = contract->target;
+                        command.targetHull = body.hull;
+                        command.impactSeconds = activity.seconds;
+                    }
                     if (action == EconomicAction::CancelHaul && economicSnapshot->player.haul)
                         command.port = economicSnapshot->player.haul->source;
                     i = economicSnapshot->siteIndex(command.port);
@@ -646,6 +668,8 @@ int main(int argc, char** argv) {
                 bool needsLink = action != EconomicAction::CollectDividends &&
                                  action != EconomicAction::AcceptHaul &&
                                  action != EconomicAction::AcceptRecovery;
+                if (action == EconomicAction::AcceptCombat || action == EconomicAction::CancelCombat)
+                    needsLink = false;
                 if (action == EconomicAction::CancelHaul)
                     needsLink = economicSnapshot->player.haul && economicSnapshot->player.haul->onboard;
                 if (action == EconomicAction::Contract) {
@@ -927,12 +951,27 @@ int main(int argc, char** argv) {
                 noticeTime = 6;
                 return true;
             };
+            auto targetSecuritySystem = [&]() {
+                if (!economicSnapshot || !economicSnapshot->player.combatJob || !economicSnapshot->network ||
+                    economicSnapshot->player.combatJob->system == economicSnapshot->network->system)
+                    return false;
+                activity.selected.reset();
+                pilot.brake();
+                pilot.clearWaypoint();
+                nav.select(economicSnapshot->player.combatJob->system);
+                marketOpen = false;
+                notice = "SECURITY CONTRACT SYSTEM TARGETED / J APPROACH / N CRUISE";
+                noticeTime = 6;
+                return true;
+            };
             auto selectedJob = [&]() -> const EconomySnapshot::Job* {
                 return economicSnapshot && marketGood < economicSnapshot->jobs.size()
                            ? &economicSnapshot->jobs[marketGood]
                            : nullptr;
             };
             auto targetJob = [&](bool returnSource) {
+                if (targetSecuritySystem())
+                    return;
                 if (economicSnapshot && economicSnapshot->player.haul && economicSnapshot->network &&
                     economicSnapshot->player.haul->system != economicSnapshot->network->system) {
                     targetActiveHaul(returnSource);
@@ -1103,6 +1142,18 @@ int main(int argc, char** argv) {
                         opt.tour = false;
                     }
                     if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat) {
+                        const bool numberOrder = !crewFlightOpen && event.key.scancode >= SDL_SCANCODE_1 &&
+                                                 event.key.scancode <= SDL_SCANCODE_5;
+                        const bool functionOrder = (event.key.mod & SDL_KMOD_CTRL) &&
+                                                   event.key.scancode >= SDL_SCANCODE_F1 &&
+                                                   event.key.scancode <= SDL_SCANCODE_F5;
+                        if (stationControl.active() && (numberOrder || functionOrder)) {
+                            stationControl.command(HelmOrder(
+                                event.key.scancode - (numberOrder ? SDL_SCANCODE_1 : SDL_SCANCODE_F1)));
+                            notice = "CREW ORDER / " + std::string(helmOrderName(stationControl.order()));
+                            noticeTime = 5;
+                            continue;
+                        }
                         if (event.key.scancode == SDL_SCANCODE_F10 && pilotEnabled && !crewOpen &&
                             !marketOpen) {
                             if (stationControl.requested())
@@ -1324,7 +1375,7 @@ int main(int argc, char** argv) {
                                 }
                                 if (marketPage == MarketPage::Jobs) {
                                     if (auto job = selectedJob()) {
-                                        if (job->working) {
+                                        if (job->working && !job->combat) {
                                             auto recovery =
                                                 std::find_if(economicSnapshot->recoveries.begin(),
                                                              economicSnapshot->recoveries.end(),
@@ -1420,6 +1471,8 @@ int main(int argc, char** argv) {
                                     break;
                                 }
                                 if (!(event.key.mod & SDL_KMOD_SHIFT) && targetActiveHaul())
+                                    break;
+                                if (!(event.key.mod & SDL_KMOD_SHIFT) && targetSecuritySystem())
                                     break;
                                 if (!(event.key.mod & SDL_KMOD_SHIFT) && targetTradeBuyer())
                                     break;
@@ -1863,7 +1916,9 @@ int main(int argc, char** argv) {
                             marketView.credits = economicSnapshot->player.credits;
                             marketView.cargoKg = economicSnapshot->player.massKg();
                             marketView.cargoLitres = economicSnapshot->player.volumeLitres();
-                            marketView.activeJob = economicSnapshot->player.haul ? "F4 HAUL" : "";
+                            marketView.activeJob = economicSnapshot->player.haul        ? "F4 HAUL"
+                                                   : economicSnapshot->player.combatJob ? "F4 SECURITY TARGET"
+                                                                                        : "";
                         }
                     }
                     renderer.setEconomy(economicSnapshot, &marketView);
@@ -1910,7 +1965,8 @@ int main(int argc, char** argv) {
                             helm = {};
                         if (stationControl.active()) {
                             stationControl.aim(helm.pitch, helm.yaw, {mouseX, mouseY}, dt);
-                            stationControl.fly(pilot, crew, dt, renderer.submittedGeometry(nav.anchor));
+                            stationControl.fly(pilot, crew, universe, nav, activityBody(), dt,
+                                               renderer.submittedGeometry(nav.anchor));
                         } else {
                             helm = resolveHelmInput(
                                 helm, marketOpen || crewOpen ? glm::dvec2(0) : glm::dvec2(mouseX, mouseY), dt,
@@ -1966,10 +2022,66 @@ int main(int argc, char** argv) {
                     player.field = pilot.instruments().fieldActive || opt.tour || !pilotEnabled ||
                                    !activity.enabled ||
                                    !(SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS);
+                    std::optional<ActivityId> escort;
+                    if (economicSnapshot)
+                        for (const auto& job : economicSnapshot->combatContracts)
+                            if (job.phase == CombatJobPhase::Accepted && job.kind == CombatJobKind::Escort)
+                                escort = job.target;
+                    npcCombat.setEscort(escort);
                     const auto combat = npcCombat.update(universe, player, renderer.combatBodies(), weapons,
                                                          dt, renderer.submittedGeometry(nav.anchor).get());
+                    for (const auto& body : combat.civilianHits)
+                        weapons.receiveNpcDamage(body, 4., activity.seconds);
                     pilot.applyCombatDamage(combat.playerDamage);
                     crew.observeHull(pilot.ship().hull);
+                    if (economicSnapshot && economy && !economicSnapshot->catchingUp && !opt.smoke &&
+                        economicSnapshot->player.combatJob && economicSnapshot->network &&
+                        economicSnapshot->player.combatJob->system == economicSnapshot->network->system) {
+                        if (economicSnapshot->player.lastCommand >= pendingSecuritySequence)
+                            pendingSecuritySequence = 0;
+                        if (!pendingSecuritySequence && !pendingEconomicSequence && !pendingCrewSequence &&
+                            !pendingWreck && activity.seconds - lastSecurityReport >= 1.) {
+                            const auto id = economicSnapshot->player.combatJob->id;
+                            auto it = std::find_if(economicSnapshot->combatContracts.begin(),
+                                                   economicSnapshot->combatContracts.end(),
+                                                   [&](const auto& c) { return c.id == id; });
+                            if (it != economicSnapshot->combatContracts.end() &&
+                                it->phase == CombatJobPhase::Accepted) {
+                                auto body =
+                                    damagedBody(sampleCombatActivity(universe, it->target, activity.seconds));
+                                const auto point = universe.pointRelative(
+                                    body.id.home,
+                                    body.position /
+                                        std::pow(10., universe.describe(body.id.home).frame.logRadius),
+                                    nav.anchor, nav.logDistance);
+                                EconomicCommand c;
+                                c.action = EconomicAction::ReportCombat;
+                                c.port = economicSnapshot->network->sites[it->site].id;
+                                c.contract = it->id;
+                                c.combatTarget = it->target;
+                                c.targetHull = body.hull;
+                                c.targetDistance = glm::length(point - nav.cameraPosition()) *
+                                                   std::pow(10., nav.logDistance);
+                                c.impactSeconds = activity.seconds;
+                                c.serviceUnits = unsigned(std::ceil(pilot.ship().hull));
+                                c.combatPresent = !player.field && !player.landed &&
+                                                  pilot.sizeRatio() >= .99 && !pilot.ship().cruise;
+                                if (it->kind == CombatJobKind::Bounty) {
+                                    const auto receipt = std::find_if(
+                                        weapons.damage().begin(), weapons.damage().end(), [&](const auto& d) {
+                                            return d.id == it->target && d.hull <= 0 &&
+                                                   d.hitSeconds >= it->acceptedSeconds;
+                                        });
+                                    c.combatPresent = receipt != weapons.damage().end();
+                                }
+                                c.sequence = economicSequence =
+                                    std::max(economicSequence, economicSnapshot->player.lastCommand) + 1;
+                                if (economy->command(c))
+                                    pendingSecuritySequence = c.sequence;
+                                lastSecurityReport = activity.seconds;
+                            }
+                        }
+                    }
                     if ((SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) && !pendingCrewSequence)
                         crew.advance(dt, pilot.instruments().properG, !npcCombat.shots().empty(),
                                      weapons.firingMask() != 0, weapons.firingMask());
@@ -2078,6 +2190,17 @@ int main(int argc, char** argv) {
                         running = false;
                 }
                 npcCombat.annotate(cockpit);
+                if (economicSnapshot) {
+                    for (const auto& c : economicSnapshot->combatContracts)
+                        if (c.phase == CombatJobPhase::Accepted || c.phase == CombatJobPhase::Claimable)
+                            cockpit.combatMission = c.phase == CombatJobPhase::Claimable
+                                                        ? "SECURITY COMPLETE / F2 JOBS / F4 CLAIM PORT"
+                                                    : c.kind == CombatJobKind::Escort
+                                                        ? "ESCORT " +
+                                                              std::to_string(int(c.protectedSeconds)) +
+                                                              "/90S / STAY WITHIN 5KM"
+                                                        : "NAMED BOUNTY ACTIVE / F2 JOBS / F4 HOSTILE";
+                }
                 weapons.annotate(cockpit,
                                  cockpit.fieldActive || cockpit.landed || marketOpen || crewOpen ||
                                      std::abs(pilot.ship().logSize - pilot.ship().targetLogSize) > .01);

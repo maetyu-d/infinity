@@ -89,6 +89,7 @@ class WeaponSystem {
     unsigned fireBattery(const Universe&, const WeaponRay&, std::span<const ActivityBody>,
                          const Geometry* = nullptr);
     void apply(ActivityBody&) const;
+    void receiveNpcDamage(const ActivityBody&, double points, double seconds);
     void annotate(FlightInstruments&, bool inhibited = false) const;
     const std::vector<WeaponShot>& shots() const {
         return shots_;

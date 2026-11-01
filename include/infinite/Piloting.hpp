@@ -52,10 +52,12 @@ struct FlightInstruments {
     bool weaponBattery = false;
     unsigned playerGun = noWeaponMount;
     glm::dquat gunAim{1, 0, 0, 0}; // read-only camera/weapon aim in physical ship axes
-    std::string stationStatus, reliefHelm;
+    std::string stationStatus, reliefHelm, helmOrder;
     double helmQuality = 0, gunYaw = 0, gunPitch = 0;
+    double gunMinYaw = -60, gunMaxYaw = 60;
     double weaponHeat = 0;
     std::string combatStatus;
+    std::string combatMission;
     unsigned hostileContacts = 0;
     double incomingFire = 0;
     std::string weather;
@@ -79,6 +81,8 @@ class Pilot {
     void update(const HelmInput&, double dt, const std::shared_ptr<const Geometry>& visible = {});
     void updateCrew(const Address& courseFrame, glm::dquat course, double quality, double dt,
                     const std::shared_ptr<const Geometry>& visible = {});
+    void updateCrewMotion(const Address& frame, glm::dquat course, glm::dvec3 velocity, double quality,
+                          double dt, const std::shared_ptr<const Geometry>& visible = {});
     void synchronizeFrame();
     void brake();
     void toggleAssist();
@@ -151,6 +155,7 @@ class Pilot {
     double crewQuality_ = 0;
     Address crewCourseFrame_;
     glm::dquat crewCourse_{1, 0, 0, 0};
+    std::optional<glm::dvec3> crewVelocity_;
     double launchTime_ = 0, lastLog_ = 0, scaleRate_ = 0, precisionScale_ = 1;
     glm::dvec3 assistCapture_{};
     double assistCaptureTime_ = 0;

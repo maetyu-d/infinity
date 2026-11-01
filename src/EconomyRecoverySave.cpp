@@ -118,7 +118,7 @@ bool Economy::readRecovery(std::istream& in) {
               r.payment >> r.crewPaid >> r.conditionRestored >> working >> cleared) ||
             !r.id || r.id >= nextOutcome_ || !r.command || r.tick > tick_ || r.updated < r.tick ||
             r.updated > tick_ || r.observeUntil > max || r.observeUntil < r.tick || r.site >= sites_.size() ||
-            kind > unsigned(OutcomeKind::Maintenance) || r.payment < 0 || r.payment > 1000000000 ||
+            kind > unsigned(OutcomeKind::Bounty) || r.payment < 0 || r.payment > 1000000000 ||
             r.crewPaid < 0 || r.crewPaid > 5000 || r.crewPaid % 100 || r.conditionRestored > 750 ||
             working > 1 || cleared > 1 || !read(in, r.delivered, maxShipPayloadKg) || !read(in, r.before) ||
             !read(in, r.after))

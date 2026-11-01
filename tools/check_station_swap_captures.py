@@ -8,7 +8,8 @@ import zlib
 root = Path(sys.argv[1])
 frames = []
 names = ('swap-helm', 'swap-relief-walking', 'swap-gun-ready', 'swap-gun-fire',
-         'swap-gun-aim', 'swap-portrait', 'swap-pilot-unavailable', 'swap-returned-helm')
+         'swap-gun-aim', 'swap-portrait', 'swap-pilot-unavailable', 'swap-returned-helm',
+         'swap-crew-circle', 'swap-crew-evade', 'swap-crew-retreat', 'swap-security-jobs')
 for name in names:
     p = root / 'captures' / (name + '.ppm')
     data = p.read_bytes() if p.exists() else zlib.decompress(p.with_suffix('.ppm.z').read_bytes())
@@ -23,4 +24,4 @@ for name in names:
     frames.append(pixels)
 assert len(set(frames)) == len(names)
 assert 'PASS: native captain/gunner handover' in (root / 'native.log').read_text()
-print('PASS: eight native helm, handover, turret, selected fire, independent view, portrait and return frames')
+print('PASS: twelve native helm, stations, crew manoeuvres, portrait and security board frames')

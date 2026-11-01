@@ -1,9 +1,11 @@
 #pragma once
+#include "infinite/Economy.hpp"
 #include "infinite/Renderer.hpp"
 #include "infinite/StationControl.hpp"
 #include <SDL3/SDL.h>
 #include <filesystem>
 #include <iostream>
+#include <numbers>
 #include <sstream>
 namespace infinite {
 class StationSwapValidation {
@@ -19,6 +21,8 @@ class StationSwapValidation {
     CrewView view_;
     unsigned stage_ = 0, age_ = 0;
     bool finished_ = false;
+    std::shared_ptr<EconomySnapshot> security_;
+    MarketView market_;
     void next(unsigned s) {
         stage_ = s;
         age_ = 0;
@@ -74,8 +78,13 @@ class StationSwapValidation {
         crew_.advance(.1, pilot_.instruments().properG, false, weapons_.firingMask() != 0,
                       weapons_.firingMask());
         control_.synchronize(crew_, pilot_, nav_);
-        if (control_.active())
-            control_.fly(pilot_, crew_, 1. / 60, renderer.submittedGeometry(nav_.anchor));
+        if (control_.active()) {
+            if (stage_ >= 9 && stage_ <= 11)
+                control_.fly(pilot_, crew_, u_, nav_, target_, 1. / 60,
+                             renderer.submittedGeometry(nav_.anchor));
+            else
+                control_.fly(pilot_, crew_, 1. / 60, renderer.submittedGeometry(nav_.anchor));
+        }
         weapons_.advance(1. / 60);
         control_.prepareWeapons(weapons_, crew_);
         if (stage_ == 1 && control_.active())
@@ -84,6 +93,8 @@ class StationSwapValidation {
         view_.flightOpen = stage_ > 0;
         view_.message = control_.status();
         renderer.setCrew(&view_);
+        if (stage_ == 12 && security_)
+            renderer.setEconomy(security_, &market_);
     }
     void observe(Renderer& renderer, const std::string& directory) {
         auto capture = [&](const char* name) {
@@ -109,9 +120,12 @@ class StationSwapValidation {
             const auto muzzle = nav_.cameraPosition() * std::pow(10., nav_.logDistance) +
                                 nav_.orientation * glm::dvec3(-4, 0, 0);
             const auto local = glm::inverse(nav_.orientation) * glm::normalize(centre - muzzle);
+            auto instruments = pilot_.instruments();
+            control_.annotate(instruments, crew_, weapons_);
             control_.aim(
                 0, 0,
-                {std::atan2(local.x, -local.z) / .0025, -std::asin(std::clamp(local.y, -1., 1.)) / .0025},
+                {(std::atan2(local.x, -local.z) - instruments.gunYaw * std::numbers::pi / 180.) / .0025,
+                 -std::asin(std::clamp(local.y, -1., 1.)) / .0025},
                 1. / 60);
             const auto ray = control_.ray(nav_, pilot_, activity_.seconds);
             expect(weapons_.fireMount(control_.mount(), u_, ray, std::span(&target_, 1)),
@@ -149,7 +163,57 @@ class StationSwapValidation {
             std::cout << "PASS: native captain/gunner handover, corridor walking, crew helm, independent "
                          "aim, selected-gun hit, pilot loss, return and portrait HUD\n";
             next(8);
-        } else if (stage_ == 8 && age_ > 12)
+        } else if (stage_ == 8 && age_ == 1) {
+            expect(control_.request(2, crew_, pilot_, nav_), "Starboard station handover failed");
+        } else if (stage_ == 8 && control_.active()) {
+            control_.command(HelmOrder::Circle);
+            next(9);
+        } else if (stage_ == 9 && age_ == 101) {
+            expect(control_.order() == HelmOrder::Circle, "Circle order lost");
+            capture("swap-crew-circle");
+        } else if (stage_ == 9 && age_ > 104) {
+            control_.command(HelmOrder::Evade);
+            next(10);
+        } else if (stage_ == 10 && age_ == 101) {
+            capture("swap-crew-evade");
+        } else if (stage_ == 10 && age_ > 104) {
+            control_.command(HelmOrder::Retreat);
+            next(11);
+        } else if (stage_ == 11 && age_ == 101) {
+            capture("swap-crew-retreat");
+        } else if (stage_ == 11 && age_ > 104) {
+            control_.returnToHelm(crew_);
+            auto network = std::make_shared<EconomicNetwork>();
+            network->system = target_.id.home.parent();
+            network->universeSeed = u_.seed();
+            network->fingerprint = 510051;
+            EconomicSite site;
+            site.id = {target_.id.home, 0};
+            site.name = sampleActivity(u_.describe(target_.id.home), 0, 60).name;
+            site.orbital = true;
+            site.capacityKg = 1000000;
+            site.initial.fill(1000);
+            site.workers = site.power = 20;
+            network->sites.push_back(site);
+            Economy ledger(network);
+            ledger.advanceTo(12);
+            security_ = std::make_shared<EconomySnapshot>();
+            security_->network = network;
+            security_->sites = ledger.sites();
+            security_->tick = ledger.tick();
+            security_->combatContracts = ledger.combatContracts();
+            for (auto& c : security_->combatContracts)
+                c.targetName = sampleCombatActivity(u_, c.target, 60).name;
+            security_->jobs = economicJobs(*security_);
+            expect(security_->jobs.size() == 2, "Security board lost funded contracts");
+            market_ = economicMarketView(security_.get(), site.id, 0, 1, false, MarketPage::Jobs);
+            next(12);
+        } else if (stage_ == 12 && age_ > 25) {
+            capture("swap-security-jobs");
+            std::cout
+                << "PASS: native crew circle, evade, retreat, starboard arc and funded security board\n";
+            next(13);
+        } else if (stage_ == 13 && age_ > 12)
             finished_ = true;
         expect(age_ < 1200, "Native station handover stalled");
     }

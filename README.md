@@ -1,5 +1,7 @@
 # INFINITE
 
+**0.51.0:** crew combat orders, distinct port/starboard gun stations with visible arcs, and funded escort/bounty contracts with persistent outcomes and salvage. [Controls and details](docs/COMBAT_OPERATIONS_0_51.md).
+
 **0.50.1:** steadier background stars, including while the ship is idle with engine vibration. An optical point-light footprint reduces subpixel brightness flashes while retaining stellar colours and core/halo energy. Universe generation, flight and crew controls stay intact. [Star stability and validation](docs/STAR_STABILITY_0_50_1.md).
 
 **0.50:** swap with a ready gunner using **F10**. In **F9**, select the gunner first; outside the console, F10 chooses a staffed extra gun. You retain the helm while relief walks to the bridge, then **mouse/arrows** aim that gun and **Space** fires it. The relief pilot holds course or continues the current approach, with skill and condition affecting control. **F10** returns the helm; **B** returns and brakes. [Station swapping and controls](docs/STATION_SWAP_0_50.md).

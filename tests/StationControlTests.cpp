@@ -100,14 +100,14 @@ int main() {
         guns.annotate(t);
         control.annotate(t, c, guns);
         check(t.playerGun == 1 && t.reliefHelm == c.members()[6].name && t.helmQuality > 0 &&
-                  t.weapon.find("PORT GUN") != std::string::npos && t.gunYaw > 0 &&
+                  t.weapon.find("PORT GUN") != std::string::npos && t.gunYaw < 0 &&
                   t.phase == "CREW / COURSE HOLD",
               "HUD omitted active station, pilot or traverse");
         for (unsigned i = 0; i < 80; ++i)
             control.aim(1, 1, {2000, -2000}, .1);
         t = r.pilot.instruments();
         control.annotate(t, c, guns);
-        check(std::abs(t.gunYaw - 120) < 1e-8 && std::abs(t.gunPitch - 70) < 1e-8,
+        check(std::abs(t.gunYaw - 30) < 1e-8 && std::abs(t.gunPitch - 70) < 1e-8,
               "Turret exceeded physical traverse stops");
         for (glm::ivec2 size : {glm::ivec2(600, 1000), {960, 1280}, {900, 900}, {1440, 900}, {2160, 900}}) {
             const CockpitViewport viewport(size.x, size.y, {0, 0, double(size.x), double(size.y)});
@@ -124,8 +124,17 @@ int main() {
                            (!stationCard.overlaps(orders.panel) && !stationCard.overlaps(orders.weapon))) &&
                           stationCard.x >= 0 && stationCard.x + stationCard.w <= 900 * aspect,
                       "Station card overlaps another instrument in the fitted viewport");
-                auto hud = cockpitOverlay(t, aspect, "", {}, {}, {}, false, viewport.projectionScale, nullptr,
-                                          t.gunAim, &crewView);
+                ActivityContact labelContact;
+                labelContact.body.name = "ARC OCCLUSION FIXTURE";
+                labelContact.body.kind = ActivityKind::Patrol;
+                labelContact.localDirection = {-.05, -.17, -1};
+                labelContact.distance = 650;
+                labelContact.selected = true;
+                auto hud = cockpitOverlay(t, aspect, "", {}, {}, std::span(&labelContact, 1), false,
+                                          viewport.projectionScale, nullptr, t.gunAim, &crewView);
+                for (const auto& label : hud.worldLabels)
+                    check(!label.overlaps({450 * aspect - 85, 493, 170, 96}),
+                          "A contact label covered the gun-arc instrument");
                 check(std::any_of(hud.panels.vertices.begin(), hud.panels.vertices.end(),
                                   [&](const auto& v) {
                                       return std::abs(v.x - (450 * aspect - 1)) < .001 &&
@@ -274,6 +283,58 @@ int main() {
                   "Reference or render-scale change broke station or physical course");
         }
         Rig drive(u);
+        for (unsigned mount : {0u, 1u, 2u}) {
+            auto stationCrew = staffed();
+            StationControl station;
+            check(station.request(mount, stationCrew, r.pilot, r.nav), "Station arc fixture failed");
+            tick(stationCrew);
+            station.synchronize(stationCrew, r.pilot, r.nav);
+            auto display = r.pilot.instruments();
+            station.annotate(display, stationCrew, guns);
+            const double neutral = mount == 1 ? -60 : mount == 2 ? 60 : 0;
+            check(std::abs(display.gunYaw - neutral) < 1e-8, "Station did not open on its own broadside");
+            for (unsigned i = 0; i < 50; ++i)
+                station.aim(0, 1, {2000, 0}, .1);
+            station.annotate(display, stationCrew, guns);
+            check(std::abs(display.gunYaw - weaponTraverse(mount).y) < 1e-8, "Gun exceeded right stop");
+            for (unsigned i = 0; i < 50; ++i)
+                station.aim(0, -1, {-2000, 0}, .1);
+            station.annotate(display, stationCrew, guns);
+            check(std::abs(display.gunYaw - weaponTraverse(mount).x) < 1e-8, "Gun exceeded left stop");
+            station.returnToHelm(stationCrew);
+        }
+        // Tactical orders use the same moving contact and physical SI frame.
+        Rig tactical(u);
+        check(tactical.nav.restore(slowApproach.nav.serialize()), "Tactical camera restore failed");
+        tactical.pilot.resetMotion();
+        auto tacticalCrew = staffed();
+        StationControl tactics;
+        check(tactics.request(1, tacticalCrew, tactical.pilot, tactical.nav), "Tactical handover failed");
+        tick(tacticalCrew);
+        tactics.synchronize(tacticalCrew, tactical.pilot, tactical.nav);
+        check(tactics.command(HelmOrder::HoldRange), "Crew refused range order");
+        const auto targetId = body.id;
+        for (unsigned i = 0; i < 240; ++i)
+            tactics.fly(tactical.pilot, tacticalCrew, u, tactical.nav, body, 1. / 60);
+        check(glm::length(tactical.pilot.ship().velocity) > 1 && body.id == targetId,
+              "Combat pilot failed to manoeuvre or changed target identity");
+        check(tactics.command(HelmOrder::Circle), "Crew refused circle order");
+        for (unsigned i = 0; i < 120; ++i)
+            tactics.fly(tactical.pilot, tacticalCrew, u, tactical.nav, body, 1. / 60);
+        auto tacticalHud = tactical.pilot.instruments();
+        tactics.annotate(tacticalHud, tacticalCrew, guns);
+        check(tacticalHud.helmOrder.find("CIRCLE TARGET") != std::string::npos,
+              "Crew order feedback missing");
+        tactics.fly(tactical.pilot, tacticalCrew, u, tactical.nav, {}, .1);
+        tacticalHud = tactical.pilot.instruments();
+        tactics.annotate(tacticalHud, tacticalCrew, guns);
+        check(tacticalHud.helmOrder.find("NO LIVE TARGET") != std::string::npos,
+              "Missing target did not fall back safely");
+        tactical.pilot.applyCombatDamage(75);
+        tactics.fly(tactical.pilot, tacticalCrew, u, tactical.nav, body, .1);
+        check(tactics.order() == HelmOrder::Retreat, "Critical hull did not trigger crew retreat");
+        tactics.returnToHelm(tacticalCrew);
+        check(!tactics.command(HelmOrder::Evade), "Crew combat authority survived captain return");
         drive.pilot.toggleCruise();
         check(!a.request(1, c, drive.pilot, drive.nav), "Crew swap allowed active travel drive");
         std::cout << "PASS: " << checks

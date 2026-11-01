@@ -1,0 +1,62 @@
+[
+  {
+    "name": "swap-crew-circle.ppm.z",
+    "sha256": "5f7339ded8cbf7cb89113234ed496d7b5584eb13f4908a63e13ed1700dd44be2",
+    "raw_bytes": 3888016
+  },
+  {
+    "name": "swap-crew-evade.ppm.z",
+    "sha256": "38215d61eeb3bef5d3e7de2bd5388f47b038302e33eb7abb303b65e1b252dde4",
+    "raw_bytes": 3888016
+  },
+  {
+    "name": "swap-crew-retreat.ppm.z",
+    "sha256": "f8eaa505658792fb3b9e2fad61435e2465fb5f52595382001dfc4c61559e17db",
+    "raw_bytes": 3888016
+  },
+  {
+    "name": "swap-gun-aim.ppm.z",
+    "sha256": "36ee0d890087a83356fb422d3e7418f7d019f988de7567bbe77996056b6c932a",
+    "raw_bytes": 3888016
+  },
+  {
+    "name": "swap-gun-fire.ppm.z",
+    "sha256": "194054a60d806bf99491d36077f7c5bf72be031e01d96d6b8c180472f3617eb5",
+    "raw_bytes": 3888016
+  },
+  {
+    "name": "swap-gun-ready.ppm.z",
+    "sha256": "bda0de28acc450369500e6bc4213543ee582148b994d14e095295f648e2b4b20",
+    "raw_bytes": 3888016
+  },
+  {
+    "name": "swap-helm.ppm.z",
+    "sha256": "5740680ffa110e1bb5ac1c194378530a7c8226e33cb250e9a079e9f34b937835",
+    "raw_bytes": 3888016
+  },
+  {
+    "name": "swap-pilot-unavailable.ppm.z",
+    "sha256": "1c457a270f147f6f5616ee62d0721a687207502996a6c83d0b142bf2bdc940d3",
+    "raw_bytes": 3686416
+  },
+  {
+    "name": "swap-portrait.ppm.z",
+    "sha256": "b734fad07c633fbf340da72400a6d4a2e68e8c2db69d704fba4cd3c08ada39a3",
+    "raw_bytes": 3686416
+  },
+  {
+    "name": "swap-relief-walking.ppm.z",
+    "sha256": "23e0b9acba60511d35c0081674442ea5fc9023dbc4714768a9d4adbd87266158",
+    "raw_bytes": 3888016
+  },
+  {
+    "name": "swap-returned-helm.ppm.z",
+    "sha256": "6d2a8be73d7574557cdc9dd49cf57ad1cd125ed204b1b5f7d0d0b3ec23339cf0",
+    "raw_bytes": 3888016
+  },
+  {
+    "name": "swap-security-jobs.ppm.z",
+    "sha256": "f22fe7469642f55c83e1911956291bb4c5e1fd13e3f962c8b01f48f43d2310d0",
+    "raw_bytes": 3888016
+  }
+]

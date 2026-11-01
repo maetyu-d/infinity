@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdio>
 #include <map>
+#include <numbers>
 
 namespace infinite {
 namespace {
@@ -386,6 +387,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     std::optional<CockpitRect> economicPanel;
     std::optional<CockpitRect> crewCommandPanel;
     std::optional<CockpitRect> stationPanel;
+    std::optional<CockpitRect> traversePanel;
     const CockpitLayout l(aspect);
     const double w = l.width, center = w * .5;
     const auto eyeFromShip = glm::inverse(headInShip);
@@ -729,11 +731,34 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                        : "HELM " + t.reliefHelm + " / FIT " + std::to_string(int(t.helmQuality * 100)) + "%",
                    station.x + 12, 626, 292, 8.5, ice);
             fitted(h.lettering,
-                   t.playerGun < maxWeaponMounts
-                       ? "AIM " + std::to_string(int(t.gunYaw)) + " / " + std::to_string(int(t.gunPitch)) +
-                             " DEG / MOUSE OR ARROWS"
-                       : "F10 CANCEL / KEEP FLYING DURING HANDOVER",
+                   t.playerGun < maxWeaponMounts ? (t.helmOrder.empty() ? "CREW / COURSE HOLD" : t.helmOrder)
+                                                 : "F10 CANCEL / KEEP FLYING DURING HANDOVER",
                    station.x + 12, 640, 292, 8.5, pearl);
+            if (t.playerGun < maxWeaponMounts) {
+                traversePanel = CockpitRect{center - 85, 493, 170, 96};
+                const auto tint = t.playerGun == 1 ? glm::vec3(.75, .55, 1) : mint;
+                const double cx = center, cy = 555, radius = 32;
+                const double rad = std::numbers::pi / 180.;
+                for (double angle = t.gunMinYaw; angle < t.gunMaxYaw; angle += 5) {
+                    const double a = angle * rad, b = std::min(angle + 5, t.gunMaxYaw) * rad;
+                    line(h.strokes, cx + std::sin(a) * radius, cy - std::cos(a) * radius,
+                         cx + std::sin(b) * radius, cy - std::cos(b) * radius, tint * .65f);
+                }
+                line(h.strokes, cx, cy + 5, cx, cy - 40, muted * .6f);
+                line(h.strokes, cx, cy, cx + std::sin(t.gunYaw * rad) * radius,
+                     cy - std::cos(t.gunYaw * rad) * radius, tint);
+                const bool stop =
+                    t.gunYaw < t.gunMinYaw + 2 || t.gunYaw > t.gunMaxYaw - 2 || std::abs(t.gunPitch) > 68;
+                fitted(h.lettering, stop ? "TRAVERSE STOP" : "GUN ARC / NOSE UP", center - 80, 501, 160, 8,
+                       stop ? amber : tint);
+                fitted(h.lettering,
+                       "AZ " + std::to_string(int(t.gunYaw)) + " / EL " + std::to_string(int(t.gunPitch)),
+                       center - 80, 578, 160, 8, tint);
+                fitted(h.lettering,
+                       flightCommands ? "CTRL F1-5: COURSE RANGE CIRCLE EVADE RETREAT"
+                                      : "1 COURSE  2 RANGE  3 CIRCLE  4 EVADE  5 RETREAT",
+                       station.x + 2, 657, 312, 7, ice);
+            }
         }
         const CockpitRect armament =
             flightCommands ? CrewFlightLayout(aspect).weapon : CockpitRect{center - 158, 665, 316, 80};
@@ -754,6 +779,8 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             fitted(h.lettering, "H TARGET NEAREST HOSTILE", armament.x + 12, 711, 292, 8.8, muted);
         fitted(h.lettering, t.combatStatus, armament.x + 12, 729, 292, 8.8,
                t.hostileContacts ? danger : muted);
+        if (!t.combatMission.empty())
+            fitted(h.lettering, t.combatMission, armament.x + 4, 750, 308, 8, mint);
     }
     if (market && market->open) {
         const auto& m = *market;
@@ -843,7 +870,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             label(weapons
                       ? std::string(weaponMountName(m.weaponMount)) + " / LEFT-RIGHT MOUNT / UP-DOWN GRADE"
                   : services ? "PORT SERVICES / UP-DOWN SELECT / ENTER PURCHASE"
-                  : jobs     ? "FUNDED LOCAL JOBS / UP-DOWN SELECT / ONE ACTIVE HAUL"
+                  : jobs     ? "FUNDED JOBS / UP-DOWN SELECT / ONE HAUL + ONE SECURITY"
                   : industry ? "EXISTING FACILITY REFITS / DELIVER CARGO TO BUILD"
                              : "AFFORDABLE LOCAL OPPORTUNITIES / UP-DOWN SELECT",
                   panel.x + 18, panel.y + 112, panel.w - 36, mint);
@@ -866,13 +893,13 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                    mint);
             label(weapons    ? "ENTER FIT / UPGRADE / BACKSPACE SELL SELECTED MOUNT / F4 PORT"
                   : services ? "ENTER PURCHASE SELECTED SERVICE / F4 TARGET PORT / J APPROACH"
-                  : jobs     ? "ENTER ACCEPT / PICKUP / DELIVER / F4 TARGET / J APPROACH"
+                  : jobs     ? "ENTER ACCEPT / DELIVER / CLAIM / F4 TARGET / J APPROACH"
                   : industry ? "ENTER FUND / DELIVER PARTS / BACKSPACE COLLECT DIVIDENDS"
                              : "ENTER TARGET SOURCE / F4 TARGET BUYER / J APPROACH",
                   panel.x + 18, panel.y + 492, panel.w - 36, pearl);
             label(weapons    ? "SPACE LINKED FIRE / F9 CTRL1-3 ASSIGNS GUNNERS / INDEPENDENT HEAT"
                   : services ? "REPAIRS USE PORT STOCK / CARGO UPGRADES KEEP SEALED CONSIGNMENTS"
-                  : jobs     ? "BACKSPACE WITHDRAW HAUL / SHIFT-F4 RETURN SOURCE / LATE FEE HALVED"
+                  : jobs     ? "BACKSPACE CANCEL HAUL OR SECURITY / SHIFT-F4 HAUL SOURCE"
                   : industry ? "DELETE CANCEL PROJECT / UNUSED FEES AND PARTS RETURNED"
                              : "QUOTES INCLUDE SPREAD / MARGINAL PRICES / NO PRICE GUARANTEE",
                   panel.x + 18, panel.y + 512, panel.w - 36, amber);
@@ -1119,6 +1146,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             if (r.overlaps(aim) || (economicPanel && r.overlaps(*economicPanel)) ||
                 (crewCommandPanel && r.overlaps(*crewCommandPanel)) ||
                 (stationPanel && r.overlaps(*stationPanel)) ||
+                (traversePanel && r.overlaps(*traversePanel)) ||
                 std::any_of(h.worldLabels.begin(), h.worldLabels.end(),
                             [&](auto other) { return r.overlaps(other); }))
                 continue;

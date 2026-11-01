@@ -253,6 +253,8 @@ void economicOutcomeView(MarketView& v, const EconomySnapshot& s, size_t selecte
     };
     v.detail = {std::string(o.kind == OutcomeKind::Relief        ? "HOUSEHOLD RELIEF"
                             : o.kind == OutcomeKind::Maintenance ? "PLANT RECOVERY"
+                            : o.kind == OutcomeKind::Bounty      ? "BOUNTY / WRECK SALVAGE"
+                            : o.kind == OutcomeKind::Escort      ? "LANE ESCORT COMPLETE"
                             : o.kind == OutcomeKind::Haul        ? "FREIGHT DELIVERY"
                             : o.kind == OutcomeKind::Supply      ? "SUPPLY CONTRACT"
                                                                  : "MARKET SALE") +
@@ -273,6 +275,10 @@ void economicOutcomeView(MarketView& v, const EconomySnapshot& s, size_t selecte
     v.detail.push_back("SITE OUTPUT SINCE HANDOVER " +
                        std::to_string(std::max<int64_t>(0, o.after.outputKg - o.before.outputKg)) +
                        " KG / OBSERVED, ALL CAUSES");
+    if (o.kind == OutcomeKind::Bounty)
+        v.detail.push_back("WRECK SALVAGE TO HOLD / 20KG ALLOY + 2KG ELECTRONICS / FINITE RECEIPT");
+    if (o.kind == OutcomeKind::Escort)
+        v.detail.push_back("CIVILIAN PROTECTED / 90S WITHIN 5KM / FUNDED REWARD SETTLED");
     if (o.kind == OutcomeKind::Maintenance)
         v.detail.push_back("CREW PAID " + std::to_string(o.crewPaid / 100) + " CR / CONDITION REPAIRED +" +
                            std::to_string(o.conditionRestored / 10) + "%" +

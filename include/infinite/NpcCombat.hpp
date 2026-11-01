@@ -22,6 +22,7 @@ struct NpcPlayer {
 struct NpcCombatReport {
     unsigned hostiles = 0, firing = 0;
     double nearest = -1, playerDamage = 0;
+    std::vector<ActivityBody> civilianHits;
 };
 // Bounded mutable steering overlay on canonical activity routes; no generator writes.
 class NpcCombat {
@@ -30,6 +31,9 @@ class NpcCombat {
                            const WeaponSystem&, double seconds, const Geometry* = nullptr);
     void apply(ActivityBody&) const;
     void annotate(FlightInstruments&) const;
+    void setEscort(std::optional<ActivityId> id) {
+        escort_ = std::move(id);
+    }
     const std::map<ActivityId, NpcAgent>& agents() const {
         return agents_;
     }
@@ -46,5 +50,6 @@ class NpcCombat {
     NpcCombatReport report_;
     double lastSeconds_ = -1, damageFlash_ = 0;
     uint64_t observedShots_ = 0;
+    std::optional<ActivityId> escort_;
 };
 } // namespace infinite

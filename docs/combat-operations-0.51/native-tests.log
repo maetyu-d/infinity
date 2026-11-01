@@ -1,0 +1,13 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 56: native_station_swap_loop
+1/4 Test #56: native_station_swap_loop .........   Passed   29.90 sec
+    Start 57: native_station_swap_images
+2/4 Test #57: native_station_swap_images .......   Passed    3.82 sec
+    Start 66: native_npc_combat_loop
+3/4 Test #66: native_npc_combat_loop ...........   Passed   37.47 sec
+    Start 67: native_npc_combat_images
+4/4 Test #67: native_npc_combat_images .........   Passed    2.12 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =  73.33 sec

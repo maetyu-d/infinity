@@ -1,3 +1,4 @@
+#include "infinite/CombatActors.hpp"
 #include "infinite/Economy.hpp"
 #include "infinite/Piloting.hpp"
 #include <condition_variable>
@@ -220,6 +221,9 @@ struct EconomyRuntime::Impl {
             s->contracts = e->contracts();
             s->hauls = e->hauls();
             s->recoveries = e->recoveries();
+            s->combatContracts = e->combatContracts();
+            for (auto& c : s->combatContracts)
+                c.targetName = sampleCombatActivity(u, c.target, e->tick() * economyTickSeconds).name;
             s->outcomes = e->outcomes();
             s->crewMarkets = e->crewMarkets();
             s->events = e->events();
@@ -365,7 +369,8 @@ struct EconomyRuntime::Impl {
                 catching = economy.tick() < goal;
                 if (!catching)
                     for (const auto& c : orders) {
-                        if (economy.siteIndex(c.port) || c.action == EconomicAction::DisableVessel)
+                        if (economy.siteIndex(c.port) || c.action == EconomicAction::DisableVessel ||
+                            c.action == EconomicAction::ReportCombat)
                             message = economy.execute(c, player);
                         else {
                             message = "ORDER CANCELLED / MARKET CHANGED";

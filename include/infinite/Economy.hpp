@@ -143,7 +143,24 @@ struct EconomicVitals {
     int64_t outputKg = 0;
 };
 EconomicVitals economicVitals(const EconomicSite&, const EconomicSiteState&, uint64_t);
-enum class OutcomeKind : uint8_t { Sale, Supply, Haul, Relief, Maintenance };
+enum class OutcomeKind : uint8_t { Sale, Supply, Haul, Relief, Maintenance, Escort, Bounty };
+enum class CombatJobKind : uint8_t { Escort, Bounty };
+enum class CombatJobPhase : uint8_t { Open, Accepted, Claimable, Complete, Failed, Expired };
+struct CombatContract {
+    uint64_t id = 0, deadline = 0;
+    unsigned site = 0;
+    ActivityId target;
+    std::string targetName; // read-only name derived when publishing a snapshot
+    CombatJobKind kind = CombatJobKind::Escort;
+    CombatJobPhase phase = CombatJobPhase::Open;
+    int64_t reward = 0, escrow = 0;
+    double acceptedSeconds = 0, lastReport = 0, protectedSeconds = 0, lastPresent = 0;
+};
+struct PlayerCombatJob {
+    Address system;
+    uint64_t id = 0;
+};
+Stock combatSalvage(const CombatContract&);
 struct EconomicOutcome {
     uint64_t id = 0, command = 0, tick = 0, updated = 0, observeUntil = 0;
     unsigned site = 0;
@@ -187,6 +204,9 @@ struct EconomyPlayer {
     std::vector<CrewTitle> crewTitles;
     std::vector<CrewBoarding> crewBoarding;
     std::array<unsigned, maxWeaponMounts - 1> extraWeapons{};
+    std::optional<PlayerCombatJob> combatJob;
+    uint64_t combatCompleted = 0, combatFailed = 0;
+    int64_t combatEarnings = 0;
     int64_t massKg() const;
     int64_t volumeLitres() const;
     int64_t availableCargo(Good) const;
@@ -221,7 +241,11 @@ enum class EconomicAction : uint8_t {
     TreatCrew,
     BuyCrew,
     SellCrew,
-    ReleaseCrew
+    ReleaseCrew,
+    AcceptCombat,
+    ReportCombat,
+    ClaimCombat,
+    CancelCombat
 };
 struct EconomicCommand {
     uint64_t sequence = 0;
@@ -237,6 +261,9 @@ struct EconomicCommand {
     unsigned crewAboard = maxShipCrew;
     std::optional<CrewMember> person; // sale/release snapshot, or casualty whose berth a purchase fills
     unsigned weaponMount = 0;
+    std::optional<ActivityId> combatTarget;
+    double targetHull = 100, targetDistance = 0;
+    bool combatPresent = false;
 };
 inline constexpr size_t maxPortCrew = 16, maxCrewMarkets = 128, maxCrewTitles = 8192;
 struct PortCrewMarket {
@@ -315,6 +342,9 @@ class Economy {
     const std::vector<RecoveryJob>& recoveries() const {
         return recoveries_;
     }
+    const std::vector<CombatContract>& combatContracts() const {
+        return combatContracts_;
+    }
     const std::vector<EconomicOutcome>& outcomes() const {
         return outcomes_;
     }
@@ -348,6 +378,8 @@ class Economy {
     std::vector<RecoveryJob> recoveries_;
     std::vector<EconomicOutcome> outcomes_;
     std::vector<PortCrewMarket> crewMarkets_;
+    std::vector<CombatContract> combatContracts_;
+    uint64_t nextCombat_ = 1;
     uint64_t nextRecovery_ = 1, nextOutcome_ = 1;
     uint64_t nextHaul_ = 1;
     uint64_t tick_ = 0, nextContract_ = 1;
@@ -373,6 +405,11 @@ class Economy {
     std::string haulCommand(const EconomicCommand&, EconomyPlayer&);
     std::string weaponTrade(const EconomicCommand&, EconomyPlayer&, size_t);
     std::string disableVessel(const EconomicCommand&);
+    void combatOffers();
+    std::string combatCommand(const EconomicCommand&, EconomyPlayer&);
+    bool reconcileCombat(EconomyPlayer&) const;
+    void writeCombat(std::ostream&) const;
+    bool readCombat(std::istream&);
     std::string service(const EconomicCommand&, EconomyPlayer&, size_t);
     std::string crewTrade(const EconomicCommand&, EconomyPlayer&, size_t);
     void writeCrewMarkets(std::ostream&) const;
@@ -409,6 +446,7 @@ struct EconomySnapshot {
     std::vector<RecoveryJob> recoveries;
     std::vector<EconomicOutcome> outcomes;
     std::vector<PortCrewMarket> crewMarkets;
+    std::vector<CombatContract> combatContracts;
     std::vector<EconomicPortSignal> portSignals; // same ordering as network->sites
     EconomyPlayer player;
     uint64_t tick = 0;
@@ -422,7 +460,8 @@ struct EconomySnapshot {
     };
     std::vector<TradeRoute> routes;
     struct Job {
-        bool haul = false, recovery = false, working = false;
+        bool haul = false, recovery = false, working = false, combat = false;
+        ActivityId issuer;
         Stock required{};
         uint64_t id = 0;
         ActivityId target;
