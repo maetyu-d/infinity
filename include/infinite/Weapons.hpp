@@ -56,6 +56,10 @@ class WeaponSystem {
     bool overheated() const {
         return overheated_;
     }
+    void setCrewReadiness(double readiness) {
+        if (std::isfinite(readiness))
+            crewReadiness_ = std::clamp(readiness, .65, 1.2);
+    }
     void advance(double seconds);
     bool fire(const Universe&, const WeaponRay&, std::span<const ActivityBody>, const Geometry* = nullptr);
     void apply(ActivityBody&) const;
@@ -72,6 +76,7 @@ class WeaponSystem {
   private:
     unsigned level_ = 1;
     double heat_ = 0, cooldown_ = 0;
+    double crewReadiness_ = 1;
     bool overheated_ = false;
     uint64_t shotsFired_ = 0;
     std::vector<WeaponShot> shots_;

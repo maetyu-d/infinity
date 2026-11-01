@@ -1,5 +1,6 @@
 #pragma once
 #include "Activity.hpp"
+#include "Crew.hpp"
 #include "Piloting.hpp"
 #include "Presentation.hpp"
 namespace infinite {
@@ -43,12 +44,18 @@ struct CockpitOverlay {
     Mesh panels, strokes, lettering;
     std::vector<CockpitRect> worldLabels, hitRegions;
 };
+struct CrewPanelLayout {
+    CockpitRect panel;
+    std::array<CockpitRect, crewRoomCount> rooms;
+    std::array<CockpitRect, maxShipCrew> roster;
+    explicit CrewPanelLayout(double aspect);
+};
 // Port of Hyperion's CabinMesh / rebuildCockpit beveled screen-framed cabin.
 Mesh cockpitMesh(double aspect);
 CockpitOverlay cockpitOverlay(const FlightInstruments&, double aspect, std::string_view mode,
                               std::string_view notice = {}, std::span<const CelestialContact> contacts = {},
                               std::span<const ActivityContact> activity = {}, bool help = false,
                               double projectionScale = 1, const MarketView* market = nullptr,
-                              glm::dquat headInShip = {1, 0, 0, 0});
+                              glm::dquat headInShip = {1, 0, 0, 0}, const CrewView* crew = nullptr);
 std::string flightQuantity(double value, bool speed = false);
 } // namespace infinite

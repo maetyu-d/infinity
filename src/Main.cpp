@@ -1,6 +1,7 @@
 #include "CelestialValidation.hpp"
 #include "CloudValidation.hpp"
 #include "CockpitMotionValidation.hpp"
+#include "CrewValidation.hpp"
 #include "EconomyValidation.hpp"
 #include "FlightValidation.hpp"
 #include "LandingLightValidation.hpp"
@@ -18,6 +19,7 @@
 #include "WindowSizing.hpp"
 #include "infinite/Cockpit.hpp"
 #include "infinite/Continuity.hpp"
+#include "infinite/Crew.hpp"
 #include "infinite/Economy.hpp"
 #include "infinite/Flight.hpp"
 #include "infinite/NpcCombat.hpp"
@@ -52,7 +54,7 @@ struct Options {
          diversityTest = false, stellarDiversityTest = false;
     bool streamingTest = false;
     bool terrainQuality = false, terrainSurfaceFrame = false, sunShadows = true;
-    bool economyTest = false, cockpitMotionTest = false, npcTest = false;
+    bool economyTest = false, cockpitMotionTest = false, npcTest = false, crewTest = false;
     bool pilotTest = false, terrainTest = false, surfaceTest = false;
 };
 static Options options(int argc, char** argv) {
@@ -72,7 +74,10 @@ static Options options(int argc, char** argv) {
             o.smoke = o.tour = o.fresh = true;
         else if (arg == "--benchmark-tour")
             o.benchmark = o.smoke = o.tour = o.fresh = true;
-        else if (arg == "--npc-combat-test") {
+        else if (arg == "--crew-test") {
+            o.smoke = o.fresh = o.crewTest = o.benchmark = true;
+            o.tour = false;
+        } else if (arg == "--npc-combat-test") {
             o.smoke = o.fresh = o.npcTest = o.benchmark = true;
             o.tour = false;
         } else if (arg == "--economy-test") {
@@ -203,7 +208,7 @@ static Options options(int argc, char** argv) {
         unsigned(o.terrainTest) + unsigned(o.surfaceTest) + unsigned(o.planetTest) + unsigned(o.uiFitTest) +
         unsigned(o.polarTest) + unsigned(o.cloudTest) + unsigned(o.celestialTest) +
         unsigned(o.landingLightTest) + unsigned(o.weatherTest) + unsigned(o.diversityTest) +
-        unsigned(o.stellarDiversityTest) + unsigned(o.npcTest);
+        unsigned(o.stellarDiversityTest) + unsigned(o.npcTest) + unsigned(o.crewTest);
     if (validationModes > 1 || (validationModes && o.tour))
         throw std::invalid_argument("Choose one automated validation mode");
     if (o.width < 320 || o.height < 240 || o.width > 7680 || o.height > 4320 || o.frames < 0)
@@ -246,7 +251,7 @@ int main(int argc, char** argv) {
                             opt.terrainTest || opt.surfaceTest || opt.planetTest || opt.uiFitTest ||
                             opt.polarTest || opt.cloudTest || opt.celestialTest || opt.landingLightTest ||
                             opt.weatherTest || opt.diversityTest || opt.stellarDiversityTest ||
-                            opt.cockpitMotionTest || opt.npcTest;
+                            opt.cockpitMotionTest || opt.npcTest || opt.crewTest;
         std::unique_ptr<FlightValidation> flightProof;
         if (opt.flightTest)
             flightProof = std::make_unique<FlightValidation>(universe, nav);
@@ -344,6 +349,16 @@ int main(int argc, char** argv) {
             if (opt.smoke)
                 activity.seconds = opt.visualTime >= 0 ? opt.visualTime : 12;
             WeaponSystem weapons;
+            ShipCrew crew(universe.seed());
+            if (!opt.smoke) {
+                std::ifstream file(data / ("crew-" + std::to_string(universe.seed()) + ".txt"));
+                if (file) {
+                    std::string text;
+                    if (!std::getline(file, text) || !crew.restore(text))
+                        throw std::runtime_error("Invalid crew save / original file retained");
+                }
+            }
+            crew.observeHull(pilot.ship().hull);
             if (!opt.smoke) {
                 std::ifstream file(data / ("combat-" + std::to_string(universe.seed()) + ".txt"));
                 std::string text;
@@ -368,6 +383,12 @@ int main(int argc, char** argv) {
             std::shared_ptr<const EconomySnapshot> economicSnapshot;
             MarketView marketView;
             bool marketOpen = false;
+            bool crewOpen = false;
+            size_t crewSelected = 0;
+            CrewStation crewStation = CrewStation::Bridge;
+            CrewView crewView;
+            std::string crewFeedback;
+            uint64_t pendingCrewSequence = 0;
             std::optional<ActivityId> marketPort;
             size_t marketGood = 1;
             MarketPage marketPage = MarketPage::Goods;
@@ -438,6 +459,54 @@ int main(int argc, char** argv) {
                 }
                 if (marketPort)
                     activity.selected = marketPort;
+            };
+            auto crewPort = [&]() -> std::optional<size_t> {
+                if (!pilotEnabled || !economicSnapshot || !economicSnapshot->network ||
+                    economicSnapshot->catchingUp)
+                    return {};
+                for (size_t i = 0; i < economicSnapshot->network->sites.size(); ++i)
+                    if (economicTradeAccess(universe, nav, pilot, economicSnapshot->network->sites[i]))
+                        return i;
+                return {};
+            };
+            auto submitCrew = [&](ShipService service) {
+                const auto port = crewPort();
+                if (!port || !economy) {
+                    crewFeedback = "BERTH OR LAND AT A PORT / FULL SIZE / STOP SHIP";
+                    return;
+                }
+                if (pendingCrewSequence > economicSnapshot->player.lastCommand ||
+                    pendingEconomicSequence > economicSnapshot->player.lastCommand) {
+                    crewFeedback = "WAIT FOR PORT ORDER";
+                    return;
+                }
+                if (service == ShipService::CrewHire && crew.living() >= maxShipCrew) {
+                    crewFeedback = "ALL EIGHT BERTHS FILLED";
+                    return;
+                }
+                if (service == ShipService::CrewSupplies && crew.spares() >= 100 && crew.medical() >= 50) {
+                    crewFeedback = "CREW STORES FULL";
+                    return;
+                }
+                auto quote = economicServiceQuote(*economicSnapshot, *port, service, 1);
+                if (!quote.available) {
+                    crewFeedback = quote.status;
+                    return;
+                }
+                EconomicCommand c;
+                c.port = economicSnapshot->network->sites[*port].id;
+                c.action = service == ShipService::CrewHire       ? EconomicAction::HireCrew
+                           : service == ShipService::CrewSupplies ? EconomicAction::SupplyCrew
+                                                                  : EconomicAction::TreatCrew;
+                c.serviceUnits = 1;
+                c.limitCents = quote.totalCents();
+                c.sequence = economicSequence =
+                    std::max(economicSequence, economicSnapshot->player.lastCommand) + 1;
+                if (economy->command(c)) {
+                    pendingCrewSequence = c.sequence;
+                    crewFeedback = "CREW SERVICE ORDER SENT";
+                } else
+                    crewFeedback = "PORT QUEUE BUSY / TRY AGAIN";
             };
             auto submitMarket = [&](EconomicAction action, const EconomySnapshot::Job* job = nullptr) {
                 if (!economy || !economicSnapshot || !marketPort || economicSnapshot->catchingUp)
@@ -548,6 +617,9 @@ int main(int argc, char** argv) {
             if (opt.npcTest)
                 npcProof = std::make_unique<NpcValidation>(universe, nav, pilot, activity, weapons, npcCombat,
                                                            window);
+            std::unique_ptr<CrewValidation> crewProof;
+            if (opt.crewTest)
+                crewProof = std::make_unique<CrewValidation>(universe, nav, pilot, crew, window);
             std::unique_ptr<SurfaceValidation> surfaceProof;
             if (opt.surfaceTest)
                 surfaceProof = std::make_unique<SurfaceValidation>(universe, nav, pilot, activity);
@@ -785,6 +857,26 @@ int main(int argc, char** argv) {
                         renderer.resize(w, h);
                     }
                     if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+                        if (crewOpen) {
+                            if (event.button.button == SDL_BUTTON_LEFT) {
+                                int w, h, pw, ph;
+                                SDL_GetWindowSize(window, &w, &h);
+                                SDL_GetWindowSizeInPixels(window, &pw, &ph);
+                                const auto viewport = renderer.cockpitViewport();
+                                const auto point =
+                                    viewport.toCanvas({event.button.x * pw / w, event.button.y * ph / h});
+                                const CrewPanelLayout layout(viewport.aspect());
+                                for (size_t i = 0; i < crew.members().size(); ++i)
+                                    if (layout.roster[i].contains(point))
+                                        crewSelected = i;
+                                for (size_t i = 0; i < crewRoomCount; ++i)
+                                    if (layout.rooms[i].contains(point)) {
+                                        crewStation = CrewStation(i);
+                                        crewFeedback = crew.assign(crewSelected, crewStation);
+                                    }
+                            }
+                            continue;
+                        }
                         if (event.button.button == SDL_BUTTON_RIGHT) {
                             rightLook = true;
                             captureLook();
@@ -815,7 +907,7 @@ int main(int argc, char** argv) {
                         rightLook = false;
                         captureLook();
                     }
-                    if (event.type == SDL_EVENT_MOUSE_MOTION && looking &&
+                    if (event.type == SDL_EVENT_MOUSE_MOTION && looking && !crewOpen &&
                         (event.motion.xrel != 0 || event.motion.yrel != 0)) {
                         if (pilotEnabled) {
                             mouseX += event.motion.xrel;
@@ -824,6 +916,8 @@ int main(int argc, char** argv) {
                             nav.rotate(event.motion.xrel, event.motion.yrel);
                         opt.tour = false;
                     }
+                    if (crewOpen && event.type == SDL_EVENT_MOUSE_WHEEL)
+                        continue;
                     if (marketOpen && event.type == SDL_EVENT_MOUSE_WHEEL && event.wheel.y != 0) {
                         marketGood =
                             (marketGood + marketRows() + (event.wheel.y > 0 ? -1 : 1)) % marketRows();
@@ -838,8 +932,80 @@ int main(int argc, char** argv) {
                         opt.tour = false;
                     }
                     if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat) {
+                        if (crewOpen) {
+                            const auto count = crew.members().size();
+                            switch (event.key.scancode) {
+                            case SDL_SCANCODE_ESCAPE:
+                            case SDL_SCANCODE_F8:
+                                crewOpen = false;
+                                break;
+                            case SDL_SCANCODE_UP:
+                                if (count)
+                                    crewSelected = (crewSelected + count - 1) % count;
+                                break;
+                            case SDL_SCANCODE_DOWN:
+                                if (count)
+                                    crewSelected = (crewSelected + 1) % count;
+                                break;
+                            case SDL_SCANCODE_LEFT:
+                                crewStation =
+                                    CrewStation((size_t(crewStation) + crewRoomCount - 1) % crewRoomCount);
+                                break;
+                            case SDL_SCANCODE_RIGHT:
+                                crewStation = CrewStation((size_t(crewStation) + 1) % crewRoomCount);
+                                break;
+                            case SDL_SCANCODE_RETURN:
+                                crewFeedback = crew.assign(crewSelected, crewStation);
+                                break;
+                            case SDL_SCANCODE_R:
+                                crewFeedback = crew.order(crewSelected, CrewOrder::Repair, crewStation);
+                                break;
+                            case SDL_SCANCODE_F:
+                                crewFeedback = crew.order(crewSelected, CrewOrder::Firefight, crewStation);
+                                break;
+                            case SDL_SCANCODE_M:
+                                crewFeedback = crew.order(crewSelected, CrewOrder::Aid, crewStation);
+                                break;
+                            case SDL_SCANCODE_T:
+                                crewFeedback = crew.order(crewSelected, CrewOrder::Rest, CrewStation::Bunks);
+                                break;
+                            case SDL_SCANCODE_V:
+                                crew.vent(crewStation);
+                                break;
+                            case SDL_SCANCODE_D:
+                                crew.recall();
+                                break;
+                            case SDL_SCANCODE_A:
+                                crew.toggleAutomatic();
+                                break;
+                            case SDL_SCANCODE_H:
+                                submitCrew(ShipService::CrewHire);
+                                break;
+                            case SDL_SCANCODE_S:
+                                submitCrew(ShipService::CrewSupplies);
+                                break;
+                            case SDL_SCANCODE_L:
+                                submitCrew(ShipService::CrewCare);
+                                break;
+                            case SDL_SCANCODE_BACKSPACE:
+                                if (crewPort() && !pendingCrewSequence) {
+                                    crew.dismiss(crewSelected);
+                                    crewSelected = 0;
+                                } else
+                                    crewFeedback = "DISMISS ONLY AT A CONNECTED PORT";
+                                break;
+                            default:
+                                break;
+                            }
+                            continue;
+                        }
                         if (marketOpen) {
                             switch (event.key.scancode) {
+                            case SDL_SCANCODE_F8:
+                                marketOpen = false;
+                                crewOpen = true;
+                                releaseLook();
+                                break;
                             case SDL_SCANCODE_ESCAPE:
                             case SDL_SCANCODE_F2:
                                 marketOpen = false;
@@ -970,6 +1136,13 @@ int main(int argc, char** argv) {
                             continue;
                         }
                         switch (event.key.scancode) {
+                        case SDL_SCANCODE_F8:
+                            if (pilotEnabled) {
+                                crewOpen = true;
+                                marketOpen = false;
+                                releaseLook();
+                            }
+                            break;
                         case SDL_SCANCODE_ESCAPE:
                             if (looking) {
                                 releaseLook();
@@ -1273,6 +1446,13 @@ int main(int argc, char** argv) {
                         economy->request(system, activity.seconds);
                     economicSnapshot = economy->snapshot();
                     if (economicSnapshot) {
+                        if (!opt.smoke)
+                            crew.reconcile(economicSnapshot->player.crew);
+                        if (pendingCrewSequence &&
+                            economicSnapshot->player.lastCommand >= pendingCrewSequence) {
+                            crewFeedback = economicSnapshot->message;
+                            pendingCrewSequence = 0;
+                        }
                         if (!opt.economyTest)
                             weapons.setLevel(economicSnapshot->player.weaponLevel);
                         if (pendingWreck && economicSnapshot->player.lastCommand >= pendingWreck)
@@ -1373,10 +1553,11 @@ int main(int argc, char** argv) {
                         helm.boost = keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT];
                         helm.precision = keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL];
                         helm.brake = keys[SDL_SCANCODE_B];
-                        if (marketOpen)
+                        if (marketOpen || crewOpen)
                             helm = {};
-                        helm = resolveHelmInput(helm, marketOpen ? glm::dvec2(0) : glm::dvec2(mouseX, mouseY),
-                                                dt, keys[SDL_SCANCODE_LALT] || keys[SDL_SCANCODE_RALT]);
+                        helm = resolveHelmInput(
+                            helm, marketOpen || crewOpen ? glm::dvec2(0) : glm::dvec2(mouseX, mouseY), dt,
+                            keys[SDL_SCANCODE_LALT] || keys[SDL_SCANCODE_RALT]);
                         pilot.update(helm, dt, renderer.submittedGeometry(nav.anchor));
                     } else if (!opt.tour)
                         flight.update(axes, dt, keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT],
@@ -1388,8 +1569,10 @@ int main(int argc, char** argv) {
                     pilot.update({}, dt, renderer.submittedGeometry(nav.anchor));
                 if (!opt.smoke) {
                     weapons.advance(dt);
-                    const bool inhibit = !pilotEnabled || marketOpen || pilot.instruments().fieldActive ||
-                                         pilot.ship().landed || pilot.ship().hull <= 0 ||
+                    weapons.setCrewReadiness(crew.weaponReadiness());
+                    const bool inhibit = !pilotEnabled || marketOpen || crewOpen ||
+                                         pilot.instruments().fieldActive || pilot.ship().landed ||
+                                         pilot.ship().hull <= 0 ||
                                          std::abs(pilot.ship().logSize - pilot.ship().targetLogSize) > .01;
                     if (!inhibit && !opt.tour && (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) &&
                         keys[SDL_SCANCODE_SPACE]) {
@@ -1407,6 +1590,7 @@ int main(int argc, char** argv) {
                 }
                 nav.update((opt.benchmark ? 1.0 / 60 : dt) * (opt.tour ? 3 : 1));
                 if (!opt.smoke) {
+                    crew.observeHull(pilot.ship().hull);
                     NpcPlayer player;
                     player.reference = nav.anchor;
                     player.position = nav.cameraPosition() * std::pow(10., nav.logDistance);
@@ -1423,6 +1607,10 @@ int main(int argc, char** argv) {
                     const auto combat = npcCombat.update(universe, player, renderer.combatBodies(), weapons,
                                                          dt, renderer.submittedGeometry(nav.anchor).get());
                     pilot.applyCombatDamage(combat.playerDamage);
+                    crew.observeHull(pilot.ship().hull);
+                    if (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS)
+                        crew.advance(dt, pilot.instruments().properG, !npcCombat.shots().empty(),
+                                     !weapons.shots().empty());
                 }
                 if (flightProof)
                     flightProof->advance(flight, renderer);
@@ -1434,6 +1622,8 @@ int main(int argc, char** argv) {
                     economyProof->advance(renderer);
                 if (npcProof)
                     npcProof->advance(renderer);
+                if (crewProof)
+                    crewProof->advance(renderer);
                 if (uiProof)
                     uiProof->advance(renderer);
                 if (polarProof)
@@ -1451,9 +1641,38 @@ int main(int argc, char** argv) {
                 if (diversityProof)
                     diversityProof->advance(renderer);
                 auto cockpit = pilot.instruments();
+                if (crewProof) {
+                    crewView = crewProof->view();
+                    renderer.setCrew(&crewView);
+                } else if (!opt.smoke) {
+                    crewView = crew.view(crewSelected, crewStation);
+                    crewView.open = crewOpen;
+                    crewView.message = crewFeedback;
+                    crewView.pending = pendingCrewSequence != 0;
+                    if (crewOpen) {
+                        if (auto i = crewPort()) {
+                            crewView.connected = true;
+                            crewView.port = economicSnapshot->network->sites[*i].name + " / " +
+                                            std::to_string(economicSnapshot->player.credits / 100) + " CR";
+                            auto describe = [&](ShipService service, std::string label) {
+                                auto q = economicServiceQuote(*economicSnapshot, *i, service, 1);
+                                return label + " / " + std::to_string(q.totalCents() / 100) + " CR / " +
+                                       q.status;
+                            };
+                            crewView.recruit = describe(
+                                ShipService::CrewHire,
+                                "H HIRE " + crew.recruit(economicSnapshot->player.crew.hired + 1).name);
+                            crewView.supply =
+                                describe(ShipService::CrewSupplies, "S +10 SPARES / +5 MEDICAL");
+                            crewView.care = describe(ShipService::CrewCare, "L SHORE CLINIC / SURVIVORS");
+                        } else
+                            crewView.port = "PORT SERVICES OFFLINE / BERTH OR LAND / FULL SIZE AND STOPPED";
+                    }
+                    renderer.setCrew(&crewView);
+                }
                 npcCombat.annotate(cockpit);
                 weapons.annotate(cockpit,
-                                 cockpit.fieldActive || cockpit.landed || marketOpen ||
+                                 cockpit.fieldActive || cockpit.landed || marketOpen || crewOpen ||
                                      std::abs(pilot.ship().logSize - pilot.ship().targetLogSize) > .01);
                 renderer.setCockpit(pilotEnabled ? &cockpit : nullptr);
                 if (motionProof)
@@ -1466,6 +1685,11 @@ int main(int argc, char** argv) {
                 if (npcProof) {
                     npcProof->observe(stats, renderer, opt.captures);
                     if (npcProof->finished())
+                        running = false;
+                }
+                if (crewProof) {
+                    crewProof->observe(renderer, opt.captures);
+                    if (crewProof->finished())
                         running = false;
                 }
                 if (flightProof) {
@@ -1671,7 +1895,8 @@ int main(int argc, char** argv) {
                 if (opt.frames > 0 && frame >= opt.frames)
                     running = false;
                 if (opt.smoke && std::chrono::duration<double>(now - start).count() >
-                                     (opt.npcTest                                     ? 180
+                                     (opt.crewTest                                    ? 240
+                                      : opt.npcTest                                   ? 180
                                       : opt.economyTest                               ? 330
                                       : opt.diversityTest || opt.stellarDiversityTest ? 360
                                       : opt.celestialTest || opt.weatherTest || opt.cloudTest ||
@@ -1710,6 +1935,7 @@ int main(int argc, char** argv) {
                 saveText(("combat-" + std::to_string(universe.seed()) + ".txt").c_str(), weapons.serialize());
                 saveText(("npc-combat-" + std::to_string(universe.seed()) + ".txt").c_str(),
                          npcCombat.serialize(universe.seed()));
+                saveText(("crew-" + std::to_string(universe.seed()) + ".txt").c_str(), crew.serialize());
                 // Rendering is fixed to Hyperion; historical display.txt preferences are ignored.
                 saveText("cockpit-motion.txt", renderer.cockpitMotionEnabled() ? "1" : "0");
             }
@@ -1731,7 +1957,10 @@ int main(int argc, char** argv) {
             std::cout << "peak_rss_bytes=" << usage.ru_maxrss * 1024 << '\n';
 #endif
 #endif
-            if (opt.npcTest) {
+            if (opt.crewTest) {
+                if (!crewProof->finished())
+                    throw std::runtime_error("Native crew validation incomplete");
+            } else if (opt.npcTest) {
                 if (!npcProof->finished())
                     throw std::runtime_error("Native NPC combat validation incomplete");
             } else if (opt.cockpitMotionTest) {

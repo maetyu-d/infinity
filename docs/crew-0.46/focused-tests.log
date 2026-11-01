@@ -1,0 +1,15 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start  1: player_crew_and_damage_control
+    Start  2: npc_combat_behaviour
+1/5 Test  #2: npc_combat_behaviour ..................   Passed    2.22 sec
+    Start  3: weapons_combat_and_equipment
+2/5 Test  #1: player_crew_and_damage_control ........   Passed    6.20 sec
+    Start  6: economic_ship_services_and_planning
+3/5 Test  #3: weapons_combat_and_equipment ..........   Passed    9.09 sec
+    Start 24: cockpit_layout_and_targeting
+4/5 Test #24: cockpit_layout_and_targeting ..........   Passed    0.94 sec
+5/5 Test  #6: economic_ship_services_and_planning ...   Passed    8.47 sec
+
+100% tests passed, 0 tests failed out of 5
+
+Total Test time (real) =  14.68 sec

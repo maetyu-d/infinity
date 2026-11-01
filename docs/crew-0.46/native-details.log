@@ -1,0 +1,96 @@
+Start testing: Nov 01 02:36 GMT
+----------------------------------------------------------
+48/93 Testing: native_npc_combat_loop
+48/93 Test: native_npc_combat_loop
+Command: "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake" "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite" "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/npc-combat/native" "-P" "/Users/user/Documents/SC tutorial/Infinite/cmake/RunNpcCombat.cmake"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_npc_combat_loop" start time: Nov 01 02:36 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =  36.94 sec
+----------------------------------------------------------
+Test Passed.
+"native_npc_combat_loop" end time: Nov 01 02:37 GMT
+"native_npc_combat_loop" time elapsed: 00:00:36
+----------------------------------------------------------
+
+46/93 Testing: native_crew_loop
+46/93 Test: native_crew_loop
+Command: "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake" "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite" "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/crew/native" "-P" "/Users/user/Documents/SC tutorial/Infinite/cmake/RunCrew.cmake"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_crew_loop" start time: Nov 01 02:37 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =  31.68 sec
+----------------------------------------------------------
+Test Passed.
+"native_crew_loop" end time: Nov 01 02:37 GMT
+"native_crew_loop" time elapsed: 00:00:31
+----------------------------------------------------------
+
+49/93 Testing: native_npc_combat_images
+49/93 Test: native_npc_combat_images
+Command: "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9" "/Users/user/Documents/SC tutorial/Infinite/tools/check_npc_captures.py" "/Users/user/Documents/SC tutorial/Infinite/build/npc-combat/native"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_npc_combat_images" start time: Nov 01 02:37 GMT
+Output:
+----------------------------------------------------------
+PASS: six native attack, evasion, retreat, patrol response and fitted combat HUD images
+<end of output>
+Test time =   1.80 sec
+----------------------------------------------------------
+Test Passed.
+"native_npc_combat_images" end time: Nov 01 02:37 GMT
+"native_npc_combat_images" time elapsed: 00:00:01
+----------------------------------------------------------
+
+47/93 Testing: native_crew_images
+47/93 Test: native_crew_images
+Command: "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9" "/Users/user/Documents/SC tutorial/Infinite/tools/check_crew_captures.py" "/Users/user/Documents/SC tutorial/Infinite/build/crew/native"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_crew_images" start time: Nov 01 02:37 GMT
+Output:
+----------------------------------------------------------
+PASS: five native crew roster, emergency, moving responders, recovery and portrait images
+<end of output>
+Test time =   1.41 sec
+----------------------------------------------------------
+Test Passed.
+"native_crew_images" end time: Nov 01 02:37 GMT
+"native_crew_images" time elapsed: 00:00:01
+----------------------------------------------------------
+
+53/93 Testing: native_economic_loop
+53/93 Test: native_economic_loop
+Command: "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake" "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite" "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/economy/native" "-P" "/Users/user/Documents/SC tutorial/Infinite/cmake/RunEconomy.cmake"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_economic_loop" start time: Nov 01 02:36 GMT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time = 151.03 sec
+----------------------------------------------------------
+Test Passed.
+"native_economic_loop" end time: Nov 01 02:38 GMT
+"native_economic_loop" time elapsed: 00:02:31
+----------------------------------------------------------
+
+54/93 Testing: native_economic_images
+54/93 Test: native_economic_images
+Command: "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9" "/Users/user/Documents/SC tutorial/Infinite/tools/check_economy_captures.py" "/Users/user/Documents/SC tutorial/Infinite/build/economy/native"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"native_economic_images" start time: Nov 01 02:38 GMT
+Output:
+----------------------------------------------------------
+PASS: thirty-three native trading, services, economic city lighting, port reports and freight images / changed 55175 recovered 6008
+<end of output>
+Test time =  13.25 sec
+----------------------------------------------------------
+Test Passed.
+"native_economic_images" end time: Nov 01 02:39 GMT
+"native_economic_images" time elapsed: 00:00:13
+----------------------------------------------------------
+
+End testing: Nov 01 02:39 GMT

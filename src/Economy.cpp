@@ -124,7 +124,7 @@ int64_t EconomyPlayer::volumeLitres() const {
 }
 std::string EconomyPlayer::serialize() const {
     std::ostringstream o;
-    o << "INFINITE_WALLET 4 " << credits << ' ' << lastCommand;
+    o << "INFINITE_WALLET 5 " << credits << ' ' << lastCommand;
     writeStock(o, cargo);
     o << ' ' << deliveries << ' ' << lateDeliveries << ' ' << returnedHauls << ' ' << freightEarnings << ' '
       << bool(haul);
@@ -136,6 +136,7 @@ std::string EconomyPlayer::serialize() const {
           << ' ' << h.kg << ' ' << h.onboard;
     }
     o << ' ' << cargoLevel << ' ' << repairPoints << ' ' << weaponLevel;
+    o << ' ' << crew.hired << ' ' << crew.supplied << ' ' << crew.treated;
     return o.str();
 }
 bool EconomyPlayer::restore(std::string_view text) {
@@ -143,7 +144,7 @@ bool EconomyPlayer::restore(std::string_view text) {
     std::istringstream in{std::string(text)};
     std::string h;
     unsigned v;
-    if (!(in >> h >> v >> p.credits >> p.lastCommand) || h != "INFINITE_WALLET" || (v < 1 || v > 4) ||
+    if (!(in >> h >> v >> p.credits >> p.lastCommand) || h != "INFINITE_WALLET" || (v < 1 || v > 5) ||
         p.credits < 0 || p.credits > 1000000000000000LL || !readStock(in, p.cargo))
         return false;
     if (v >= 2) {
@@ -183,6 +184,9 @@ bool EconomyPlayer::restore(std::string_view text) {
                    p.repairPoints > 1000000000000ULL))
         return false;
     if (v >= 4 && (!(in >> p.weaponLevel) || p.weaponLevel > maxWeaponLevel))
+        return false;
+    if (v >= 5 && (!(in >> p.crew.hired >> p.crew.supplied >> p.crew.treated) || p.crew.hired > 1000000 ||
+                   p.crew.supplied > 1000000 || p.crew.treated > 1000000))
         return false;
     p.capacityKg = holdCapacityKg(p.cargoLevel);
     p.capacityLitres = holdCapacityLitres(p.cargoLevel);
@@ -596,7 +600,7 @@ std::string Economy::execute(const EconomicCommand& c, EconomyPlayer& player) {
     auto index = siteIndex(c.port);
     if (!index)
         return "PORT HAS NO MARKET";
-    if (unsigned(c.action) > unsigned(EconomicAction::DisableVessel))
+    if (unsigned(c.action) > unsigned(EconomicAction::TreatCrew))
         return "INVALID ECONOMIC ACTION";
     if (!reconcilePlayer(player))
         return "HAUL SAVE MISMATCH / TRADING PAUSED";
@@ -604,7 +608,9 @@ std::string Economy::execute(const EconomicCommand& c, EconomyPlayer& player) {
         return weaponTrade(c, player, *index);
     if (c.action == EconomicAction::AcceptRecovery || c.action == EconomicAction::DeliverRecovery)
         return recoveryCommand(c, player, *index);
-    if (c.action == EconomicAction::RepairHull || c.action == EconomicAction::UpgradeCargo)
+    if (c.action == EconomicAction::RepairHull || c.action == EconomicAction::UpgradeCargo ||
+        c.action == EconomicAction::HireCrew || c.action == EconomicAction::SupplyCrew ||
+        c.action == EconomicAction::TreatCrew)
         return service(c, player, *index);
     if (c.action >= EconomicAction::AcceptHaul)
         return haulCommand(c, player);

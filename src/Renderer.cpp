@@ -142,6 +142,7 @@ struct Renderer::Impl {
     const ActivityState* activity = nullptr;
     const WeaponSystem* weapons = nullptr;
     const NpcCombat* npcCombat = nullptr;
+    const CrewView* crew = nullptr;
     std::vector<ActivityBody> combatBodies;
     std::vector<ActivityBody> weaponTargets;
     std::shared_ptr<const EconomySnapshot> economy;
@@ -1432,6 +1433,9 @@ void Renderer::setEconomy(std::shared_ptr<const EconomySnapshot> economy, const 
 void Renderer::setNpcCombat(const NpcCombat* combat) {
     impl_->npcCombat = combat;
 }
+void Renderer::setCrew(const CrewView* crew) {
+    impl_->crew = crew;
+}
 std::span<const ActivityBody> Renderer::combatBodies() const {
     return impl_->combatBodies;
 }
@@ -2035,7 +2039,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         cockpit.weatherSeverity = p.weatherSeverity;
         const auto hud =
             cockpitOverlay(cockpit, aspect, renderModeName(p.mode), notice, p.contacts, p.activityContacts,
-                           p.cockpitHelp, viewport.projectionScale, p.market, p.head.orientation);
+                           p.cockpitHelp, viewport.projectionScale, p.market, p.head.orientation, p.crew);
         p.cockpitHitRegions = hud.hitRegions;
         const auto projection = bgfx::getCaps()->homogeneousDepth
                                     ? glm::orthoRH_NO(0.f, float(900 * aspect), 900.f, 0.f, -1.f, 1.f)

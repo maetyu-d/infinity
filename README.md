@@ -1,5 +1,7 @@
 # INFINITE
 
+**0.46:** six named ship crew, connected stations, skills, fatigue, injuries and casualties, fires, oxygen/breaches and finite damage-control stores. **F8** opens the crew deck: assign stations, dispatch repairs/firefighters/first aid, rest relief crew and vent compartments. Connected ports sell recruitment contracts, supplies and shore treatment through the existing economy. [Crew controls and validation](docs/CREW_0_46.md).
+
 **0.45:** hostile raiders acquire, attack, evade and retreat; existing patrols respond to attacks on themselves or nearby civilians. Enemy fire damages the saved player hull. **H** selects a visible hostile; **Space** fires the fitted laser. Guarded ports, landing, cruise and extreme shrinking provide escape options. [NPC combat, controls and validation](docs/NPC_COMBAT_0_45.md).
 
 **0.44:** a starter pulse laser, Space firing with heat/recoil/impact effects, damage and persistent disabled craft, plus three tradable/upgradable weapon grades. **F2 → F5 → Weapons** buys, upgrades and sells the fitted laser using existing port parts, crews and money. Wrecked freighter cargo remains accounted for. [Weapons, controls and validation](docs/WEAPONS_0_44.md).

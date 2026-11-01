@@ -37,6 +37,31 @@ ShipServiceQuote quoteService(const EconomicSiteState& site, const EconomyPlayer
         add(Good::Machinery, 10 * units);
         add(Good::Tools, 5 * units);
         q.labourCents = 100000 * units;
+    } else if (service == ShipService::CrewHire || service == ShipService::CrewSupplies ||
+               service == ShipService::CrewCare) {
+        const auto receipts = service == ShipService::CrewHire       ? player.crew.hired
+                              : service == ShipService::CrewSupplies ? player.crew.supplied
+                                                                     : player.crew.treated;
+        if (units != 1 || receipts >= 1000000) {
+            q.status = "INVALID CREW SERVICE OR RECEIPT LIMIT";
+            return q;
+        }
+        if (service == ShipService::CrewHire) {
+            add(Good::Food, 4);
+            add(Good::Oxygen, 4);
+            q.labourCents = 40000;
+        } else if (service == ShipService::CrewSupplies) {
+            add(Good::Tools, 2);
+            add(Good::Machinery, 1);
+            add(Good::Alloy, 2);
+            add(Good::Medicine, 1);
+            q.labourCents = 2500;
+        } else {
+            add(Good::Medicine, 5);
+            add(Good::Food, 10);
+            add(Good::Oxygen, 5);
+            q.labourCents = 5000;
+        }
     } else {
         q.status = "UNKNOWN SHIP SERVICE";
         return q;
@@ -68,8 +93,13 @@ ShipServiceQuote economicServiceQuote(const EconomySnapshot& s, size_t i, ShipSe
 }
 std::string Economy::service(const EconomicCommand& c, EconomyPlayer& player, size_t i) {
     const bool repair = c.action == EconomicAction::RepairHull;
-    auto q = quoteService(sites_[i], player, tick_, repair ? ShipService::Repair : ShipService::CargoHold,
-                          c.serviceUnits, [&](Good good, int64_t kg) { return quote(i, good, kg); });
+    const auto kind = repair                                     ? ShipService::Repair
+                      : c.action == EconomicAction::UpgradeCargo ? ShipService::CargoHold
+                      : c.action == EconomicAction::HireCrew     ? ShipService::CrewHire
+                      : c.action == EconomicAction::SupplyCrew   ? ShipService::CrewSupplies
+                                                                 : ShipService::CrewCare;
+    auto q = quoteService(sites_[i], player, tick_, kind, c.serviceUnits,
+                          [&](Good good, int64_t kg) { return quote(i, good, kg); });
     if (!q.available)
         return q.status;
     if (c.limitCents < q.totalCents())
@@ -79,7 +109,9 @@ std::string Economy::service(const EconomicCommand& c, EconomyPlayer& player, si
         site.stock[g] -= q.materials[g];
         // Repair parts are final maintenance consumption. Refit parts leave the
         // port as installed ship capital, represented by the persistent level.
-        (repair ? site.consumed[g] : site.exported[g]) += q.materials[g];
+        (repair || kind == ShipService::CrewHire || kind == ShipService::CrewCare ? site.consumed[g]
+                                                                                  : site.exported[g]) +=
+            q.materials[g];
     }
     player.credits -= q.totalCents();
     externalMoneyDelta_ += q.totalCents();
@@ -95,6 +127,18 @@ std::string Economy::service(const EconomicCommand& c, EconomyPlayer& player, si
         receipt << "HULL REPAIR PAID / +" << q.units << " POINTS / " << std::fixed << std::setprecision(2)
                 << q.totalCents() / 100. << " CR";
         return receipt.str();
+    }
+    if (kind == ShipService::CrewHire || kind == ShipService::CrewSupplies || kind == ShipService::CrewCare) {
+        auto& receipt = kind == ShipService::CrewHire       ? player.crew.hired
+                        : kind == ShipService::CrewSupplies ? player.crew.supplied
+                                                            : player.crew.treated;
+        ++receipt;
+        const std::string message = kind == ShipService::CrewHire ? "CREW CONTRACT SIGNED / F8 ASSIGN RELIEF"
+                                    : kind == ShipService::CrewSupplies
+                                        ? "CREW STORES PAID / +10 SPARES / +5 MEDICAL"
+                                        : "SHORE CLINIC PAID / SURVIVING CREW TREATED AND RESTED";
+        event(network_->sites[i].name + " / " + message);
+        return message;
     }
     player.cargoLevel = q.units;
     player.capacityKg = holdCapacityKg(q.units);

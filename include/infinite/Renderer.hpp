@@ -10,6 +10,7 @@
 struct SDL_Window;
 namespace infinite {
 struct CockpitViewport;
+struct CrewView;
 struct EconomySnapshot;
 struct MarketView;
 class WeaponSystem;
@@ -73,6 +74,7 @@ class Renderer {
     RenderMode mode() const;
     void freezeVisualTime(double seconds);
     void setCockpit(const FlightInstruments*);
+    void setCrew(const CrewView*);
     void setCockpitMotionEnabled(bool);
     bool cockpitMotionEnabled() const;
     CockpitMotionPose cockpitMotionPose() const;

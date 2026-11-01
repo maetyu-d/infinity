@@ -1,0 +1,83 @@
+Start testing: Nov 01 02:17 GMT
+----------------------------------------------------------
+2/93 Testing: npc_combat_behaviour
+2/93 Test: npc_combat_behaviour
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_npc_combat_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"npc_combat_behaviour" start time: Nov 01 02:17 GMT
+Output:
+----------------------------------------------------------
+1586 NPC attack, evasion, retreat, safety, patrol, persistence and deterministic steering checks passed
+<end of output>
+Test time =   2.22 sec
+----------------------------------------------------------
+Test Passed.
+"npc_combat_behaviour" end time: Nov 01 02:17 GMT
+"npc_combat_behaviour" time elapsed: 00:00:02
+----------------------------------------------------------
+
+1/93 Testing: player_crew_and_damage_control
+1/93 Test: player_crew_and_damage_control
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_crew_tests" "/Users/user/Documents/SC tutorial/Infinite/build/crew/runtime-test"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"player_crew_and_damage_control" start time: Nov 01 02:17 GMT
+Output:
+----------------------------------------------------------
+212 crew stations, walking, injuries, damage control, finite supplies, determinism, receipts, accounting, migration and HUD checks passed
+<end of output>
+Test time =   6.20 sec
+----------------------------------------------------------
+Test Passed.
+"player_crew_and_damage_control" end time: Nov 01 02:17 GMT
+"player_crew_and_damage_control" time elapsed: 00:00:06
+----------------------------------------------------------
+
+3/93 Testing: weapons_combat_and_equipment
+3/93 Test: weapons_combat_and_equipment
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_weapons_tests" "/Users/user/Documents/SC tutorial/Infinite/build/economy/weapons-test"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"weapons_combat_and_equipment" start time: Nov 01 02:17 GMT
+Output:
+----------------------------------------------------------
+183 weapon, damage, heat, trade, upgrade, migration and wreck accounting checks passed
+<end of output>
+Test time =   9.09 sec
+----------------------------------------------------------
+Test Passed.
+"weapons_combat_and_equipment" end time: Nov 01 02:17 GMT
+"weapons_combat_and_equipment" time elapsed: 00:00:09
+----------------------------------------------------------
+
+24/93 Testing: cockpit_layout_and_targeting
+24/93 Test: cockpit_layout_and_targeting
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_cockpit_tests"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"cockpit_layout_and_targeting" start time: Nov 01 02:17 GMT
+Output:
+----------------------------------------------------------
+PASS: 2170838 cockpit layout, target projection, decluttering, stable selection and SI unit checks
+<end of output>
+Test time =   0.94 sec
+----------------------------------------------------------
+Test Passed.
+"cockpit_layout_and_targeting" end time: Nov 01 02:17 GMT
+"cockpit_layout_and_targeting" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/93 Testing: economic_ship_services_and_planning
+6/93 Test: economic_ship_services_and_planning
+Command: "/Users/user/Documents/SC tutorial/Infinite/build/infinite_economy_services_tests" "/Users/user/Documents/SC tutorial/Infinite/build/economy/services-test"
+Directory: /Users/user/Documents/SC tutorial/Infinite/build
+"economic_ship_services_and_planning" start time: Nov 01 02:17 GMT
+Output:
+----------------------------------------------------------
+PASS: 575 port services, repair receipts, cargo tiers, planning, conservation and restart checks
+<end of output>
+Test time =   8.47 sec
+----------------------------------------------------------
+Test Passed.
+"economic_ship_services_and_planning" end time: Nov 01 02:18 GMT
+"economic_ship_services_and_planning" time elapsed: 00:00:08
+----------------------------------------------------------
+
+End testing: Nov 01 02:18 GMT

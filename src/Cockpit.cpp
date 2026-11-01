@@ -179,6 +179,18 @@ CockpitLayout::CockpitLayout(double aspect)
     flight = {navigation.x + navigation.w + 12, 758, mid * .48, 124};
     scope = {flight.x + flight.w + 12, 758, mid * .52, 124};
 }
+CrewPanelLayout::CrewPanelLayout(double aspect) {
+    const double width = 900 * aspect, pw = std::min(960., width - 48), map = pw * .35;
+    panel = {(width - pw) * .5, 168, pw, 578};
+    for (size_t i = 0; i < crewRoomCount; ++i) {
+        auto p = crewRoomPosition(CrewStation(i));
+        if (i >= 5)
+            p.x = i == 5 ? -2 : 2;
+        rooms[i] = {panel.x + map * .5 + p.x * map * .105 - map * .2, panel.y + 154 + p.y * 23, map * .4, 56};
+    }
+    for (size_t i = 0; i < maxShipCrew; ++i)
+        roster[i] = {panel.x + map + 12, panel.y + 66 + i * 31, pw - map - 28, 29};
+}
 namespace {
 std::optional<size_t> contactRow(glm::dvec2 p, CockpitRect r, size_t count, size_t capacity) {
     if (!r.contains(p) || p.y < 205 || p.y >= 205 + 34 * std::min(count, capacity))
@@ -346,7 +358,7 @@ Mesh cockpitMesh(double aspect) {
 CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::string_view,
                               std::string_view notice, std::span<const CelestialContact> contacts,
                               std::span<const ActivityContact> activity, bool help, double projectionScale,
-                              const MarketView* market, glm::dquat headInShip) {
+                              const MarketView* market, glm::dquat headInShip, const CrewView* crew) {
     CockpitOverlay h;
     std::optional<CockpitRect> economicPanel;
     const CockpitLayout l(aspect);
@@ -432,7 +444,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             label(t.shrinking ? "SHRINK FIELD ACTIVE" : "ORBITAL FLIGHT", w - 296, 125, 258, muted);
         }
     }
-    if (!t.weather.empty() && !t.shrinking && !(market && market->open)) {
+    if (!t.weather.empty() && !t.shrinking && !(market && market->open) && !(crew && crew->open)) {
         const auto weatherColour = t.weatherSeverity > .5 ? amber : ice;
         card(h, {w - 310, 514, 286, 29}, weatherColour);
         h.hitRegions.push_back({w - 310, 514, 286, 29});
@@ -575,6 +587,98 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     quantity("FLIGHT " + duration(t.flightSeconds) + " / " + flightQuantity(t.travelMetres),
              std::max(178., center - 180), 887, std::max(180., w - 490), 9, muted);
     label("TAB HUD", w - 200, 887, 178, muted);
+    if (crew && !crew->open && !(market && market->open) && !help) {
+        card(h, {center - 205, 639, 410, 20}, ice);
+        fitted(h.lettering, crew->summary, center - 195, 645, 390, 8.2,
+               crew->summary.find("EMERGENCY") != std::string::npos ? amber : ice);
+    }
+    if (crew && crew->open) {
+        const CrewPanelLayout layout(aspect);
+        const auto p = layout.panel;
+        const double map = p.w * .35, rx = p.x + map + 20, rw = p.w - map - 40;
+        card(h, p, mint);
+        fitted(h.lettering, "SHIP CREW / STATIONS AND DAMAGE CONTROL", p.x + 18, p.y + 15, p.w - 36, 15,
+               pearl);
+        fitted(h.lettering, crew->summary + " / AUTO " + (crew->autoDamageControl ? "ON" : "OFF"), p.x + 18,
+               p.y + 39, p.w - 36, 9.5, ice);
+        auto portEdge = [](const CockpitRect& r, glm::dvec2 toward) {
+            const glm::dvec2 centre{r.x + r.w * .5, r.y + 48};
+            const auto d = toward - centre;
+            const double tx = std::abs(d.x) > 1e-9 ? ((d.x > 0 ? r.x + r.w : r.x) - centre.x) / d.x : 1e10;
+            const double ty = std::abs(d.y) > 1e-9 ? ((d.y > 0 ? r.y + r.h : r.y) - centre.y) / d.y : 1e10;
+            return centre + d * std::min(tx, ty);
+        };
+        for (auto [a, b] : crewCorridors()) {
+            const auto ra = layout.rooms[a], rb = layout.rooms[b];
+            const auto x = portEdge(ra, {rb.x + rb.w * .5, rb.y + 48}),
+                       y = portEdge(rb, {ra.x + ra.w * .5, ra.y + 48});
+            line(h.strokes, x.x, x.y, y.x, y.y, muted * .7f);
+        }
+        for (size_t i = 0; i < crewRoomCount; ++i) {
+            const auto r = layout.rooms[i];
+            const auto& room = crew->rooms[i];
+            const auto colour = room.fire > 1         ? glm::vec3(1, .3, .12)
+                                : room.oxygen < 25    ? amber
+                                : room.integrity < 70 ? trafficInk
+                                                      : ice;
+            card(h, r, crew->station == CrewStation(i) ? mint : colour);
+            fitted(h.lettering, crewStationName(CrewStation(i)), r.x + 5, r.y + 6, r.w - 10, 8, pearl);
+            fitted(h.lettering,
+                   "SYS " + std::to_string(int(room.integrity)) + " O2 " + std::to_string(int(room.oxygen)),
+                   r.x + 5, r.y + 20, r.w - 10, 7.6, colour);
+            fitted(h.lettering,
+                   room.vented
+                       ? "VENT OPEN"
+                       : "F" + std::to_string(int(room.fire)) + " B" + std::to_string(int(room.breach)),
+                   r.x + 5, r.y + 33, r.w - 10, 7.6, colour);
+        }
+        for (size_t i = 0; i < crew->members.size(); ++i) {
+            const auto& m = crew->members[i];
+            const auto row = layout.roster[i];
+            const auto c = m.health <= 0 ? muted : m.health < 40 ? amber : i == crew->selected ? mint : pearl;
+            if (i == crew->selected)
+                rect(h.panels, row.x, row.y, row.w, row.h, mint * .16f);
+            fitted(h.lettering, m.name + " / " + std::string(crewStationName(m.duty)), row.x + 6, row.y + 4,
+                   row.w - 12, 9, c);
+            const std::string state = m.health <= 0   ? "LOST"
+                                      : m.travel > 0  ? "MOVING"
+                                      : m.health < 20 ? "INCAPACITATED"
+                                                      : std::string(crewOrderName(m.order));
+            fitted(h.lettering,
+                   state + " / HP " + std::to_string(int(m.health)) + " FAT " +
+                       std::to_string(int(m.fatigue)) + " MOR " + std::to_string(int(m.morale)),
+                   row.x + 6, row.y + 17, row.w - 12, 8, ice);
+            const auto from = layout.rooms[size_t(m.room)], to = layout.rooms[size_t(m.walkTo)];
+            const double blend = m.travelDuration > 0 && m.travel > 0 ? 1 - m.travel / m.travelDuration : 0;
+            const double x = glm::mix(from.x + from.w * .5, to.x + to.w * .5, blend) + double(i % 3) * 5 - 5;
+            const double y = glm::mix(from.y + 48, to.y + 48, blend);
+            rect(h.panels, x, y, 4, 4, c);
+        }
+        fitted(h.lettering, "TARGET " + std::string(crewStationName(crew->station)), rx, p.y + 323, rw, 10,
+               mint);
+        fitted(h.lettering, "TRAIT / B N W E L M RANKS: " + crew->selectedSkill, rx, p.y + 342, rw, 8.5, ice);
+        fitted(h.lettering,
+               "STORES / " + std::to_string(int(crew->spares)) + " SPARES / " +
+                   std::to_string(int(crew->medical)) + " MEDICAL",
+               p.x + 18, p.y + 365, p.w - 36, 9.5, pearl);
+        fitted(h.lettering, crew->port, p.x + 18, p.y + 385, p.w - 36, 8.5, crew->connected ? mint : muted);
+        fitted(h.lettering, crew->recruit, p.x + 18, p.y + 403, p.w - 36, 8.5, ice);
+        fitted(h.lettering, crew->supply, p.x + 18, p.y + 421, p.w - 36, 8.5, ice);
+        fitted(h.lettering, crew->care, p.x + 18, p.y + 439, p.w - 36, 8.5, ice);
+        fitted(h.lettering, crew->pending ? "PORT ORDER PENDING" : crew->message, p.x + 18, p.y + 459,
+               p.w - 36, 9, amber);
+        if (!crew->events.empty())
+            fitted(h.lettering, crew->events.back(), p.x + 18, p.y + 478, p.w - 36, 8.5, trafficInk);
+        fitted(h.lettering, "CLICK CREW THEN ROOM / UP-DOWN CREW / LEFT-RIGHT ROOM / ENTER ASSIGN", p.x + 18,
+               p.y + 502, p.w - 36, 8.3, pearl);
+        fitted(h.lettering, "R REPAIR / F FIRE / M FIRST AID / T REST / V VENT / D RECALL / A AUTO", p.x + 18,
+               p.y + 521, p.w - 36, 8.3, ice);
+        fitted(h.lettering, "AT PORT: H HIRE / S STORES / L CLINIC / BACKSPACE DISMISS", p.x + 18, p.y + 540,
+               p.w - 36, 8.3, mint);
+        fitted(h.lettering, "F8 OR ESC CLOSE / FLIGHT CONTINUES / MANUAL HELM SUSPENDED", p.x + 18, p.y + 559,
+               p.w - 36, 8.3, muted);
+        return h;
+    }
     if (!t.weapon.empty() && !(market && market->open) && !help) {
         const CockpitRect armament{center - 158, 665, 316, 80};
         const auto danger = glm::vec3(1, .3, .2);
@@ -693,7 +797,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
         return h;
     }
     if (help) {
-        const CockpitRect guide{center - std::min(700., w - 80) * .5, 180, std::min(700., w - 80), 520};
+        const CockpitRect guide{center - std::min(700., w - 80) * .5, 180, std::min(700., w - 80), 548};
         card(h, guide, mint);
         fitted(h.lettering, "FLIGHT CONTROLS", guide.x + 22, guide.y + 22, guide.w - 44, 17.5, pearl);
         const std::pair<const char*, const char*> controls[]{
@@ -712,6 +816,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             {"SHIFT-Z / V", "FULL SIZE / EXPLORER"},
             {"F6 / TAB", "TRAFFIC / HUD"},
             {"F7", "COCKPIT MOTION"},
+            {"F8", "CREW / STATIONS / DAMAGE CONTROL"},
             {"SPACE", "FIRE FITTED LASER"},
             {"H", "TARGET NEAREST HOSTILE"},
             {"F2 / F5", "MARKET PAGES / JOBS / SERVICES / DELIVERY REPORTS"},

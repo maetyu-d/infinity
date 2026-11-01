@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Infinite VERSION 0.45.0 LANGUAGES C CXX)
+project(Infinite VERSION 0.46.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -39,6 +39,11 @@ else()
   target_compile_options(infinite_performance_tests PRIVATE -ffp-contract=off)
 endif()
 enable_testing()
+target_sources(infinite_core PRIVATE src/Crew.cpp)
+add_executable(infinite_crew_tests tests/CrewTests.cpp)
+target_link_libraries(infinite_crew_tests PRIVATE infinite_core)
+add_test(NAME player_crew_and_damage_control COMMAND infinite_crew_tests "${CMAKE_BINARY_DIR}/crew/runtime-test")
+set_tests_properties(player_crew_and_damage_control PROPERTIES TIMEOUT 120)
 add_executable(infinite_npc_combat_tests tests/NpcCombatTests.cpp)
 target_link_libraries(infinite_npc_combat_tests PRIVATE infinite_core)
 add_test(NAME npc_combat_behaviour COMMAND infinite_npc_combat_tests)
@@ -210,6 +215,13 @@ if(INFINITE_VIEWER)
   endif()
   if(INFINITE_GPU_TESTS)
     find_package(Python3 3.9 COMPONENTS Interpreter REQUIRED)
+    add_test(NAME native_crew_loop COMMAND "${CMAKE_COMMAND}"
+      "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/crew/native"
+      -P "${PROJECT_SOURCE_DIR}/cmake/RunCrew.cmake")
+    set_tests_properties(native_crew_loop PROPERTIES FIXTURES_SETUP crew_captures TIMEOUT 300)
+    add_test(NAME native_crew_images COMMAND "${Python3_EXECUTABLE}"
+      "${PROJECT_SOURCE_DIR}/tools/check_crew_captures.py" "${CMAKE_BINARY_DIR}/crew/native")
+    set_tests_properties(native_crew_images PROPERTIES FIXTURES_REQUIRED crew_captures TIMEOUT 60)
     add_test(NAME native_npc_combat_loop COMMAND "${CMAKE_COMMAND}"
       "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/npc-combat/native"
       -P "${PROJECT_SOURCE_DIR}/cmake/RunNpcCombat.cmake")

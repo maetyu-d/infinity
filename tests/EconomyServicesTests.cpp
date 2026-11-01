@@ -299,12 +299,12 @@ int main(int argc, char** argv) {
         check(!owner.restore(badWallet) && owner.serialize() == retained,
               "Invalid capacity tier mutated wallet");
         EconomyPlayer old;
-        auto v2 = old.serialize();
-        v2.erase(v2.rfind(' '));
-        v2.erase(v2.rfind(' '));
-        v2.erase(v2.rfind(' '));
-        v2.replace(16, 1, "2");
-        check(old.restore(v2) && old.cargoLevel == 0 && old.capacityKg == 4000 && !old.repairPoints,
+        std::ostringstream v2;
+        v2 << "INFINITE_WALLET 2 250000 0";
+        for (size_t g = 0; g < goodCount; ++g)
+            v2 << " 0";
+        v2 << " 0 0 0 0 0";
+        check(old.restore(v2.str()) && old.cargoLevel == 0 && old.capacityKg == 4000 && !old.repairPoints,
               "Version-two migration granted upgrades or lost default capacity");
         // Upgrades and unconsumed repair receipts survive LRU eviction and worker restart.
         auto dir = std::filesystem::path(argc > 1 ? argv[1] : "build/economy/services-test");

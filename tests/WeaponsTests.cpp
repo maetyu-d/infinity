@@ -203,11 +203,14 @@ int main(int argc, char** argv) {
             check(v.detail.size() == 15 && !hud.lettering.vertices.empty(),
                   "Weapon shop does not fit/render");
         }
-        auto old = p.serialize();
-        old.erase(old.rfind(' '));
-        old.replace(16, 1, "3");
+        // Historical v3 fixture, independent of future wallet trailers.
+        std::ostringstream old;
+        old << "INFINITE_WALLET 3 " << p.credits << ' ' << p.lastCommand;
+        for (size_t g = 0; g < goodCount; ++g)
+            old << " 0";
+        old << " 0 0 0 0 0 0 0";
         EconomyPlayer migrated;
-        check(migrated.restore(old) && migrated.weaponLevel == 1 && migrated.credits == p.credits,
+        check(migrated.restore(old.str()) && migrated.weaponLevel == 1 && migrated.credits == p.credits,
               "Legacy wallet lost cargo/cash or lacked starter laser");
         // Killing a reserved carrier refunds its buyer and releases physical stock.
         Economy waiting(net);

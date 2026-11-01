@@ -1,4 +1,5 @@
 #pragma once
+#include "Crew.hpp"
 #include "ShipDynamics.hpp"
 #include "SurfaceLife.hpp"
 #include "Weapons.hpp"
@@ -175,6 +176,7 @@ struct EconomyPlayer {
     unsigned weaponLevel = 1; // existing saves receive the same starter laser as new ships
     unsigned cargoLevel = 0;
     uint64_t repairPoints = 0; // durable cumulative receipt; the ship applies each point once
+    CrewReceipts crew;
     int64_t massKg() const;
     int64_t volumeLitres() const;
     int64_t availableCargo(Good) const;
@@ -203,7 +205,10 @@ enum class EconomicAction : uint8_t {
     DeliverRecovery,
     FitWeapon,
     SellWeapon,
-    DisableVessel
+    DisableVessel,
+    HireCrew,
+    SupplyCrew,
+    TreatCrew
 };
 struct EconomicCommand {
     uint64_t sequence = 0;
@@ -223,7 +228,7 @@ inline int64_t holdCapacityKg(unsigned level) {
 inline int64_t holdCapacityLitres(unsigned level) {
     return 8000 + 8000 * int64_t(level);
 }
-enum class ShipService : uint8_t { Repair, CargoHold };
+enum class ShipService : uint8_t { Repair, CargoHold, CrewHire, CrewSupplies, CrewCare };
 struct ShipServiceQuote {
     Stock materials{};
     int64_t partsCents = 0, labourCents = 0;

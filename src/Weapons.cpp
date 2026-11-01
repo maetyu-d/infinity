@@ -76,7 +76,7 @@ void WeaponSystem::advance(double dt) {
         return;
     dt = std::min(dt, 60.);
     cooldown_ = std::max(0., cooldown_ - dt);
-    heat_ = std::max(0., heat_ - weaponSpec(level_).cooling * dt);
+    heat_ = std::max(0., heat_ - weaponSpec(level_).cooling * crewReadiness_ * dt);
     if (heat_ <= 35)
         overheated_ = false;
     for (auto& s : shots_)
@@ -218,7 +218,7 @@ bool WeaponSystem::fire(const Universe& u, const WeaponRay& input, std::span<con
     }
     ++shotsFired_;
     heat_ += spec.heatPerShot;
-    cooldown_ = spec.interval;
+    cooldown_ = spec.interval / crewReadiness_;
     if (shots_.size() >= 12)
         shots_.erase(shots_.begin());
     shots_.push_back({ray.reference,
