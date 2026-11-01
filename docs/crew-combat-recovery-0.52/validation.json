@@ -1,0 +1,16 @@
+{
+  "version": "0.52.0",
+  "baseline": "c1cf67d",
+  "core_suites_passed": 53,
+  "final_focused_suites_passed": 6,
+  "native_checks_passed": 6,
+  "new_native_frames": 10,
+  "unchanged_sources_and_shaders": 200,
+  "tested_binary_sha256": "5412e4abf3699cd399448a6bbf8676e156fdb98ff8a05a2816e6dcfb858252bb",
+  "saved_flight_launch": {
+    "status": "verified",
+    "version": "0.52.0",
+    "process_id": 17248,
+    "observed": "Saved flight restored; crew 6/8, 2500 credits, full-size ship, new gunner orders and engine/RCS/life-support instruments visible"
+  }
+}

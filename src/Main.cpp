@@ -1,6 +1,7 @@
 #include "CelestialValidation.hpp"
 #include "CloudValidation.hpp"
 #include "CockpitMotionValidation.hpp"
+#include "CombatOperationsValidation.hpp"
 #include "CrewFlightValidation.hpp"
 #include "CrewGunsValidation.hpp"
 #include "CrewTradeValidation.hpp"
@@ -26,9 +27,11 @@
 #include "infinite/Continuity.hpp"
 #include "infinite/Crew.hpp"
 #include "infinite/Economy.hpp"
+#include "infinite/FireControl.hpp"
 #include "infinite/Flight.hpp"
 #include "infinite/NpcCombat.hpp"
 #include "infinite/Piloting.hpp"
+#include "infinite/Recovery.hpp"
 #include "infinite/Renderer.hpp"
 #include "infinite/StationControl.hpp"
 #include "infinite/Weapons.hpp"
@@ -62,7 +65,7 @@ struct Options {
     bool terrainQuality = false, terrainSurfaceFrame = false, sunShadows = true;
     bool economyTest = false, cockpitMotionTest = false, npcTest = false, crewTest = false,
          crewTradeTest = false, crewFlightTest = false, crewGunsTest = false, stationSwapTest = false,
-         starStabilityTest = false;
+         starStabilityTest = false, combatOperationsTest = false;
     bool pilotTest = false, terrainTest = false, surfaceTest = false;
 };
 static Options options(int argc, char** argv) {
@@ -85,6 +88,9 @@ static Options options(int argc, char** argv) {
         else if (arg == "--star-stability-test") {
             o.smoke = o.fresh = o.starStabilityTest = o.benchmark = true;
             o.visualTime = 12;
+        } else if (arg == "--combat-operations-test") {
+            o.smoke = o.fresh = o.combatOperationsTest = o.benchmark = true;
+            o.visualTime = 60;
         } else if (arg == "--station-swap-test") {
             o.smoke = o.fresh = o.stationSwapTest = o.benchmark = true;
             o.visualTime = 12;
@@ -235,7 +241,7 @@ static Options options(int argc, char** argv) {
         unsigned(o.landingLightTest) + unsigned(o.weatherTest) + unsigned(o.diversityTest) +
         unsigned(o.stellarDiversityTest) + unsigned(o.npcTest) + unsigned(o.crewTest) +
         unsigned(o.crewTradeTest) + unsigned(o.crewFlightTest) + unsigned(o.crewGunsTest) +
-        unsigned(o.stationSwapTest) + unsigned(o.starStabilityTest);
+        unsigned(o.stationSwapTest) + unsigned(o.starStabilityTest) + unsigned(o.combatOperationsTest);
     if (validationModes > 1 || (validationModes && o.tour))
         throw std::invalid_argument("Choose one automated validation mode");
     if (o.width < 320 || o.height < 240 || o.width > 7680 || o.height > 4320 || o.frames < 0)
@@ -280,7 +286,7 @@ int main(int argc, char** argv) {
                             opt.weatherTest || opt.diversityTest || opt.stellarDiversityTest ||
                             opt.cockpitMotionTest || opt.npcTest || opt.crewTest || opt.crewTradeTest ||
                             opt.crewFlightTest || opt.crewGunsTest || opt.stationSwapTest ||
-                            opt.starStabilityTest;
+                            opt.starStabilityTest || opt.combatOperationsTest;
         std::unique_ptr<FlightValidation> flightProof;
         if (opt.flightTest)
             flightProof = std::make_unique<FlightValidation>(universe, nav);
@@ -380,6 +386,15 @@ int main(int argc, char** argv) {
             WeaponSystem weapons;
             ShipCrew crew(universe.seed());
             StationControl stationControl;
+            FireControl fireControl;
+            ShipSystem targetSystem = ShipSystem::Hull;
+            RecoveryController recovery;
+            if (!opt.fresh && !opt.smoke) {
+                std::ifstream file(data / ("fire-control-" + std::to_string(universe.seed()) + ".txt"));
+                std::string state;
+                if (std::getline(file, state))
+                    fireControl.restore(state);
+            }
             if (!opt.smoke) {
                 std::ifstream file(data / ("crew-" + std::to_string(universe.seed()) + ".txt"));
                 if (file) {
@@ -437,7 +452,7 @@ int main(int argc, char** argv) {
             auto marketRows = [&]() -> size_t {
                 return marketPage == MarketPage::Goods      ? goodCount
                        : marketPage == MarketPage::Industry ? facilityModuleCount
-                       : marketPage == MarketPage::Services ? 2
+                       : marketPage == MarketPage::Services ? 3
                        : marketPage == MarketPage::Weapons  ? maxWeaponLevel
                        : marketPage == MarketPage::Crew
                            ? std::max<size_t>(
@@ -456,6 +471,8 @@ int main(int argc, char** argv) {
             int64_t marketQuantity = 10;
             uint64_t economicSequence = 0, pendingEconomicSequence = 0;
             uint64_t pendingSecuritySequence = 0;
+            uint64_t pendingRecoverySequence = 0;
+            std::string recoveryMessage;
             double lastSecurityReport = -1;
             int64_t pendingCargoKg = 0;
             std::string marketFeedback;
@@ -528,7 +545,8 @@ int main(int argc, char** argv) {
                     crewFeedback = "WAIT FOR PORT ORDER";
                     return;
                 }
-                if (service == ShipService::CrewHire && crew.living() >= maxShipCrew) {
+                if (service == ShipService::CrewHire &&
+                    crew.living() + economicSnapshot->player.rescued.size() >= maxShipCrew) {
                     crewFeedback = "ALL EIGHT BERTHS FILLED";
                     return;
                 }
@@ -571,7 +589,8 @@ int main(int argc, char** argv) {
                     return;
                 }
                 const bool buy = action == EconomicAction::BuyCrew;
-                const auto quote = economicCrewQuote(*economicSnapshot, *port, person, buy, crew.living());
+                const auto quote = economicCrewQuote(*economicSnapshot, *port, person, buy,
+                                                     crew.living() + economicSnapshot->player.rescued.size());
                 if (action != EconomicAction::ReleaseCrew && !quote.available) {
                     crewFeedback = quote.status;
                     marketSay(crewFeedback);
@@ -581,7 +600,7 @@ int main(int argc, char** argv) {
                 c.port = economicSnapshot->network->sites[*port].id;
                 c.action = action;
                 c.crewId = person.id;
-                c.crewAboard = unsigned(crew.living());
+                c.crewAboard = unsigned(crew.living() + economicSnapshot->player.rescued.size());
                 if (!buy)
                     c.person = person;
                 else {
@@ -762,6 +781,10 @@ int main(int argc, char** argv) {
             if (opt.crewGunsTest)
                 crewGunsProof = std::make_unique<CrewGunsValidation>(universe, nav, pilot, crew, weapons,
                                                                      *economy, activity, window);
+            std::unique_ptr<CombatOperationsValidation> combatOperationsProof;
+            if (opt.combatOperationsTest)
+                combatOperationsProof = std::make_unique<CombatOperationsValidation>(
+                    universe, nav, pilot, crew, weapons, fireControl, activity);
             std::unique_ptr<StationSwapValidation> stationSwapProof;
             if (opt.stationSwapTest)
                 stationSwapProof = std::make_unique<StationSwapValidation>(
@@ -833,7 +856,9 @@ int main(int argc, char** argv) {
                                       body.velocity,
                                       surface                              ? 0.
                                       : body.kind == ActivityKind::Harbour ? body.radius * 4
-                                                                           : std::max(750., body.radius * 5),
+                                      : (body.disabled || body.systems[size_t(ShipSystem::Engines)] <= 0)
+                                          ? body.radius + 55
+                                          : std::max(750., body.radius * 5),
                                       body.name,
                                       surface};
             };
@@ -1142,6 +1167,25 @@ int main(int argc, char** argv) {
                         opt.tour = false;
                     }
                     if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat) {
+                        if (pilotEnabled && !marketOpen && !crewOpen && !crewFlightOpen &&
+                            event.key.scancode == SDL_SCANCODE_9) {
+                            constexpr std::array systems{ShipSystem::Hull, ShipSystem::Engines,
+                                                         ShipSystem::Thrusters, ShipSystem::NoseGun,
+                                                         ShipSystem::LifeSupport};
+                            auto it = std::find(systems.begin(), systems.end(), targetSystem);
+                            targetSystem = systems[(size_t(it - systems.begin()) + 1) % systems.size()];
+                            notice = "TARGET COMPONENT / " + std::string(shipSystemName(targetSystem));
+                            noticeTime = 5;
+                            continue;
+                        }
+                        if (pilotEnabled && !marketOpen && !crewOpen &&
+                            (!crewFlightOpen || (event.key.mod & SDL_KMOD_CTRL)) &&
+                            event.key.scancode >= SDL_SCANCODE_6 && event.key.scancode <= SDL_SCANCODE_8) {
+                            fireControl.order(FireOrder(event.key.scancode - SDL_SCANCODE_6));
+                            notice = "CREW GUNNERS / " + std::string(fireOrderName(fireControl.order()));
+                            noticeTime = 6;
+                            continue;
+                        }
                         const bool numberOrder = !crewFlightOpen && event.key.scancode >= SDL_SCANCODE_1 &&
                                                  event.key.scancode <= SDL_SCANCODE_5;
                         const bool functionOrder = (event.key.mod & SDL_KMOD_CTRL) &&
@@ -1396,8 +1440,9 @@ int main(int argc, char** argv) {
                                 } else if (marketPage == MarketPage::Weapons)
                                     submitMarket(EconomicAction::FitWeapon);
                                 else if (marketPage == MarketPage::Services)
-                                    submitMarket(marketGood == 0 ? EconomicAction::RepairHull
-                                                                 : EconomicAction::UpgradeCargo);
+                                    submitMarket(marketGood == 0   ? EconomicAction::RepairHull
+                                                 : marketGood == 1 ? EconomicAction::UpgradeCargo
+                                                                   : EconomicAction::DisembarkRescued);
                                 else if (marketPage == MarketPage::Routes)
                                     targetMarketRoute(false);
                                 else if (marketPage != MarketPage::Outcomes)
@@ -1852,9 +1897,11 @@ int main(int argc, char** argv) {
                             pendingWreck = 0;
                         if (!pendingWreck && !economicSnapshot->catchingUp && !opt.smoke)
                             for (const auto& f : economicSnapshot->flights) {
-                                auto d =
-                                    std::find_if(weapons.damage().begin(), weapons.damage().end(),
-                                                 [&](const auto& d) { return d.id == f.id && d.hull <= 0; });
+                                auto d = std::find_if(
+                                    weapons.damage().begin(), weapons.damage().end(), [&](const auto& d) {
+                                        return d.id == f.id &&
+                                               (d.hull <= 0 || d.systems[size_t(ShipSystem::Engines)] <= 0);
+                                    });
                                 if (f.disabledAt < 0 && d != weapons.damage().end()) {
                                     EconomicCommand c;
                                     c.port = f.id;
@@ -1888,7 +1935,15 @@ int main(int argc, char** argv) {
                             }
                         }
                         pilot.setCargoMass(std::min<int64_t>(
-                            maxShipPayloadKg, economicSnapshot->player.massKg() + pendingCargoKg));
+                            maxShipPayloadKg, economicSnapshot->player.massKg() + pendingCargoKg +
+                                                  economicSnapshot->player.rescued.size() * 80));
+                        if (pendingRecoverySequence &&
+                            economicSnapshot->player.lastCommand >= pendingRecoverySequence) {
+                            recoveryMessage = economicSnapshot->message;
+                            notice = recoveryMessage;
+                            noticeTime = 7;
+                            pendingRecoverySequence = 0;
+                        }
                     }
                     if (tradeBuyer && economicSnapshot && economicSnapshot->network &&
                         !economicSnapshot->siteIndex(*tradeBuyer)) {
@@ -1916,9 +1971,13 @@ int main(int argc, char** argv) {
                             marketView.credits = economicSnapshot->player.credits;
                             marketView.cargoKg = economicSnapshot->player.massKg();
                             marketView.cargoLitres = economicSnapshot->player.volumeLitres();
-                            marketView.activeJob = economicSnapshot->player.haul        ? "F4 HAUL"
-                                                   : economicSnapshot->player.combatJob ? "F4 SECURITY TARGET"
-                                                                                        : "";
+                            marketView.activeJob =
+                                !economicSnapshot->player.rescued.empty()
+                                    ? "RESCUED " + std::to_string(economicSnapshot->player.rescued.size()) +
+                                          " / F2 SERVICES"
+                                : economicSnapshot->player.haul      ? "F4 HAUL"
+                                : economicSnapshot->player.combatJob ? "F4 SECURITY TARGET"
+                                                                     : "";
                         }
                     }
                     renderer.setEconomy(economicSnapshot, &marketView);
@@ -1931,6 +1990,8 @@ int main(int argc, char** argv) {
                     surfaceFrame = surfaceFrame.parent();
                 pilot.setSurfaceWorld(
                     surfaceFrame.kind() == Kind::Planet ? renderer.surfaceWorld(surfaceFrame) : nullptr);
+                pilot.setSystemAuthority(crew.systemHealth(ShipSystem::Engines) / 100.,
+                                         crew.systemHealth(ShipSystem::Thrusters) / 100.);
                 const bool* keys = SDL_GetKeyboardState(nullptr);
                 const bool stationWasRequested = stationControl.requested();
                 const bool stationWasActive = stationControl.active();
@@ -1990,7 +2051,8 @@ int main(int argc, char** argv) {
                                          std::abs(pilot.ship().logSize - pilot.ship().targetLogSize) > .01;
                     if (!inhibit && !opt.tour && (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) &&
                         keys[SDL_SCANCODE_SPACE]) {
-                        const auto ray = stationControl.ray(nav, pilot, activity.seconds);
+                        auto ray = stationControl.ray(nav, pilot, activity.seconds);
+                        ray.targetSystem = targetSystem;
                         const auto geometry = renderer.submittedGeometry(nav.anchor);
                         const auto fired = stationControl.active()
                                                ? (weapons.fireMount(stationControl.mount(), universe, ray,
@@ -2005,6 +2067,18 @@ int main(int argc, char** argv) {
                                 .35 + weapons.level() * .12 +
                                     .08 * (unsigned(bool(fired & 2)) + unsigned(bool(fired & 4))));
                     }
+                    if (!opt.tour) {
+                        auto ray = stationControl.ray(nav, pilot, activity.seconds);
+                        ray.targetSystem = targetSystem;
+                        const auto fired = fireControl.update(
+                            universe, ray, nav.orientation, activity.selected,
+                            stationControl.active() ? stationControl.mount() : 0, crew, weapons,
+                            renderer.weaponTargets(), dt,
+                            inhibit || !(SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS),
+                            renderer.submittedGeometry(nav.anchor).get());
+                        if (fired)
+                            renderer.cockpitImpulse(CockpitImpulse::Recoil, .18);
+                    }
                 }
                 nav.update((opt.benchmark ? 1.0 / 60 : dt) * (opt.tour ? 3 : 1));
                 if (!opt.smoke) {
@@ -2015,6 +2089,7 @@ int main(int argc, char** argv) {
                     player.velocity = universe.relative(pilot.ship().frame, nav.anchor, 0).orientation *
                                       pilot.ship().velocity;
                     player.forward = nav.orientation * glm::dvec3(0, 0, -1);
+                    player.orientation = nav.orientation;
                     player.size = pilot.sizeRatio();
                     player.hull = pilot.ship().hull;
                     player.seconds = activity.seconds;
@@ -2032,8 +2107,10 @@ int main(int argc, char** argv) {
                                                          dt, renderer.submittedGeometry(nav.anchor).get());
                     for (const auto& body : combat.civilianHits)
                         weapons.receiveNpcDamage(body, 4., activity.seconds);
-                    pilot.applyCombatDamage(combat.playerDamage);
-                    crew.observeHull(pilot.ship().hull);
+                    for (const auto& [system, damage] : combat.playerHits) {
+                        pilot.applyCombatDamage(damage);
+                        crew.observeCombatHit(pilot.ship().hull, system, damage);
+                    }
                     if (economicSnapshot && economy && !economicSnapshot->catchingUp && !opt.smoke &&
                         economicSnapshot->player.combatJob && economicSnapshot->network &&
                         economicSnapshot->player.combatJob->system == economicSnapshot->network->system) {
@@ -2082,6 +2159,48 @@ int main(int argc, char** argv) {
                             }
                         }
                     }
+                    const auto recoveryTarget = activityBody();
+                    const bool holdingRecovery = keys[SDL_SCANCODE_0] && !marketOpen && !crewOpen &&
+                                                 !crewFlightOpen &&
+                                                 (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS);
+                    const bool recovered =
+                        recovery.update(universe, player, recoveryTarget, dt, holdingRecovery,
+                                        renderer.submittedGeometry(nav.anchor).get());
+                    if (holdingRecovery && recoveryTarget && economicSnapshot && economy &&
+                        !economicSnapshot->catchingUp && !pendingRecoverySequence &&
+                        !pendingEconomicSequence && !pendingCrewSequence && !pendingSecuritySequence &&
+                        !pendingWreck) {
+                        const auto wreck = std::find_if(
+                            weapons.damage().begin(), weapons.damage().end(), [&](const auto& d) {
+                                return d.id == recoveryTarget->id &&
+                                       (d.hull <= 0 || d.systems[size_t(ShipSystem::Engines)] <= 0);
+                            });
+                        const auto receipt =
+                            std::find_if(economicSnapshot->wrecks.begin(), economicSnapshot->wrecks.end(),
+                                         [&](const auto& w) { return w.id == recoveryTarget->id; });
+                        if (wreck != weapons.damage().end() &&
+                            (receipt == economicSnapshot->wrecks.end() || recovered)) {
+                            EconomicCommand c;
+                            c.port = recoveryTarget->id;
+                            c.combatTarget = recoveryTarget->id;
+                            c.wreck = *wreck;
+                            c.action = receipt == economicSnapshot->wrecks.end()
+                                           ? EconomicAction::RegisterWreck
+                                           : EconomicAction::RecoverWreck;
+                            c.targetDistance = std::max(0., recovery.range() - recoveryTarget->radius);
+                            c.relativeSpeed = recovery.relativeSpeed();
+                            c.combatPresent = !player.field && !player.landed && player.size >= .99 &&
+                                              player.hull > 0 && !pilot.ship().cruise;
+                            c.crewAboard = unsigned(crew.living());
+                            c.sequence = economicSequence =
+                                std::max(economicSequence, economicSnapshot->player.lastCommand) + 1;
+                            if (economy->command(c)) {
+                                pendingRecoverySequence = c.sequence;
+                                if (recovered)
+                                    recovery.reset();
+                            }
+                        }
+                    }
                     if ((SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) && !pendingCrewSequence)
                         crew.advance(dt, pilot.instruments().properG, !npcCombat.shots().empty(),
                                      weapons.firingMask() != 0, weapons.firingMask());
@@ -2106,6 +2225,8 @@ int main(int argc, char** argv) {
                     crewGunsProof->advance(renderer);
                 if (stationSwapProof)
                     stationSwapProof->advance(renderer);
+                if (combatOperationsProof)
+                    combatOperationsProof->advance(renderer);
                 if (uiProof)
                     uiProof->advance(renderer);
                 if (polarProof)
@@ -2132,6 +2253,9 @@ int main(int argc, char** argv) {
                     crewView.open = crewOpen;
                     crewView.flightOpen = crewFlightOpen && pilotEnabled;
                     crewView.message = crewFeedback;
+                    for (unsigned i = 0; i < maxWeaponMounts; ++i)
+                        if (!fireControl.status()[i].empty())
+                            crewView.gunStatus[i] = fireControl.status()[i] + " / " + crewView.gunStatus[i];
                     crewView.pending = pendingCrewSequence != 0;
                     if (crewOpen) {
                         if (auto i = crewPort()) {
@@ -2146,8 +2270,9 @@ int main(int argc, char** argv) {
                             auto offers = economicCrewOffers(*economicSnapshot, *i);
                             if (!offers.empty()) {
                                 const auto& person = offers[crewOffer % offers.size()];
-                                const auto q =
-                                    economicCrewQuote(*economicSnapshot, *i, person, true, crew.living());
+                                const auto q = economicCrewQuote(*economicSnapshot, *i, person, true,
+                                                                 crew.living() +
+                                                                     economicSnapshot->player.rescued.size());
                                 crewView.recruit = "H BUY " + person.name + " / " + crewMoney(q.buyCents) +
                                                    " CR / BRACKETS CYCLE / " + q.status;
                             } else
@@ -2190,6 +2315,9 @@ int main(int argc, char** argv) {
                         running = false;
                 }
                 npcCombat.annotate(cockpit);
+                cockpit.crewFire =
+                    "GUNNERS " + std::string(fireOrderName(fireControl.order())) +
+                    (crewFlightOpen ? " / CTRL6 HOLD 7 DEF 8 FOCUS" : " / 6 HOLD 7 DEF 8 FOCUS");
                 if (economicSnapshot) {
                     for (const auto& c : economicSnapshot->combatContracts)
                         if (c.phase == CombatJobPhase::Accepted || c.phase == CombatJobPhase::Claimable)
@@ -2205,6 +2333,36 @@ int main(int argc, char** argv) {
                                  cockpit.fieldActive || cockpit.landed || marketOpen || crewOpen ||
                                      std::abs(pilot.ship().logSize - pilot.ship().targetLogSize) > .01);
                 stationControl.annotate(cockpit, crew, weapons);
+                cockpit.recoveryStatus = pendingRecoverySequence ? "RECOVERY TRANSFER PENDING"
+                                         : crewFlightOpen && !recovery.status().empty()
+                                             ? "CLOSE F9 / HOLD 0 TO RECOVER"
+                                             : recovery.status();
+                cockpit.systemFault =
+                    "ENG " + std::to_string(int(crew.systemHealth(ShipSystem::Engines))) + " / RCS " +
+                    std::to_string(int(crew.systemHealth(ShipSystem::Thrusters))) + " / O2 " +
+                    std::to_string(int(crew.systemHealth(ShipSystem::LifeSupport)));
+                if (auto body = activityBody()) {
+                    cockpit.systemTarget = "9 TARGET " + std::string(shipSystemName(targetSystem)) + " " +
+                                           std::to_string(int(targetSystem == ShipSystem::Hull
+                                                                  ? body->hull
+                                                                  : body->systems[size_t(targetSystem)])) +
+                                           "%";
+                    const auto point =
+                        body->position + body->orientation * (systemOffset(targetSystem) * body->radius);
+                    const auto relative = universe.pointRelative(
+                        body->id.home,
+                        point / std::pow(10., universe.describe(body->id.home).frame.logRadius), nav.anchor,
+                        0);
+                    cockpit.localSystemTarget =
+                        glm::inverse(nav.orientation) *
+                        (relative - nav.cameraPosition() * std::pow(10., nav.logDistance));
+                }
+                if (combatOperationsProof) {
+                    combatOperationsProof->annotate(cockpit);
+                    combatOperationsProof->observe(renderer, opt.captures);
+                    if (combatOperationsProof->finished())
+                        running = false;
+                }
                 renderer.setCockpit(pilotEnabled ? &cockpit : nullptr);
                 if (motionProof)
                     motionProof->apply(renderer);
@@ -2433,18 +2591,19 @@ int main(int argc, char** argv) {
                 }
                 if (opt.frames > 0 && frame >= opt.frames)
                     running = false;
-                if (opt.smoke && std::chrono::duration<double>(now - start).count() >
-                                     (opt.crewTest || opt.crewTradeTest || opt.crewFlightTest ||
-                                              opt.crewGunsTest || opt.stationSwapTest || opt.starStabilityTest
-                                          ? 240
-                                      : opt.npcTest                                   ? 180
-                                      : opt.economyTest                               ? 330
-                                      : opt.diversityTest || opt.stellarDiversityTest ? 360
-                                      : opt.celestialTest || opt.weatherTest || opt.cloudTest ||
-                                              opt.polarTest || opt.surfaceTest
-                                          ? 210
-                                      : opt.pilotTest ? 180
-                                                      : 100))
+                if (opt.smoke &&
+                    std::chrono::duration<double>(now - start).count() >
+                        (opt.crewTest || opt.crewTradeTest || opt.crewFlightTest || opt.crewGunsTest ||
+                                 opt.stationSwapTest || opt.starStabilityTest || opt.combatOperationsTest
+                             ? 240
+                         : opt.npcTest                                   ? 180
+                         : opt.economyTest                               ? 330
+                         : opt.diversityTest || opt.stellarDiversityTest ? 360
+                         : opt.celestialTest || opt.weatherTest || opt.cloudTest || opt.polarTest ||
+                                 opt.surfaceTest
+                             ? 210
+                         : opt.pilotTest ? 180
+                                         : 100))
                     throw std::runtime_error("Native GPU tour timed out before completion");
                 if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED)
                     std::this_thread::sleep_for(std::chrono::milliseconds(25));
@@ -2474,6 +2633,8 @@ int main(int argc, char** argv) {
                 saveText(("activity-" + std::to_string(universe.seed()) + ".txt").c_str(),
                          activity.serialize());
                 saveText(("combat-" + std::to_string(universe.seed()) + ".txt").c_str(), weapons.serialize());
+                saveText(("fire-control-" + std::to_string(universe.seed()) + ".txt").c_str(),
+                         fireControl.serialize());
                 saveText(("npc-combat-" + std::to_string(universe.seed()) + ".txt").c_str(),
                          npcCombat.serialize(universe.seed()));
                 saveText(("crew-" + std::to_string(universe.seed()) + ".txt").c_str(), crew.serialize());
@@ -2501,6 +2662,9 @@ int main(int argc, char** argv) {
             if (opt.starStabilityTest) {
                 if (!pointLightProof->finished())
                     throw std::runtime_error("Native star stability validation incomplete");
+            } else if (opt.combatOperationsTest) {
+                if (!combatOperationsProof->finished())
+                    throw std::runtime_error("Native combat operations incomplete");
             } else if (opt.stationSwapTest) {
                 if (!stationSwapProof->finished())
                     throw std::runtime_error("Native station swap validation incomplete");

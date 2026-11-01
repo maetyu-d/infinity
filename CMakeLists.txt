@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Infinite VERSION 0.51.0 LANGUAGES C CXX)
+project(Infinite VERSION 0.52.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -42,7 +42,13 @@ enable_testing()
 add_executable(infinite_point_light_tests tests/PointLightTests.cpp)
 target_link_libraries(infinite_point_light_tests PRIVATE infinite_core)
 add_test(NAME stable_background_point_lights COMMAND infinite_point_light_tests)
-target_sources(infinite_core PRIVATE src/StationControl.cpp src/EconomyCombat.cpp)
+target_sources(infinite_core PRIVATE src/StationControl.cpp src/EconomyCombat.cpp src/FireControl.cpp src/Recovery.cpp src/EconomyWrecks.cpp)
+add_executable(infinite_wreck_recovery_tests tests/WreckRecoveryTests.cpp)
+target_link_libraries(infinite_wreck_recovery_tests PRIVATE infinite_core)
+add_test(NAME physical_wreck_salvage_and_rescue COMMAND infinite_wreck_recovery_tests "${CMAKE_BINARY_DIR}/wreck-recovery/runtime-test")
+add_executable(infinite_combat_operations_tests tests/CombatOperationsTests.cpp)
+target_link_libraries(infinite_combat_operations_tests PRIVATE infinite_core)
+add_test(NAME crew_fire_control_and_ship_systems COMMAND infinite_combat_operations_tests)
 add_executable(infinite_economy_combat_tests tests/EconomyCombatTests.cpp)
 target_link_libraries(infinite_economy_combat_tests PRIVATE infinite_core)
 add_test(NAME economic_security_contracts COMMAND infinite_economy_combat_tests "${CMAKE_BINARY_DIR}/security-contracts/runtime-test")
@@ -247,6 +253,13 @@ if(INFINITE_VIEWER)
     add_test(NAME native_star_stability_images COMMAND "${Python3_EXECUTABLE}"
       "${PROJECT_SOURCE_DIR}/tools/check_star_stability_captures.py" "${CMAKE_BINARY_DIR}/star-stability/native")
     set_tests_properties(native_star_stability_images PROPERTIES FIXTURES_REQUIRED star_stability_captures TIMEOUT 90)
+    add_test(NAME native_combat_operations_loop COMMAND "${CMAKE_COMMAND}"
+      "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/combat-operations/native"
+      -P "${PROJECT_SOURCE_DIR}/cmake/RunCombatOperations.cmake")
+    set_tests_properties(native_combat_operations_loop PROPERTIES FIXTURES_SETUP combat_operations_captures TIMEOUT 360)
+    add_test(NAME native_combat_operations_images COMMAND "${Python3_EXECUTABLE}"
+      "${PROJECT_SOURCE_DIR}/tools/check_combat_operations_captures.py" "${CMAKE_BINARY_DIR}/combat-operations/native")
+    set_tests_properties(native_combat_operations_images PROPERTIES FIXTURES_REQUIRED combat_operations_captures TIMEOUT 90)
     add_test(NAME native_station_swap_loop COMMAND "${CMAKE_COMMAND}"
       "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/station-swap/native"
       -P "${PROJECT_SOURCE_DIR}/cmake/RunStationSwap.cmake")

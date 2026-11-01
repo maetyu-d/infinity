@@ -155,7 +155,16 @@ struct CombatContract {
     CombatJobPhase phase = CombatJobPhase::Open;
     int64_t reward = 0, escrow = 0;
     double acceptedSeconds = 0, lastReport = 0, protectedSeconds = 0, lastPresent = 0;
+    bool physicalSalvage = false;
 };
+struct WreckRecovery {
+    ActivityId id;
+    unsigned accountingSite = 0;
+    Stock scrap{};
+    std::optional<CrewMember> survivor;
+    bool rescued = false;
+};
+struct RescuedPassenger { ActivityId source; CrewMember person; };
 struct PlayerCombatJob {
     Address system;
     uint64_t id = 0;
@@ -207,6 +216,8 @@ struct EconomyPlayer {
     std::optional<PlayerCombatJob> combatJob;
     uint64_t combatCompleted = 0, combatFailed = 0;
     int64_t combatEarnings = 0;
+    std::vector<RescuedPassenger> rescued;
+    uint64_t rescuesDelivered = 0, recoveredKg = 0;
     int64_t massKg() const;
     int64_t volumeLitres() const;
     int64_t availableCargo(Good) const;
@@ -245,7 +256,10 @@ enum class EconomicAction : uint8_t {
     AcceptCombat,
     ReportCombat,
     ClaimCombat,
-    CancelCombat
+    CancelCombat,
+    RegisterWreck,
+    RecoverWreck,
+    DisembarkRescued
 };
 struct EconomicCommand {
     uint64_t sequence = 0;
@@ -264,6 +278,8 @@ struct EconomicCommand {
     std::optional<ActivityId> combatTarget;
     double targetHull = 100, targetDistance = 0;
     bool combatPresent = false;
+    std::optional<WeaponDamage> wreck;
+    double relativeSpeed = 0;
 };
 inline constexpr size_t maxPortCrew = 16, maxCrewMarkets = 128, maxCrewTitles = 8192;
 struct PortCrewMarket {
@@ -345,6 +361,7 @@ class Economy {
     const std::vector<CombatContract>& combatContracts() const {
         return combatContracts_;
     }
+    const std::vector<WreckRecovery>& wrecks() const { return wrecks_; }
     const std::vector<EconomicOutcome>& outcomes() const {
         return outcomes_;
     }
@@ -379,6 +396,7 @@ class Economy {
     std::vector<EconomicOutcome> outcomes_;
     std::vector<PortCrewMarket> crewMarkets_;
     std::vector<CombatContract> combatContracts_;
+    std::vector<WreckRecovery> wrecks_;
     uint64_t nextCombat_ = 1;
     uint64_t nextRecovery_ = 1, nextOutcome_ = 1;
     uint64_t nextHaul_ = 1;
@@ -409,7 +427,10 @@ class Economy {
     std::string combatCommand(const EconomicCommand&, EconomyPlayer&);
     bool reconcileCombat(EconomyPlayer&) const;
     void writeCombat(std::ostream&) const;
-    bool readCombat(std::istream&);
+    bool readCombat(std::istream&, bool physical = false);
+    std::string wreckCommand(const EconomicCommand&, EconomyPlayer&);
+    void writeWrecks(std::ostream&) const;
+    bool readWrecks(std::istream&);
     std::string service(const EconomicCommand&, EconomyPlayer&, size_t);
     std::string crewTrade(const EconomicCommand&, EconomyPlayer&, size_t);
     void writeCrewMarkets(std::ostream&) const;
@@ -447,6 +468,7 @@ struct EconomySnapshot {
     std::vector<EconomicOutcome> outcomes;
     std::vector<PortCrewMarket> crewMarkets;
     std::vector<CombatContract> combatContracts;
+    std::vector<WreckRecovery> wrecks;
     std::vector<EconomicPortSignal> portSignals; // same ordering as network->sites
     EconomyPlayer player;
     uint64_t tick = 0;

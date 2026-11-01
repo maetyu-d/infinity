@@ -33,7 +33,7 @@ ClassicAuthority classicAuthority(double size, double limit, double speed, doubl
     return {glm::dvec3(44, 48, 52) * gain * load, 32 * gain * load};
 }
 void classicRotation(glm::dquat& orientation, glm::dvec3& rate, glm::dvec3 target, double dt,
-                     double payloadKg) {
+                     double payloadKg, double authority = 1) {
     glm::dvec3 correction;
     for (int axis = 0; axis < 3; ++axis) {
         const bool slowing = target[axis] * rate[axis] <= 0 || std::abs(target[axis]) < std::abs(rate[axis]);
@@ -41,7 +41,7 @@ void classicRotation(glm::dquat& orientation, glm::dvec3& rate, glm::dvec3 targe
     }
     const bool slowing = glm::dot(rate, correction) < 0;
     const auto next =
-        rate + limited(correction, (slowing ? 9.5 : 6.5) * (12000. / (12000. + payloadKg)) * dt);
+        rate + limited(correction, (slowing ? 9.5 : 6.5) * (12000. / (12000. + payloadKg)) * dt * authority);
     const auto mid = (rate + next) * .5;
     const auto angle = glm::length(mid) * dt;
     if (angle > 1e-15)
@@ -887,7 +887,7 @@ void Pilot::step(const HelmInput& input, double dt) {
     if (manualAssist) {
         // This is the original assisted controller, not another gain adjustment
         // to the coupled torque allocator. Turning cannot steal steering jets.
-        classicRotation(nav_.orientation, ship_.angularVelocity, spin, dt, cargoMassKg_);
+        classicRotation(nav_.orientation, ship_.angularVelocity, spin, dt, cargoMassKg_, manoeuvreAuthority_);
         ship_.angularThrusters = {};
         const auto inverse = glm::inverse(nav_.orientation);
         const auto authority =
@@ -910,6 +910,11 @@ void Pilot::step(const HelmInput& input, double dt) {
                 glm::dvec3(ship_.thrusters.x * authority.caps.x, ship_.thrusters.y * authority.caps.y,
                            ship_.thrusters.z * (ship_.thrusters.z < 0 ? authority.caps.z : authority.retro)) +
             drag / properties.massKg;
+        if (engineAuthority_ < 1 || manoeuvreAuthority_ < 1) {
+            auto force = glm::inverse(nav_.orientation) * (appliedAcceleration - drag / properties.massKg);
+            force *= glm::dvec3(manoeuvreAuthority_, manoeuvreAuthority_, engineAuthority_);
+            appliedAcceleration = nav_.orientation * force + drag / properties.massKg;
+        }
     } else {
         const auto inverse = glm::inverse(nav_.orientation);
         // The explicit shrink field rescales local wind and shields a hull below
@@ -928,7 +933,7 @@ void Pilot::step(const HelmInput& input, double dt) {
                 if (spin[axis] * ship_.angularVelocity[axis] <= 0 ||
                     std::abs(spin[axis]) < std::abs(ship_.angularVelocity[axis]))
                     gain[axis] = axis == 2 ? 22. : 18.;
-            const auto acceleration = error * gain;
+            const auto acceleration = error * gain * manoeuvreAuthority_;
             angularCommand = properties.inertia * acceleration +
                              glm::cross(ship_.angularVelocity, properties.inertia * ship_.angularVelocity);
         } else {
@@ -961,10 +966,13 @@ void Pilot::step(const HelmInput& input, double dt) {
                                                shipTorque(properties, ship_.angularThrusters));
         ship_.thrusters = actual.linear;
         ship_.angularThrusters = actual.angular;
-        appliedAcceleration = nav_.orientation * shipForce(properties, actual.linear) / properties.massKg +
+        appliedAcceleration = nav_.orientation *
+                                  (shipForce(properties, actual.linear) *
+                                   glm::dvec3(manoeuvreAuthority_, manoeuvreAuthority_, engineAuthority_)) /
+                                  properties.massKg +
                               drag / properties.massKg;
         integrateShipRotation(nav_.orientation, ship_.angularVelocity, properties.inertia,
-                              shipTorque(properties, actual.angular), dt);
+                              shipTorque(properties, actual.angular) * manoeuvreAuthority_, dt);
     }
     const auto oldVelocity = ship_.velocity;
     const bool resizingField = ship_.shrinking && ship_.targetLogSize < ship_.logSize;
@@ -1194,6 +1202,14 @@ void Pilot::updateCrew(const Address& frame, glm::dquat course, double quality, 
     update({}, dt, visible);
     ship_.assist = assist;
     crewQuality_ = 0;
+}
+void Pilot::setSystemAuthority(double engines, double thrusters) {
+    if (!std::isfinite(engines) || !std::isfinite(thrusters))
+        return;
+    engineAuthority_ = std::clamp(engines, 0., 1.);
+    manoeuvreAuthority_ = std::clamp(thrusters, 0., 1.);
+    if (ship_.cruise && engineAuthority_ < .2)
+        toggleCruise();
 }
 void Pilot::updateCrewMotion(const Address& frame, glm::dquat course, glm::dvec3 velocity, double quality,
                              double dt, const std::shared_ptr<const Geometry>& visible) {

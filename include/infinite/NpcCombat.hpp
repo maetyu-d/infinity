@@ -18,11 +18,13 @@ struct NpcPlayer {
     glm::dvec3 position{}, velocity{}, forward{0, 0, -1}; // SI in reference axes
     double size = 1, hull = 100, seconds = 0;
     bool landed = false, field = false;
+    glm::dquat orientation{1,0,0,0};
 };
 struct NpcCombatReport {
     unsigned hostiles = 0, firing = 0;
     double nearest = -1, playerDamage = 0;
     std::vector<ActivityBody> civilianHits;
+    std::vector<std::pair<ShipSystem,double>> playerHits;
 };
 // Bounded mutable steering overlay on canonical activity routes; no generator writes.
 class NpcCombat {

@@ -125,7 +125,7 @@ int64_t EconomyPlayer::volumeLitres() const {
 }
 std::string EconomyPlayer::serialize() const {
     std::ostringstream o;
-    o << "INFINITE_WALLET 8 " << credits << ' ' << lastCommand;
+    o << "INFINITE_WALLET 9 " << credits << ' ' << lastCommand;
     writeStock(o, cargo);
     o << ' ' << deliveries << ' ' << lateDeliveries << ' ' << returnedHauls << ' ' << freightEarnings << ' '
       << bool(haul);
@@ -152,6 +152,8 @@ std::string EconomyPlayer::serialize() const {
     if (combatJob)
         o << ' ' << std::quoted(combatJob->system.str()) << ' ' << combatJob->id;
     o << ' ' << combatCompleted << ' ' << combatFailed << ' ' << combatEarnings;
+    o << ' ' << rescuesDelivered << ' ' << recoveredKg << ' ' << rescued.size();
+    for(const auto& r:rescued) { o << ' ' << std::quoted(r.source.str()) << ' ';writeCrewPerson(o,r.person); }
     return o.str();
 }
 bool EconomyPlayer::restore(std::string_view text) {
@@ -159,7 +161,7 @@ bool EconomyPlayer::restore(std::string_view text) {
     std::istringstream in{std::string(text)};
     std::string h;
     unsigned v;
-    if (!(in >> h >> v >> p.credits >> p.lastCommand) || h != "INFINITE_WALLET" || (v < 1 || v > 8) ||
+    if (!(in >> h >> v >> p.credits >> p.lastCommand) || h != "INFINITE_WALLET" || (v < 1 || v > 9) ||
         p.credits < 0 || p.credits > 1000000000000000LL || !readStock(in, p.cargo))
         return false;
     if (v >= 2) {
@@ -256,6 +258,14 @@ bool EconomyPlayer::restore(std::string_view text) {
             p.combatCompleted > 1000000000000ULL || p.combatFailed > 1000000000000ULL ||
             p.combatEarnings < 0 || p.combatEarnings > 1000000000000000LL)
             return false;
+    }
+    if(v>=9) {
+        size_t count;std::set<uint64_t> people;
+        if(!(in>>p.rescuesDelivered>>p.recoveredKg>>count)||count>maxShipCrew||p.rescuesDelivered>1000000000000ULL||p.recoveredKg>1000000000000ULL)return false;
+        for(size_t i=0;i<count;++i){RescuedPassenger r;std::string id;
+            if(!(in>>std::quoted(id))||!readCrewPerson(in,r.person)||r.person.health<=0||!people.insert(r.person.id).second||crewOwned(p,r.person.id))return false;
+            try{r.source=ActivityId::parse(id);}catch(...){return false;}p.rescued.push_back(r);
+        }
     }
     p.capacityKg = holdCapacityKg(p.cargoLevel);
     p.capacityLitres = holdCapacityLitres(p.cargoLevel);
@@ -665,6 +675,7 @@ std::string Economy::execute(const EconomicCommand& c, EconomyPlayer& player) {
     if (!c.sequence || c.sequence <= player.lastCommand)
         return "ORDER ALREADY PROCESSED";
     player.lastCommand = c.sequence;
+    if(c.action>=EconomicAction::RegisterWreck && c.action<=EconomicAction::DisembarkRescued) return wreckCommand(c,player);
     if (c.action == EconomicAction::DisableVessel)
         return disableVessel(c);
     if (c.action >= EconomicAction::AcceptCombat && c.action <= EconomicAction::CancelCombat)
@@ -672,7 +683,7 @@ std::string Economy::execute(const EconomicCommand& c, EconomyPlayer& player) {
     auto index = siteIndex(c.port);
     if (!index)
         return "PORT HAS NO MARKET";
-    if (unsigned(c.action) > unsigned(EconomicAction::CancelCombat))
+    if (unsigned(c.action) > unsigned(EconomicAction::DisembarkRescued))
         return "INVALID ECONOMIC ACTION";
     if (!reconcilePlayer(player))
         return "HAUL SAVE MISMATCH / TRADING PAUSED";
@@ -787,6 +798,7 @@ int64_t Economy::moneyTotal() const {
 }
 Stock Economy::inventoryTotal() const {
     Stock n{};
+    for(const auto& w:wrecks_)for(size_t g=0;g<goodCount;++g)n[g]+=w.scrap[g];
     for (const auto& s : sites_) {
         const auto capital = facilityMaterials(s);
         for (size_t g = 0; g < goodCount; g++)
@@ -822,11 +834,11 @@ size_t Economy::residentBytes() const {
            freight_.capacity() * sizeof(EconomicFreight) + contracts_.capacity() * sizeof(EconomicContract) +
            events_.capacity() * sizeof(EconomicEvent) + hauls_.capacity() * sizeof(HaulContract) +
            recoveries_.capacity() * sizeof(RecoveryJob) + outcomes_.capacity() * sizeof(EconomicOutcome) +
-           combatContracts_.capacity() * sizeof(CombatContract) + crewBytes;
+           combatContracts_.capacity() * sizeof(CombatContract) + wrecks_.capacity()*sizeof(WreckRecovery) + crewBytes;
 }
 std::string Economy::serialize() const {
     std::ostringstream o;
-    o << "INFINITE_ECONOMY 8 " << network_->fingerprint << ' ' << tick_ << ' ' << nextContract_ << ' '
+    o << "INFINITE_ECONOMY 9 " << network_->fingerprint << ' ' << tick_ << ' ' << nextContract_ << ' '
       << treasury_ << ' ' << carrierCash_ << ' ' << externalMoneyDelta_ << ' ' << sites_.size() << '\n';
     for (const auto& s : sites_) {
         o << s.cash << ' ' << s.householdCash << ' ' << s.condition << ' ' << s.health << ' '
@@ -873,6 +885,7 @@ std::string Economy::serialize() const {
             o << i << ' ' << freight_[i].disabledAt << '\n';
     writeCrewMarkets(o);
     writeCombat(o);
+    writeWrecks(o);
     return o.str();
 }
 bool Economy::restore(std::string_view text) {
@@ -884,7 +897,7 @@ bool Economy::restore(std::string_view text) {
     size_t count;
     if (!(in >> header >> version >> fingerprint >> candidate.tick_ >> candidate.nextContract_ >>
           candidate.treasury_ >> candidate.carrierCash_ >> candidate.externalMoneyDelta_ >> count) ||
-        header != "INFINITE_ECONOMY" || (version < 1 || version > 8) ||
+        header != "INFINITE_ECONOMY" || (version < 1 || version > 9) ||
         fingerprint != network_->fingerprint || count != sites_.size() || candidate.treasury_ < 0 ||
         candidate.carrierCash_ < 0 || candidate.treasury_ > 1000000000000000LL ||
         candidate.carrierCash_ > 1000000000000000LL || candidate.externalMoneyDelta_ < -1000000000000000LL ||
@@ -1032,8 +1045,9 @@ bool Economy::restore(std::string_view text) {
     }
     if (version >= 7 && !candidate.readCrewMarkets(in))
         return false;
-    if (version >= 8 && !candidate.readCombat(in))
+    if (version >= 8 && !candidate.readCombat(in,version>=9))
         return false;
+    if(version>=9 && !candidate.readWrecks(in))return false;
     in >> std::ws;
     if (!in.eof())
         return false;
@@ -1192,7 +1206,7 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
         return v;
     }
     if (page == MarketPage::Services) {
-        v.selected = std::min<size_t>(selected, 1);
+        v.selected = std::min<size_t>(selected, 2);
         const double hull = std::isfinite(context.hull) ? std::clamp(context.hull, 0., 100.) : 100.;
         const auto points = unsigned(std::ceil(std::clamp(100. - hull, 0., 10.)));
         auto credits = [](int64_t cents) {
@@ -1222,6 +1236,11 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
             v.detail.push_back(std::move(parts));
             v.detail.push_back(q.status);
         }
+        v.detail.push_back("DISEMBARK RESCUED SURVIVORS / "+std::to_string(s->player.rescued.size())+" ABOARD");
+        v.detail.push_back("200 CR EACH / FUNDED PORT REWARD / SAME PERSON ENTERS LOCAL CREW OFFICE");
+        v.detail.push_back("RETURN AT FULL SIZE / BERTH OR LAND / BELOW 3 M/S");
+        v.detail.push_back("INJURIES AND SKILLS RETAINED / HIRE LATER THROUGH CREW MARKET");
+        v.detail.push_back(s->player.rescued.empty()?"NO PASSENGERS ABOARD":"ENTER TO TRANSFER / REWARD SUBJECT TO PORT FUNDS AND BERTHS");
         v.summary = "HOLD " + std::to_string(v.cargoKg) + "/" + std::to_string(v.capacityKg) + " KG / " +
                     std::to_string(v.cargoLitres) + "/" + std::to_string(v.capacityLitres) + " L";
         v.bottleneck = "PORT SUPPLIES UNRESERVED PARTS / CREW PAID / REPAIRS PERSIST THROUGH RESTART";

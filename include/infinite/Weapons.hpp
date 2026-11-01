@@ -14,6 +14,7 @@ struct WeaponRay {
     Address reference;
     glm::dvec3 origin{}, direction{0, 0, -1}, right{1, 0, 0}; // SI in reference axes
     double scale = 1, seconds = 0;
+    ShipSystem targetSystem = ShipSystem::Hull;
     bool direct = false; // player at a turret: sight originates at that mount, no nose convergence
 };
 struct WeaponShot {
@@ -37,12 +38,14 @@ struct WeaponDamage {
     double hull = 100, hitSeconds = 0;
     glm::dvec3 position{}; // retained home-frame SI wreck position
     glm::dquat orientation{1, 0, 0, 0};
+    SystemHealth systems = intactSystems();
 };
 struct WeaponMountState {
     unsigned level = 0;
     double heat = 0, cooldown = 0, crewReadiness = 0;
     bool overheated = false;
     uint64_t shotsFired = 0;
+    double integrity = 100;
 };
 // Mutable gameplay overlay. World addresses, generators and craft recipes remain read-only.
 class WeaponSystem {
@@ -81,6 +84,7 @@ class WeaponSystem {
             mounts_[0].crewReadiness = std::clamp(readiness, .65, 1.2);
     }
     void setMountReadiness(unsigned, double);
+    void setMountIntegrity(unsigned mount, double integrity);
     unsigned firingMask() const;
     void advance(double seconds);
     bool fire(const Universe&, const WeaponRay&, std::span<const ActivityBody>, const Geometry* = nullptr);

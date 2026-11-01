@@ -75,6 +75,10 @@ void WeaponSystem::setLoadout(const std::array<unsigned, maxWeaponMounts>& level
     for (unsigned i = 0; i < maxWeaponMounts; ++i)
         mounts_[i].level = std::min(levels[i], maxWeaponLevel);
 }
+void WeaponSystem::setMountIntegrity(unsigned mount, double integrity) {
+    if (mount < maxWeaponMounts && std::isfinite(integrity))
+        mounts_[mount].integrity = std::clamp(integrity, 0., 100.);
+}
 void WeaponSystem::setMountReadiness(unsigned mount, double readiness) {
     if (mount >= maxWeaponMounts || !std::isfinite(readiness))
         return;
@@ -129,6 +133,13 @@ void WeaponSystem::apply(ActivityBody& body) const {
     if (it == damage_.end() || body.kind == ActivityKind::Harbour || body.kind == ActivityKind::SurfacePort)
         return;
     body.hull = it->hull;
+    body.systems = it->systems;
+    body.systems[0] = body.hull;
+    if (it->systems[size_t(ShipSystem::Engines)] <= 0 && it->hull > 0) {
+        body.position = it->position;
+        body.velocity = {};
+        body.status = "ADRIFT / ENGINES OFFLINE";
+    }
     body.disabled = body.disabled || it->hull <= 0;
     if (body.disabled) {
         body.position = it->position;
@@ -234,10 +245,11 @@ bool WeaponSystem::fireMount(unsigned mount, const Universe& u, const WeaponRay&
     if (mount >= maxWeaponMounts)
         return false;
     auto& m = mounts_[mount];
-    if (!m.level || m.crewReadiness <= 0 || m.cooldown > 1e-9 || m.overheated || !finite(input.origin) ||
-        !finite(input.direction) || !finite(input.right) || !std::isfinite(input.scale) ||
-        input.scale < 1e-12 || input.scale > 1 || !std::isfinite(input.seconds) || input.seconds < 0 ||
-        input.seconds > 1e12 || glm::length(input.direction) < .99 || glm::length(input.direction) > 1.01 ||
+    if (!m.level || m.integrity <= 0 || m.crewReadiness <= 0 || m.cooldown > 1e-9 || m.overheated ||
+        !finite(input.origin) || !finite(input.direction) || !finite(input.right) ||
+        !std::isfinite(input.scale) || input.scale < 1e-12 || input.scale > 1 ||
+        !std::isfinite(input.seconds) || input.seconds < 0 || input.seconds > 1e12 ||
+        glm::length(input.direction) < .99 || glm::length(input.direction) > 1.01 ||
         m.shotsFired >= 1000000000000ULL || (mount && std::abs(glm::length(input.right) - 1) > .01))
         return false;
     WeaponRay ray = input;
@@ -274,7 +286,23 @@ bool WeaponSystem::fireMount(unsigned mount, const Universe& u, const WeaponRay&
             it = damage_.end() - 1;
         }
         if (it != damage_.end()) {
-            it->hull = std::max(0., it->hull - spec.damage);
+            bool componentHit = false;
+            if (input.targetSystem != ShipSystem::Hull && size_t(input.targetSystem) < shipSystemCount) {
+                const auto origin = u.pointRelative(
+                    ray.reference, ray.origin / std::pow(10., u.describe(ray.reference).frame.logRadius),
+                    chosen->id.home, 0);
+                const auto direction =
+                    u.relative(ray.reference, chosen->id.home, 0).orientation * ray.direction;
+                const auto point = chosen->position +
+                                   chosen->orientation * (systemOffset(input.targetSystem) * chosen->radius);
+                const auto along = glm::dot(point - origin, direction);
+                componentHit =
+                    along > 0 && glm::length(point - origin - direction * along) <= chosen->radius * .2;
+                if (componentHit)
+                    it->systems[size_t(input.targetSystem)] =
+                        std::max(0., it->systems[size_t(input.targetSystem)] - spec.damage * 3.);
+            }
+            it->hull = std::max(0., it->hull - spec.damage * (componentHit ? .35 : 1.));
             it->hitSeconds = ray.seconds;
             it->position = chosen->position;
             it->orientation = chosen->orientation;
@@ -283,7 +311,7 @@ bool WeaponSystem::fireMount(unsigned mount, const Universe& u, const WeaponRay&
     }
     ++m.shotsFired;
     m.heat += spec.heatPerShot;
-    m.cooldown = spec.interval / m.crewReadiness;
+    m.cooldown = spec.interval / (m.crewReadiness * std::clamp(m.integrity / 100., .25, 1.));
     if (shots_.size() >= 12)
         shots_.erase(shots_.begin());
     shots_.push_back({ray.reference,
@@ -298,10 +326,11 @@ void WeaponSystem::annotate(FlightInstruments& t, bool inhibited) const {
     t.weaponBattery = mounts_[1].level || mounts_[2].level;
     t.weapon = m.level ? std::string(weaponSpec(m.level).name) : "NO WEAPON FITTED";
     t.weaponHeat = m.heat;
-    t.weaponStatus = !m.level       ? "F2 WEAPONS / BUY A LASER"
-                     : inhibited    ? "WEAPON INHIBITED"
-                     : m.overheated ? "OVERHEAT / COOLING"
-                                    : "SPACE FIRE";
+    t.weaponStatus = m.integrity <= 0 ? "NOSE GUN OFFLINE / F9 REPAIR"
+                     : !m.level       ? "F2 WEAPONS / BUY A LASER"
+                     : inhibited      ? "WEAPON INHIBITED"
+                     : m.overheated   ? "OVERHEAT / COOLING"
+                                      : "SPACE FIRE";
     if (t.weaponBattery) {
         t.weapon = "HEAT ";
         t.weaponStatus.clear();
@@ -316,10 +345,11 @@ void WeaponSystem::annotate(FlightInstruments& t, bool inhibited) const {
             if (i && s.level) {
                 if (!t.weaponStatus.empty())
                     t.weaponStatus += " / ";
-                t.weaponStatus += std::string(names[i]) + (s.crewReadiness <= 0 ? " UNMANNED"
-                                                           : s.overheated       ? " HOT"
-                                                           : s.cooldown > 0     ? " RELOAD"
-                                                                                : " READY");
+                t.weaponStatus += std::string(names[i]) + (s.integrity <= 0       ? " OFFLINE"
+                                                           : s.crewReadiness <= 0 ? " UNMANNED"
+                                                           : s.overheated         ? " HOT"
+                                                           : s.cooldown > 0       ? " RELOAD"
+                                                                                  : " READY");
             }
         }
         t.weaponStatus = inhibited ? "BATTERY INHIBITED" : t.weaponStatus + " / SPACE FIRE";
@@ -327,14 +357,17 @@ void WeaponSystem::annotate(FlightInstruments& t, bool inhibited) const {
 }
 std::string WeaponSystem::serialize() const {
     std::ostringstream o;
-    o << std::setprecision(17) << "INFINITE_COMBAT 2";
+    o << std::setprecision(17) << "INFINITE_COMBAT 3";
     for (const auto& m : mounts_)
         o << ' ' << m.heat << ' ' << m.cooldown << ' ' << m.overheated << ' ' << m.shotsFired;
     o << ' ' << damage_.size();
-    for (const auto& d : damage_)
+    for (const auto& d : damage_) {
         o << ' ' << d.id.str() << ' ' << d.hull << ' ' << d.hitSeconds << ' ' << d.position.x << ' '
           << d.position.y << ' ' << d.position.z << ' ' << d.orientation.w << ' ' << d.orientation.x << ' '
           << d.orientation.y << ' ' << d.orientation.z;
+        for (double health : d.systems)
+            o << ' ' << health;
+    }
     return o.str();
 }
 bool WeaponSystem::restore(std::string_view text, const Universe& u) {
@@ -346,13 +379,13 @@ bool WeaponSystem::restore(std::string_view text, const Universe& u) {
         std::string h;
         unsigned v, hot;
         size_t count;
-        if (!(in >> h >> v) || h != "INFINITE_COMBAT" || (v != 1 && v != 2))
+        if (!(in >> h >> v) || h != "INFINITE_COMBAT" || (v < 1 || v > 3))
             return false;
         for (unsigned j = 0; j < (v == 1 ? 1u : maxWeaponMounts); ++j) {
             auto& m = p.mounts_[j];
             if (!(in >> m.heat >> m.cooldown >> hot >> m.shotsFired) || !std::isfinite(m.heat) ||
                 m.heat < 0 || m.heat > 100 || !std::isfinite(m.cooldown) || m.cooldown < 0 ||
-                m.cooldown > 2 || hot > 1 || m.shotsFired > 1000000000000ULL)
+                m.cooldown > (v >= 3 ? 8. : 2.) || hot > 1 || m.shotsFired > 1000000000000ULL)
                 return false;
             m.overheated = hot;
         }
@@ -368,6 +401,10 @@ bool WeaponSystem::restore(std::string_view text, const Universe& u) {
                 !std::isfinite(glm::length(d.position)) || glm::length(d.position) > 1e20 ||
                 !std::isfinite(glm::length(d.orientation)) || std::abs(glm::length(d.orientation) - 1) > 1e-6)
                 return false;
+            if (v >= 3)
+                for (auto& health : d.systems)
+                    if (!(in >> health) || !std::isfinite(health) || health < 0 || health > 100)
+                        return false;
             d.id = ActivityId::parse(id);
             const auto body = sampleCombatActivity(u, d.id, d.hitSeconds);
             if (body.kind == ActivityKind::Harbour || body.kind == ActivityKind::SurfacePort ||

@@ -176,6 +176,8 @@ void StationControl::fly(Pilot& pilot, const ShipCrew& crew, const Universe& u, 
 }
 void StationControl::prepareWeapons(WeaponSystem& weapons, const ShipCrew& crew) const {
     weapons.setCrewReadiness(crew.weaponReadiness());
+    for (unsigned i = 0; i < maxWeaponMounts; ++i)
+        weapons.setMountIntegrity(i, crew.systemHealth(ShipSystem(unsigned(ShipSystem::NoseGun) + i)));
     for (unsigned i = 1; i < maxWeaponMounts; ++i)
         weapons.setMountReadiness(i, crew.gunnerReadiness(i));
     if (active() && crew.gunReliefValid())
@@ -216,9 +218,10 @@ void StationControl::annotate(FlightInstruments& t, const ShipCrew& crew, const 
     t.weapon = std::string(weaponMountName(mount_)) + " / " + std::string(weaponSpec(gun.level).name);
     t.weaponHeat = gun.heat;
     t.weaponBattery = false;
-    t.weaponStatus = t.weaponStatus.find("INHIBITED") != std::string::npos ? "WEAPON INHIBITED"
-                     : gun.overheated                                      ? "OVERHEAT / COOLING"
-                     : gun.cooldown > 0                                    ? "RELOADING"
-                                                                           : "SPACE FIRE THIS GUN / F10 HELM";
+    t.weaponStatus = gun.integrity <= 0 ? "GUN OFFLINE / F9 DAMAGE CONTROL"
+                     : t.weaponStatus.find("INHIBITED") != std::string::npos ? "WEAPON INHIBITED"
+                     : gun.overheated                                        ? "OVERHEAT / COOLING"
+                     : gun.cooldown > 0                                      ? "RELOADING"
+                                        : "SPACE FIRE THIS GUN / F10 HELM";
 }
 } // namespace infinite

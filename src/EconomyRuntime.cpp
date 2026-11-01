@@ -222,6 +222,7 @@ struct EconomyRuntime::Impl {
             s->hauls = e->hauls();
             s->recoveries = e->recoveries();
             s->combatContracts = e->combatContracts();
+            s->wrecks=e->wrecks();
             for (auto& c : s->combatContracts)
                 c.targetName = sampleCombatActivity(u, c.target, e->tick() * economyTickSeconds).name;
             s->outcomes = e->outcomes();
@@ -370,7 +371,7 @@ struct EconomyRuntime::Impl {
                 if (!catching)
                     for (const auto& c : orders) {
                         if (economy.siteIndex(c.port) || c.action == EconomicAction::DisableVessel ||
-                            c.action == EconomicAction::ReportCombat)
+                            c.action == EconomicAction::ReportCombat || c.action == EconomicAction::RegisterWreck || c.action == EconomicAction::RecoverWreck)
                             message = economy.execute(c, player);
                         else {
                             message = "ORDER CANCELLED / MARKET CHANGED";

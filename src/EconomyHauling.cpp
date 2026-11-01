@@ -283,7 +283,8 @@ std::vector<EconomySnapshot::Job> economicJobs(const EconomySnapshot& s) {
         job.route = c.targetName + " / " +
                     std::string(c.kind == CombatJobKind::Escort
                                     ? "FERRY / 5KM / " + std::to_string(int(c.protectedSeconds)) + "/90S"
-                                    : "RAIDER / DISABLE / 22KG SALVAGE") +
+                                : c.physicalSalvage ? "RAIDER / DISABLE / RECOVER WRECK"
+                                                    : "RAIDER / DISABLE / 22KG SALVAGE") +
                     " / ISSUER " + s.network->sites[c.site].name;
         jobs.push_back(std::move(job));
     };

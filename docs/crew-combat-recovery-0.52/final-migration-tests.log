@@ -1,0 +1,11 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 5: physical_wreck_salvage_and_rescue
+1/3 Test #5: physical_wreck_salvage_and_rescue ....   Passed    1.90 sec
+    Start 6: crew_fire_control_and_ship_systems
+2/3 Test #6: crew_fire_control_and_ship_systems ...   Passed    0.44 sec
+    Start 7: economic_security_contracts
+3/3 Test #7: economic_security_contracts ..........   Passed    1.82 sec
+
+100% tests passed, 0 tests failed out of 3
+
+Total Test time (real) =   4.19 sec

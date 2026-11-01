@@ -135,12 +135,10 @@ int main(int argc, char** argv) {
         check(e.execute(c, p).starts_with("OBJECTIVE COMPLETE"), "Named kill receipt failed");
         p.capacityKg = p.massKg();
         c = command(e, p, bounty, EconomicAction::ClaimCombat, 152);
-        check(e.execute(c, p).starts_with("MAKE ROOM"), "Salvage overflow lost cargo");
+        check(e.execute(c, p).starts_with("SECURITY PAID") && p.cargo[size_t(Good::Alloy)] == 0 &&
+                  p.cargo[size_t(Good::Electronics)] == 0 && p.combatCompleted == 2,
+              "New bounty failed to pay without automatically teleporting wreck salvage");
         p.capacityKg = holdCapacityKg(0);
-        c = command(e, p, bounty, EconomicAction::ClaimCombat, 152);
-        check(e.execute(c, p).starts_with("SECURITY PAID") && p.cargo[size_t(Good::Alloy)] == 20 &&
-                  p.cargo[size_t(Good::Electronics)] == 2 && p.combatCompleted == 2,
-              "Bounty salvage or payment failed");
         audit(e, p, money);
         check(e.execute(c, p) == "ORDER ALREADY PROCESSED", "Bounty paid twice");
         // Abandonment and actual civilian loss fail with a full issuer refund.
@@ -172,6 +170,48 @@ int main(int argc, char** argv) {
                   "Failed security job retained authority or issuer funds");
             audit(failed, owner, cash);
         }
+        // Version-eight accepted bounty bonuses remain payable, and their
+        // reserved scrap allocation cannot also be taken from the same wreck.
+        Economy oldReward(n);
+        oldReward.advanceTo(12);
+        auto oldText = oldReward.serialize();
+        const auto security = oldText.rfind("\nSECURITY ") + 1;
+        const auto wreckTail = oldText.find("\nWRECK_RECOVERY ") + 1;
+        std::istringstream securityRows(oldText.substr(security, wreckTail - security));
+        std::string line, oldRows;
+        std::getline(securityRows, line);
+        oldRows = line + "\n";
+        while (std::getline(securityRows, line))
+            if (!line.empty()) {
+                line.erase(line.rfind(' '));
+                oldRows += line + "\n";
+            }
+        oldText.erase(security);
+        oldText += oldRows;
+        oldText.replace(17, 1, "8");
+        check(oldReward.restore(oldText), "Version-eight bounty ledger failed migration");
+        EconomyPlayer legacyPilot;
+        const auto legacyBounty = oldReward.combatContracts()[1];
+        auto legacyOrder = command(oldReward, legacyPilot, legacyBounty, EconomicAction::AcceptCombat, 60);
+        oldReward.execute(legacyOrder, legacyPilot);
+        legacyOrder = command(oldReward, legacyPilot, legacyBounty, EconomicAction::ReportCombat, 61);
+        legacyOrder.targetHull = 0;
+        oldReward.execute(legacyOrder, legacyPilot);
+        legacyOrder = command(oldReward, legacyPilot, legacyBounty, EconomicAction::ClaimCombat, 61);
+        check(oldReward.execute(legacyOrder, legacyPilot).starts_with("SECURITY PAID") &&
+                  legacyPilot.massKg() == 22,
+              "Migration removed an existing bounty salvage entitlement");
+        legacyOrder = command(oldReward, legacyPilot, legacyBounty, EconomicAction::RegisterWreck, 61);
+        WeaponDamage legacyWreck;
+        legacyWreck.id = legacyBounty.target;
+        legacyWreck.hull = 0;
+        legacyWreck.hitSeconds = 61;
+        legacyOrder.wreck = legacyWreck;
+        check(oldReward.execute(legacyOrder, legacyPilot).starts_with("WRECK REGISTERED"),
+              "Legacy wreck did not register");
+        check(std::all_of(oldReward.wrecks().back().scrap.begin(), oldReward.wrecks().back().scrap.end(),
+                          [](auto kg) { return kg == 0; }),
+              "Legacy bounty created duplicate physical salvage");
         // Old ledger and wallet formats remain readable before security exists.
         Economy legacy(n);
         auto old = legacy.serialize();
@@ -182,7 +222,7 @@ int main(int argc, char** argv) {
         EconomyPlayer empty;
         auto wallet = empty.serialize();
         wallet.replace(16, 1, "7");
-        wallet.erase(wallet.size() - 8);
+        wallet.erase(wallet.size() - 14);
         EconomyPlayer oldPlayer;
         check(oldPlayer.restore(wallet), "Version-seven wallet migration failed");
         auto malformed = e.serialize();

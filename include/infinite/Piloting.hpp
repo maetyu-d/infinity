@@ -58,6 +58,8 @@ struct FlightInstruments {
     double weaponHeat = 0;
     std::string combatStatus;
     std::string combatMission;
+    std::string crewFire, systemTarget, systemFault, recoveryStatus;
+    glm::dvec3 localSystemTarget{};
     unsigned hostileContacts = 0;
     double incomingFire = 0;
     std::string weather;
@@ -93,6 +95,7 @@ class Pilot {
             ship_.gear = !ship_.gear;
     }
     void setCargoMass(double kg);
+    void setSystemAuthority(double engines, double thrusters);
     void applyCombatDamage(double points);
     void applyPortRepairs(uint64_t purchasedPoints);
     double cargoMass() const {
@@ -152,6 +155,7 @@ class Pilot {
     bool fieldBraking_ = false;
     bool growthBlocked_ = false;
     double cargoMassKg_ = 0;
+    double engineAuthority_ = 1, manoeuvreAuthority_ = 1;
     double crewQuality_ = 0;
     Address crewCourseFrame_;
     glm::dquat crewCourse_{1, 0, 0, 0};

@@ -276,7 +276,7 @@ void economicOutcomeView(MarketView& v, const EconomySnapshot& s, size_t selecte
                        std::to_string(std::max<int64_t>(0, o.after.outputKg - o.before.outputKg)) +
                        " KG / OBSERVED, ALL CAUSES");
     if (o.kind == OutcomeKind::Bounty)
-        v.detail.push_back("WRECK SALVAGE TO HOLD / 20KG ALLOY + 2KG ELECTRONICS / FINITE RECEIPT");
+        v.detail.push_back("BOUNTY SETTLED / PHYSICAL WRECK RECOVERY: APPROACH CLOSE AND HOLD 0");
     if (o.kind == OutcomeKind::Escort)
         v.detail.push_back("CIVILIAN PROTECTED / 90S WITHIN 5KM / FUNDED REWARD SETTLED");
     if (o.kind == OutcomeKind::Maintenance)

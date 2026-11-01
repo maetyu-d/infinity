@@ -1,5 +1,6 @@
 #pragma once
 #include "Geometry.hpp"
+#include "ShipSystems.hpp"
 #include <array>
 #include <span>
 
@@ -22,6 +23,7 @@ struct ActivityBody {
     glm::vec3 tint{1};
     double radius = 1, phase = 0;
     double hull = 100;
+    SystemHealth systems = intactSystems();
     bool disabled = false, hostile = false;
     uint64_t seed = 0;
     std::string name, status;

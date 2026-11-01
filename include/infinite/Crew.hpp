@@ -1,6 +1,7 @@
 #pragma once
 #include "Armament.hpp"
 #include "Core.hpp"
+#include "ShipSystems.hpp"
 #include <algorithm>
 #include <array>
 #include <iosfwd>
@@ -141,6 +142,8 @@ class ShipCrew {
     void vent(CrewStation);
     bool dismiss(size_t); // caller enforces port access
     void observeHull(double hull);
+    void observeCombatHit(double hull, ShipSystem, double damage);
+    double systemHealth(ShipSystem) const;
     void advance(double seconds, double properG = 0, bool combat = false, bool firing = false,
                  unsigned firingMounts = 1);
     void reconcile(CrewReceipts);
@@ -162,11 +165,13 @@ class ShipCrew {
     double spares_ = 30, medical_ = 12, previousHull_ = -1, accumulator_ = 0;
     bool automatic_ = true;
     std::array<unsigned, maxWeaponMounts> weaponLevels_{1, 0, 0}; // read-only loadout supplied by the wallet
+    std::array<double, maxWeaponMounts> gunIntegrity_{100, 100, 100};
     // Temporary captain/gunner exchange. Saved duty stays bound to the original gun.
     uint64_t reliefHelmId_ = 0;
     unsigned playerGun_ = noWeaponMount;
     void step(double properG, bool combat, unsigned firingMounts);
     void event(std::string);
+    void damageRoom(size_t room, double damage, uint64_t pattern, double integrityFactor = 1.5);
     CrewStation nextRoom(CrewStation from, CrewStation to) const;
 };
 } // namespace infinite

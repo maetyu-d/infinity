@@ -1,0 +1,17 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 59: native_combat_operations_loop
+1/6 Test #59: native_combat_operations_loop .....   Passed   26.31 sec
+    Start 60: native_combat_operations_images
+2/6 Test #60: native_combat_operations_images ...   Passed    3.66 sec
+    Start 61: native_station_swap_loop
+3/6 Test #61: native_station_swap_loop ..........   Passed   34.05 sec
+    Start 62: native_station_swap_images
+4/6 Test #62: native_station_swap_images ........   Passed   10.96 sec
+    Start 71: native_npc_combat_loop
+5/6 Test #71: native_npc_combat_loop ............   Passed   34.37 sec
+    Start 72: native_npc_combat_images
+6/6 Test #72: native_npc_combat_images ..........   Passed    3.12 sec
+
+100% tests passed, 0 tests failed out of 6
+
+Total Test time (real) = 112.53 sec

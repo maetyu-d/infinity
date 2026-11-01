@@ -102,7 +102,8 @@ CrewTradeQuote economicCrewQuote(const EconomySnapshot& s, size_t site, const Cr
 std::vector<CrewTradeRow> economicCrewRows(const EconomySnapshot& s, size_t site,
                                            std::span<const CrewMember> aboard) {
     std::vector<CrewTradeRow> rows;
-    size_t count = std::count_if(aboard.begin(), aboard.end(), [](const auto& m) { return m.health > 0; });
+    size_t count = std::count_if(aboard.begin(), aboard.end(), [](const auto& m) { return m.health > 0; }) +
+                   s.player.rescued.size();
     for (const auto& m : economicCrewOffers(s, site))
         rows.push_back({m, true, economicCrewQuote(s, site, m, true, count)});
     for (const auto& m : aboard)

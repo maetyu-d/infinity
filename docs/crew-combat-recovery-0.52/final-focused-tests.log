@@ -1,0 +1,17 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start  5: physical_wreck_salvage_and_rescue
+1/6 Test  #5: physical_wreck_salvage_and_rescue ....   Passed    4.27 sec
+    Start  6: crew_fire_control_and_ship_systems
+2/6 Test  #6: crew_fire_control_and_ship_systems ...   Passed    1.24 sec
+    Start  7: economic_security_contracts
+3/6 Test  #7: economic_security_contracts ..........   Passed    3.75 sec
+    Start 10: inflight_crew_management
+4/6 Test #10: inflight_crew_management .............   Passed    0.71 sec
+    Start 13: npc_combat_behaviour
+5/6 Test #13: npc_combat_behaviour .................   Passed    0.78 sec
+    Start 35: cockpit_layout_and_targeting
+6/6 Test #35: cockpit_layout_and_targeting .........   Passed    0.84 sec
+
+100% tests passed, 0 tests failed out of 6
+
+Total Test time (real) =  11.62 sec

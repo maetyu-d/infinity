@@ -141,7 +141,7 @@ double ShipCrew::gunnerReadiness(unsigned mount) const {
     if (mount >= maxWeaponMounts || !weaponLevels_[mount])
         return 0;
     const auto& room = rooms_[size_t(CrewStation::Weapons)];
-    if (room.integrity <= 0 || room.oxygen < 18 || room.fire >= 25)
+    if (gunIntegrity_[mount] <= 0 || room.integrity <= 0 || room.oxygen < 18 || room.fire >= 25)
         return 0;
     for (const auto& m : members_)
         if (m.id != reliefHelmId_ && m.health >= 20 && m.duty == CrewStation::Weapons &&
@@ -153,6 +153,8 @@ double ShipCrew::gunnerReadiness(unsigned mount) const {
 std::string ShipCrew::gunnerStatus(unsigned mount) const {
     if (mount >= maxWeaponMounts || !weaponLevels_[mount])
         return "EMPTY";
+    if (gunIntegrity_[mount] <= 0)
+        return "GUN OFFLINE";
     if (mount == playerGun_ && reliefHelmId_)
         return "CAPTAIN / RELIEF HELM";
     for (const auto& m : members_)
@@ -189,6 +191,7 @@ bool ShipCrew::beginGunRelief(unsigned mount) {
 }
 bool ShipCrew::gunReliefValid() const {
     if (!reliefHelmId_ || playerGun_ >= maxWeaponMounts || !weaponLevels_[playerGun_] ||
+        gunIntegrity_[playerGun_] <= 0 ||
         std::count_if(weaponLevels_.begin(), weaponLevels_.end(), [](unsigned level) { return level > 0; }) <
             2)
         return false;
@@ -255,9 +258,11 @@ void ShipCrew::observeHull(double hull) {
     if (damage <= 0)
         return;
     const auto h = mix64(seed_ ^ mix64(++impacts_));
-    const size_t r = size_t(h % 6);
+    damageRoom(size_t(h % 6), damage, h);
+}
+void ShipCrew::damageRoom(size_t r, double damage, uint64_t h, double integrityFactor) {
     auto& room = rooms_[r];
-    room.integrity = std::max(0., room.integrity - damage * 1.5);
+    room.integrity = std::max(0., room.integrity - damage * integrityFactor);
     if (damage >= 15 || ((h >> 8) & 3) == 0)
         room.fire = std::min(100., room.fire + damage * 1.8);
     if (damage >= 6 && ((h >> 12) & 1))
@@ -275,6 +280,34 @@ void ShipCrew::observeHull(double hull) {
         }
     event(std::string(crewStationName(CrewStation(r))) + " / IMPACT / " +
           (room.fire > 0 ? "FIRE" : "SYSTEM DAMAGE"));
+}
+double ShipCrew::systemHealth(ShipSystem s) const {
+    if (s >= ShipSystem::NoseGun && s <= ShipSystem::StarboardGun)
+        return gunIntegrity_[size_t(s) - size_t(ShipSystem::NoseGun)];
+    return s == ShipSystem::Engines       ? rooms_[3].integrity
+           : s == ShipSystem::Thrusters   ? rooms_[1].integrity
+           : s == ShipSystem::LifeSupport ? rooms_[4].integrity
+                                          : 100.;
+}
+void ShipCrew::observeCombatHit(double hull, ShipSystem system, double damage) {
+    if (!std::isfinite(hull) || hull < 0 || hull > 100 || !std::isfinite(damage) || damage <= 0 ||
+        damage > 100)
+        return;
+    if (system == ShipSystem::Hull || size_t(system) >= shipSystemCount) {
+        observeHull(hull);
+        return;
+    }
+    previousHull_ = hull;
+    const auto room = system == ShipSystem::Engines       ? 3u
+                      : system == ShipSystem::Thrusters   ? 1u
+                      : system == ShipSystem::LifeSupport ? 4u
+                                                          : 2u;
+    if (system >= ShipSystem::NoseGun && system <= ShipSystem::StarboardGun) {
+        auto& health = gunIntegrity_[size_t(system) - size_t(ShipSystem::NoseGun)];
+        health = std::max(0., health - damage * 4);
+    }
+    damageRoom(room, damage, mix64(seed_ ^ mix64(++impacts_)), 3.);
+    event(std::string(shipSystemName(system)) + " / COMPONENT HIT");
 }
 double ShipCrew::efficiency(CrewStation s) const {
     if (!valid(s))
@@ -344,6 +377,8 @@ void ShipCrew::step(double g, bool combat, unsigned firingMounts) {
     const auto coordination =
         1 + .1 * (efficiency(CrewStation::Bridge) + efficiency(CrewStation::Navigation));
     for (auto& r : rooms_) {
+        if (rooms_[4].integrity <= 0)
+            r.oxygen = std::max(0., r.oxygen - dt * .5);
         r.oxygen = std::clamp(r.oxygen + dt * ((r.vented ? -8. : (1.2 + life) * rooms_[4].integrity / 100.) -
                                                r.breach * .1 - r.fire * .01),
                               0., 100.);
@@ -468,6 +503,10 @@ void ShipCrew::step(double g, bool combat, unsigned firingMounts) {
             room.breach -= patched;
             const double repaired = std::min(100. - room.integrity, work - patched);
             room.integrity += repaired;
+            if (m.target == CrewStation::Weapons && repaired > 0) {
+                auto gun = std::min_element(gunIntegrity_.begin(), gunIntegrity_.end());
+                *gun = std::min(100., *gun + repaired * 4.);
+            }
             spares_ = std::max(0., spares_ - (patched + repaired) / 5.);
             worked = patched + repaired > 0;
         } else if (m.order == CrewOrder::Aid && medical_ > 0 && room.oxygen >= 18 && room.fire < 10) {
@@ -636,7 +675,7 @@ void ShipCrew::reconcileMarket(uint64_t revision, std::span<const CrewTitle> tit
 }
 std::string ShipCrew::serialize() const {
     std::ostringstream o;
-    o << std::setprecision(17) << "INFINITE_CREW 3 " << seed_ << ' ' << impacts_ << ' ' << receipts_.hired
+    o << std::setprecision(17) << "INFINITE_CREW 4 " << seed_ << ' ' << impacts_ << ' ' << receipts_.hired
       << ' ' << receipts_.supplied << ' ' << receipts_.treated << ' ' << spares_ << ' ' << medical_ << ' '
       << previousHull_ << ' ' << accumulator_ << ' ' << automatic_ << ' ' << marketRevision_ << ' '
       << members_.size();
@@ -657,6 +696,8 @@ std::string ShipCrew::serialize() const {
     o << ' ' << events_.size();
     for (const auto& e : events_)
         o << ' ' << std::quoted(e);
+    for (double health : gunIntegrity_)
+        o << ' ' << health;
     return o.str();
 }
 bool ShipCrew::restore(std::string_view text) {
@@ -673,7 +714,7 @@ bool ShipCrew::restore(std::string_view text) {
     uint64_t seed;
     if (!(in >> h >> v >> seed >> c.impacts_ >> c.receipts_.hired >> c.receipts_.supplied >>
           c.receipts_.treated >> c.spares_ >> c.medical_ >> c.previousHull_ >> c.accumulator_ >> automatic) ||
-        h != "INFINITE_CREW" || (v < 1 || v > 3) || seed != seed_ || automatic > 1 ||
+        h != "INFINITE_CREW" || (v < 1 || v > 4) || seed != seed_ || automatic > 1 ||
         c.impacts_ > 1000000000000ULL || c.receipts_.hired > 1000000 || c.receipts_.supplied > 1000000 ||
         c.receipts_.treated > 1000000 || !range(c.spares_, 0, 100) || !range(c.medical_, 0, 50) ||
         !range(c.previousHull_, -1, 100) || !range(c.accumulator_, 0, .25) ||
@@ -744,6 +785,10 @@ bool ShipCrew::restore(std::string_view text) {
             return false;
         c.events_.push_back(e);
     }
+    if (v >= 4)
+        for (auto& health : c.gunIntegrity_)
+            if (!(in >> health) || !range(health, 0, 100))
+                return false;
     in >> std::ws;
     if (!in.eof())
         return false;

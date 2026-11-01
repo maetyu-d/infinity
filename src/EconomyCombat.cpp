@@ -16,7 +16,7 @@ bool funded(CombatJobPhase p) {
 } // namespace
 Stock combatSalvage(const CombatContract& c) {
     Stock s{};
-    if (c.kind == CombatJobKind::Bounty) {
+    if (c.kind == CombatJobKind::Bounty && !c.physicalSalvage) {
         s[size_t(Good::Alloy)] = 20;
         s[size_t(Good::Electronics)] = 2;
     }
@@ -76,6 +76,7 @@ void Economy::combatOffers() {
             c.target = target;
             c.kind = kind;
             c.reward = c.escrow = reward;
+            c.physicalSalvage=true;
             sites_[i].cash -= reward;
             combatContracts_.push_back(c);
             ++offered;
@@ -198,9 +199,9 @@ void Economy::writeCombat(std::ostream& o) const {
         o << c.id << ' ' << c.deadline << ' ' << c.site << ' ' << std::quoted(c.target.str()) << ' '
           << unsigned(c.kind) << ' ' << unsigned(c.phase) << ' ' << c.reward << ' ' << c.escrow << ' '
           << c.acceptedSeconds << ' ' << c.lastReport << ' ' << c.protectedSeconds << ' ' << c.lastPresent
-          << '\n';
+          << ' ' << c.physicalSalvage << '\n';
 }
-bool Economy::readCombat(std::istream& in) {
+bool Economy::readCombat(std::istream& in, bool physical) {
     std::string h, id;
     size_t count;
     if (!(in >> h >> nextCombat_ >> count) || h != "SECURITY" || !nextCombat_ || count > 32)
@@ -217,6 +218,7 @@ bool Economy::readCombat(std::istream& in) {
             phase > unsigned(CombatJobPhase::Expired) || c.reward < 1 || c.reward > 1000000 ||
             c.deadline > 1000000000000ULL)
             return false;
+        if(physical){unsigned flag;if(!(in>>flag)||flag>1)return false;c.physicalSalvage=flag;}
         try {
             c.target = ActivityId::parse(id);
         } catch (...) {

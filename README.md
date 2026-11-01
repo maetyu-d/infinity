@@ -1,5 +1,7 @@
 # INFINITE
 
+**0.52.0:** autonomous crew gunners, targetable ship systems and crew repairs, plus physical wreck salvage and survivor rescue. [Controls and validation](docs/CREW_COMBAT_RECOVERY_0_52.md).
+
 **0.51.0:** crew combat orders, distinct port/starboard gun stations with visible arcs, and funded escort/bounty contracts with persistent outcomes and salvage. [Controls and details](docs/COMBAT_OPERATIONS_0_51.md).
 
 **0.50.1:** steadier background stars, including while the ship is idle with engine vibration. An optical point-light footprint reduces subpixel brightness flashes while retaining stellar colours and core/halo energy. Universe generation, flight and crew controls stay intact. [Star stability and validation](docs/STAR_STABILITY_0_50_1.md).

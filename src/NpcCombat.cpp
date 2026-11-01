@@ -136,7 +136,14 @@ NpcCombatReport NpcCombat::update(const Universe& u, const NpcPlayer& player,
                 glm::length(port.position - f.position) <
                     port.radius + (port.kind == ActivityKind::Harbour ? 4500. : 1800.))
                 safe = true;
-        local.push_back({raw, body, f.position, f.velocity, unit(f.forward), &a, range, safe});
+        auto base = raw;
+        if (body.systems[size_t(ShipSystem::Engines)] <= 0) {
+            base.position = body.position;
+            base.velocity = {};
+            a.offset = {};
+            a.drift = {};
+        }
+        local.push_back({base, body, f.position, f.velocity, unit(f.forward), &a, range, safe});
     }
     for (auto& c : local) {
         auto& a = *c.agent;
@@ -223,7 +230,10 @@ NpcCombatReport NpcCombat::update(const Universe& u, const NpcPlayer& player,
         }
         desired = limited(desired, 550.);
         const auto old = a.drift;
-        a.drift += limited(desired - a.drift, (a.mode == NpcMode::Retreat ? 70. : 45.) * dt);
+        const auto propulsion = c.body.systems[size_t(ShipSystem::Engines)] / 100.;
+        const auto steering = c.body.systems[size_t(ShipSystem::Thrusters)] / 100.;
+        a.drift +=
+            limited(desired * propulsion - a.drift, (a.mode == NpcMode::Retreat ? 70. : 45.) * dt * steering);
         a.offset += (old + a.drift) * (.5 * dt);
         a.offset = limited(a.offset, 20000.);
         const auto planet = u.describe(c.body.id.home);
@@ -241,7 +251,7 @@ NpcCombatReport NpcCombat::update(const Universe& u, const NpcPlayer& player,
         const auto target = heading(aim, up);
         const double angle = 2 * std::acos(std::clamp(std::abs(glm::dot(a.attitude, target)), 0., 1.));
         const double blend = std::min(1 - std::exp(-dt * 2.5), angle > 1e-9 ? 1.8 * dt / angle : 1.);
-        a.attitude = glm::normalize(glm::slerp(a.attitude, target, blend));
+        a.attitude = glm::normalize(glm::slerp(a.attitude, target, blend * steering));
         a.cooldown = std::max(0., a.cooldown - dt);
         a.heat = std::max(0., a.heat - 28 * dt);
         if (detectable && hostile) {
@@ -249,8 +259,8 @@ NpcCombatReport NpcCombat::update(const Universe& u, const NpcPlayer& player,
             if (report_.nearest < 0 || distance < report_.nearest)
                 report_.nearest = distance;
         }
-        if (!engage || a.mode == NpcMode::Retreat || a.cooldown > 0 || a.heat > 82 || distance < 70 ||
-            distance > 2400)
+        if (!engage || c.body.systems[size_t(ShipSystem::NoseGun)] <= 0 || a.mode == NpcMode::Retreat ||
+            a.cooldown > 0 || a.heat > 82 || distance < 70 || distance > 2400)
             continue;
         auto forward = a.attitude * glm::dvec3(0, 0, -1);
         if (glm::dot(forward, toward) < .9997)
@@ -268,6 +278,16 @@ NpcCombatReport NpcCombat::update(const Universe& u, const NpcPlayer& player,
         proxy.kind = ActivityKind::Patrol;
         proxy.position = c.player;
         proxy.radius = 2 * player.size;
+        proxy.orientation = u.relative(player.reference, c.body.id.home, 0).orientation * player.orientation;
+        constexpr std::array components{ShipSystem::Engines,      ShipSystem::Thrusters,
+                                        ShipSystem::NoseGun,      ShipSystem::PortGun,
+                                        ShipSystem::StarboardGun, ShipSystem::LifeSupport};
+        const auto hitSystem = components[(a.shots + c.body.seed) % components.size()];
+        const auto componentPoint =
+            proxy.position + proxy.orientation * (systemOffset(hitSystem) * proxy.radius);
+        if (!victim)
+            ray.direction = unit(unit(componentPoint - ray.origin) +
+                                 right * (std::sin(double(a.shots) * 2.399 + phase) * .0012));
         std::vector<ActivityBody> targets;
         targets.reserve(input.size() + 1);
         for (auto body : input)
@@ -284,6 +304,11 @@ NpcCombatReport NpcCombat::update(const Universe& u, const NpcPlayer& player,
             report_.civilianHits.push_back(*trace.body);
         if (hit) {
             report_.playerDamage += c.body.kind == ActivityKind::Raider ? 4. : 6.;
+            const auto componentDelta = componentPoint - ray.origin;
+            const auto miss =
+                glm::length(componentDelta - ray.direction * glm::dot(componentDelta, ray.direction));
+            report_.playerHits.emplace_back(miss <= proxy.radius * .25 ? hitSystem : ShipSystem::Hull,
+                                            c.body.kind == ActivityKind::Raider ? 4. : 6.);
             damageFlash_ = 1;
         }
         if (shots_.size() >= 24)

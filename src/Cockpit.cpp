@@ -441,6 +441,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
            : t.shrinking                 ? amber
                                          : ice);
     line(h.strokes, 24, 45, w - 24, 45, muted * .3f);
+    fitted(h.lettering, t.crewFire, w - 360, 20, 336, 8, mint);
 
     // Scale changes and physical ship size share one backed instrument. They
     // remain separate quantities; reference-frame refinement never resizes it.
@@ -547,8 +548,9 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     if (market)
         fitted(h.lettering,
                std::to_string(market->credits / 100) + " CR / " + std::to_string(market->cargoKg) + " KG / " +
-                   (market->activeJob.empty() ? "F2 MARKET" : "F4 HAUL"),
+                   (market->activeJob.empty() ? "F2 MARKET" : market->activeJob),
                systems.x + 14, systems.y + 88, systems.w - 28, 8.4, ice);
+    fitted(h.lettering, t.systemFault, systems.x + 14, systems.y + 116, systems.w - 28, 7, amber);
     label(t.gear ? "G  GEAR DOWN" : "G  GEAR UP", systems.x + 14, systems.y + 105, systems.w - 28,
           t.gear ? mint : muted);
     const double radarX = scope.x + scope.w * .5, radarY = scope.y + 72;
@@ -772,13 +774,15 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             std::find_if(activity.begin(), activity.end(), [](const auto& c) { return c.selected; });
         if (target != activity.end())
             fitted(h.lettering,
-                   "TARGET HULL " + std::to_string(int(std::ceil(target->body.hull))) + "% / " +
-                       flightQuantity(target->distance),
+                   t.systemTarget.empty()
+                       ? "TARGET HULL " + std::to_string(int(std::ceil(target->body.hull))) + "% / " +
+                             flightQuantity(target->distance)
+                       : t.systemTarget,
                    armament.x + 12, 711, 292, 8.8, target->body.hostile ? danger : ice);
         else
             fitted(h.lettering, "H TARGET NEAREST HOSTILE", armament.x + 12, 711, 292, 8.8, muted);
-        fitted(h.lettering, t.combatStatus, armament.x + 12, 729, 292, 8.8,
-               t.hostileContacts ? danger : muted);
+        fitted(h.lettering, t.recoveryStatus.empty() ? t.combatStatus : t.recoveryStatus, armament.x + 12,
+               729, 292, 8.8, t.hostileContacts ? danger : muted);
         if (!t.combatMission.empty())
             fitted(h.lettering, t.combatMission, armament.x + 4, 750, 308, 8, mint);
     }
@@ -869,7 +873,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             const bool weapons = m.page == MarketPage::Weapons;
             label(weapons
                       ? std::string(weaponMountName(m.weaponMount)) + " / LEFT-RIGHT MOUNT / UP-DOWN GRADE"
-                  : services ? "PORT SERVICES / UP-DOWN SELECT / ENTER PURCHASE"
+                  : services ? "PORT SERVICES / REPAIRS / HOLD / RESCUE HANDOVER"
                   : jobs     ? "FUNDED JOBS / UP-DOWN SELECT / ONE HAUL + ONE SECURITY"
                   : industry ? "EXISTING FACILITY REFITS / DELIVER CARGO TO BUILD"
                              : "AFFORDABLE LOCAL OPPORTUNITIES / UP-DOWN SELECT",
@@ -892,7 +896,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             fitted(h.lettering, m.summary, panel.x + 18, panel.y + (jobs ? 480 : 472), panel.w - 36, 8.4,
                    mint);
             label(weapons    ? "ENTER FIT / UPGRADE / BACKSPACE SELL SELECTED MOUNT / F4 PORT"
-                  : services ? "ENTER PURCHASE SELECTED SERVICE / F4 TARGET PORT / J APPROACH"
+                  : services ? "ENTER SERVICE OR DISEMBARK / F4 TARGET PORT / J APPROACH"
                   : jobs     ? "ENTER ACCEPT / DELIVER / CLAIM / F4 TARGET / J APPROACH"
                   : industry ? "ENTER FUND / DELIVER PARTS / BACKSPACE COLLECT DIVIDENDS"
                              : "ENTER TARGET SOURCE / F4 TARGET BUYER / J APPROACH",
@@ -992,8 +996,15 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
         }
         const auto detail =
             crew->selected < crew->tasks.size() ? crew->tasks[crew->selected] : CrewTaskView{};
-        fitted(h.lettering, "ROOM " + std::string(crewStationName(crew->station)) + " / " + detail.detail,
-               p.x + 12, p.y + 307, p.w - 24, 8, detail.blocked ? amber : mint);
+        std::string selectedDetail =
+            "ROOM " + std::string(crewStationName(crew->station)) + " / " + detail.detail;
+        if (crew->selected < crew->members.size()) {
+            const auto& m = crew->members[crew->selected];
+            if (m.duty == CrewStation::Weapons && m.weaponMount < maxWeaponMounts)
+                selectedDetail =
+                    std::string(weaponMountName(m.weaponMount)) + " / " + crew->gunStatus[m.weaponMount];
+        }
+        fitted(h.lettering, selectedDetail, p.x + 12, p.y + 307, p.w - 24, 8, detail.blocked ? amber : mint);
         for (size_t i = 0; i < crewRoomCount; ++i) {
             const auto r = layout.rooms[i];
             const auto& room = crew->rooms[i];
@@ -1131,6 +1142,13 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
 
     // Readable world labels reserve rectangles, avoid all fixed panels and the
     // reticle, and cap at three secondary labels. Geometry and picking stay full.
+    if (!t.systemTarget.empty() && glm::length(t.localSystemTarget) > 1e-12 && !(market && market->open) &&
+        !help) {
+        const auto marker =
+            cockpitTargetMarker(glm::inverse(headInShip) * t.localSystemTarget, aspect, projectionScale);
+        if (!marker.offscreen && !marker.aft)
+            diamond(h.strokes, marker.point, 7, amber);
+    }
     const CockpitRect aim{aimPoint.x - 42, aimPoint.y - 27, 84, 54};
     auto worldLabel = [&](glm::dvec2 anchor, std::string_view name, std::string_view range, glm::vec3 color) {
         const double width = std::min(184., l.windscreen.w - 12);

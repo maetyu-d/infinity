@@ -26,8 +26,9 @@ CrewTaskView ShipCrew::task(size_t i) const {
         v.detail = "RELIEF HELM / " + std::string(weaponMountName(playerGun_)) + " TO CAPTAIN";
     } else if (m.duty == CrewStation::Weapons && m.order == CrewOrder::Duty) {
         v.detail = std::string(weaponMountName(m.weaponMount)) + " / " + gunnerStatus(m.weaponMount);
-        v.blocked = m.weaponMount >= maxWeaponMounts || !weaponLevels_[m.weaponMount] ||
-                    gunnerStatus(m.weaponMount) == "BAY UNSAFE";
+        v.blocked =
+            m.weaponMount >= maxWeaponMounts || !weaponLevels_[m.weaponMount] ||
+            (gunnerStatus(m.weaponMount) == "BAY UNSAFE" || gunnerStatus(m.weaponMount) == "GUN OFFLINE");
     }
     if (m.order == CrewOrder::Repair && (spares_ <= 0 || room.fire >= 5)) {
         v.detail = spares_ <= 0 ? "SPARES EMPTY / RESUPPLY AT PORT" : "FIRE TOO HOT / EXTINGUISH FIRST";
