@@ -1,0 +1,64 @@
+{
+  "version": "0.52.1",
+  "source_commit": "1627c40a2a998752b9346802bd542aac85834db8",
+  "universe_seed": 5282236693612155973,
+  "renderer": "Hyperion / Metal",
+  "visual_time_seconds": 12,
+  "hud_visible": false,
+  "image_processing": "Full-frame JPEG encoding, quality 88; original 1920x1080 dimensions retained",
+  "source_executable_sha256": "e1ed9124a959c0f1e7ab47197bf85d4505fae169ca334d1f2fe4df608a337c54",
+  "captures": [
+    {
+      "file": "ringed-gas-giant.jpg",
+      "caption": "Ringed gas giant",
+      "address": "0,0,0/1:0/2:0/3:15",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 576410,
+      "sha256": "d76d88e3e59fec968d0ffd864eac0d9e31c7f3fd290da0bc9d3fcaaab0f44827",
+      "original_ppm_sha256": "c77d193f1f9e479d38a08f92b7b033cd8dd321ba25017bda2d67b21352194867"
+    },
+    {
+      "file": "spiral-galaxy.jpg",
+      "caption": "Spiral galaxy",
+      "address": "0,0,0/1:0",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 515503,
+      "sha256": "70476d301b766c163c77419eb152f36ebb9d6369994218df15bcdfd9767001da",
+      "original_ppm_sha256": "88132f391315910a79af4bf2bb538fc1ebd9c607d194de1a23f6bf41d24e08aa"
+    },
+    {
+      "file": "ice-giant.jpg",
+      "caption": "Ice giant",
+      "address": "0,0,0/1:0/2:0/3:16",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 633974,
+      "sha256": "77591a22e0587ff1f9cf74cc944abb2aa9816b115498f0a974292d20c17bd5de",
+      "original_ppm_sha256": "27313a714a735dbdad44575066164ed1a4ea12b7eadd6eb21366848d757d2e7e"
+    },
+    {
+      "file": "volcanic-world.jpg",
+      "caption": "Volcanic world",
+      "address": "0,0,0/1:0/2:90/3:9",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 563192,
+      "sha256": "cea98e33cbe12de39d5040fdd5c03333b8971a754d1204d6f64264368ef1af78",
+      "original_ppm_sha256": "5d1b7b6baac93f6e6ba9a551b717c76dd3f27576643df9fba913b7a2b25e08a3"
+    },
+    {
+      "file": "quartz-lattice.jpg",
+      "caption": "Quartz atomic lattice",
+      "address": "0,0,0/1:0/2:0/3:0/4:115964125760/5:0/6:0/7:19/8:0",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 554650,
+      "sha256": "bbaeb1e685023a020443c1baf6c0011cc0ebe45d43cb6c9d62d5859c12af31d9",
+      "original_ppm_sha256": "cfd81f42ab78b0be39a7bdcf25d8ad79336654bd010c36271c454c57bbac74bd"
+    }
+  ],
+  "scale_views": "spiral-galaxy\n0,0,0/1:0 20.435644575814692 0.97249075206356739 -0.12350218603133263 0.19593315090460978 0.024882676160548785 -5.5511151231257827e-17 0 0\ndescriptor=14157483649510533887 seed=10360266803085061642 atoms=0\nrock-fabric\n0,0,0/1:0/2:0/3:0/4:115964125760/5:0/6:0 0.16849869326484224 0.97249075206356739 -0.12350218603133263 0.19593315090460978 0.024882676160548785 -5.5511151231257827e-17 0 0\ndescriptor=6181879859202039552 seed=56161420735731417 atoms=0\nmineral-grain\n0,0,0/1:0/2:0/3:0/4:115964125760/5:0/6:0/7:19 -2.6651391486116864 0.97249075206356739 -0.12350218603133263 0.19593315090460978 0.024882676160548785 -5.5511151231257827e-17 0 0\ndescriptor=17691624717344602834 seed=8636158979376547018 atoms=0\natomic-lattice\n0,0,0/1:0/2:0/3:0/4:115964125760/5:0/6:0/7:19/8:0 -8.3005019854815334 0.97249075206356739 -0.12350218603133263 0.19593315090460978 0.024882676160548785 -5.5511151231257827e-17 0 0\ndescriptor=6880976823270589872 seed=6117979681227645831 atoms=7729\n",
+  "planet_validation": "BACKBUFFER 1920x1080 (requested 1920x1080)\nInfinite / Metal / seed 5282236693612155973\nPLANET_VARIETY scene=gas-hyperion address=0,0,0/1:0/2:0/3:15 mode=HYPERION geometry=8208230608829149891 descriptor=1234422651828678852 radius_km=57413.3 temperature_k=56.6965 rings=1 frame=308 camera=unchanged\nPLANET_VARIETY scene=ice-giant-hyperion address=0,0,0/1:0/2:0/3:16 mode=HYPERION geometry=3914322016239318044 descriptor=15750271031024222497 radius_km=31406.7 temperature_k=39.6162 rings=1 frame=333 camera=unchanged\nPLANET_VARIETY scene=sub-neptune-hyperion address=0,0,0/1:0/2:0/3:18 mode=HYPERION geometry=9093999972996001749 descriptor=14841492945681074295 radius_km=16963 temperature_k=28.9657 rings=1 frame=358 camera=unchanged\nPLANET_VARIETY scene=solid-0 address=0,0,0/1:0/2:1/3:13 mode=HYPERION geometry=16674514822000608109 descriptor=11465722303489871934 radius_km=789.647 temperature_k=215.665 rings=0 frame=561 camera=unchanged\nPLANET_VARIETY scene=solid-1 address=0,0,0/1:0/2:15/3:7 mode=HYPERION geometry=2334552800438208466 descriptor=17646208273595959064 radius_km=1702.68 temperature_k=183.562 rings=0 frame=885 camera=unchanged\nPLANET_VARIETY scene=solid-2 address=0,0,0/1:0/2:0/3:7 mode=HYPERION geometry=6739733952669065302 descriptor=18412089594104444351 radius_km=2250.67 temperature_k=379.674 rings=0 frame=1270 camera=unchanged\nPLANET_VARIETY scene=solid-3 address=0,0,0/1:0/2:18/3:9 mode=HYPERION geometry=14678476554575519870 descriptor=4825997181444813160 radius_km=1596.21 temperature_k=284.343 rings=0 frame=1573 camera=unchanged\nPLANET_VARIETY scene=solid-4 address=0,0,0/1:0/2:0/3:0 mode=HYPERION geometry=18323162104142898796 descriptor=11836071194178916530 radius_km=4657.69 temperature_k=95.3737 rings=0 frame=1909 camera=unchanged\nPLANET_VARIETY scene=solid-5 address=0,0,0/1:0/2:90/3:9 mode=HYPERION geometry=12645668533798607011 descriptor=13806753452455668625 radius_km=548.588 temperature_k=1100.93 rings=0 frame=2202 camera=unchanged\nPLANET_VARIETY scene=hot-giant address=0,0,0/1:0/2:1/3:21 mode=HYPERION geometry=3766645982647706626 descriptor=8080594672132041275 radius_km=78592.1 temperature_k=1320.77 rings=0 frame=2232 camera=unchanged\nPLANET_VARIETY scene=rings-off address=0,0,0/1:0/2:0/3:15 mode=HYPERION geometry=8208230608829149891 descriptor=1234422651828678852 radius_km=57413.3 temperature_k=56.6965 rings=0 frame=2262 camera=unchanged\nPLANET_VARIETY scene=rings-rebased address=0,0,0/1:0/2:0/3:15 mode=HYPERION geometry=8208230608829149891 descriptor=1234422651828678852 radius_km=57413.3 temperature_k=56.6965 rings=1 frame=2286 camera=unchanged\nPASS: real planet families, ring composition, three rendering modes, unchanged geometry and physical camera\nFRAME median_ms=50.0225 p95_ms=134.443 frames=2292 cache_bytes=12018496\npeak_rss_bytes=143540224\n"
+}

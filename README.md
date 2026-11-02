@@ -1,5 +1,21 @@
 # INFINITE
 
+A deterministic procedural universe, from spiral galaxies and ringed worlds to the atomic lattices inside a mineral grain.
+
+[![A ringed gas giant and a nearby blue world against Infinite's colourful stellar sky](docs/screenshots/ringed-gas-giant.jpg)](docs/screenshots/ringed-gas-giant.jpg)
+
+| Spiral galaxy | Ice giant |
+|:---:|:---:|
+| [![A spiral galaxy filled with warm stars and colourful stellar clouds](docs/screenshots/spiral-galaxy.jpg)](docs/screenshots/spiral-galaxy.jpg) | [![A cyan ice giant surrounded by delicate rings and a luminous star field](docs/screenshots/ice-giant.jpg)](docs/screenshots/ice-giant.jpg) |
+| **Volcanic world** | **Quartz atomic lattice** |
+| [![A dark volcanic planet traced with glowing red surface patterns](docs/screenshots/volcanic-world.jpg)](docs/screenshots/volcanic-world.jpg) | [![Blue and orange atoms arranged in the three-dimensional structure of quartz](docs/screenshots/quartz-lattice.jpg)](docs/screenshots/quartz-lattice.jpg) |
+
+*Captured in-engine in 0.52.1 with the HUD hidden. Click an image for the full 1920 × 1080 view. [Capture details](docs/screenshots/README.md).*
+
+[Download the latest release](https://github.com/maetyu-d/infinity/releases/latest)
+
+---
+
 **0.52.1:** lower CPU/allocation costs for crew targeting, weapon traces and idle recovery. All nearby ships now obstruct autonomous fire and physical recovery. [Measured results and checks](docs/COMBAT_PERFORMANCE_0_52_1.md).
 
 **0.52.0:** autonomous crew gunners, targetable ship systems and crew repairs, plus physical wreck salvage and survivor rescue. [Controls and validation](docs/CREW_COMBAT_RECOVERY_0_52.md).
