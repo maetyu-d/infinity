@@ -7,6 +7,7 @@
 #include "CrewTradeValidation.hpp"
 #include "CrewValidation.hpp"
 #include "EconomyValidation.hpp"
+#include "ExplorationValidation.hpp"
 #include "FlightValidation.hpp"
 #include "LandingLightValidation.hpp"
 #include "NpcValidation.hpp"
@@ -65,7 +66,7 @@ struct Options {
     bool terrainQuality = false, terrainSurfaceFrame = false, sunShadows = true;
     bool economyTest = false, cockpitMotionTest = false, npcTest = false, crewTest = false,
          crewTradeTest = false, crewFlightTest = false, crewGunsTest = false, stationSwapTest = false,
-         starStabilityTest = false, combatOperationsTest = false;
+         starStabilityTest = false, combatOperationsTest = false, explorationTest = false;
     bool pilotTest = false, terrainTest = false, surfaceTest = false;
 };
 static Options options(int argc, char** argv) {
@@ -88,6 +89,9 @@ static Options options(int argc, char** argv) {
         else if (arg == "--star-stability-test") {
             o.smoke = o.fresh = o.starStabilityTest = o.benchmark = true;
             o.visualTime = 12;
+        } else if (arg == "--exploration-test") {
+            o.smoke = o.fresh = o.explorationTest = o.benchmark = true;
+            o.visualTime = 100;
         } else if (arg == "--combat-operations-test") {
             o.smoke = o.fresh = o.combatOperationsTest = o.benchmark = true;
             o.visualTime = 60;
@@ -241,7 +245,8 @@ static Options options(int argc, char** argv) {
         unsigned(o.landingLightTest) + unsigned(o.weatherTest) + unsigned(o.diversityTest) +
         unsigned(o.stellarDiversityTest) + unsigned(o.npcTest) + unsigned(o.crewTest) +
         unsigned(o.crewTradeTest) + unsigned(o.crewFlightTest) + unsigned(o.crewGunsTest) +
-        unsigned(o.stationSwapTest) + unsigned(o.starStabilityTest) + unsigned(o.combatOperationsTest);
+        unsigned(o.stationSwapTest) + unsigned(o.starStabilityTest) + unsigned(o.combatOperationsTest) +
+        unsigned(o.explorationTest);
     if (validationModes > 1 || (validationModes && o.tour))
         throw std::invalid_argument("Choose one automated validation mode");
     if (o.width < 320 || o.height < 240 || o.width > 7680 || o.height > 4320 || o.frames < 0)
@@ -286,7 +291,7 @@ int main(int argc, char** argv) {
                             opt.weatherTest || opt.diversityTest || opt.stellarDiversityTest ||
                             opt.cockpitMotionTest || opt.npcTest || opt.crewTest || opt.crewTradeTest ||
                             opt.crewFlightTest || opt.crewGunsTest || opt.stationSwapTest ||
-                            opt.starStabilityTest || opt.combatOperationsTest;
+                            opt.starStabilityTest || opt.combatOperationsTest || opt.explorationTest;
         std::unique_ptr<FlightValidation> flightProof;
         if (opt.flightTest)
             flightProof = std::make_unique<FlightValidation>(universe, nav);
@@ -420,12 +425,18 @@ int main(int argc, char** argv) {
             renderer.setNpcCombat(&npcCombat);
             renderer.setWeapons(&weapons);
             renderer.setActivity(&activity);
+            std::unique_ptr<ExplorationValidation> explorationProof;
+            if (opt.explorationTest)
+                explorationProof = std::make_unique<ExplorationValidation>(universe, nav, pilot, crew,
+                                                                           weapons, activity, window);
             std::unique_ptr<EconomyRuntime> economy;
             if (!opt.smoke || opt.economyTest || opt.crewTradeTest || opt.crewGunsTest)
                 economy = std::make_unique<EconomyRuntime>(universe, data);
             if (!opt.smoke)
                 weapons.setLoadout({0, 0, 0}); // wait for the authoritative saved mounts
             std::shared_ptr<const EconomySnapshot> economicSnapshot;
+            SurveyController surveyController;
+            MiningController miningController;
             MarketView marketView;
             bool marketOpen = false;
             bool crewOpen = false;
@@ -454,6 +465,11 @@ int main(int argc, char** argv) {
                        : marketPage == MarketPage::Industry ? facilityModuleCount
                        : marketPage == MarketPage::Services ? 3
                        : marketPage == MarketPage::Weapons  ? maxWeaponLevel
+                       : marketPage == MarketPage::Journal
+                           ? std::max<size_t>(
+                                 1, economicSnapshot ? economicSnapshot->exploration.journal.size() : 0)
+                       : marketPage == MarketPage::Survey
+                           ? 3 + (economicSnapshot ? explorationJobs(*economicSnapshot).size() : 0)
                        : marketPage == MarketPage::Crew
                            ? std::max<size_t>(
                                  1, economicSnapshot && marketPort && economicSnapshot->siteIndex(*marketPort)
@@ -486,6 +502,20 @@ int main(int argc, char** argv) {
                     return false;
                 auto i = economicSnapshot->siteIndex(*marketPort);
                 return i && economicTradeAccess(universe, nav, pilot, economicSnapshot->network->sites[*i]);
+            };
+            auto explorationObserver = [&] {
+                SurveyObserver o;
+                o.reference = nav.anchor;
+                o.position = nav.cameraPosition() * std::pow(10., nav.logDistance);
+                o.velocity =
+                    universe.relative(pilot.ship().frame, nav.anchor, 0).orientation * pilot.ship().velocity;
+                o.attitude = nav.orientation;
+                o.size = pilot.sizeRatio();
+                o.hull = pilot.ship().hull;
+                o.seconds = activity.seconds;
+                o.landed = pilot.ship().landed;
+                o.field = !pilotEnabled || pilot.ship().cruise || pilot.instruments().fieldActive;
+                return o;
             };
             auto marketContext = [&] {
                 MarketContext context;
@@ -649,6 +679,28 @@ int main(int argc, char** argv) {
                 command.good = marketPage == MarketPage::Goods ? Good(marketGood) : Good::Water;
                 command.module = FacilityModule(std::min(marketGood, facilityModuleCount - 1));
                 command.kg = marketQuantity;
+                if (action >= EconomicAction::ScanSurvey) {
+                    command.observer = explorationObserver();
+                    command.weaponMount = marketWeaponMount;
+                    if (marketPage == MarketPage::Journal) {
+                        const auto& records = economicSnapshot->exploration.journal;
+                        if (records.empty())
+                            return;
+                        command.surveyTarget =
+                            records[records.size() - 1 - std::min(marketGood, records.size() - 1)].address;
+                    }
+                    if (marketPage == MarketPage::Survey && marketGood >= 3) {
+                        const auto jobs = explorationJobs(*economicSnapshot);
+                        if (marketGood - 3 >= jobs.size())
+                            return;
+                        const auto& j = economicSnapshot->exploration.contracts[jobs[marketGood - 3]];
+                        command.port = j.issuer;
+                        command.contract = j.id;
+                        i = economicSnapshot->siteIndex(command.port);
+                        if (!i)
+                            return;
+                    }
+                }
                 if (job) {
                     action = action == EconomicAction::CancelHaul ? action : job->action;
                     command.action = action;
@@ -689,6 +741,8 @@ int main(int argc, char** argv) {
                                  action != EconomicAction::AcceptRecovery;
                 if (action == EconomicAction::AcceptCombat || action == EconomicAction::CancelCombat)
                     needsLink = false;
+                if (action == EconomicAction::AcceptSurvey || action == EconomicAction::CancelSurvey)
+                    needsLink = false;
                 if (action == EconomicAction::CancelHaul)
                     needsLink = economicSnapshot->player.haul && economicSnapshot->player.haul->onboard;
                 if (action == EconomicAction::Contract) {
@@ -714,6 +768,18 @@ int main(int argc, char** argv) {
                 }
                 auto q = economicSnapshot->quote(*i, command.good, marketQuantity);
                 command.limitCents = action == EconomicAction::Buy ? q.buyCents : q.sellCents;
+                if (action == EconomicAction::UpgradeScanner || action == EconomicAction::FitMiningHead ||
+                    action == EconomicAction::SellMiningHead) {
+                    const auto quote = economicExplorationQuote(
+                        *economicSnapshot, *i, action != EconomicAction::UpgradeScanner, marketWeaponMount,
+                        action == EconomicAction::SellMiningHead);
+                    if (!quote.available) {
+                        marketSay(quote.status);
+                        return;
+                    }
+                    command.limitCents =
+                        action == EconomicAction::SellMiningHead ? quote.sellCents : quote.totalCents();
+                }
                 if (action == EconomicAction::Invest)
                     command.limitCents =
                         facilityRefit(command.module,
@@ -1167,6 +1233,18 @@ int main(int argc, char** argv) {
                         opt.tour = false;
                     }
                     if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat) {
+                        if (event.key.scancode == SDL_SCANCODE_F11 && !crewOpen) {
+                            const bool close = marketOpen && marketPage == MarketPage::Journal;
+                            marketOpen = !close;
+                            marketPage = MarketPage::Journal;
+                            marketGood = 0;
+                            crewFlightOpen = false;
+                            overlay = true;
+                            releaseLook();
+                            if (marketOpen)
+                                selectMarket();
+                            continue;
+                        }
                         if (pilotEnabled && !marketOpen && !crewOpen && !crewFlightOpen &&
                             event.key.scancode == SDL_SCANCODE_9) {
                             constexpr std::array systems{ShipSystem::Hull, ShipSystem::Engines,
@@ -1396,23 +1474,43 @@ int main(int argc, char** argv) {
                                 marketGood = (marketGood + 1) % marketRows();
                                 break;
                             case SDL_SCANCODE_LEFT:
-                                if (marketPage == MarketPage::Weapons)
+                                if (marketPage == MarketPage::Weapons || marketPage == MarketPage::Survey)
                                     marketWeaponMount =
                                         (marketWeaponMount + maxWeaponMounts - 1) % maxWeaponMounts;
                                 else
                                     marketQuantity = std::max<int64_t>(1, marketQuantity / 10);
                                 break;
                             case SDL_SCANCODE_RIGHT:
-                                if (marketPage == MarketPage::Weapons)
+                                if (marketPage == MarketPage::Weapons || marketPage == MarketPage::Survey)
                                     marketWeaponMount = (marketWeaponMount + 1) % maxWeaponMounts;
                                 else
                                     marketQuantity = std::min<int64_t>(maxShipPayloadKg, marketQuantity * 10);
                                 break;
                             case SDL_SCANCODE_F5:
-                                marketPage = MarketPage((unsigned(marketPage) + 1) % 8);
+                                marketPage = MarketPage((unsigned(marketPage) + 1) % 10);
                                 marketGood = 0;
                                 break;
                             case SDL_SCANCODE_RETURN:
+                                if (marketPage == MarketPage::Journal) {
+                                    submitMarket(EconomicAction::SellSurvey);
+                                    break;
+                                }
+                                if (marketPage == MarketPage::Survey) {
+                                    if (marketGood < 3)
+                                        submitMarket(marketGood == 0   ? EconomicAction::UpgradeScanner
+                                                     : marketGood == 1 ? EconomicAction::FitMiningHead
+                                                                       : EconomicAction::SellMiningHead);
+                                    else if (economicSnapshot) {
+                                        const auto jobs = explorationJobs(*economicSnapshot);
+                                        if (marketGood - 3 < jobs.size())
+                                            submitMarket(
+                                                economicSnapshot->exploration.contracts[jobs[marketGood - 3]]
+                                                            .phase == SurveyPhase::Open
+                                                    ? EconomicAction::AcceptSurvey
+                                                    : EconomicAction::ClaimSurvey);
+                                    }
+                                    break;
+                                }
                                 if (marketPage == MarketPage::Crew) {
                                     tradeMarketCrew(EconomicAction::BuyCrew);
                                     break;
@@ -1450,6 +1548,13 @@ int main(int argc, char** argv) {
                                                                                     : EconomicAction::Buy);
                                 break;
                             case SDL_SCANCODE_BACKSPACE:
+                                if (marketPage == MarketPage::Journal)
+                                    break;
+                                if (marketPage == MarketPage::Survey) {
+                                    if (marketGood >= 3)
+                                        submitMarket(EconomicAction::CancelSurvey);
+                                    break;
+                                }
                                 if (marketPage == MarketPage::Crew) {
                                     tradeMarketCrew(event.key.mod & SDL_KMOD_SHIFT
                                                         ? EconomicAction::ReleaseCrew
@@ -1470,6 +1575,8 @@ int main(int argc, char** argv) {
                                                      : EconomicAction::Sell);
                                 break;
                             case SDL_SCANCODE_DELETE:
+                                if (marketPage == MarketPage::Survey || marketPage == MarketPage::Journal)
+                                    break;
                                 if (marketPage == MarketPage::Industry)
                                     submitMarket(EconomicAction::CancelProject);
                                 else if (marketPage != MarketPage::Services &&
@@ -1486,6 +1593,39 @@ int main(int argc, char** argv) {
                                     submitMarket(EconomicAction::Contract);
                                 break;
                             case SDL_SCANCODE_F4:
+                                if (marketPage == MarketPage::Survey || marketPage == MarketPage::Journal) {
+                                    std::optional<Address> destination;
+                                    if (event.key.mod & SDL_KMOD_SHIFT) {
+                                        if (marketPort)
+                                            chooseActivity(*marketPort);
+                                    } else if (economicSnapshot && marketPage == MarketPage::Journal) {
+                                        const auto& records = economicSnapshot->exploration.journal;
+                                        if (!records.empty())
+                                            destination = records[records.size() - 1 -
+                                                                  std::min(marketGood, records.size() - 1)]
+                                                              .address;
+                                    } else if (economicSnapshot && marketGood >= 3) {
+                                        const auto jobs = explorationJobs(*economicSnapshot);
+                                        if (marketGood - 3 < jobs.size())
+                                            destination =
+                                                economicSnapshot->exploration.contracts[jobs[marketGood - 3]]
+                                                    .target;
+                                    } else if (marketPort)
+                                        chooseActivity(*marketPort);
+                                    if (destination) {
+                                        activity.selected.reset();
+                                        pilot.clearWaypoint();
+                                        if (*destination != nav.anchor)
+                                            nav.select(*destination);
+                                        else
+                                            nav.selected.reset();
+                                    }
+                                    marketOpen = false;
+                                    notice = "EXPLORATION DESTINATION / J APPROACH / F12 SCAN / Z SHRINK FOR "
+                                             "MATERIALS";
+                                    noticeTime = 7;
+                                    break;
+                                }
                                 if (marketPage == MarketPage::Outcomes) {
                                     if (economicSnapshot && !economicSnapshot->outcomes.empty()) {
                                         const auto k =
@@ -1891,7 +2031,8 @@ int main(int argc, char** argv) {
                         }
                         if (!opt.economyTest) {
                             weapons.setLoadout(economicSnapshot->player.weaponLoadout());
-                            crew.setWeaponLevels(economicSnapshot->player.weaponLoadout());
+                            crew.setWeaponLevels(
+                                economicSnapshot->exploration.stationLoadout(economicSnapshot->player));
                         }
                         if (pendingWreck && economicSnapshot->player.lastCommand >= pendingWreck)
                             pendingWreck = 0;
@@ -1926,6 +2067,10 @@ int main(int argc, char** argv) {
                             }
                             pendingEconomicSequence = 0;
                             marketSay(economicSnapshot->message);
+                            if (pendingEconomicAction >= EconomicAction::ScanSurvey) {
+                                notice = economicSnapshot->message;
+                                noticeTime = 6;
+                            }
                             if (pendingEconomicAction == EconomicAction::Sell &&
                                 pendingEconomicGood == tradeGood && tradeBuyer &&
                                 economicSnapshot->message.starts_with("SOLD") &&
@@ -2045,12 +2190,83 @@ int main(int argc, char** argv) {
                 if (!opt.smoke) {
                     weapons.advance(dt);
                     stationControl.prepareWeapons(weapons, crew);
+                    const bool controlHeld = keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL];
+                    const bool workAllowed = pilotEnabled && !opt.tour && !marketOpen && !crewOpen &&
+                                             (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS);
+                    const bool scanHeld = workAllowed && keys[SDL_SCANCODE_F12];
+                    const bool mineHeld = workAllowed && controlHeld && keys[SDL_SCANCODE_SPACE];
+                    SurveyObserver observer;
+                    if (scanHeld || mineHeld)
+                        observer = explorationObserver();
+                    std::optional<Address> target;
+                    if (scanHeld || mineHeld) {
+                        if (nav.anchor.kind() >= Kind::Surface)
+                            target = nav.anchor;
+                        else if (nav.anchor.kind() == Kind::Planet && pilot.instruments().altitude < 1000) {
+                            target = nav.anchor.child(
+                                Kind::Surface, encodeTile(tileAt(glm::normalize(observer.position), 7)));
+                        } else if (nav.selected && nav.selected->kind() >= Kind::Planet)
+                            target = nav.selected;
+                        else if (nav.anchor.kind() == Kind::Planet)
+                            target = nav.anchor;
+                    }
+                    const auto* exploration = economicSnapshot ? &economicSnapshot->exploration : nullptr;
+                    const bool canSubmit = economy && economicSnapshot && !economicSnapshot->catchingUp &&
+                                           !pendingEconomicSequence && !pendingCrewSequence &&
+                                           !pendingSecuritySequence && !pendingRecoverySequence &&
+                                           !pendingWreck;
+                    const bool scanComplete = surveyController.update(
+                        universe, observer, target, exploration ? exploration->scannerLevel : 1,
+                        crew.efficiency(CrewStation::Navigation),
+                        pendingEconomicSequence && scanHeld ? 0 : dt, scanHeld);
+                    MiningAccess access;
+                    double readiness = 0;
+                    if (mineHeld && target && exploration && exploration->miningLevel) {
+                        access = miningAccess(universe, observer, *target, exploration->miningMount,
+                                              renderer.weaponTargets());
+                        const auto mount = exploration->miningMount;
+                        const bool captain = mount == (stationControl.active() ? stationControl.mount() : 0);
+                        readiness = (captain ? 1. : crew.gunnerReadiness(mount)) *
+                                    crew.systemHealth(ShipSystem(unsigned(ShipSystem::NoseGun) + mount)) /
+                                    100. * (.6 + .4 * crew.efficiency(CrewStation::Engineering));
+                        const auto& bay = crew.rooms()[size_t(CrewStation::Weapons)];
+                        if (bay.fire >= 25 || bay.oxygen < 18 || bay.integrity <= 0)
+                            readiness = 0;
+                    }
+                    const bool extracted =
+                        miningController.update(access, exploration ? exploration->miningLevel : 0, readiness,
+                                                dt, mineHeld && canSubmit);
+                    if (mineHeld && access.allowed && readiness > 0 && miningController.progress() > 0 &&
+                        miningController.heat() < 100)
+                        weapons.utilityBeam(access.ray, access.endpoint, exploration->miningMount);
+                    if ((scanComplete || extracted) && canSubmit && target) {
+                        EconomicCommand c;
+                        c.action =
+                            scanComplete ? EconomicAction::ScanSurvey : EconomicAction::ExtractProspect;
+                        c.surveyTarget = target;
+                        c.observer = observer;
+                        c.workSeconds = scanComplete ? 8 : 6;
+                        c.serviceUnits =
+                            unsigned(std::clamp(crew.efficiency(CrewStation::Navigation) * 100, 0., 150.));
+                        c.weaponMount = exploration ? exploration->miningMount : 0;
+                        c.combatPresent = access.allowed;
+                        c.sequence = economicSequence =
+                            std::max(economicSequence, economicSnapshot->player.lastCommand) + 1;
+                        if (economy->command(c)) {
+                            pendingEconomicSequence = c.sequence;
+                            pendingEconomicAction = c.action;
+                            if (extracted)
+                                pendingCargoKg = std::min<int64_t>(10 * exploration->miningLevel,
+                                                                   economicSnapshot->player.capacityKg -
+                                                                       economicSnapshot->player.massKg());
+                        }
+                    }
                     const bool inhibit = !pilotEnabled || marketOpen || crewOpen ||
                                          pilot.instruments().fieldActive || pilot.ship().landed ||
                                          pilot.ship().hull <= 0 ||
                                          std::abs(pilot.ship().logSize - pilot.ship().targetLogSize) > .01;
                     if (!inhibit && !opt.tour && (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) &&
-                        keys[SDL_SCANCODE_SPACE]) {
+                        keys[SDL_SCANCODE_SPACE] && !(keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL])) {
                         auto ray = stationControl.ray(nav, pilot, activity.seconds);
                         ray.targetSystem = targetSystem;
                         const auto geometry = renderer.submittedGeometry(nav.anchor);
@@ -2163,9 +2379,9 @@ int main(int argc, char** argv) {
                     const bool holdingRecovery = keys[SDL_SCANCODE_0] && !marketOpen && !crewOpen &&
                                                  !crewFlightOpen &&
                                                  (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS);
-                    const bool recovered =
-                        recovery.update(universe, player, recoveryTarget, dt, holdingRecovery,
-                                        renderer.submittedGeometry(nav.anchor).get(), renderer.weaponTargets());
+                    const bool recovered = recovery.update(
+                        universe, player, recoveryTarget, dt, holdingRecovery,
+                        renderer.submittedGeometry(nav.anchor).get(), renderer.weaponTargets());
                     if (holdingRecovery && recoveryTarget && economicSnapshot && economy &&
                         !economicSnapshot->catchingUp && !pendingRecoverySequence &&
                         !pendingEconomicSequence && !pendingCrewSequence && !pendingSecuritySequence &&
@@ -2227,6 +2443,8 @@ int main(int argc, char** argv) {
                     stationSwapProof->advance(renderer);
                 if (combatOperationsProof)
                     combatOperationsProof->advance(renderer);
+                if (explorationProof)
+                    explorationProof->advance(renderer);
                 if (uiProof)
                     uiProof->advance(renderer);
                 if (polarProof)
@@ -2244,6 +2462,22 @@ int main(int argc, char** argv) {
                 if (diversityProof)
                     diversityProof->advance(renderer);
                 auto cockpit = pilot.instruments();
+                cockpit.explorationActive =
+                    keys[SDL_SCANCODE_F12] ||
+                    ((keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL]) && keys[SDL_SCANCODE_SPACE]);
+                const bool miningDisplay =
+                    (keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL]) && keys[SDL_SCANCODE_SPACE];
+                if (cockpit.explorationActive)
+                    cockpit.exploration = {
+                        miningDisplay ? "GEOLOGICAL EXTRACTION" : "EXPLORATION SCANNER",
+                        miningDisplay ? miningController.status() : surveyController.status(),
+                        economicSnapshot
+                            ? "JOURNAL " + std::to_string(economicSnapshot->exploration.journal.size()) +
+                                  " / MINED " + std::to_string(economicSnapshot->exploration.minedKg) + " KG"
+                            : "EXPLORATION LEDGER LOADING",
+                        pendingEconomicSequence && pendingEconomicAction >= EconomicAction::ScanSurvey
+                            ? "AWAITING DURABLE RECEIPT"
+                            : "F11 JOURNAL / F2 SURVEY EQUIPMENT"};
                 if (crewProof) {
                     crewView = crewProof->view();
                     renderer.setCrew(&crewView);
@@ -2256,6 +2490,12 @@ int main(int argc, char** argv) {
                     for (unsigned i = 0; i < maxWeaponMounts; ++i)
                         if (!fireControl.status()[i].empty())
                             crewView.gunStatus[i] = fireControl.status()[i] + " / " + crewView.gunStatus[i];
+                    if (economicSnapshot && economicSnapshot->exploration.miningLevel) {
+                        const auto mount = economicSnapshot->exploration.miningMount;
+                        crewView.gunStatus[mount] =
+                            "MINING HEAD " + std::to_string(economicSnapshot->exploration.miningLevel) +
+                            " / CTRL-SPACE / " + crew.gunnerStatus(mount);
+                    }
                     crewView.pending = pendingCrewSequence != 0;
                     if (crewOpen) {
                         if (auto i = crewPort()) {
@@ -2363,6 +2603,8 @@ int main(int argc, char** argv) {
                     if (combatOperationsProof->finished())
                         running = false;
                 }
+                if (explorationProof)
+                    explorationProof->annotate(cockpit);
                 renderer.setCockpit(pilotEnabled ? &cockpit : nullptr);
                 if (motionProof)
                     motionProof->apply(renderer);
@@ -2474,6 +2716,11 @@ int main(int argc, char** argv) {
                         running = false;
                 }
                 auto gen = cache.stats();
+                if (explorationProof) {
+                    explorationProof->observe(stats, cache, renderer, opt.captures);
+                    if (explorationProof->finished())
+                        running = false;
+                }
                 if (!gen.error.empty())
                     throw std::runtime_error(gen.error);
                 if (profile)
@@ -2594,7 +2841,8 @@ int main(int argc, char** argv) {
                 if (opt.smoke &&
                     std::chrono::duration<double>(now - start).count() >
                         (opt.crewTest || opt.crewTradeTest || opt.crewFlightTest || opt.crewGunsTest ||
-                                 opt.stationSwapTest || opt.starStabilityTest || opt.combatOperationsTest
+                                 opt.stationSwapTest || opt.starStabilityTest || opt.combatOperationsTest ||
+                                 opt.explorationTest
                              ? 240
                          : opt.npcTest                                   ? 180
                          : opt.economyTest                               ? 330
@@ -2659,7 +2907,10 @@ int main(int argc, char** argv) {
             std::cout << "peak_rss_bytes=" << usage.ru_maxrss * 1024 << '\n';
 #endif
 #endif
-            if (opt.starStabilityTest) {
+            if (opt.explorationTest) {
+                if (!explorationProof->finished())
+                    throw std::runtime_error("Native exploration incomplete");
+            } else if (opt.starStabilityTest) {
                 if (!pointLightProof->finished())
                     throw std::runtime_error("Native star stability validation incomplete");
             } else if (opt.combatOperationsTest) {

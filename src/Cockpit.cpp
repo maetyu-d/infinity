@@ -766,23 +766,34 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             flightCommands ? CrewFlightLayout(aspect).weapon : CockpitRect{center - 158, 665, 316, 80};
         const auto danger = glm::vec3(1, .3, .2);
         card(h, armament, t.incomingFire > .2 ? danger : t.weaponHeat > 80 ? amber : mint);
-        fitted(h.lettering,
-               t.weapon + (t.weaponBattery ? "" : " / HEAT " + std::to_string(int(t.weaponHeat)) + "%"),
-               armament.x + 12, 675, 292, 9.5, pearl);
-        fitted(h.lettering, t.weaponStatus, armament.x + 12, 693, 292, 8.8, t.weaponHeat > 80 ? amber : ice);
-        const auto target =
-            std::find_if(activity.begin(), activity.end(), [](const auto& c) { return c.selected; });
-        if (target != activity.end())
+        if (t.explorationActive) {
+            for (size_t i = 0; i < t.exploration.size(); ++i)
+                fitted(h.lettering, t.exploration[i], armament.x + 12, 675 + i * 18, 292, i == 0 ? 9.5 : 8.5,
+                       i == 0 ? pearl : ice);
+        } else {
             fitted(h.lettering,
-                   t.systemTarget.empty()
-                       ? "TARGET HULL " + std::to_string(int(std::ceil(target->body.hull))) + "% / " +
-                             flightQuantity(target->distance)
-                       : t.systemTarget,
-                   armament.x + 12, 711, 292, 8.8, target->body.hostile ? danger : ice);
-        else
-            fitted(h.lettering, "H TARGET NEAREST HOSTILE", armament.x + 12, 711, 292, 8.8, muted);
-        fitted(h.lettering, t.recoveryStatus.empty() ? t.combatStatus : t.recoveryStatus, armament.x + 12,
-               729, 292, 8.8, t.hostileContacts ? danger : muted);
+                   t.weapon + (t.weaponBattery ? "" : " / HEAT " + std::to_string(int(t.weaponHeat)) + "%"),
+                   armament.x + 12, 675, 292, 9.5, pearl);
+            fitted(h.lettering, t.weaponStatus, armament.x + 12, 693, 292, 8.8,
+                   t.weaponHeat > 80 ? amber : ice);
+            const auto target =
+                std::find_if(activity.begin(), activity.end(), [](const auto& c) { return c.selected; });
+            if (target != activity.end())
+                fitted(h.lettering,
+                       t.systemTarget.empty()
+                           ? "TARGET HULL " + std::to_string(int(std::ceil(target->body.hull))) + "% / " +
+                                 flightQuantity(target->distance)
+                           : t.systemTarget,
+                       armament.x + 12, 711, 292, 8.8, target->body.hostile ? danger : ice);
+            else
+                fitted(h.lettering, "H TARGET NEAREST HOSTILE", armament.x + 12, 711, 292, 8.8, muted);
+            fitted(
+                h.lettering,
+                t.recoveryStatus.empty()
+                    ? (t.combatStatus.empty() ? "F12 SCAN / F11 JOURNAL / CTRL-SPACE MINE" : t.combatStatus)
+                    : t.recoveryStatus,
+                armament.x + 12, 729, 292, 8.8, t.hostileContacts ? danger : muted);
+        }
         if (!t.combatMission.empty())
             fitted(h.lettering, t.combatMission, armament.x + 4, 750, 308, 8, mint);
     }
@@ -799,14 +810,16 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                               : m.page == MarketPage::Outcomes ? "OUTCOMES"
                               : m.page == MarketPage::Weapons  ? "WEAPONS"
                               : m.page == MarketPage::Crew     ? "CREW MARKET"
+                              : m.page == MarketPage::Survey   ? "SURVEY AND EQUIPMENT"
+                              : m.page == MarketPage::Journal  ? "SURVEY JOURNAL"
                                                                : "SERVICES") +
                   " / ECON " + std::to_string(m.tick * 5 / 60) + "H",
               panel.x + 18, panel.y + 16, panel.w - 36, mint);
         quantity(m.ready ? m.site : "LOCAL ECONOMY", panel.x + 18, panel.y + 39, panel.w - 36, 14, pearl);
         label(m.role + " / " +
-                  (m.page == MarketPage::Outcomes ? "SAVED REPORT"
-                   : m.connected                  ? "TRADE LINK"
-                                                  : "REMOTE / APPROACH AND STOP"),
+                  (m.page == MarketPage::Outcomes || m.page == MarketPage::Journal ? "SAVED REPORT"
+                   : m.connected                                                   ? "TRADE LINK"
+                                 : "REMOTE / APPROACH AND STOP"),
               panel.x + 18, panel.y + 64, panel.w - 36, m.connected ? mint : amber);
         quantity("CREDITS " + std::to_string(m.credits / 100) + " / CARGO " + std::to_string(m.cargoKg) +
                      "/" + std::to_string(m.capacityKg) + " KG / " + std::to_string(m.cargoLitres) + "/" +
@@ -829,6 +842,22 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                   panel.w - 36, pearl);
             fitted(h.lettering, m.summary.empty() ? m.contract : m.summary, panel.x + 18, panel.y + 512,
                    panel.w - 36, 8.4, amber);
+        } else if (m.page == MarketPage::Journal || m.page == MarketPage::Survey) {
+            const bool journal = m.page == MarketPage::Journal;
+            fitted(h.lettering,
+                   journal ? "UP-DOWN RECORDS / F4 VISIT / ENTER SELL DATA"
+                           : "UP-DOWN EQUIPMENT OR CONTRACT / LEFT-RIGHT MOUNT",
+                   panel.x + 18, panel.y + 112, panel.w - 36, 9, mint);
+            for (size_t i = 0; i < m.detail.size(); ++i)
+                fitted(h.lettering, m.detail[i], panel.x + 18, panel.y + 140 + i * (journal ? 25 : 18),
+                       panel.w - 36, i == 0 ? 9.4 : 8.4, i % 2 ? ice : pearl);
+            fitted(h.lettering, m.summary, panel.x + 18, panel.y + 472, panel.w - 36, 8.4, mint);
+            fitted(h.lettering,
+                   journal ? "F11 CLOSE / F12 SCAN / CTRL-SPACE EXTRACT"
+                           : "ENTER FIT OR ACCEPT-CLAIM / BACKSPACE CANCEL / F4 TARGET",
+                   panel.x + 18, panel.y + 492, panel.w - 36, 9, pearl);
+            fitted(h.lettering, "SCAN AT ANY SCALE / EXTRACTION AT FULL SIZE / DEPLETION PERSISTS",
+                   panel.x + 18, panel.y + 512, panel.w - 36, 8.4, amber);
         } else if (m.page == MarketPage::Crew) {
             fitted(h.lettering, m.summary, panel.x + 18, panel.y + 112, panel.w - 36, 9.5, mint);
             const size_t first = m.selected >= 12 ? m.selected - 11 : 0;
@@ -935,6 +964,8 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             {"F8", "CREW / STATIONS / DAMAGE CONTROL"},
             {"F9", "IN-FLIGHT CREW ORDERS / HELM LIVE"},
             {"F10", "SWAP WITH READY GUNNER / RETURN TO HELM"},
+            {"F11 / F12", "SURVEY JOURNAL / HOLD TO SCAN"},
+            {"CTRL+SPACE", "OPERATE FITTED MINING HEAD"},
             {"SPACE", "FIRE FITTED LASER"},
             {"H", "TARGET NEAREST HOSTILE"},
             {"F2 / F5", "MARKET PAGES / JOBS / SERVICES / DELIVERY REPORTS"},

@@ -1,0 +1,9 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 1: exploration_survey_and_mining
+1/2 Test #1: exploration_survey_and_mining ....   Passed    1.09 sec
+    Start 2: exploration_worker_and_restart
+2/2 Test #2: exploration_worker_and_restart ...   Passed    4.46 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =   5.58 sec

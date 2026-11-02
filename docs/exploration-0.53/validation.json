@@ -1,0 +1,12 @@
+{
+  "version": "0.53.0",
+  "build": "60",
+  "baseline": "4951957",
+  "core_suites_passed": 55,
+  "native_checks_passed": 2,
+  "native_frames": 8,
+  "unchanged_runtime_sources_and_shaders": 218,
+  "sanitizers": "ASan/UBSan passed for Exploration, ExplorationEconomy, ExplorationView, Weapons and ExplorationTests; remaining core library Release",
+  "binary_sha256": "8e947d7098e18ccf7df248f3eb37998c18b01af7513dd3a968fb714fb8d50905",
+  "saved_flight": "Normal saved flight left untouched; updated package applies next launch"
+}

@@ -109,6 +109,12 @@ void WeaponSystem::advance(double dt) {
         s.age += dt;
     std::erase_if(shots_, [](const auto& s) { return s.age > .16; });
 }
+void WeaponSystem::utilityBeam(const WeaponRay& ray, glm::dvec3 endpoint, unsigned mount) {
+    if(mount>=maxWeaponMounts || !finite(ray.origin) || !finite(endpoint))return;
+    std::erase_if(shots_,[&](const auto& s){return !s.enemy && s.mount==mount;});
+    if(shots_.size()>=12)shots_.erase(shots_.begin());
+    shots_.push_back({ray.reference,ray.origin,endpoint,0,1,true,false,1,false,mount});
+}
 void WeaponSystem::receiveNpcDamage(const ActivityBody& body, double points, double seconds) {
     if ((body.kind != ActivityKind::Ferry && body.kind != ActivityKind::Freighter &&
          body.kind != ActivityKind::Survey) ||

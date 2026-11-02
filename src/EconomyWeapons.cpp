@@ -21,6 +21,9 @@ WeaponQuote economicWeaponQuote(const EconomySnapshot& s, size_t i, unsigned lev
     }
     const auto& site = s.sites[i];
     const auto current = s.player.weaponAt(mount);
+    if(!sell&&s.exploration.miningLevel&&s.exploration.miningMount==mount){
+        q.status="MINING HEAD FITTED / F2 SURVEY TO SELL FIRST";return q;
+    }
     if (sell && (!current || current != level)) {
         q.status = "NO MATCHING WEAPON FITTED";
         return q;

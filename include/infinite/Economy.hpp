@@ -1,5 +1,6 @@
 #pragma once
 #include "Crew.hpp"
+#include "Exploration.hpp"
 #include "ShipDynamics.hpp"
 #include "SurfaceLife.hpp"
 #include "Weapons.hpp"
@@ -259,7 +260,16 @@ enum class EconomicAction : uint8_t {
     CancelCombat,
     RegisterWreck,
     RecoverWreck,
-    DisembarkRescued
+    DisembarkRescued,
+    ScanSurvey,
+    ExtractProspect,
+    UpgradeScanner,
+    FitMiningHead,
+    SellMiningHead,
+    AcceptSurvey,
+    ClaimSurvey,
+    CancelSurvey,
+    SellSurvey
 };
 struct EconomicCommand {
     uint64_t sequence = 0;
@@ -280,6 +290,9 @@ struct EconomicCommand {
     bool combatPresent = false;
     std::optional<WeaponDamage> wreck;
     double relativeSpeed = 0;
+    std::optional<Address> surveyTarget;
+    std::optional<SurveyObserver> observer;
+    double workSeconds = 0;
 };
 inline constexpr size_t maxPortCrew = 16, maxCrewMarkets = 128, maxCrewTitles = 8192;
 struct PortCrewMarket {
@@ -333,6 +346,8 @@ struct WeaponQuote {
 Stock weaponMaterials(unsigned level);
 WeaponQuote economicWeaponQuote(const struct EconomySnapshot&, size_t, unsigned level, bool sell = false,
                                 unsigned mount = 0);
+WeaponQuote economicExplorationQuote(const struct EconomySnapshot&, size_t, bool mining,
+                                     unsigned mount = 0, bool sell = false);
 int64_t economicPendingPayload(const EconomicCommand&, const EconomicSiteState&);
 class Economy {
   public:
@@ -386,6 +401,7 @@ class Economy {
     size_t residentBytes() const;
 
   private:
+    friend class ExplorationLedger;
     std::shared_ptr<const EconomicNetwork> network_;
     std::vector<EconomicSiteState> sites_;
     std::vector<EconomicFreight> freight_;
@@ -469,6 +485,7 @@ struct EconomySnapshot {
     std::vector<PortCrewMarket> crewMarkets;
     std::vector<CombatContract> combatContracts;
     std::vector<WreckRecovery> wrecks;
+    ExplorationState exploration;
     std::vector<EconomicPortSignal> portSignals; // same ordering as network->sites
     EconomyPlayer player;
     uint64_t tick = 0;
@@ -536,7 +553,7 @@ class EconomyRuntime {
 class Pilot;
 class Navigation;
 bool economicTradeAccess(const Universe&, const Navigation&, const Pilot&, const EconomicSite&);
-enum class MarketPage : uint8_t { Goods, Routes, Industry, Jobs, Services, Outcomes, Weapons, Crew };
+enum class MarketPage : uint8_t { Goods, Routes, Industry, Jobs, Services, Outcomes, Weapons, Crew, Survey, Journal };
 struct MarketView {
     bool open = false, connected = false, ready = false;
     std::string site, role, message, bottleneck, contract;

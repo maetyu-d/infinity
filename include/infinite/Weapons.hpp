@@ -94,6 +94,7 @@ class WeaponSystem {
                          const Geometry* = nullptr);
     void apply(ActivityBody&) const;
     void receiveNpcDamage(const ActivityBody&, double points, double seconds);
+    void utilityBeam(const WeaponRay&, glm::dvec3 endpoint, unsigned mount);
     void annotate(FlightInstruments&, bool inhibited = false) const;
     const std::vector<WeaponShot>& shots() const {
         return shots_;

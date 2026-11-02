@@ -1,0 +1,13 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+EXPLORATION_CAPTURE survey-equipment
+EXPLORATION_CAPTURE survey-orbit-scan
+EXPLORATION_CAPTURE survey-world-journal
+EXPLORATION_CAPTURE survey-contract-paid
+EXPLORATION_CAPTURE survey-surface-scan
+EXPLORATION_CAPTURE survey-mining-beam
+EXPLORATION_CAPTURE survey-extracted-cargo
+EXPLORATION_CAPTURE survey-journal-portrait
+PASS: native survey, crew-assisted reading, equipment fitting, funded contract, physical extraction, persistent journal and portrait HUD
+FRAME median_ms=51.4223 p95_ms=146.791 frames=1842 cache_bytes=10768856
+peak_rss_bytes=141819904

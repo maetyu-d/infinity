@@ -59,6 +59,8 @@ struct FlightInstruments {
     std::string combatStatus;
     std::string combatMission;
     std::string crewFire, systemTarget, systemFault, recoveryStatus;
+    std::array<std::string,4> exploration;
+    bool explorationActive = false;
     glm::dvec3 localSystemTarget{};
     unsigned hostileContacts = 0;
     double incomingFire = 0;

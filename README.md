@@ -16,6 +16,8 @@ A deterministic procedural universe, from spiral galaxies and ringed worlds to t
 
 ---
 
+**0.53.0:** survey real worlds and material structures with **F12**, keep discoveries in the **F11** journal, and sell new data at ports. Fit and crew mining heads through **F2 → Survey**, then **Ctrl+Space** extracts finite material from surveyed solid terrain. Port-funded contracts reward new observations; scanner upgrades and crew skill improve speed and precision. [Exploration controls and validation](docs/EXPLORATION_0_53.md).
+
 **0.52.1:** lower CPU/allocation costs for crew targeting, weapon traces and idle recovery. All nearby ships now obstruct autonomous fire and physical recovery. [Measured results and checks](docs/COMBAT_PERFORMANCE_0_52_1.md).
 
 **0.52.0:** autonomous crew gunners, targetable ship systems and crew repairs, plus physical wreck salvage and survivor rescue. [Controls and validation](docs/CREW_COMBAT_RECOVERY_0_52.md).

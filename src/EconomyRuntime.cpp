@@ -174,6 +174,7 @@ struct EconomyRuntime::Impl {
     std::map<Address, std::unique_ptr<Economy>> active;
     std::map<Address, uint64_t> used;
     EconomyPlayer player;
+    ExplorationLedger exploration;
     sqlite3* db = nullptr;
     std::string message;
     Impl(const Universe& world, std::filesystem::path directory)
@@ -202,6 +203,7 @@ struct EconomyRuntime::Impl {
         sql(db, "BEGIN IMMEDIATE");
         try {
             write("wallet", player.serialize());
+            write("exploration", exploration.serialize());
             for (const auto& [a, e] : active)
                 write(a.str(), e->serialize());
             sql(db, "COMMIT");
@@ -213,6 +215,7 @@ struct EconomyRuntime::Impl {
     void publish(Economy* e, uint64_t goal) {
         auto s = std::make_shared<EconomySnapshot>();
         s->player = player;
+        s->exploration = exploration.state();
         s->message = message;
         if (e) {
             // Alias ownership is avoided: the definition already has immutable shared lifetime.
@@ -222,7 +225,7 @@ struct EconomyRuntime::Impl {
             s->hauls = e->hauls();
             s->recoveries = e->recoveries();
             s->combatContracts = e->combatContracts();
-            s->wrecks=e->wrecks();
+            s->wrecks = e->wrecks();
             for (auto& c : s->combatContracts)
                 c.targetName = sampleCombatActivity(u, c.target, e->tick() * economyTickSeconds).name;
             s->outcomes = e->outcomes();
@@ -289,7 +292,7 @@ struct EconomyRuntime::Impl {
             bytes += economy->residentBytes();
         bytes += player.crewTitles.capacity() * sizeof(CrewTitle) +
                  player.crewBoarding.capacity() * sizeof(CrewBoarding);
-        workerBytes = bytes;
+        workerBytes = bytes + exploration.residentBytes();
         std::lock_guard lock(mutex);
         published = std::move(s);
     }
@@ -304,6 +307,8 @@ struct EconomyRuntime::Impl {
                     "KEY(universe,key));");
             if (auto text = read("wallet"); text && !player.restore(*text))
                 throw std::runtime_error("ECONOMY SAVE INVALID / original ledger retained");
+            if (auto text = read("exploration"); text && !exploration.restore(*text, u))
+                throw std::runtime_error("EXPLORATION SAVE INVALID / original ledger retained");
             publish(nullptr, 0);
             uint64_t handled = 0;
             bool catching = false;
@@ -365,13 +370,28 @@ struct EconomyRuntime::Impl {
                 if (!economy.reconcilePlayer(player))
                     throw std::runtime_error("HAUL SAVE MISMATCH / original ledger retained");
                 economy.advanceTo(goal, 16);
+                exploration.offer(u, economy);
                 if (!economy.reconcilePlayer(player))
                     throw std::runtime_error("HAUL SAVE MISMATCH / original ledger retained");
                 catching = economy.tick() < goal;
                 if (!catching)
                     for (const auto& c : orders) {
+                        if (c.action >= EconomicAction::ScanSurvey &&
+                            c.action <= EconomicAction::SellSurvey) {
+                            message = exploration.execute(u, economy, player, c);
+                            continue;
+                        }
+                        if (c.action == EconomicAction::FitWeapon && exploration.state().miningLevel &&
+                            c.weaponMount == exploration.state().miningMount) {
+                            if (c.sequence > player.lastCommand)
+                                player.lastCommand = c.sequence;
+                            message = "SELL MINING HEAD FIRST / F2 SURVEY";
+                            continue;
+                        }
                         if (economy.siteIndex(c.port) || c.action == EconomicAction::DisableVessel ||
-                            c.action == EconomicAction::ReportCombat || c.action == EconomicAction::RegisterWreck || c.action == EconomicAction::RecoverWreck)
+                            c.action == EconomicAction::ReportCombat ||
+                            c.action == EconomicAction::RegisterWreck ||
+                            c.action == EconomicAction::RecoverWreck)
                             message = economy.execute(c, player);
                         else {
                             message = "ORDER CANCELLED / MARKET CHANGED";
@@ -454,6 +474,18 @@ size_t EconomyRuntime::residentBytes() const {
     if (!s)
         return 0;
     size_t extras = 0;
+    extras += s->exploration.journal.capacity() * sizeof(SurveyRecord) +
+              s->exploration.prospects.capacity() * sizeof(Prospect) +
+              s->exploration.contracts.capacity() * sizeof(SurveyContract);
+    for (const auto& r : s->exploration.journal)
+        extras += r.address.path.capacity() * sizeof(Segment) + r.name.capacity() + r.formation.capacity() +
+                  r.mineral.capacity() + r.conditions.capacity() + r.composition.capacity() +
+                  (r.prospect ? r.prospect->path.capacity() * sizeof(Segment) : 0);
+    for (const auto& p : s->exploration.prospects)
+        extras += p.address.path.capacity() * sizeof(Segment);
+    for (const auto& c : s->exploration.contracts)
+        extras +=
+            (c.issuer.home.path.capacity() + c.target.path.capacity()) * sizeof(Segment) + c.name.capacity();
     for (const auto& job : s->jobs)
         extras +=
             job.title.capacity() + job.route.capacity() + job.target.home.path.capacity() * sizeof(Segment);

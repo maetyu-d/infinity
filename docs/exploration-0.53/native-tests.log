@@ -1,0 +1,9 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 62: native_exploration_loop
+1/2 Test #62: native_exploration_loop ..........   Passed  146.06 sec
+    Start 63: native_exploration_images
+2/2 Test #63: native_exploration_images ........   Passed    3.00 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) = 149.10 sec

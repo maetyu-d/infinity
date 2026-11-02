@@ -1136,6 +1136,7 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
     v.capacityLitres = s->player.capacityLitres;
     v.tick = s->tick;
     v.message = s->message;
+    if(page==MarketPage::Journal){explorationMarketView(v,*s,true,selected,context.weaponMount);return v;}
     if (s->player.combatJob)
         v.activeJob = "SECURITY ACTIVE / F2 JOBS / F4 TARGET";
     if (s->player.haul)
@@ -1160,6 +1161,7 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
         v.connected = false;
         v.message = "ECONOMY CATCHING UP / TRADING PAUSED";
     }
+    if(page==MarketPage::Survey){explorationMarketView(v,*s,false,selected,context.weaponMount,*i);return v;}
     if (page == MarketPage::Crew) {
         v.crewRows = economicCrewRows(*s, *i, context.crew);
         v.selected = v.crewRows.empty() ? 0 : std::min(selected, v.crewRows.size() - 1);

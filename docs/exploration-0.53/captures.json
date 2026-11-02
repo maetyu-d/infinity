@@ -1,0 +1,34 @@
+[
+  {
+    "name": "survey-contract-paid.ppm.z",
+    "sha256": "bb3d3ba711094696e5f67a3f5f7cf3c80e6b13858f2d4c3db08d2298e0f8088e"
+  },
+  {
+    "name": "survey-equipment.ppm.z",
+    "sha256": "6a597268f0221025b72d888cd3a57b6d6932ab74f930a5db4930dae443353821"
+  },
+  {
+    "name": "survey-extracted-cargo.ppm.z",
+    "sha256": "30f16f6ad892c5ab000012b997498572f4fc96c6f2ea5329d23340de8a3a1901"
+  },
+  {
+    "name": "survey-journal-portrait.ppm.z",
+    "sha256": "c3136072099895d70e77bfa973a3a2acc101ec2f800267cd75fbc0165ec25af9"
+  },
+  {
+    "name": "survey-mining-beam.ppm.z",
+    "sha256": "967758b39e9c3a4cb9ebb47370a12339cfb1878a660150010b8117da02a4ddf4"
+  },
+  {
+    "name": "survey-orbit-scan.ppm.z",
+    "sha256": "91d7945d19b173d550c788ef5b453bf20c4181f7a5011fd25c10a15e97660a6c"
+  },
+  {
+    "name": "survey-surface-scan.ppm.z",
+    "sha256": "7fca0d686f0ab0138be6efe5c8018b04ac7b8c156c9e9a46a538281ee255015f"
+  },
+  {
+    "name": "survey-world-journal.ppm.z",
+    "sha256": "3172acdfe6b4da6b62740074fa27032c91cdc11a074f41a5851f02f6fae6a62a"
+  }
+]
