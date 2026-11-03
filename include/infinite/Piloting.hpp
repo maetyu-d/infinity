@@ -1,5 +1,6 @@
 #pragma once
 #include "Armament.hpp"
+#include "Docking.hpp"
 #include "Flight.hpp"
 #include "FlightEnvironment.hpp"
 #include "ShipDynamics.hpp"
@@ -21,6 +22,7 @@ struct FlightWaypoint {
     double standOff = 100;
     std::string label;
     bool surfacePort = false;
+    std::optional<DockingBerth> berth;
 };
 // Velocity is SI in frame axes. Angular rate and thrusters are in ship axes.
 // Neither is multiplied by the renderer's current magnification.
@@ -37,6 +39,7 @@ struct ShipState {
     uint64_t appliedRepairPoints = 0;
 };
 struct FlightInstruments {
+    DockingReadout docking;
     glm::dvec3 localVelocity{}, localTarget{}, localUp{0, 1, 0};
     glm::dvec3 localAcceleration{}, localAngularVelocity{}, contactImpulse{};
     uint64_t contactSequence = 0; // transient read-only presentation events, not a saved simulation rule
@@ -122,6 +125,7 @@ class Pilot {
     void trackWaypoint(const FlightWaypoint&);
     void navigateWaypoint(const FlightWaypoint&);
     void clearWaypoint();
+    bool dock();
     bool land();
     bool landAt(const Address& planet, glm::dvec3 direction);
     void setSurfaceWorld(std::shared_ptr<const SurfaceWorld> world) {
@@ -152,6 +156,9 @@ class Pilot {
     FlightInstruments instruments_;
     std::optional<Address> destination_, landingPlanet_;
     std::optional<FlightWaypoint> waypoint_;
+    DockingController docking_;
+    bool dockingArmed_ = false;
+    bool restoredDockCandidate_ = false;
     glm::dvec3 landingDirection_{0, 1, 0};
     bool autopilot_ = false, landing_ = false;
     bool fieldBraking_ = false;
@@ -173,6 +180,7 @@ class Pilot {
     std::optional<Ground> ground() const;
     glm::dvec3 targetVelocity() const;
     glm::dvec3 destinationPoint() const;
+    std::optional<DockingBerth> dockingTarget() const;
     double speedLimit() const;
     double operatingClearance() const;
     void step(const HelmInput&, double dt);

@@ -8,6 +8,7 @@
 #include "CrewValidation.hpp"
 #include "EconomyValidation.hpp"
 #include "ExplorationValidation.hpp"
+#include "DockingValidation.hpp"
 #include "FlightValidation.hpp"
 #include "LandingLightValidation.hpp"
 #include "NpcValidation.hpp"
@@ -66,7 +67,7 @@ struct Options {
     bool terrainQuality = false, terrainSurfaceFrame = false, sunShadows = true;
     bool economyTest = false, cockpitMotionTest = false, npcTest = false, crewTest = false,
          crewTradeTest = false, crewFlightTest = false, crewGunsTest = false, stationSwapTest = false,
-         starStabilityTest = false, combatOperationsTest = false, explorationTest = false;
+         starStabilityTest = false, combatOperationsTest = false, explorationTest = false, dockingTest = false;
     bool pilotTest = false, terrainTest = false, surfaceTest = false;
 };
 static Options options(int argc, char** argv) {
@@ -88,6 +89,9 @@ static Options options(int argc, char** argv) {
             o.benchmark = o.smoke = o.tour = o.fresh = true;
         else if (arg == "--star-stability-test") {
             o.smoke = o.fresh = o.starStabilityTest = o.benchmark = true;
+            o.visualTime = 12;
+        } else if (arg == "--docking-test") {
+            o.smoke = o.fresh = o.dockingTest = o.benchmark = true;
             o.visualTime = 12;
         } else if (arg == "--exploration-test") {
             o.smoke = o.fresh = o.explorationTest = o.benchmark = true;
@@ -246,7 +250,7 @@ static Options options(int argc, char** argv) {
         unsigned(o.stellarDiversityTest) + unsigned(o.npcTest) + unsigned(o.crewTest) +
         unsigned(o.crewTradeTest) + unsigned(o.crewFlightTest) + unsigned(o.crewGunsTest) +
         unsigned(o.stationSwapTest) + unsigned(o.starStabilityTest) + unsigned(o.combatOperationsTest) +
-        unsigned(o.explorationTest);
+        unsigned(o.explorationTest) + unsigned(o.dockingTest);
     if (validationModes > 1 || (validationModes && o.tour))
         throw std::invalid_argument("Choose one automated validation mode");
     if (o.width < 320 || o.height < 240 || o.width > 7680 || o.height > 4320 || o.frames < 0)
@@ -291,7 +295,7 @@ int main(int argc, char** argv) {
                             opt.weatherTest || opt.diversityTest || opt.stellarDiversityTest ||
                             opt.cockpitMotionTest || opt.npcTest || opt.crewTest || opt.crewTradeTest ||
                             opt.crewFlightTest || opt.crewGunsTest || opt.stationSwapTest ||
-                            opt.starStabilityTest || opt.combatOperationsTest || opt.explorationTest;
+                            opt.starStabilityTest || opt.combatOperationsTest || opt.explorationTest || opt.dockingTest;
         std::unique_ptr<FlightValidation> flightProof;
         if (opt.flightTest)
             flightProof = std::make_unique<FlightValidation>(universe, nav);
@@ -426,6 +430,9 @@ int main(int argc, char** argv) {
             renderer.setWeapons(&weapons);
             renderer.setActivity(&activity);
             std::unique_ptr<ExplorationValidation> explorationProof;
+            std::unique_ptr<DockingValidation> dockingProof;
+            if (opt.dockingTest)
+                dockingProof = std::make_unique<DockingValidation>(universe, nav, pilot, activity);
             if (opt.explorationTest)
                 explorationProof = std::make_unique<ExplorationValidation>(universe, nav, pilot, crew,
                                                                            weapons, activity, window);
@@ -926,7 +933,8 @@ int main(int argc, char** argv) {
                                           ? body.radius + 55
                                           : std::max(750., body.radius * 5),
                                       body.name,
-                                      surface};
+                                      surface,
+                                      dockingBerth(body)};
             };
             auto chooseActivity = [&](const ActivityId& id) {
                 activity.selected = id;
@@ -1937,13 +1945,17 @@ int main(int argc, char** argv) {
                             if (pilotEnabled) {
                                 const auto body = activityBody();
                                 const bool surface = body && body->kind == ActivityKind::SurfacePort;
+                                const bool harbour = body && body->kind == ActivityKind::Harbour;
                                 const bool landing =
-                                    surface ? pilot.landAt(body->id.home, glm::normalize(body->position))
+                                    harbour ? pilot.dock()
+                                    : surface ? pilot.landAt(body->id.home, glm::normalize(body->position))
                                             : pilot.land();
-                                if (landing)
+                                if (landing && !harbour)
                                     activity.selected.reset();
                                 notice =
-                                    landing ? "Landing site acquired on existing terrain / assisted approach"
+                                    harbour ? (landing ? "Arrival cleared / follow the berth lights / B takes the helm"
+                                                       : "Select a healthy harbour at full ship size / J approaches")
+                                    : landing ? "Landing site acquired on existing terrain / assisted approach"
                                     : surface
                                         ? "J approaches the surface port / L lands when nearby"
                                         : "Approach a planet in ship mode before selecting a landing site";
@@ -1952,7 +1964,7 @@ int main(int argc, char** argv) {
                             break;
                         case SDL_SCANCODE_RETURN:
                             if (pilotEnabled) {
-                                if (pilot.ship().landed)
+                                if (pilot.ship().landed || pilot.instruments().docking.docked)
                                     pilot.launch();
                                 else
                                     navigateSelected();
@@ -2448,6 +2460,8 @@ int main(int argc, char** argv) {
                     combatOperationsProof->advance(renderer);
                 if (explorationProof)
                     explorationProof->advance(renderer);
+                if (dockingProof)
+                    dockingProof->advance(renderer);
                 if (uiProof)
                     uiProof->advance(renderer);
                 if (polarProof)
@@ -2724,6 +2738,11 @@ int main(int argc, char** argv) {
                     if (explorationProof->finished())
                         running = false;
                 }
+                if (dockingProof) {
+                    dockingProof->observe(stats, cache, renderer, opt.captures);
+                    if (dockingProof->finished())
+                        running = false;
+                }
                 if (!gen.error.empty())
                     throw std::runtime_error(gen.error);
                 if (profile)
@@ -2845,7 +2864,7 @@ int main(int argc, char** argv) {
                     std::chrono::duration<double>(now - start).count() >
                         (opt.crewTest || opt.crewTradeTest || opt.crewFlightTest || opt.crewGunsTest ||
                                  opt.stationSwapTest || opt.starStabilityTest || opt.combatOperationsTest ||
-                                 opt.explorationTest
+                                 opt.explorationTest || opt.dockingTest
                              ? 240
                          : opt.npcTest                                   ? 180
                          : opt.economyTest                               ? 330
@@ -2910,7 +2929,10 @@ int main(int argc, char** argv) {
             std::cout << "peak_rss_bytes=" << usage.ru_maxrss * 1024 << '\n';
 #endif
 #endif
-            if (opt.explorationTest) {
+            if (opt.dockingTest) {
+                if (!dockingProof->finished())
+                    throw std::runtime_error("Native docking incomplete");
+            } else if (opt.explorationTest) {
                 if (!explorationProof->finished())
                     throw std::runtime_error("Native exploration incomplete");
             } else if (opt.starStabilityTest) {

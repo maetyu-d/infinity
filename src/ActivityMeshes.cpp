@@ -55,6 +55,30 @@ Mesh activityMesh(ActivityKind kind, unsigned detail) {
         box(m, {0, .12, 0}, {.36, .7, .4}, trim);
         ring(m, .82, .05, 0, hull, detail ? 48 : 20);
         if (detail) {
+            // An open arrival terrace on the retained harbour, facing local +Z.
+            box(m, {0, .105, 1.12}, {.18, .065, .66}, hull);
+            box(m, {0, .13, 1.45}, {.36, .025, .48}, {.055, .08, .11});
+            for (int side : {-1, 1}) {
+                box(m, {side * .18, .15, 1.45}, {.012, .025, .48}, glow);
+                box(m, {side * .21, .20, 1.22}, {.024, .16, .035}, trim);
+                box(m, {side * .21, .29, 1.22}, {.028, .025, .035}, {.74, .35, .93});
+                for (int i = 0; i < 7; ++i)
+                    box(m, {side * .12, .146, 1.25 + i * .06}, {.018, .006, .022}, glow);
+            }
+            box(m, {0, .146, 1.21}, {.30, .007, .016}, {.95, .65, .26});
+            box(m, {0, .278, 1.22}, {.44, .025, .03}, hull);
+            box(m, {0, .278, 1.24}, {.38, .010, .008}, {.74, .35, .93});
+            if (detail == 2) {
+                for (int i = 0; i < 8; ++i) {
+                    const double z = 1.28 + i * .05;
+                    for (int side : {-1, 1}) {
+                        box(m, {side * .105, .144, z}, {.12, .004, .042}, {.035, .045, .06});
+                        const glm::dvec3 a(0, .151, z - .012), b(side * .032, .151, z + .010),
+                            c(side * .032, .151, z + .019);
+                        tri(m, a, side > 0 ? c : b, side > 0 ? b : c, glow);
+                    }
+                }
+            }
             ring(m, .82, .012, .06, glow, 48);
             for (int side : {-1, 1}) {
                 box(m, {side * .59, .16, 0}, {.23, .37, .52}, hull);

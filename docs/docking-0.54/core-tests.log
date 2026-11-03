@@ -1,0 +1,117 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+      Start 62: continuity_restart_write
+      Start 59: persistence_process_write
+ 1/56 Test #59: persistence_process_write .............   Passed    0.55 sec
+      Start 40: planetary_weather_and_surface_life
+ 2/56 Test #62: continuity_restart_write ..............   Passed    1.40 sec
+      Start 18: crew_commodity_market
+ 3/56 Test #40: planetary_weather_and_surface_life ....   Passed    4.89 sec
+      Start 28: persistent_economic_supply_chains
+ 4/56 Test #18: crew_commodity_market .................   Passed    4.15 sec
+      Start 27: economic_investment_and_trade
+ 5/56 Test #27: economic_investment_and_trade .........   Passed    3.01 sec
+      Start 61: cross_scale_round_trip
+ 6/56 Test #28: persistent_economic_supply_chains .....   Passed    3.21 sec
+      Start 51: seamless_scale_flight
+ 7/56 Test #51: seamless_scale_flight .................   Passed    2.20 sec
+      Start 46: persistent_orbital_activity
+ 8/56 Test #61: cross_scale_round_trip ................   Passed    3.76 sec
+      Start 26: economic_hauling_and_career
+ 9/56 Test #46: persistent_orbital_activity ...........   Passed    2.60 sec
+      Start  3: exploration_worker_and_restart
+10/56 Test #26: economic_hauling_and_career ...........   Passed    2.68 sec
+      Start 50: unbounded_spatial_streaming
+11/56 Test  #3: exploration_worker_and_restart ........   Passed    1.63 sec
+      Start 24: economic_ship_services_and_planning
+12/56 Test #50: unbounded_spatial_streaming ...........   Passed    1.67 sec
+      Start 21: weapons_combat_and_equipment
+13/56 Test #24: economic_ship_services_and_planning ...   Passed    2.60 sec
+      Start 47: operating_regimes_and_shrinking
+14/56 Test #21: weapons_combat_and_equipment ..........   Passed    2.45 sec
+      Start 19: player_crew_and_damage_control
+15/56 Test #47: operating_regimes_and_shrinking .......   Passed    1.44 sec
+      Start 38: surface_site_preservation
+16/56 Test #19: player_crew_and_damage_control ........   Passed    1.43 sec
+      Start 12: physical_wreck_salvage_and_rescue
+17/56 Test #38: surface_site_preservation .............   Passed    1.51 sec
+      Start 48: ship_dynamics_and_landing
+18/56 Test #48: ship_dynamics_and_landing .............   Passed    1.11 sec
+      Start 39: procedural_city_structure
+19/56 Test #12: physical_wreck_salvage_and_rescue .....   Passed    1.38 sec
+      Start 55: rendering_preserves_universe
+20/56 Test #39: procedural_city_structure .............   Passed    0.95 sec
+      Start 30: stellar_evolution_and_inheritance
+21/56 Test #30: stellar_evolution_and_inheritance .....   Passed    0.87 sec
+      Start 29: physical_ship_forces_and_guidance
+22/56 Test #55: rendering_preserves_universe ..........   Passed    1.79 sec
+      Start 16: crewed_weapon_stations
+23/56 Test #29: physical_ship_forces_and_guidance .....   Passed    0.87 sec
+      Start 41: solid_planet_local_terrain
+24/56 Test #41: solid_planet_local_terrain ............   Passed    0.68 sec
+      Start 14: economic_security_contracts
+25/56 Test #16: crewed_weapon_stations ................   Passed    1.74 sec
+      Start 57: structural_processes
+26/56 Test #57: structural_processes ..................   Passed    0.84 sec
+      Start 56: performance_invariants
+27/56 Test #14: economic_security_contracts ...........   Passed    1.40 sec
+      Start 49: ship_handling_and_roll
+28/56 Test #56: performance_invariants ................   Passed    0.63 sec
+      Start 43: planetary_population_and_moons
+29/56 Test #49: ship_handling_and_roll ................   Passed    1.08 sec
+      Start  2: exploration_survey_and_mining
+30/56 Test #43: planetary_population_and_moons ........   Passed    1.08 sec
+      Start 53: filtered_material_texture
+31/56 Test  #2: exploration_survey_and_mining .........   Passed    0.83 sec
+      Start 31: stellar_catalogue_preservation
+32/56 Test #53: filtered_material_texture .............   Passed    0.85 sec
+      Start 63: continuity_restart_read
+33/56 Test #31: stellar_catalogue_preservation ........   Passed    0.92 sec
+      Start  4: stable_background_point_lights
+34/56 Test #63: continuity_restart_read ...............   Passed    0.50 sec
+      Start 33: planetary_weather_processes
+35/56 Test  #4: stable_background_point_lights ........   Passed    0.35 sec
+      Start 34: addressed_stellar_optics
+36/56 Test #33: planetary_weather_processes ...........   Passed    0.60 sec
+      Start 35: read_only_weather_optics
+37/56 Test #34: addressed_stellar_optics ..............   Passed    0.71 sec
+      Start 25: cockpit_motion_and_feedback
+38/56 Test #35: read_only_weather_optics ..............   Passed    0.81 sec
+      Start 15: captain_gunner_station_swap
+39/56 Test #25: cockpit_motion_and_feedback ...........   Passed    0.79 sec
+      Start 22: economic_recovery_and_outcomes
+40/56 Test #15: captain_gunner_station_swap ...........   Passed    1.06 sec
+      Start 42: cockpit_layout_and_targeting
+41/56 Test #22: economic_recovery_and_outcomes ........   Passed    0.93 sec
+      Start 52: free_flight_navigation
+42/56 Test #42: cockpit_layout_and_targeting ..........   Passed    0.74 sec
+      Start 23: economic_world_feedback
+43/56 Test #52: free_flight_navigation ................   Passed    0.80 sec
+      Start 13: crew_fire_control_and_ship_systems
+44/56 Test #23: economic_world_feedback ...............   Passed    0.76 sec
+      Start 36: window_fits_display_work_area
+45/56 Test #13: crew_fire_control_and_ship_systems ....   Passed    0.93 sec
+      Start 32: planetary_type_diversity
+46/56 Test #36: window_fits_display_work_area .........   Passed    0.77 sec
+      Start 17: inflight_crew_management
+47/56 Test #32: planetary_type_diversity ..............   Passed    0.73 sec
+      Start 54: surface_shading_preserves_mesh
+48/56 Test #17: inflight_crew_management ..............   Passed    0.85 sec
+      Start 58: universe_regressions
+49/56 Test #58: universe_regressions ..................   Passed    0.18 sec
+      Start 20: npc_combat_behaviour
+50/56 Test #54: surface_shading_preserves_mesh ........   Passed    0.64 sec
+      Start 37: multiscale_depth_precision
+51/56 Test #20: npc_combat_behaviour ..................   Passed    0.56 sec
+      Start 44: legacy_population_preservation
+52/56 Test #44: legacy_population_preservation ........   Passed    0.12 sec
+      Start 45: established_world_preservation
+53/56 Test #45: established_world_preservation ........   Passed    0.11 sec
+      Start 60: persistence_process_read
+54/56 Test #60: persistence_process_read ..............   Passed    0.01 sec
+      Start  1: graceful_docking_and_departure
+55/56 Test #37: multiscale_depth_precision ............   Passed    0.82 sec
+56/56 Test  #1: graceful_docking_and_departure ........   Passed    7.22 sec
+
+100% tests passed, 0 tests failed out of 56
+
+Total Test time (real) =  43.23 sec

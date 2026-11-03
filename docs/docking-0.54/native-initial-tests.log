@@ -1,0 +1,83 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+      Start  65: native_graceful_docking
+ 1/10 Test  #65: native_graceful_docking ..........   Passed   34.36 sec
+      Start  66: native_docking_images
+ 2/10 Test  #66: native_docking_images ............   Passed    0.65 sec
+      Start  69: native_exploration_loop
+ 3/10 Test  #69: native_exploration_loop ..........   Passed   43.34 sec
+      Start  70: native_exploration_images
+ 4/10 Test  #70: native_exploration_images ........   Passed    0.97 sec
+      Start  73: native_station_swap_loop
+ 5/10 Test  #73: native_station_swap_loop .........   Passed   12.33 sec
+      Start  74: native_station_swap_images
+ 6/10 Test  #74: native_station_swap_images .......   Passed    1.50 sec
+      Start  88: native_economic_loop
+ 7/10 Test  #88: native_economic_loop .............   Passed   41.13 sec
+      Start  89: native_economic_images
+ 8/10 Test  #89: native_economic_images ...........   Passed    5.26 sec
+      Start 120: native_piloting_loop
+ 9/10 Test #120: native_piloting_loop .............***Failed   32.66 sec
+CMake Error at /Users/user/Documents/SC tutorial/Infinite/cmake/RunPilot.cmake:11 (message):
+  Native piloting failed (1):
+
+  BACKBUFFER 1440x900 (requested 1440x900)
+
+  PILOT_FIXTURE 0,0,0/1:0/2:9/3:0 temperature=247.702
+
+  Infinite / Metal / seed 5282236693612155973
+
+  PILOT_MODE_PROOF identical camera and planet geometry in Hyperion rendering
+  / sky stars=0 background_galaxies=63 atmosphere=1
+
+  PILOT_ACTIVITY population=85 visible=0 template_bytes=0
+
+  PILOT_SYSTEM_CONTACTS count=76 lights=17 distant_planet_pick=PASS
+
+  PILOT_STELLAR_SKY addressed stars=4625 sky_pick=PASS
+
+  PILOT_HARBOUR visible=10 triangles=2158 picking=PASS
+
+  PILOT_TOUCHDOWN agl=0.000592118 hull=100
+
+  PILOT_DEPARTURE agl=30.7578
+
+  PILOT_MICRO_SHIP hull_m=1.02924e-05
+
+  PASS: native cockpit mode identity, geological touchdown, persisted ship,
+  thrust launch and nano-size ship; atoms=1631
+
+  PILOT_BUSY_START visible=15 triangles=1714
+
+  PILOT_MOON_FAMILY worlds=1 planets=17 contacts=76
+  moon_id=0,0,0/1:0/2:9/3:9223372036854775808
+
+  PILOT_COCKPIT_GUIDE unchanged camera, blocked click-through, guide
+  capture=PASS
+
+  PILOT_ROLL side=1 rate_rad_s=1.79992 bank=0.998899 forward=retained
+
+  PILOT_ROLL side=-1 rate_rad_s=-1.8 bank=-0.962039 forward=retained
+
+  PILOT_ROLL_RELEASE rate_rad_s=-6.68474e-11 PASS
+
+  Infinite: Could not finish profiling CSV (check free disk space)
+
+
+
+
+      Start 121: native_cockpit_images
+Failed test dependencies: native_piloting_loop
+10/10 Test #121: native_cockpit_images ............***Not Run   0.00 sec
+
+80% tests passed, 2 tests failed out of 10
+
+Total Test time (real) = 172.24 sec
+
+The following tests FAILED:
+CMake Error: Cannot open file for write: /Users/user/Documents/SC tutorial/Infinite/build/Testing/Temporary/LastTestsFailed.log.tmp83de0
+CMake Error: : System Error: No space left on device
+Problem opening file: /Users/user/Documents/SC tutorial/Infinite/build/Testing/Temporary/LastTestsFailed.log
+Cannot create log file: LastTestsFailed.log
+	120 - native_piloting_loop (Failed)
+	121 - native_cockpit_images (Not Run)
+Errors while running CTest

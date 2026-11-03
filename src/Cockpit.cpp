@@ -394,8 +394,10 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     const auto aimPoint =
         cockpitTargetMarker(eyeFromShip * (t.gunAim * glm::dvec3(0, 0, -1)), aspect, projectionScale).point;
     const double ratio = std::max(1e-12, t.hullMetres / 12);
-    const bool surface = t.altitude >= 0 && (t.gear || t.altitude < 5000 * ratio);
-    const bool catalogues = !t.shrinking || t.hullMetres >= .001;
+    const bool docking = t.docking.active ||
+                         (t.docking.available && !t.shrinking && t.docking.range < 3000);
+    const bool surface = !docking && t.altitude >= 0 && (t.gear || t.altitude < 5000 * ratio);
+    const bool catalogues = (!t.shrinking || t.hullMetres >= .001) && (!docking || t.hostileContacts);
     const bool flightCommands = crew && crew->flightOpen && !crew->open && !(market && market->open) && !help;
     const auto living = std::count_if(contacts.begin(), contacts.end(), hasSurfaceLife);
     const auto scanning = std::count_if(contacts.begin(), contacts.end(), [](const auto& c) {
@@ -435,7 +437,10 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     h.hitRegions.push_back({0, 0, w, 46});
     text(h.lettering, "INFINITE", 26, 15, 17.5, pearl);
     fitted(h.lettering,
-           t.playerGun < maxWeaponMounts ? std::string(weaponMountName(t.playerGun)) + " / CAPTAIN" : t.drive,
+           t.playerGun < maxWeaponMounts ? std::string(weaponMountName(t.playerGun)) + " / CAPTAIN"
+           : t.docking.docked ? "BERTH SECURE"
+           : t.docking.phase == DockingPhase::Departure ? "HARBOUR DEPARTURE"
+           : docking ? "HARBOUR APPROACH" : t.drive,
            center - 160, 19, 320, 10.5,
            t.playerGun < maxWeaponMounts ? mint
            : t.shrinking                 ? amber
@@ -478,7 +483,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             label(t.shrinking ? "SHRINK FIELD ACTIVE" : "ORBITAL FLIGHT", w - 296, 125, 258, muted);
         }
     }
-    if (!t.weather.empty() && !t.shrinking && !(market && market->open) && !(crew && crew->open)) {
+    if (!t.weather.empty() && !t.shrinking && !docking && !(market && market->open) && !(crew && crew->open)) {
         const auto weatherColour = t.weatherSeverity > .5 ? amber : ice;
         card(h, {w - 310, 514, 286, 29}, weatherColour);
         h.hitRegions.push_back({w - 310, 514, 286, 29});
@@ -506,8 +511,10 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     }
     const auto phase = t.phase.starts_with("PLANETARY FLIGHT / Y") ? "PLANETARY FLIGHT" : t.phase;
     label(phase, nav.x + 14, nav.y + 81, nav.w - 28, t.landed ? mint : muted);
-    const auto primary = t.landed          ? "ENTER  LAUNCH"
+    const auto primary = t.docking.docked ? "ENTER  UNDOCK"
+                         : t.landed          ? "ENTER  LAUNCH"
                          : t.navigating    ? "B  TAKE HELM"
+                         : t.docking.available ? "J  DOCK"
                          : t.targetVisible ? "J  APPROACH"
                                            : "Y  NEXT WORLD";
     label(primary, nav.x + 14, nav.y + 105, nav.w * .52, mint);
@@ -555,8 +562,8 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
           t.gear ? mint : muted);
     const double radarX = scope.x + scope.w * .5, radarY = scope.y + 72;
     const double radarRadius = std::min(90., (scope.w - 28) * .5);
-    label(surface ? "LANDING DIRECTOR" : "CONTACT SCOPE", scope.x + 14, scope.y + 12, scope.w - 28,
-          surface ? mint : ice);
+    label(docking ? "DOCKING DIRECTOR" : surface ? "LANDING DIRECTOR" : "CONTACT SCOPE",
+          scope.x + 14, scope.y + 12, scope.w - 28, docking || surface ? mint : ice);
     for (double r : {.5, 1.})
         for (int i = 0; i < 64; ++i) {
             const double a = i * 6.283185307 / 64, b = (i + 1) * 6.283185307 / 64;
@@ -575,7 +582,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
         else
             rect(h.panels, tip.x - 1.5, tip.y - 1.5, 3, 3, color);
     };
-    if (catalogues && !surface) {
+    if (catalogues && !surface && !docking) {
         for (const auto& contact : contacts)
             if (!contact.selected)
                 scopePoint(contact.localDirection,
@@ -588,11 +595,25 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                 scopePoint(activity[i].localDirection, activity[i].selected ? amber : trafficInk,
                            activity[i].selected, false);
     }
-    if (!surface && t.targetVisible && glm::length(t.localTarget) > 1e-30)
+    if (!surface && !docking && t.targetVisible && glm::length(t.localTarget) > 1e-30)
         scopePoint(t.playerGun < maxWeaponMounts ? eyeFromShip * glm::normalize(t.localTarget)
                                                  : glm::normalize(t.localTarget),
                    amber, true, true);
-    if (surface) {
+    if (docking) {
+        const auto& d = t.docking;
+        const bool aligned = d.heading < .045 && std::abs(d.roll) < .06;
+        const auto tint = d.docked || aligned ? mint : amber;
+        const double dx = std::clamp(d.offset.x / d.width, -1., 1.) * radarRadius * .78;
+        const double dy = std::clamp(d.offset.y / (d.width * .52), -1., 1.) * 23;
+        diamond(h.strokes, {radarX + dx, radarY - dy}, 5, tint);
+        const double angle = std::clamp(d.roll, -1.4, 1.4);
+        line(h.strokes, radarX - 19 * std::cos(angle), radarY + 19 * std::sin(angle),
+             radarX + 19 * std::cos(angle), radarY - 19 * std::sin(angle), tint);
+        label(d.docked ? "CLAMPS SECURE" : aligned ? "AXIS ALIGNED" : "MATCH THE HORIZON",
+              scope.x + 14, scope.y + 31, scope.w - 28, tint);
+        std::snprintf(value, sizeof(value), "ROLL %+.1f / AXIS %.1f", d.roll * 57.2957795, d.heading * 57.2957795);
+        label(value, scope.x + 14, scope.y + 105, scope.w - 28, tint);
+    } else if (surface) {
         const double shift = std::clamp(t.pitch * 38, -18., 18.);
         for (int side : {-1, 1}) {
             const double a = side * 12., b = side * radarRadius * .8;
@@ -770,6 +791,21 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             for (size_t i = 0; i < t.exploration.size(); ++i)
                 fitted(h.lettering, t.exploration[i], armament.x + 12, 675 + i * 18, 292, i == 0 ? 9.5 : 8.5,
                        i == 0 ? pearl : ice);
+        } else if (docking) {
+            const auto& d = t.docking;
+            fitted(h.lettering, dockingPhaseName(d.phase), armament.x + 12, 675, 292, 9.5, d.docked ? mint : pearl);
+            quantity("BERTH " + flightQuantity(d.range) + " / " + flightQuantity(std::abs(d.closing), true),
+                     armament.x + 12, 693, 292, 8.8, ice);
+            const double lateral = glm::length(glm::dvec2(d.offset));
+            quantity("LATERAL " + flightQuantity(lateral) + (d.closing < -.2 ? " / OPENING" : " / CLOSING"),
+                     armament.x + 12, 711, 292, 8.8, lateral < 2 ? mint : ice);
+            if (d.phase == DockingPhase::Capture)
+                bar(h.panels, armament.x + 12, 734, 292, d.capture, mint);
+            else
+                fitted(h.lettering, d.docked ? "WELCOME ABOARD / F2 SERVICES / ENTER UNDOCK"
+                                   : !d.active ? "MANUAL / L SOFT CAPTURE / J AUTO DOCK"
+                                              : "ARRIVAL > ALIGN > GLIDE > CAPTURE / B TAKE HELM",
+                       armament.x + 12, 729, 292, 8, mint);
         } else {
             fitted(h.lettering,
                    t.weapon + (t.weaponBattery ? "" : " / HEAT " + std::to_string(int(t.weaponHeat)) + "%"),
@@ -953,9 +989,9 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             {"B / X", "RECOVER / ASSIST"},
             {"Y / SHIFT-Y", "PLANETS / MOONS"},
             {"CTRL-Y", "LIFE-DETECTED WORLDS"},
-            {"K / I / J", "TRAFFIC / HAIL / APPROACH"},
+            {"K / I / J", "TRAFFIC / HAIL / APPROACH-DOCK"},
             {"SHIFT-K", "SURFACE PORTS"},
-            {"L / G / ENTER", "LAND / GEAR / LAUNCH"},
+            {"L / G / ENTER", "LAND-DOCK / GEAR / LAUNCH-UNDOCK"},
             {"N / SHIFT-N", "CRUISE / STAR TYPES"},
             {"Z / , / .", "SHRINK / SMALLER / LARGER"},
             {"SHIFT-Z / V", "FULL SIZE / EXPLORER"},

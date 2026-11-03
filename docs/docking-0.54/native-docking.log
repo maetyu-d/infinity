@@ -1,0 +1,13 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+DOCKING_CAPTURE 01-arrival phase=1 berth_m=1916.23 frame=692
+DOCKING_CAPTURE 02-alignment phase=2 berth_m=1281.16 frame=848
+DOCKING_CAPTURE 03-glide phase=3 berth_m=1260.63 frame=917
+DOCKING_CAPTURE 04-final-approach phase=3 berth_m=199.852 frame=1382
+DOCKING_CAPTURE 05-soft-capture phase=4 berth_m=27.8982 frame=1496
+DOCKING_CAPTURE 06-docked phase=5 berth_m=1.86265e-09 frame=1689
+DOCKING_CAPTURE 07-departure phase=6 berth_m=120.147 frame=1910
+DOCKING_CAPTURE 08-clear phase=0 berth_m=1290.23 frame=2317
+PASS: native arrival, alignment, glide, soft capture, physical port access and departure / unchanged planet and harbour / max_step_m=1.96689
+FRAME median_ms=11.727 p95_ms=20.0794 frames=2323 cache_bytes=11325504
+peak_rss_bytes=152649728

@@ -1,0 +1,52 @@
+[
+  {
+    "name": "native_graceful_docking",
+    "result": "passed",
+    "log": "final-departure-tests.log"
+  },
+  {
+    "name": "native_docking_images",
+    "result": "passed",
+    "log": "final-departure-tests.log"
+  },
+  {
+    "name": "native_piloting_loop",
+    "result": "passed",
+    "log": "piloting-rerun.log"
+  },
+  {
+    "name": "native_cockpit_images",
+    "result": "passed",
+    "log": "piloting-rerun.log"
+  },
+  {
+    "name": "native_station_swap_loop",
+    "result": "passed",
+    "log": "native-initial-tests.log"
+  },
+  {
+    "name": "native_station_swap_images",
+    "result": "passed",
+    "log": "native-initial-tests.log"
+  },
+  {
+    "name": "native_economic_loop",
+    "result": "passed",
+    "log": "native-initial-tests.log"
+  },
+  {
+    "name": "native_economic_images",
+    "result": "passed",
+    "log": "native-initial-tests.log"
+  },
+  {
+    "name": "native_exploration_loop",
+    "result": "passed",
+    "log": "native-initial-tests.log"
+  },
+  {
+    "name": "native_exploration_images",
+    "result": "passed",
+    "log": "native-initial-tests.log"
+  }
+]

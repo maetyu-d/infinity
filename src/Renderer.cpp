@@ -825,6 +825,7 @@ struct Renderer::Impl {
         bgfx::setViewTransform(62, glm::value_ptr(rotationView), glm::value_ptr(actorProjection));
         bgfx::setViewRect(62, 0, 0, uint16_t(width), uint16_t(height));
         Mesh exhaust;
+        Mesh dockingLights;
         const double units = std::pow(10., nav.logDistance);
         for (const auto& system : nodes) {
             if (system.address.kind() != Kind::System)
@@ -900,6 +901,25 @@ struct Renderer::Impl {
                                          : glm::length(velocity),
                              selected, occulted});
                     }
+                    // The outbound lane can remain in view after its harbour is behind the ship.
+                    if (selected && !occulted && distance < 18000 && (!instruments || !instruments->shrinking))
+                        if (const auto berth = dockingBerth(body)) {
+                            const auto phase = instruments ? instruments->docking.phase : DockingPhase::None;
+                            const auto lane = dockingLane(*berth, activity->seconds, phase);
+                            stats.dockingGuideVertices += lane.vertices.size();
+                            const auto base = uint32_t(dockingLights.vertices.size());
+                            for (auto vertex : lane.vertices) {
+                                const auto local = glm::dvec3(vertex.x, vertex.y, vertex.z);
+                                const auto relative = pose.orientation *
+                                    ((berth->metres - planetEye) + berth->orientation * local) / units;
+                                vertex.x = float(relative.x);
+                                vertex.y = float(relative.y);
+                                vertex.z = float(relative.z);
+                                dockingLights.vertices.push_back(vertex);
+                            }
+                            for (size_t i = 0; i < lane.indexCount(); ++i)
+                                dockingLights.indices.push_back(base + lane.index(i));
+                        }
                     if (direction.z >= 0 || occulted ||
                         (distance > 2e6 && body.kind != ActivityKind::Harbour && !selected))
                         continue;
@@ -1009,6 +1029,7 @@ struct Renderer::Impl {
             activityContacts.resize(80);
         }
         transient(exhaust, worldView(), true, true);
+        transient(dockingLights, 62, true, true);
         stats.activityBytes = craftBytes;
     }
     void renderNode(const Node& node, const Navigation& nav, RegionCache& cache, unsigned maximum = 4) {

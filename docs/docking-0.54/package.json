@@ -1,0 +1,7 @@
+{
+  "version": "0.54.0",
+  "build": 62,
+  "binary_sha256": "e52c58622f08f50977b4fd534ec3eb0224fba9726953869de51ed3a97f872b02",
+  "matching_code_and_data_sections": 28,
+  "signature": "ad hoc verified"
+}

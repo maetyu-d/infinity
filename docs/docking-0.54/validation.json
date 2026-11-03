@@ -1,0 +1,20 @@
+{
+  "date": "2026-11-03",
+  "version": "0.54.0",
+  "build": 62,
+  "baseline": "0927ba8",
+  "core_suites_passed": 56,
+  "affected_native_checks_passed": 10,
+  "native_docking_captures": 8,
+  "focused_docking_assertions": 48,
+  "fully_instrumented_core_translation_units": 57,
+  "sanitizers": "ASan/UBSan passed; all core translation units consistently instrumented, third-party dependencies Release",
+  "preserved_runtime_sources_headers_and_shaders": 224,
+  "original_save_writes": false,
+  "normal_packaged_app_frames": 240,
+  "binary_sha256": "e52c58622f08f50977b4fd534ec3eb0224fba9726953869de51ed3a97f872b02",
+  "package_sections_match": 28,
+  "initial_native_failures": "Disk full prevented profiling CSV completion in piloting; piloting and cockpit image checks rerun and passed",
+  "initial_sanitizer_run": "Mixed Release/ASan libc++ container annotations; replaced with a fully instrumented core run, checks enabled",
+  "final_native_docking_repeat": 2
+}

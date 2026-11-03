@@ -1,0 +1,4 @@
+DOCK scenario=0 phase=5 range=1.86265e-09 relative_speed=0 max_step=1.97042
+DOCK scenario=1 phase=5 range=0 relative_speed=0 max_step=2.5
+DOCK scenario=2 phase=5 range=1.86265e-09 relative_speed=0 max_step=1.95475
+PASS: 48 physical docking, roll alignment, moving berth, rebase, abort, departure and fitted-HUD checks

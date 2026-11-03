@@ -16,6 +16,8 @@ A deterministic procedural universe, from spiral galaxies and ringed worlds to t
 
 ---
 
+**0.54.0:** orbital docking follows a lit arrival lane through roll alignment, glide and soft capture onto a harbour terrace. **J** docks, **B** takes the helm, **L** captures a manually aligned final approach, and **Enter** undocks. Includes a docking director and guided departure. [Controls, screenshots and validation](docs/DOCKING_0_54.md).
+
 **0.53.1:** scanning and mining preserve progress during background transactions. Includes a full game checkup and updated image checks for the single Hyperion renderer. [Fixes and verification](docs/CHECKUP_0_53_1.md).
 
 **0.53.0:** survey real worlds and material structures with **F12**, keep discoveries in the **F11** journal, and sell new data at ports. Fit and crew mining heads through **F2 → Survey**, then **Ctrl+Space** extracts finite material from surveyed solid terrain. Port-funded contracts reward new observations; scanner upgrades and crew skill improve speed and precision. [Exploration controls and validation](docs/EXPLORATION_0_53.md).

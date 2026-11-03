@@ -32,6 +32,7 @@ struct FrameStats {
     size_t lifeWorlds = 0, lifeScanning = 0;
     size_t moonWorlds = 0;
     size_t activityBodies = 0, activityVisible = 0, activityTriangles = 0, activityBytes = 0;
+    size_t dockingGuideVertices = 0;
     size_t surfaceSites = 0, surfaceBuildings = 0, surfaceResidents = 0, surfaceTriangles = 0;
     size_t surfaceBytes = 0, surfaceGpuBytes = 0, surfacePending = 0, weatherCells = 0, weatherParticles = 0;
     size_t weatherPending = 0, weatherCacheBytes = 0, weatherGpuBytes = 0, weatherVolumes = 0;
