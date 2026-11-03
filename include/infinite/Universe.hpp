@@ -7,6 +7,7 @@
 namespace infinite {
 inline constexpr uint32_t generationRecipeVersion = 3;
 inline constexpr uint32_t populationRecipeVersion = 1;
+inline constexpr uint64_t exposureRockIdFlag = uint64_t(1) << 62; // additive resource-bearing outcrops
 inline constexpr uint64_t moonIdFlag = uint64_t(1) << 63;
 bool isMoon(const Address&);
 uint64_t moonId(uint64_t primary, unsigned ordinal);

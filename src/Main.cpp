@@ -18,6 +18,7 @@
 #include "PlanetValidation.hpp"
 #include "PointLightValidation.hpp"
 #include "PolarValidation.hpp"
+#include "ProspectingValidation.hpp"
 #include "StationSwapValidation.hpp"
 #include "StellarDiversityValidation.hpp"
 #include "StreamingValidation.hpp"
@@ -69,7 +70,7 @@ struct Options {
     bool economyTest = false, cockpitMotionTest = false, npcTest = false, crewTest = false,
          crewTradeTest = false, crewFlightTest = false, crewGunsTest = false, stationSwapTest = false,
          starStabilityTest = false, combatOperationsTest = false, explorationTest = false,
-         dockingTest = false, expeditionTest = false;
+         dockingTest = false, expeditionTest = false, prospectingTest = false;
     bool pilotTest = false, terrainTest = false, surfaceTest = false;
 };
 static Options options(int argc, char** argv) {
@@ -95,6 +96,9 @@ static Options options(int argc, char** argv) {
         } else if (arg == "--docking-test") {
             o.smoke = o.fresh = o.dockingTest = o.benchmark = true;
             o.visualTime = 12;
+        } else if (arg == "--prospecting-test") {
+            o.smoke = o.fresh = o.prospectingTest = o.benchmark = true;
+            o.visualTime = 100;
         } else if (arg == "--expedition-test") {
             o.smoke = o.fresh = o.expeditionTest = o.benchmark = true;
             o.visualTime = 100;
@@ -238,7 +242,8 @@ static Options options(int argc, char** argv) {
                    "buy/fund/deliver, "
                    "Backspace "
                    "sell/collect; F3 supply "
-                   "contract. Shift-F11 material expeditions / parked specimen probe.\nLocal activity: K cycles traffic, I hails, J approaches/matches course, F6 "
+                   "contract. Shift-F11 material expeditions; Shift-F12 mineral prospects.\nLocal activity: K "
+                   "cycles traffic, I hails, J approaches/matches course, F6 "
                    "hides/shows. Shift-K cycles surface ports; J approaches, L lands.\n";
             std::exit(0);
         } else
@@ -301,7 +306,7 @@ int main(int argc, char** argv) {
                             opt.cockpitMotionTest || opt.npcTest || opt.crewTest || opt.crewTradeTest ||
                             opt.crewFlightTest || opt.crewGunsTest || opt.stationSwapTest ||
                             opt.starStabilityTest || opt.combatOperationsTest || opt.explorationTest ||
-                            opt.dockingTest || opt.expeditionTest;
+                            opt.dockingTest || opt.expeditionTest || opt.prospectingTest;
         std::unique_ptr<FlightValidation> flightProof;
         if (opt.flightTest)
             flightProof = std::make_unique<FlightValidation>(universe, nav);
@@ -435,6 +440,10 @@ int main(int argc, char** argv) {
             renderer.setNpcCombat(&npcCombat);
             renderer.setWeapons(&weapons);
             renderer.setActivity(&activity);
+            std::unique_ptr<ProspectingValidation> prospectingProof;
+            if (opt.prospectingTest)
+                prospectingProof =
+                    std::make_unique<ProspectingValidation>(universe, nav, pilot, renderer, weapons, window);
             std::unique_ptr<ExpeditionValidation> expeditionProof;
             if (opt.expeditionTest)
                 expeditionProof =
@@ -985,8 +994,27 @@ int main(int argc, char** argv) {
                     pilot.trackWaypoint(waypointFor(*body));
             };
 
+            auto selectedProspect = [&]() -> const ProspectSite* {
+                if (!nav.selected)
+                    return nullptr;
+                for (const auto& site : renderer.prospects())
+                    if (site.surface.ancestorOf(*nav.selected))
+                        return &site;
+                return nullptr;
+            };
+            auto prospectWaypointFor = [&](const ProspectSite& site) {
+                FlightWaypoint point;
+                point.reference = site.surface.parent();
+                point.metres = site.metres + site.direction * 16.;
+                point.standOff = 12;
+                point.surfacePort = true;
+                point.label = site.name;
+                return point;
+            };
             auto navigateSelected = [&]() {
-                if (auto body = activityBody())
+                if (const auto* site = selectedProspect(); site && !pilot.ship().shrinking) {
+                    pilot.navigateWaypoint(prospectWaypointFor(*site));
+                } else if (auto body = activityBody())
                     pilot.navigateWaypoint(waypointFor(*body));
                 else if (nav.selected)
                     pilot.navigate(*nav.selected);
@@ -1008,7 +1036,7 @@ int main(int argc, char** argv) {
                        "surface_sites,surface_buildings,surface_residents,surface_triangles,surface_bytes,"
                        "surface_gpu_bytes,surface_pending,weather_cells,weather_particles,shadow_bytes,"
                        "shadow_active,shadow_updates,weather_pending,weather_cache_bytes,weather_gpu_bytes,"
-                       "weather_volumes\n";
+                       "weather_volumes,prospect_sites,prospect_rocks,prospect_markers\n";
             }
             bool running = true, overlay = true, looking = false;
             bool mouseFlight = false, rightLook = false;
@@ -1243,6 +1271,8 @@ int main(int argc, char** argv) {
                                     pilot.selectPlanet(*a);
                                 else
                                     nav.select(*a);
+                                if (const auto* site = selectedProspect(); site && !pilot.ship().shrinking)
+                                    pilot.trackWaypoint(prospectWaypointFor(*site));
                                 notice = "Selected " + universe.describe(*a).label() +
                                          " / J navigate / F explorer focus";
                                 noticeTime = 4;
@@ -1301,6 +1331,48 @@ int main(int argc, char** argv) {
                         opt.tour = false;
                     }
                     if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat) {
+                        if (event.key.scancode == SDL_SCANCODE_F12 && (event.key.mod & SDL_KMOD_SHIFT) &&
+                            pilotEnabled && !specimenProbe.active() && !marketOpen && !crewOpen) {
+                            const auto sites = renderer.prospects();
+                            if (sites.empty()) {
+                                notice =
+                                    "GEOLOGICAL SCAN / SELECT OR APPROACH A SOLID WORLD / RETRY SHIFT-F12";
+                            } else {
+                                size_t next = 0;
+                                const auto selected = selectedProspect();
+                                if (selected)
+                                    next = (size_t(selected - sites.data()) + 1) % sites.size();
+                                else {
+                                    double nearest = 1e100;
+                                    for (size_t i = 0; i < sites.size(); ++i) {
+                                        const auto point = universe.pointRelative(
+                                            sites[i].surface.parent(),
+                                            sites[i].metres /
+                                                std::pow(10., universe.describe(sites[i].surface.parent())
+                                                                  .frame.logRadius),
+                                            nav.anchor, nav.logDistance);
+                                        const auto distance = glm::length(point - nav.cameraPosition());
+                                        if (distance < nearest && (sites[i].easy || !sites[next].easy)) {
+                                            nearest = distance;
+                                            next = i;
+                                        }
+                                    }
+                                }
+                                const auto& site = sites[next];
+                                activity.selected.reset();
+                                pilot.clearWaypoint();
+                                if (site.surface == nav.anchor)
+                                    nav.changeFrame(site.surface.parent());
+                                nav.select(site.surface);
+                                pilot.trackWaypoint(prospectWaypointFor(site));
+                                notice = site.name +
+                                         std::string(site.easy ? " / GENTLE APPROACH"
+                                                               : " / ROUGH GROUND / HOVER") +
+                                         " / J APPROACH / F12 SURVEY";
+                            }
+                            noticeTime = 8;
+                            continue;
+                        }
                         const bool expeditionKey =
                             event.key.scancode == SDL_SCANCODE_F11 && (event.key.mod & SDL_KMOD_SHIFT);
                         if (specimenProbe.active() &&
@@ -2443,7 +2515,8 @@ int main(int argc, char** argv) {
                     const bool controlHeld = keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL];
                     const bool workAllowed = pilotEnabled && !opt.tour && !marketOpen && !crewOpen &&
                                              (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS);
-                    const bool scanHeld = workAllowed && keys[SDL_SCANCODE_F12];
+                    const bool scanHeld = workAllowed && keys[SDL_SCANCODE_F12] &&
+                                          !(keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT]);
                     const bool mineHeld = workAllowed && controlHeld && keys[SDL_SCANCODE_SPACE];
                     SurveyObserver observer;
                     if (scanHeld || mineHeld)
@@ -2460,6 +2533,10 @@ int main(int argc, char** argv) {
                         else if (nav.anchor.kind() == Kind::Planet)
                             target = nav.anchor;
                     }
+                    if ((scanHeld || mineHeld) && !specimenProbe.active())
+                        if (const auto* site = selectedProspect();
+                            site && surveyAccess(universe, observer, site->surface))
+                            target = site->surface;
                     if (specimenProbe.active() && nav.selected && specimenProbe.contains(*nav.selected) &&
                         surveyAccess(universe, observer, *nav.selected))
                         target = nav.selected;
@@ -2470,7 +2547,9 @@ int main(int argc, char** argv) {
                     const bool loanCore =
                         !specimenProbe.active() && mission && mission->phase == ExpeditionPhase::Survey &&
                         target &&
-                        prospectAddress(universe, *target) == prospectAddress(universe, mission->source);
+                        prospectAddress(universe, *target) == prospectAddress(universe, mission->source) &&
+                        glm::length(universe.pointRelative(mission->source, {}, observer.reference, 0) -
+                                    observer.position) <= 80;
                     const auto* exploration = economicSnapshot ? &economicSnapshot->exploration : nullptr;
                     const bool canSubmit = economy && economicSnapshot && economicSnapshot->network &&
                                            target && economicSnapshot->network->system.ancestorOf(*target) &&
@@ -2724,6 +2803,8 @@ int main(int argc, char** argv) {
                     stationSwapProof->advance(renderer);
                 if (combatOperationsProof)
                     combatOperationsProof->advance(renderer);
+                if (prospectingProof)
+                    prospectingProof->advance();
                 if (expeditionProof)
                     expeditionProof->advance();
                 if (explorationProof)
@@ -2783,6 +2864,27 @@ int main(int argc, char** argv) {
                         cockpit.phase = "SPECIMEN INSPECTION";
                         cockpit.weapon = "PROBE / NO WEAPONS";
                     }
+                }
+                if (!cockpit.explorationActive && !marketOpen && !crewOpen && !crewFlightOpen &&
+                    !specimenProbe.active() && !pilot.ship().shrinking && cockpit.altitude >= 0 &&
+                    cockpit.altitude < 50000 && !renderer.prospects().empty()) {
+                    const auto* site = selectedProspect();
+                    if (!site)
+                        site = &renderer.prospects().front();
+                    const auto point = universe.pointRelative(
+                        site->surface.parent(),
+                        site->metres /
+                            std::pow(10., universe.describe(site->surface.parent()).frame.logRadius),
+                        nav.anchor, nav.logDistance);
+                    const auto distance =
+                        glm::length(point - nav.cameraPosition()) * std::pow(10., nav.logDistance);
+                    cockpit.explorationActive = true;
+                    cockpit.exploration = {"GEOLOGICAL PROSPECT / " + site->name,
+                                           std::to_string(int(distance / 1000)) + " KM / " +
+                                               (site->easy ? "GENTLE GROUND" : "ROUGH / HOVER TO SAMPLE") +
+                                               " / SLOPE " + std::to_string(int(site->slopeDegrees)) + " DEG",
+                                           "F12 SURVEY / CTRL-SPACE EXTRACT / FULL SIZE / BELOW 40 M",
+                                           "SHIFT-F12 NEXT PROSPECT / J APPROACH / SHARED FINITE RESERVE"};
                 }
                 if (crewProof) {
                     crewView = crewProof->view();
@@ -2909,6 +3011,8 @@ int main(int argc, char** argv) {
                     if (combatOperationsProof->finished())
                         running = false;
                 }
+                if (prospectingProof)
+                    prospectingProof->annotate(cockpit);
                 if (expeditionProof)
                     expeditionProof->annotate(cockpit);
                 if (explorationProof)
@@ -3024,6 +3128,11 @@ int main(int argc, char** argv) {
                         running = false;
                 }
                 auto gen = cache.stats();
+                if (prospectingProof) {
+                    prospectingProof->observe(stats, cache, opt.captures);
+                    if (prospectingProof->finished())
+                        running = false;
+                }
                 if (expeditionProof) {
                     expeditionProof->observe(stats, cache, opt.captures);
                     if (expeditionProof->finished())
@@ -3061,7 +3170,9 @@ int main(int argc, char** argv) {
                             << stats.weatherCells << ',' << stats.weatherParticles << ',' << stats.shadowBytes
                             << ',' << stats.shadowActive << ',' << stats.shadowUpdates << ','
                             << stats.weatherPending << ',' << stats.weatherCacheBytes << ','
-                            << stats.weatherGpuBytes << ',' << stats.weatherVolumes << '\n';
+                            << stats.weatherGpuBytes << ',' << stats.weatherVolumes << ','
+                            << stats.prospectSites << ',' << stats.prospectRocks << ','
+                            << stats.prospectMarkers << '\n';
                 if (opt.tour) {
                     if (!nav.transitioning && stats.visibleObjects > 0 && gen.pending == 0 &&
                         gen.queued == 0 && stats.surfacePending == 0 && stats.weatherPending == 0 &&
@@ -3231,7 +3342,10 @@ int main(int argc, char** argv) {
             std::cout << "peak_rss_bytes=" << usage.ru_maxrss * 1024 << '\n';
 #endif
 #endif
-            if (opt.expeditionTest) {
+            if (opt.prospectingTest) {
+                if (!prospectingProof->finished())
+                    throw std::runtime_error("Native prospecting incomplete");
+            } else if (opt.expeditionTest) {
                 if (!expeditionProof->finished())
                     throw std::runtime_error("Native material expedition incomplete");
             } else if (opt.dockingTest) {

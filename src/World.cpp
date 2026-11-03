@@ -17,6 +17,9 @@ RegionCache::~RegionCache() {
         for (auto& [key, e] : catalogs_)
             if (e.cancel)
                 e.cancel->store(true);
+        for (auto& [key, e] : prospects_)
+            if (e.cancel)
+                e.cancel->store(true);
     }
     tasks_.wait();
 }
@@ -245,7 +248,7 @@ std::shared_ptr<const std::vector<Node>> RegionCache::catalog(const Node& parent
     return {};
 }
 void RegionCache::trim() {
-    while (stats_.bytes > budget_ || catalogs_.size() > 12) {
+    while (stats_.bytes > budget_ || catalogs_.size() > 12 || prospects_.size() > 4) {
         auto g = entries_.end();
         auto c = catalogs_.end();
         for (auto i = entries_.begin(); i != entries_.end(); ++i)
@@ -254,6 +257,18 @@ void RegionCache::trim() {
         for (auto i = catalogs_.begin(); i != catalogs_.end(); ++i)
             if (i->second.nodes && (c == catalogs_.end() || i->second.used < c->second.used))
                 c = i;
+        auto p = prospects_.end();
+        for (auto i = prospects_.begin(); i != prospects_.end(); ++i)
+            if (i->second.sites && (p == prospects_.end() || i->second.used < p->second.used))
+                p = i;
+        if (p != prospects_.end() &&
+            (prospects_.size() > 4 || ((g == entries_.end() || p->second.used < g->second.used) &&
+                                       (c == catalogs_.end() || p->second.used < c->second.used)))) {
+            stats_.bytes -= p->second.bytes;
+            prospects_.erase(p);
+            ++stats_.evicted;
+            continue;
+        }
         if (c != catalogs_.end() &&
             (catalogs_.size() > 12 || g == entries_.end() || c->second.used < g->second.used)) {
             stats_.bytes -= c->second.bytes;
@@ -284,6 +299,9 @@ void RegionCache::finishFrame() {
     for (auto& [key, e] : catalogs_)
         if (e.cancel && frame_ > e.used + 1)
             e.cancel->store(true);
+    for (auto& [key, e] : prospects_)
+        if (e.cancel && frame_ > e.used + 1)
+            e.cancel->store(true);
     trim();
     dispatch();
 }
@@ -311,11 +329,15 @@ void RegionCache::clear() {
         for (auto& [key, e] : catalogs_)
             if (e.cancel)
                 e.cancel->store(true);
+        for (auto& [key, e] : prospects_)
+            if (e.cancel)
+                e.cancel->store(true);
     }
     tasks_.wait();
     std::lock_guard lock(mutex_);
     entries_.clear();
     catalogs_.clear();
+    prospects_.clear();
     stats_.bytes = stats_.queued = 0;
 }
 

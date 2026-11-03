@@ -16,6 +16,8 @@ A deterministic procedural universe, from spiral galaxies and ringed worlds to t
 
 ---
 
+**0.56.0:** solid worlds now offer visible resource formations, varied geological reserves and gentler sampling clearings. **Shift-F12** finds prospects; **J** approaches a clearing, **F12** surveys and **Ctrl-Space** extracts with a fitted mining head. Existing depleted deposits stay depleted. [Prospecting controls and generation](docs/PROSPECTING_0_56.md).
+
 **0.55.0:** colony equipment faults now lead to connected material expeditions: diagnose, survey a real core site, recover a sealed sample, inspect its original rock/mineral/atomic lineage in a port lab, then return with an adapted exchanger. **Shift-F11** opens Expeditions; the actual ship stays parked during probe inspection. Repairs fund a lasting colony power upgrade. [Controls and validation](docs/EXPEDITIONS_0_55.md).
 
 **0.54.0:** orbital docking follows a lit arrival lane through roll alignment, glide and soft capture onto a harbour terrace. **J** docks, **B** takes the helm, **L** captures a manually aligned final approach, and **Enter** undocks. Includes a docking director and guided departure. [Controls, screenshots and validation](docs/DOCKING_0_54.md).

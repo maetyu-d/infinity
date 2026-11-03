@@ -1,5 +1,6 @@
 #pragma once
 #include "Crew.hpp"
+#include "Prospecting.hpp"
 #include "Weapons.hpp"
 #include <iosfwd>
 
@@ -10,7 +11,6 @@ struct EconomicCommand;
 struct EconomySnapshot;
 struct MarketView;
 inline constexpr size_t maxSurveyRecords = 1024, maxProspects = 1024, maxSurveyContracts = 128;
-using ResourceStock = std::array<int64_t, 4>; // ice, metal ore, silicate, carbon; canonical kg
 struct SurveyObserver {
     Address reference;
     glm::dvec3 position{}, velocity{}; // SI in reference axes
@@ -33,6 +33,7 @@ struct SurveyRecord {
 struct Prospect {
     Address address; // fixed level-7 surface patch; shared by all its finer scales
     ResourceStock extracted{};
+    ResourceStock capacity{}; // frozen on first extraction; legacy depleted pools never refill
 };
 enum class SurveyPhase : uint8_t { Open, Accepted, Complete, Cancelled };
 struct SurveyContract {

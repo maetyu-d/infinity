@@ -1,0 +1,62 @@
+{
+  "version": "0.56.0",
+  "build": "64",
+  "date": "2026-11-03",
+  "baseline_commit": "b9f6c2a011dc3732cef933de29b9e82295a6448e",
+  "core_suites_passed": 59,
+  "native_checks_passed": 8,
+  "sanitizer": {
+    "address": true,
+    "undefined_behaviour": true,
+    "instrumented_translation_units": 64,
+    "prospecting_assertions": 220,
+    "expedition_assertions": 52,
+    "worker_restart_assertions": 36,
+    "leak_check": "unavailable in the installed macOS sanitizer runtime"
+  },
+  "canonical_before_after_meshes": {
+    "terrain": "9629325689093661317",
+    "planet": "16401599728176779381",
+    "exact_match": true
+  },
+  "macho_sections_match": 28,
+  "comparison": {
+    "camera_sha256": "058e63b7998bcb0dfdeddca951f6595bd6ffbae5f4b5dd1780c84a6d1ce1fefa",
+    "physical_eye_planet_metres": [
+      -2043172.0282387815,
+      -861585.0856170201,
+      5039954.4189691655
+    ],
+    "resolution": [
+      1440,
+      900
+    ],
+    "visual_time": 12,
+    "scenes": {
+      "before": {
+        "frames": 475,
+        "settled_frames": 15,
+        "settled_median_cpu_ms": 14.8951,
+        "settled_median_wall_ms": 19.7963,
+        "settled_gpu_bytes": 0,
+        "settled_cpu_cache_bytes": 10669768,
+        "peak_rss_bytes": 131842048,
+        "capture_sha256": "e312a74ede7a2ec3dd2f7d3ab933a8bfa942b94a4af3ae5f8eaff9bdbbbb094d"
+      },
+      "after": {
+        "frames": 478,
+        "settled_frames": 17,
+        "settled_median_cpu_ms": 15.105,
+        "settled_median_wall_ms": 23.1617,
+        "settled_gpu_bytes": 92440,
+        "settled_cpu_cache_bytes": 11183716,
+        "peak_rss_bytes": 134496256,
+        "capture_sha256": "d3dcb4ade7891b448897cb9f01425f2ee82097e39444f35e9d923cf56d092ffe"
+      }
+    }
+  },
+  "executable_sha256": "6d9f790878b1a4d4e71a4ca5e610ff04f02a221c22313689877b2f0dee5c572c",
+  "packaged_executable_sha256": "031132b49bbb4a2f73623f1847745eea77e9911b00a2101c06db19903449b6c4",
+  "user_save_files_modified_by_validation": false,
+  "normal_packaged_startup_frames": 240
+}

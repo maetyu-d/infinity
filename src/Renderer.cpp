@@ -182,6 +182,8 @@ struct Renderer::Impl {
     std::unique_ptr<HyperionRenderer> hyperion;
     static constexpr RenderMode mode = RenderMode::Hyperion;
     std::optional<Address> specimen;
+    std::shared_ptr<const std::vector<ProspectSite>> prospectSites;
+    Mesh prospectMarkers;
     double visualTime = 0, fixedVisualTime = -1;
     bgfx::ViewId atomView = 2;
     std::map<const Geometry*, GPUGeometry> gpu;
@@ -264,14 +266,19 @@ struct Renderer::Impl {
             bgfx::shutdown();
         }
     }
-    GPUMesh upload(const Mesh& m) {
+    GPUMesh upload(const Mesh& m, std::span<const uint32_t> colors = {}) {
         GPUMesh result;
         if (m.vertices.empty() || m.indexCount() == 0)
             return result;
         stats.uploadBytes += m.bytes();
         staticUploadBytes += m.bytes();
-        result.vertices = bgfx::createVertexBuffer(
-            bgfx::copy(m.vertices.data(), static_cast<uint32_t>(m.vertices.size() * sizeof(Vertex))), layout);
+        const auto memory = bgfx::copy(m.vertices.data(), uint32_t(m.vertices.size() * sizeof(Vertex)));
+        if (colors.size() == m.vertices.size()) {
+            auto vertices = reinterpret_cast<Vertex*>(memory->data);
+            for (size_t i = 0; i < colors.size(); ++i)
+                vertices[i].color = colors[i];
+        }
+        result.vertices = bgfx::createVertexBuffer(memory, layout);
         result.indices = bgfx::createIndexBuffer(
             bgfx::copy(m.indexData(), static_cast<uint32_t>(m.indexCount() * m.indexWidth())),
             m.wideIndices() ? BGFX_BUFFER_INDEX32 : 0);
@@ -356,7 +363,7 @@ struct Renderer::Impl {
             return false;
         }
         GPUGeometry item;
-        item.solid = upload(geometry->solid);
+        item.solid = upload(geometry->solid, geometry->exposureColors);
         item.lines = upload(geometry->lines);
         if (!geometry->atomInstances.empty()) {
             size_t count = geometry->atomInstances.size() * sizeof(Instance);
@@ -1230,7 +1237,9 @@ struct Renderer::Impl {
             auto data = reinterpret_cast<Vertex*>(vertices.data);
             for (unsigned i = 0; i < points.size(); ++i)
                 data[i] = {float(points[i].x), float(points[i].y), float(points[i].z),
-                           smoothTerrain ? g.terrainAlbedo[i] : g.solid.vertices[i].color};
+                           smoothTerrain
+                               ? (g.exposureColors.size() == 81 ? g.exposureColors[i] : g.terrainAlbedo[i])
+                               : g.solid.vertices[i].color};
             if (smoothTerrain) {
                 bgfx::allocTransientVertexBuffer(&normals, 81, normalLayout);
                 auto output = reinterpret_cast<ShadingNormal*>(normals.data);
@@ -1460,7 +1469,13 @@ std::span<const CelestialContact> Renderer::celestialContacts() const {
 std::span<const ActivityContact> Renderer::activityContacts() const {
     return impl_->activityContacts;
 }
-void Renderer::setSpecimen(std::optional<Address> source) { impl_->specimen = std::move(source); }
+std::span<const ProspectSite> Renderer::prospects() const {
+    return impl_->prospectSites ? std::span<const ProspectSite>(*impl_->prospectSites)
+                                : std::span<const ProspectSite>{};
+}
+void Renderer::setSpecimen(std::optional<Address> source) {
+    impl_->specimen = std::move(source);
+}
 std::shared_ptr<const SurfaceWorld> Renderer::surfaceWorld(const Address& planet) const {
     return impl_->surfaceLife.find(planet);
 }
@@ -1626,6 +1641,51 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     if (p.instruments && p.instruments->playerGun < maxWeaponMounts)
         p.eye += nav.orientation * glm::dvec3(weaponMountLateralMetres(p.instruments->playerGun), 0, 0) *
                  (p.instruments->hullMetres / 12 / std::pow(10., nav.logDistance));
+    p.prospectSites.reset();
+    std::optional<Node> prospectPlanet;
+    if (!p.specimen && nav.anchor.kind() < Kind::Rock && (!p.instruments || !p.instruments->shrinking)) {
+        for (const auto& node : nodes)
+            if (node.address.kind() == Kind::Planet && hasSolidSurface(node))
+                prospectPlanet = node;
+        if (!prospectPlanet && nav.selected && nav.selected->kind() == Kind::Planet) {
+            const auto selected = p.universe.describe(*nav.selected);
+            if (hasSolidSurface(selected))
+                prospectPlanet = selected;
+        }
+        if (prospectPlanet) {
+            const auto planetEye = p.universe.pointRelative(
+                nav.anchor, p.eye * std::pow(10., nav.logDistance - p.anchorFrames.back().logRadius),
+                prospectPlanet->address, 0);
+            auto region = tileAt(glm::normalize(planetEye), 7);
+            auto depleted = [&](Tile t) {
+                if (!p.economy)
+                    return false;
+                const auto key = prospectPlanet->address.child(Kind::Surface, encodeTile(t));
+                for (const auto& pool : p.economy->exploration.prospects)
+                    if (pool.address == key)
+                        return pool.extracted == pool.capacity;
+                return false;
+            };
+            if (depleted(region)) {
+                std::optional<Tile> next;
+                double score = -2;
+                for (unsigned edge = 0; edge < 4; ++edge) {
+                    auto candidate = region;
+                    for (unsigned step = 0; step < 3; ++step) {
+                        candidate = terrainNeighbor(candidate, edge);
+                        const auto proximity = glm::dot(tileDirection(candidate), glm::normalize(planetEye));
+                        if (!depleted(candidate) && proximity > score) {
+                            score = proximity;
+                            next = candidate;
+                        }
+                    }
+                }
+                if (next)
+                    region = *next;
+            }
+            p.prospectSites = cache.prospects(*prospectPlanet, region);
+        }
+    }
     p.view = glm::mat4_cast(p.cameraInverse) * glm::translate(glm::dmat4(1), -p.eye);
     const double fov = p.instruments ? 70. * std::numbers::pi / 180. : 1.;
     p.fieldOfView = fov;
@@ -1826,6 +1886,63 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     }
     if (terrainPlanet)
         p.renderTerrain(*terrainPlanet, nav);
+    p.prospectMarkers.vertices.clear();
+    p.prospectMarkers.indices.clear();
+    if (prospectPlanet) {
+        const auto planet = *prospectPlanet;
+        const auto radius = std::pow(10., planet.frame.logRadius);
+        const auto planetEye = p.universe.pointRelative(
+            nav.anchor, p.eye * std::pow(10., nav.logDistance - p.anchorFrames.back().logRadius),
+            planet.address, 0);
+        if (p.prospectSites) {
+            p.stats.prospectSites = p.prospectSites->size();
+            std::array<const ProspectSite*, maxRegionalProspects> ranked{};
+            size_t count = 0;
+            for (const auto& site : *p.prospectSites)
+                ranked[count++] = &site;
+            std::sort(ranked.begin(), ranked.begin() + count, [&](auto a, auto b) {
+                return glm::length(a->metres - planetEye) < glm::length(b->metres - planetEye);
+            });
+            unsigned shown = 0, rocks = 0;
+            for (size_t index = 0; index < count; ++index) {
+                const auto& site = *ranked[index];
+                const auto distance = glm::length(site.metres - planetEye);
+                const bool selected =
+                    nav.selected && (*nav.selected == site.surface || site.surface.ancestorOf(*nav.selected));
+                const auto point = p.universe.pointRelative(planet.address, site.outcropMetres / radius,
+                                                            nav.anchor, nav.logDistance);
+                if (glm::dot(site.direction, planetEye - site.metres) > 0 && (selected || shown < 4))
+                    if (auto screen = p.project(point);
+                        screen && screen->x > p.width * .20 && screen->x < p.width * .80 &&
+                        screen->y > p.height * .18 && screen->y < p.height * .70) {
+                        const double x = screen->x, y = screen->y, s = selected ? 13 : 7;
+                        const auto color = selected    ? glm::vec3(.55, .97, .78)
+                                           : site.easy ? glm::vec3(.35, .78, .92)
+                                                       : glm::vec3(.96, .62, .27);
+                        for (unsigned i = 0; i < 4; ++i) {
+                            const double a = i * 1.5707963267948966, b = (i + 1) * 1.5707963267948966;
+                            addLine(p.prospectMarkers, {x + std::cos(a) * s, y + std::sin(a) * s, 0},
+                                    {x + std::cos(b) * s, y + std::sin(b) * s, 0}, color);
+                        }
+                        p.picks.push_back({site.surface, *screen, distance});
+                        ++shown;
+                        ++p.stats.prospectMarkers;
+                    }
+                if (distance < 2200 && rocks < 12) {
+                    for (const auto& node : site.rocks) {
+                        auto frames = site.parentFrames;
+                        frames.push_back(node.frame);
+                        p.frameFrames.try_emplace(node.address, std::move(frames));
+                        p.renderNode(node, nav, cache, 3);
+                        if (auto screen = p.project(p.poseFor(node.address, nav).position))
+                            p.picks.push_back({node.address, *screen, distance});
+                        ++rocks;
+                        ++p.stats.prospectRocks;
+                    }
+                }
+            }
+        }
+    }
     Mesh locators;
     auto candidates = [&](const Node& parent) {
         auto parentPose = p.poseFor(parent.address, nav);
@@ -2124,6 +2241,8 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     bgfx::setViewRect(255, 0, 0, static_cast<uint16_t>(p.width), static_cast<uint16_t>(p.height));
     if (!p.instruments)
         p.transient(locators, 255, true, false, false);
+    if (overlay && !p.specimen)
+        p.transient(p.prospectMarkers, 255, true, false, false);
     bgfx::dbgTextClear();
     if (looking && !p.instruments)
         bgfx::dbgTextPrintf(p.width / 16, p.height / 32, 0x0f, "+");

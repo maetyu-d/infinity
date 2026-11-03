@@ -1010,7 +1010,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             {"F8", "CREW / STATIONS / DAMAGE CONTROL"},
             {"F9", "IN-FLIGHT CREW ORDERS / HELM LIVE"},
             {"F10", "SWAP WITH READY GUNNER / RETURN TO HELM"},
-            {"F11 / F12", "JOURNAL / HOLD TO SCAN / SHIFT-F11 EXPEDITION"},
+            {"F11 / F12", "JOURNAL / HOLD SCAN / SHIFT-F12 PROSPECTS"},
             {"CTRL+SPACE", "OPERATE FITTED MINING HEAD"},
             {"SPACE", "FIRE FITTED LASER"},
             {"H", "TARGET NEAREST HOSTILE"},

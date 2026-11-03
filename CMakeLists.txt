@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Infinite VERSION 0.55.0 LANGUAGES C CXX)
+project(Infinite VERSION 0.56.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -30,7 +30,10 @@ target_link_libraries(infinite_benchmark PRIVATE infinite_core)
 add_executable(infinite_combat_benchmark tools/CombatBenchmark.cpp)
 target_link_libraries(infinite_combat_benchmark PRIVATE infinite_core)
 target_sources(infinite_core PRIVATE src/Exploration.cpp src/ExplorationEconomy.cpp src/ExplorationView.cpp)
-target_sources(infinite_core PRIVATE src/Docking.cpp src/Expedition.cpp src/Specimen.cpp)
+target_sources(infinite_core PRIVATE src/Docking.cpp src/Expedition.cpp src/Specimen.cpp src/Prospecting.cpp src/ProspectCache.cpp)
+add_executable(infinite_prospecting_tests tests/ProspectingTests.cpp)
+target_link_libraries(infinite_prospecting_tests PRIVATE infinite_core)
+add_test(NAME geological_mining_prospects COMMAND infinite_prospecting_tests)
 add_executable(infinite_expedition_runtime_tests tests/ExpeditionRuntimeTests.cpp)
 target_link_libraries(infinite_expedition_runtime_tests PRIVATE infinite_core)
 add_test(NAME material_expedition_worker_restart COMMAND infinite_expedition_runtime_tests "${CMAKE_BINARY_DIR}/expedition/runtime-test")
@@ -266,6 +269,13 @@ if(INFINITE_VIEWER)
   endif()
   if(INFINITE_GPU_TESTS)
     find_package(Python3 3.9 COMPONENTS Interpreter REQUIRED)
+    add_test(NAME native_geological_prospecting COMMAND "${CMAKE_COMMAND}"
+      "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/prospecting/native"
+      -P "${PROJECT_SOURCE_DIR}/cmake/RunProspecting.cmake")
+    set_tests_properties(native_geological_prospecting PROPERTIES FIXTURES_SETUP prospecting_captures TIMEOUT 360)
+    add_test(NAME native_geological_prospecting_images COMMAND "${Python3_EXECUTABLE}"
+      "${PROJECT_SOURCE_DIR}/tools/check_prospecting_captures.py" "${CMAKE_BINARY_DIR}/prospecting/native")
+    set_tests_properties(native_geological_prospecting_images PROPERTIES FIXTURES_REQUIRED prospecting_captures TIMEOUT 90)
     add_test(NAME native_material_expedition COMMAND "${CMAKE_COMMAND}"
       "-DINFINITE_EXE=$<TARGET_FILE:infinite>" "-DOUTPUT=${CMAKE_BINARY_DIR}/expedition/native"
       -P "${PROJECT_SOURCE_DIR}/cmake/RunExpedition.cmake")

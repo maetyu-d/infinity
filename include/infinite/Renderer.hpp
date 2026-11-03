@@ -33,6 +33,7 @@ struct FrameStats {
     size_t moonWorlds = 0;
     size_t activityBodies = 0, activityVisible = 0, activityTriangles = 0, activityBytes = 0;
     size_t dockingGuideVertices = 0;
+    size_t prospectSites = 0, prospectRocks = 0, prospectMarkers = 0;
     size_t surfaceSites = 0, surfaceBuildings = 0, surfaceResidents = 0, surfaceTriangles = 0;
     size_t surfaceBytes = 0, surfaceGpuBytes = 0, surfacePending = 0, weatherCells = 0, weatherParticles = 0;
     size_t weatherPending = 0, weatherCacheBytes = 0, weatherGpuBytes = 0, weatherVolumes = 0;
@@ -61,6 +62,7 @@ class Renderer {
     std::shared_ptr<const Geometry> submittedGeometry(const Address&) const;
     std::shared_ptr<const Geometry> galaxySamples() const;
     std::span<const CelestialContact> celestialContacts() const;
+    std::span<const ProspectSite> prospects() const;
     std::span<const ActivityContact> activityContacts() const;
     std::span<const ActivityBody> weaponTargets() const;
     std::optional<ActivityId> pickActivity(double x, double y) const;

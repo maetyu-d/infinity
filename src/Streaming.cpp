@@ -335,6 +335,7 @@ std::shared_ptr<Geometry> terrainGeometry(const Universe& u, const Node& planet,
     const double radius = std::pow(10., planet.frame.logRadius);
     g->terrainNormals.reserve(81);
     g->terrainAlbedo.reserve(81);
+    g->exposureColors.reserve(81);
     for (unsigned y = 0; y <= 8; ++y) {
         if (cancel && cancel->load())
             return {};
@@ -342,13 +343,15 @@ std::shared_ptr<Geometry> terrainGeometry(const Universe& u, const Node& planet,
             const auto d = terrainVertexDirection(terrainVertexKey(tile, x, y));
             const auto p = d * (1 + u.terrainHeight(planet, d) / radius);
             const auto normal = u.terrainNormal(planet, d);
-            const auto albedo = u.terrainAlbedo(planet, d);
+            const auto field = geologySample(*planet.geology, d);
+            const auto albedo = u.terrainAlbedo(planet, d, field);
             const auto color =
                 albedo *
                 float(.19 + .81 * std::max(0., glm::dot(normal, glm::normalize(glm::dvec3(-.5, .8, 1)))));
             g->precisePositions.push_back(p);
             g->terrainNormals.emplace_back(normal);
             g->terrainAlbedo.push_back(rgba(albedo));
+            g->exposureColors.push_back(rgba(exposureColor(planet, d, field, albedo)));
             g->solid.vertices.push_back({float(p.x), float(p.y), float(p.z), rgba(color)});
         }
     }

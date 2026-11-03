@@ -1,5 +1,6 @@
 #include "infinite/Geometry.hpp"
 #include "infinite/Planetology.hpp"
+#include "infinite/Prospecting.hpp"
 #include "infinite/StellarEvolution.hpp"
 #include <FastNoise/FastNoise.h>
 #include <algorithm>
@@ -83,10 +84,10 @@ std::vector<TerrainLeaf> terrainLeaves(glm::dvec3 view, unsigned maxLevel) {
 }
 static void terrainGrid(Mesh& mesh, const Universe& universe, const Node& n, unsigned size,
                         const std::function<glm::dvec3(double, double)>& direction, bool planet,
-                        const std::atomic<bool>* cancel) {
+                        const std::atomic<bool>* cancel, std::vector<uint32_t>* exposureColors) {
     struct Sample {
         glm::dvec3 point, world;
-        glm::vec3 color;
+        glm::vec3 color, presentation;
     };
     unsigned side = size + 3;
     std::vector<Sample> samples(size_t(side) * side);
@@ -107,6 +108,7 @@ static void terrainGrid(Mesh& mesh, const Universe& universe, const Node& n, uns
                                   : basis * ((d - n.geographicDirection) / ratio +
                                              d * (field.heightMetres / metres) - n.geographicDirection * h0);
             sample.color = universe.terrainAlbedo(n, d, field);
+            sample.presentation = exposureColor(n, d, field, sample.color);
         }
     }
     uint32_t base = static_cast<uint32_t>(mesh.vertices.size());
@@ -118,6 +120,7 @@ static void terrainGrid(Mesh& mesh, const Universe& universe, const Node& n, uns
             if (glm::dot(normal, sample.world) < 0)
                 normal = -normal;
             mesh.vertices.push_back(vertex(sample.point, shade(sample.color, normal)));
+            exposureColors->push_back(rgba(shade(sample.presentation, normal)));
         }
     for (unsigned y = 0; y < size; ++y)
         for (unsigned x = 0; x < size; ++x) {
@@ -450,13 +453,13 @@ std::shared_ptr<Geometry> GeometryGenerator::generate(const Node& n, unsigned lo
                 return {};
             terrainGrid(
                 g->solid, universe_, n, 8, [&](double u, double v) { return tileDirection(leaf.tile, u, v); },
-                true, cancel);
+                true, cancel, &g->exposureColors);
         }
     } else if (kind == Kind::Surface || kind == Kind::Mountain) {
         terrainGrid(
             g->solid, universe_, n, lod == 4 ? 192u : 8u << lod,
             [&](double u, double v) { return universe_.terrainDirection(n, (u - .5) * 2.4, (v - .5) * 2.4); },
-            false, cancel);
+            false, cancel, &g->exposureColors);
     } else if (kind == Kind::Rock || kind == Kind::Grain) {
         std::vector<Node> grains;
         if (kind == Kind::Rock)

@@ -133,6 +133,12 @@ std::string ExplorationLedger::execute(const Universe& u, Economy& e, EconomyPla
                 record = surveyReading(u, *c.surveyTarget, record.grade, c.observer->seconds);
                 record.paidGrade = found->paidGrade;
             }
+            if (record.prospect)
+                for (const auto& pool : state_.prospects)
+                    if (pool.address == *record.prospect) {
+                        record.resources = pool.capacity;
+                        break;
+                    }
             record.revision = ++state_.revision;
             const bool first = found == state_.journal.end();
             if (first)
@@ -162,10 +168,10 @@ std::string ExplorationLedger::execute(const Universe& u, Economy& e, EconomyPla
         if (found == state_.prospects.end()) {
             if (state_.prospects.size() >= maxProspects)
                 return "PROSPECT REGISTER FULL / DEPLETION RECORDS RETAINED";
-            state_.prospects.push_back({access.deposit});
+            state_.prospects.push_back({access.deposit, {}, prospectResources(u, access.deposit)});
             found = std::prev(state_.prospects.end());
         }
-        const auto total = prospectResources(u, access.deposit);
+        const auto total = found->capacity;
         int64_t taken = 0, budget = 10 * state_.miningLevel;
         for (size_t slot = 0; slot < resources.size(); ++slot) {
             const auto good = resources[slot];

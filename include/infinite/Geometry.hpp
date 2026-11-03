@@ -63,6 +63,7 @@ struct Geometry {
     // Original vertex colours and all positions/indices stay authoritative.
     std::vector<glm::vec3> terrainNormals;
     std::vector<uint32_t> terrainAlbedo;
+    std::vector<uint32_t> exposureColors; // presentation data; never part of canonical mesh fingerprints
     std::optional<Tile> terrainTile;
     unsigned terrainStitch = 0;
     std::vector<Particle> particles;
@@ -77,7 +78,8 @@ struct Geometry {
         return solid.bytes() + lines.bytes() + particles.size() * sizeof(Particle) +
                lattice.atoms.size() * sizeof(Atom) + lattice.bonds.size() * sizeof(Bond) +
                lattice.vacantSites.size() * sizeof(uint64_t) + precisePositions.size() * sizeof(glm::dvec3) +
-               terrainNormals.size() * sizeof(glm::vec3) + terrainAlbedo.size() * sizeof(uint32_t);
+               terrainNormals.size() * sizeof(glm::vec3) +
+               (terrainAlbedo.size() + exposureColors.size()) * sizeof(uint32_t);
     }
     size_t residentBytes() const {
         return sizeof(Geometry) + solid.vertices.capacity() * sizeof(Vertex) + solid.indices.capacity() * 4 +
@@ -87,7 +89,8 @@ struct Geometry {
                lattice.bonds.capacity() * sizeof(Bond) + lattice.vacantSites.capacity() * 8 +
                atomInstances.capacity() * sizeof(Instance) +
                precisePositions.capacity() * sizeof(glm::dvec3) +
-               terrainNormals.capacity() * sizeof(glm::vec3) + terrainAlbedo.capacity() * sizeof(uint32_t);
+               terrainNormals.capacity() * sizeof(glm::vec3) +
+               (terrainAlbedo.capacity() + exposureColors.capacity()) * sizeof(uint32_t);
     }
 };
 uint32_t rgba(glm::vec3, float alpha = 1);

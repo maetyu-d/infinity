@@ -48,6 +48,9 @@ void explorationMarketView(MarketView& v, const EconomySnapshot& s, bool journal
             if (p != x.prospects.end())
                 for (size_t g = 0; g < 4; ++g)
                     remaining[g] -= p->extracted[g];
+            v.detail.push_back("RECOVERABLE KG: ICE " + std::to_string(remaining[0]) + " / ORE " +
+                               std::to_string(remaining[1]) + " / SILICATE " + std::to_string(remaining[2]) +
+                               " / CARBON " + std::to_string(remaining[3]));
             v.detail.push_back(
                 "PROSPECT REMAINING " +
                 std::to_string(std::accumulate(remaining.begin(), remaining.end(), int64_t(0))) +

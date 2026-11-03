@@ -1,5 +1,6 @@
 #pragma once
 #include "Geometry.hpp"
+#include "Prospecting.hpp"
 #include <map>
 #include <mutex>
 #include <oneapi/tbb/task_group.h>
@@ -24,6 +25,7 @@ class RegionCache {
     std::shared_ptr<const Geometry> requestSection(const Node&, const Address& anchor, int halfDecade);
     std::shared_ptr<const Geometry> requestTerrain(const Node& planet, Tile, unsigned stitch);
     std::shared_ptr<const Geometry> requestCosmicBoundary(const Node& root);
+    std::shared_ptr<const std::vector<ProspectSite>> prospects(const Node& planet, Tile region);
     void finishFrame();
     GenerationStats stats() const;
     void clear();
@@ -47,6 +49,13 @@ class RegionCache {
         size_t bytes = 0;
     };
     std::map<Address, CatalogEntry> catalogs_;
+    struct ProspectEntry {
+        std::shared_ptr<std::vector<ProspectSite>> sites;
+        std::shared_ptr<std::atomic<bool>> cancel;
+        uint64_t used = 0;
+        size_t bytes = 0;
+    };
+    std::map<Address, ProspectEntry> prospects_;
     const Universe& universe_;
     size_t budget_, maxJobs_;
     uint64_t frame_ = 0;

@@ -22,18 +22,7 @@ Stock parts(const MaterialExpedition& j) {
     return facilityRefit(FacilityModule::Power, j.powerLevel).materials;
 }
 Address sourceAt(const Universe& u, const EconomicSite& site) {
-    const auto p = u.describe(site.id.home);
-    const auto up = glm::normalize(site.metres);
-    auto side = glm::cross(up, glm::dvec3(0, 1, 0));
-    if (glm::length(side) < .01)
-        side = glm::cross(up, glm::dvec3(1, 0, 0));
-    const auto direction =
-        glm::normalize(site.metres + glm::normalize(side) * std::max(650., site.radius + 300.));
-    // A metre-scale neighbourhood of the real terrain, not an independent sample scene.
-    const unsigned level = unsigned(std::clamp(int(p.frame.logRadius / std::log10(2.)) - 4, 7, 24));
-    return p.address.child(Kind::Surface, encodeTile(tileAt(direction, level)))
-        .child(Kind::Mountain, 0)
-        .child(Kind::Rock, 0);
+    return samplingSourceNear(u, u.describe(site.id.home), site.metres, site.radius);
 }
 } // namespace
 const MaterialExpedition* selectedExpedition(const ExpeditionState& s, size_t i) {
@@ -202,7 +191,7 @@ std::string ExpeditionLedger::execute(const Universe& u, Economy& e, Exploration
                                      [&](const auto& a) { return a.address == *key; });
         if (prospect == x.prospects.end() && x.prospects.size() >= maxProspects)
             return "PROSPECT REGISTER FULL";
-        const auto available = prospectResources(u, *key);
+        const auto available = prospect == x.prospects.end() ? prospectResources(u, *key) : prospect->capacity;
         unsigned slot = 0;
         int64_t most = -1;
         for (unsigned k = 0; k < 4; ++k) {
@@ -220,7 +209,7 @@ std::string ExpeditionLedger::execute(const Universe& u, Economy& e, Exploration
             p.volumeLitres() + goodInfo(resources[slot]).litresPerKg > p.capacityLitres)
             return "MAKE ROOM FOR A ONE KG SEALED CORE";
         if (prospect == x.prospects.end()) {
-            x.prospects.push_back({*key});
+            x.prospects.push_back({*key, {}, available});
             prospect = std::prev(x.prospects.end());
         }
         ++prospect->extracted[slot];

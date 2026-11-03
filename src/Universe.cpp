@@ -1,4 +1,5 @@
 #include "infinite/Universe.hpp"
+#include "infinite/Prospecting.hpp"
 #include "infinite/Planetology.hpp"
 #include "infinite/StellarEvolution.hpp"
 #include <algorithm>
@@ -622,8 +623,17 @@ Node Universe::makeChild(const Node& p, Segment s) const {
                                 ? p.frame.logRadius - 1.4
                                 : std::min(-.4 + .7 * r.unit(7), p.frame.logRadius - 1.0);
         if (s.kind == Kind::Rock) {
+            if (s.id & exposureRockIdFlag) {
+                // New outcrop addresses add metre-scale formations without changing any established rock.
+                n.frame.logRadius = std::min(std::log10(5. + r.unit(7) * 11.), p.frame.logRadius - .35);
+            }
             n.frame.position.y += std::pow(10.0, n.frame.logRadius - p.frame.logRadius) * .55;
             const auto site = geologySample(*n.geology, n.geographicDirection);
+            if (s.id & exposureRockIdFlag) {
+                const auto exposure = resourceExposure(p, n.geographicDirection, site);
+                env.chemistry = {exposure.fractions[2], exposure.fractions[1], exposure.fractions[3], exposure.fractions[0]};
+                env.chemistry.normalize();
+            }
             env.strain = std::clamp(env.strain * .5 + site.convergence + site.shear * .4, 0.0, 1.0);
             env.peakTemperature =
                 std::max(env.temperature, p.environment.peakTemperature * (.65 + .35 * site.volcanism));
@@ -753,7 +763,7 @@ std::vector<Address> Universe::children(const Node& n, size_t limit) const {
         break;
     }
     std::vector<Address> out;
-    out.reserve(std::min(count, limit));
+    out.reserve(std::min(count + (kind == Kind::Mountain ? 3 : 0), limit));
     Random r{n.seed};
     for (size_t i = 0; i < std::min(count, limit); ++i) {
         uint64_t id = kind == Kind::Galaxy && i >= 192 ? stellarIdFlag | (i - 192) : i;
@@ -763,6 +773,9 @@ std::vector<Address> Universe::children(const Node& n, size_t limit) const {
         }
         out.push_back(n.address.child(static_cast<Kind>(static_cast<int>(kind) + 1), id));
     }
+    if (kind == Kind::Mountain)
+        for (unsigned i=0; i<3 && out.size()<limit; ++i)
+            out.push_back(n.address.child(Kind::Rock, exposureRockIdFlag | i));
     return out;
 }
 double Universe::terrainHeight(const Node& p, glm::dvec3 d) const {

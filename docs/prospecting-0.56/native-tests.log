@@ -1,0 +1,21 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 68: native_geological_prospecting
+1/8 Test #68: native_geological_prospecting ..........   Passed   53.48 sec
+    Start 69: native_geological_prospecting_images
+2/8 Test #69: native_geological_prospecting_images ...   Passed    2.26 sec
+    Start 70: native_material_expedition
+3/8 Test #70: native_material_expedition .............   Passed   33.19 sec
+    Start 71: native_material_expedition_images
+4/8 Test #71: native_material_expedition_images ......   Passed    2.25 sec
+    Start 72: native_graceful_docking
+5/8 Test #72: native_graceful_docking ................   Passed   53.25 sec
+    Start 73: native_docking_images
+6/8 Test #73: native_docking_images ..................   Passed    0.55 sec
+    Start 76: native_exploration_loop
+7/8 Test #76: native_exploration_loop ................   Passed   51.61 sec
+    Start 77: native_exploration_images
+8/8 Test #77: native_exploration_images ..............   Passed    1.01 sec
+
+100% tests passed, 0 tests failed out of 8
+
+Total Test time (real) = 197.62 sec

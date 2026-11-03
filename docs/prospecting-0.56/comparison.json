@@ -1,0 +1,35 @@
+{
+  "camera_sha256": "058e63b7998bcb0dfdeddca951f6595bd6ffbae5f4b5dd1780c84a6d1ce1fefa",
+  "physical_eye_planet_metres": [
+    -2043172.0282387815,
+    -861585.0856170201,
+    5039954.4189691655
+  ],
+  "resolution": [
+    1440,
+    900
+  ],
+  "visual_time": 12,
+  "scenes": {
+    "before": {
+      "frames": 475,
+      "settled_frames": 15,
+      "settled_median_cpu_ms": 14.8951,
+      "settled_median_wall_ms": 19.7963,
+      "settled_gpu_bytes": 0,
+      "settled_cpu_cache_bytes": 10669768,
+      "peak_rss_bytes": 131842048,
+      "capture_sha256": "e312a74ede7a2ec3dd2f7d3ab933a8bfa942b94a4af3ae5f8eaff9bdbbbb094d"
+    },
+    "after": {
+      "frames": 478,
+      "settled_frames": 17,
+      "settled_median_cpu_ms": 15.105,
+      "settled_median_wall_ms": 23.1617,
+      "settled_gpu_bytes": 92440,
+      "settled_cpu_cache_bytes": 11183716,
+      "peak_rss_bytes": 134496256,
+      "capture_sha256": "d3dcb4ade7891b448897cb9f01425f2ee82097e39444f35e9d923cf56d092ffe"
+    }
+  }
+}

@@ -65,6 +65,12 @@ SurveyRecord surveyReading(const Universe& u, const Address& a, unsigned grade, 
     r.prospect = prospectAddress(u, a);
     if (r.prospect)
         r.resources = prospectResources(u, *r.prospect);
+    if (r.prospect && a.kind() == Kind::Surface) {
+        const auto e =
+            resourceExposure(n, n.geographicDirection, geologySample(*n.geology, n.geographicDirection));
+        r.formation = std::string(exposureName(e.type)) + " / " + std::to_string(int(e.concentration * 100)) +
+                      "% EXPOSURE GRADE";
+    }
     return r;
 }
 std::optional<Address> prospectAddress(const Universe& u, const Address& target) {
@@ -84,17 +90,19 @@ ResourceStock prospectResources(const Universe& u, const Address& target) {
     if (!key)
         return {};
     const auto n = u.describe(*key);
-    auto c = n.environment.chemistry;
-    c.normalize();
-    // A finite recoverable half-cubic-metre sample, not the entire landscape.
-    const auto mass = int64_t(std::clamp(material(n.environment.mineral).density * .5, 100., 5000.));
+    const auto field = geologySample(*n.geology, n.geographicDirection);
+    const auto e = resourceExposure(n, n.geographicDirection, field);
+    const auto mass = int64_t(
+        std::clamp(material(n.environment.mineral).density * (.35 + e.concentration * .35), 100., 5000.));
     ResourceStock out{};
-    const std::array fraction{c.ice, c.metal, c.silicate, c.carbon};
-    int64_t left = mass;
-    for (size_t i = 0; i < 4; ++i) {
-        out[i] = i == 3 ? left : int64_t(std::floor(mass * fraction[i]));
-        left -= out[i];
+    int64_t assigned = 0;
+    for (unsigned i = 0; i < 4; ++i) {
+        out[i] = int64_t(std::floor(mass * e.fractions[i]));
+        assigned += out[i];
     }
+    const auto dominant =
+        size_t(std::max_element(e.fractions.begin(), e.fractions.end()) - e.fractions.begin());
+    out[dominant] += mass - assigned;
     return out;
 }
 bool surveyAccess(const Universe& u, const SurveyObserver& o, const Address& target) {
@@ -264,7 +272,7 @@ bool MiningController::update(const MiningAccess& a, unsigned level, double read
 }
 std::string ExplorationLedger::serialize() const {
     std::ostringstream out;
-    out << std::setprecision(17) << "INFINITE_EXPLORATION 1 " << state_.scannerLevel << ' '
+    out << std::setprecision(17) << "INFINITE_EXPLORATION 2 " << state_.scannerLevel << ' '
         << state_.miningLevel << ' ' << state_.miningMount << ' ' << state_.minedKg << ' '
         << state_.surveysDelivered << ' ' << state_.surveyEarnings << ' ' << state_.revision << '\n';
     out << state_.journal.size() << '\n';
@@ -275,6 +283,8 @@ std::string ExplorationLedger::serialize() const {
     for (const auto& p : state_.prospects) {
         out << std::quoted(p.address.str());
         for (auto kg : p.extracted)
+            out << ' ' << kg;
+        for (auto kg : p.capacity)
             out << ' ' << kg;
         out << '\n';
     }
@@ -293,7 +303,7 @@ bool ExplorationLedger::restore(std::string_view text, const Universe& u) {
         unsigned v;
         if (!(in >> h >> v >> s.scannerLevel >> s.miningLevel >> s.miningMount >> s.minedKg >>
               s.surveysDelivered >> s.surveyEarnings >> s.revision) ||
-            h != "INFINITE_EXPLORATION" || v != 1 || s.scannerLevel < 1 || s.scannerLevel > 3 ||
+            h != "INFINITE_EXPLORATION" || (v != 1 && v != 2) || s.scannerLevel < 1 || s.scannerLevel > 3 ||
             s.miningLevel > 3 || s.miningMount > noWeaponMount ||
             bool(s.miningLevel) != (s.miningMount < noWeaponMount) || s.minedKg > 1000000000000ULL ||
             s.surveysDelivered > 1000000000000ULL || s.surveyEarnings < 0 ||
@@ -333,12 +343,31 @@ bool ExplorationLedger::restore(std::string_view text, const Universe& u) {
             auto canonical = prospectAddress(u, p.address);
             if (!canonical || *canonical != p.address || !ids.insert(p.address).second)
                 return false;
-            auto resources = prospectResources(u, p.address);
-            for (size_t g = 0; g < 4; ++g)
-                if (!(in >> p.extracted[g]) || p.extracted[g] < 0 || p.extracted[g] > resources[g])
+            p.capacity = legacyProspectResources(u, p.address);
+            for (auto& kg : p.extracted)
+                if (!(in >> kg) || kg < 0 || kg > 5000)
                     return false;
+            if (v >= 2)
+                for (auto& kg : p.capacity)
+                    if (!(in >> kg) || kg < 0 || kg > 5000)
+                        return false;
+            int64_t mass = 0;
+            for (size_t g = 0; g < 4; ++g) {
+                if (p.extracted[g] > p.capacity[g])
+                    return false;
+                mass += p.capacity[g];
+            }
+            if (mass < 100 || mass > 5000)
+                return false;
             s.prospects.push_back(p);
         }
+        for (auto& r : s.journal)
+            if (r.prospect)
+                for (const auto& p : s.prospects)
+                    if (p.address == *r.prospect) {
+                        r.resources = p.capacity;
+                        break;
+                    }
         std::set<uint64_t> jobs;
         if (!(in >> count) || count > maxSurveyContracts)
             return false;
