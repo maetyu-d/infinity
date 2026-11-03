@@ -32,8 +32,21 @@ for scene in ('sun', 'eclipse', 'away', 'day', 'ice', 'partial'):
     if scene in ('eclipse', 'away'):
         assert on == off, f'{scene}: stellar optics leak through solid ground or into vacuum'
     result[scene] = dict(changed_pixels=changed, rebase_rms_255=rms, large_error_fraction=large)
-for scene in ('sun','day','ice','partial'):
+for scene in ('sun','day','partial'):
     assert result[scene]['changed_pixels'] > 100, f'{scene}: visible celestial rendering is missing'
+
+# The ice fixture once compared Original against Hyperion. With the single
+# Hyperion presentation, this switch controls only the addressed stellar pass;
+# the off-screen star must not change the planet's ice material.
+ice_off, ice_on = read('ice-0'), read('ice-1')
+assert ice_on == ice_off, 'ice: off-screen stellar optics changed the retained ice material'
+patch = [tuple(ice_on[(y*1440+x)*3:(y*1440+x)*3+3])
+         for y in range(180,680) for x in range(320,1120)]
+cold = sum(b > r+10 and g > r+5 for r,g,b in patch)
+luminance = sorted((r+g+b)/3 for r,g,b in patch)
+contrast = luminance[19*len(patch)//20]-luminance[len(patch)//20]
+assert cold > len(patch)*.25 and contrast > 20, 'ice: resolved glacial shading is missing'
+result['ice'].update(cold_material_pixels=cold, material_luminance_range_255=contrast)
 (root/'comparison.json').write_text(json.dumps(result, indent=2)+'\n')
 print(json.dumps(result, indent=2))
 print('PASS: addressed sun and ice; exact planetary eclipse/behind-camera controls; stable magnification')

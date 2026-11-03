@@ -1,0 +1,135 @@
+RUN native_star_stability_loop
+PASS native_star_stability_loop 18.389
+RUN native_star_stability_images
+PASS native_star_stability_images 3.988
+RUN native_exploration_loop
+PASS native_exploration_loop 49.818
+RUN native_exploration_images
+PASS native_exploration_images 0.994
+RUN native_combat_operations_loop
+PASS native_combat_operations_loop 10.139
+RUN native_combat_operations_images
+PASS native_combat_operations_images 1.334
+RUN native_station_swap_loop
+PASS native_station_swap_loop 11.27
+RUN native_station_swap_images
+PASS native_station_swap_images 1.492
+RUN native_crew_guns_loop
+PASS native_crew_guns_loop 9.601
+RUN native_crew_guns_images
+PASS native_crew_guns_images 1.208
+RUN native_crew_flight_loop
+PASS native_crew_flight_loop 6.472
+RUN native_crew_flight_images
+PASS native_crew_flight_images 0.673
+RUN native_crew_trade_loop
+PASS native_crew_trade_loop 7.982
+RUN native_crew_trade_images
+PASS native_crew_trade_images 0.546
+RUN native_crew_loop
+PASS native_crew_loop 7.377
+RUN native_crew_images
+PASS native_crew_images 0.615
+RUN native_npc_combat_loop
+PASS native_npc_combat_loop 7.726
+RUN native_npc_combat_images
+PASS native_npc_combat_images 0.729
+RUN native_hyperion_settings
+PASS native_hyperion_settings 6.533
+RUN native_cockpit_motion
+PASS native_cockpit_motion 17.226
+RUN native_cockpit_motion_images
+PASS native_cockpit_motion_images 1.494
+RUN native_economic_loop
+PASS native_economic_loop 44.9
+RUN native_economic_images
+PASS native_economic_images 5.28
+RUN native_stellar_diversity
+PASS native_stellar_diversity 14.14
+RUN native_stellar_diversity_images
+PASS native_stellar_diversity_images 0.29
+RUN native_planet_diversity
+PASS native_planet_diversity 53.847
+RUN native_planet_diversity_images
+PASS native_planet_diversity_images 2.304
+RUN native_weather_visibility
+PASS native_weather_visibility 102.97
+RUN native_weather_visibility_images
+PASS native_weather_visibility_images 11.827
+RUN native_landing_light
+PASS native_landing_light 28.536
+RUN native_landing_light_images
+PASS native_landing_light_images 7.644
+RUN native_celestial_optics
+PASS native_celestial_optics 53.066
+RUN native_celestial_optics_images
+FAIL native_celestial_optics_images 8.6
+Traceback (most recent call last):
+  File "/Users/user/Documents/SC tutorial/Infinite/tools/check_celestial_optics.py", line 36, in <module>
+    assert result[scene]['changed_pixels'] > 100, f'{scene}: visible celestial rendering is missing'
+AssertionError: ice: visible celestial rendering is missing
+
+RUN native_cloud_volumes
+PASS native_cloud_volumes 55.941
+RUN native_cloud_volume_images
+PASS native_cloud_volume_images 10.469
+RUN native_polar_optics
+PASS native_polar_optics 37.63
+RUN native_polar_optics_images
+PASS native_polar_optics_images 8.573
+RUN native_ui_fit
+PASS native_ui_fit 15.48
+RUN native_ui_fit_images
+PASS native_ui_fit_images 0.235
+RUN native_planet_stability
+PASS native_planet_stability 16.058
+RUN native_planet_stability_images
+PASS native_planet_stability_images 0.289
+RUN native_weather_and_surface_life
+PASS native_weather_and_surface_life 94.918
+RUN native_weather_and_surface_images
+PASS native_weather_and_surface_images 1.206
+RUN native_solid_terrain
+PASS native_solid_terrain 56.452
+RUN native_solid_terrain_images
+FAIL native_solid_terrain_images 0.071
+Traceback (most recent call last):
+  File "/Users/user/Documents/SC tutorial/Infinite/tools/check_terrain_captures.py", line 13, in <module>
+    assert len(captures)==len(fixtures)*3
+AssertionError
+
+RUN native_surface_quality
+PASS native_surface_quality 22.879
+RUN native_surface_quality_images
+PASS native_surface_quality_images 0.504
+RUN native_surface_frame_and_retina
+PASS native_surface_frame_and_retina 40.353
+RUN native_surface_frame_and_retina_images
+PASS native_surface_frame_and_retina_images 1.254
+RUN native_grazing_sun_receivers
+PASS native_grazing_sun_receivers 35.17
+RUN native_grazing_sun_images
+PASS native_grazing_sun_images 0.293
+RUN native_terrain_cast_shadows
+PASS native_terrain_cast_shadows 17.107
+RUN native_terrain_cast_shadow_images
+PASS native_terrain_cast_shadow_images 0.296
+RUN native_piloting_loop
+PASS native_piloting_loop 37.241
+RUN native_cockpit_images
+PASS native_cockpit_images 3.661
+RUN native_boundary_streaming
+PASS native_boundary_streaming 15.248
+RUN native_boundary_pixels
+PASS native_boundary_pixels 2.62
+RUN native_seamless_scale_flight
+PASS native_seamless_scale_flight 32.715
+RUN native_cross_scale_round_trip
+PASS native_cross_scale_round_trip 37.486
+RUN native_atomic_visibility
+PASS native_atomic_visibility 1.268
+RUN native_hyperion_round_trip
+PASS native_hyperion_round_trip 51.729
+RUN native_hyperion_images
+PASS native_hyperion_images 3.351
+RESULT 60 passed of 62

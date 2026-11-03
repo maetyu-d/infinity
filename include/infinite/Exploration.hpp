@@ -71,8 +71,9 @@ MiningAccess miningAccess(const Universe&, const SurveyObserver&, const Address&
                           std::span<const ActivityBody> nearby = {});
 class SurveyController {
   public:
+    // Queue backpressure pauses work; releasing or losing access still cancels it.
     bool update(const Universe&, const SurveyObserver&, const std::optional<Address>&, unsigned grade,
-                double crewQuality, double dt, bool held);
+                double crewQuality, double dt, bool held, bool submissionReady = true);
     void reset();
     double progress() const {
         return progress_;
@@ -89,7 +90,9 @@ class SurveyController {
 };
 class MiningController {
   public:
-    bool update(const MiningAccess&, unsigned level, double readiness, double dt, bool held);
+    // Keep completed work available until the flight computer can accept it.
+    bool update(const MiningAccess&, unsigned level, double readiness, double dt, bool held,
+                bool submissionReady = true);
     double heat() const {
         return heat_;
     }

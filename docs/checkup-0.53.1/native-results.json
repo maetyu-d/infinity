@@ -1,0 +1,760 @@
+[
+  {
+    "name": "native_star_stability_loop",
+    "exit": 0,
+    "seconds": 18.389,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/star-stability/native",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunStarStability.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_star_stability_images",
+    "exit": 0,
+    "seconds": 3.988,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_star_stability_captures.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/star-stability/native"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_exploration_loop",
+    "exit": 0,
+    "seconds": 40.413,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/post-fix/native/exploration/native",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunExploration.cmake"
+    ],
+    "pass_source": "final 0.53.1 repeat"
+  },
+  {
+    "name": "native_exploration_images",
+    "exit": 0,
+    "seconds": 1.007,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_exploration_captures.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/post-fix/native/exploration/native"
+    ],
+    "pass_source": "final 0.53.1 repeat"
+  },
+  {
+    "name": "native_combat_operations_loop",
+    "exit": 0,
+    "seconds": 10.139,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/combat-operations/native",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunCombatOperations.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_combat_operations_images",
+    "exit": 0,
+    "seconds": 1.334,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_combat_operations_captures.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/combat-operations/native"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_station_swap_loop",
+    "exit": 0,
+    "seconds": 11.27,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/station-swap/native",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunStationSwap.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_station_swap_images",
+    "exit": 0,
+    "seconds": 1.492,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_station_swap_captures.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/station-swap/native"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_crew_guns_loop",
+    "exit": 0,
+    "seconds": 9.601,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/crew-guns/native",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunCrewGuns.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_crew_guns_images",
+    "exit": 0,
+    "seconds": 1.208,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_crew_guns_captures.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/crew-guns/native"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_crew_flight_loop",
+    "exit": 0,
+    "seconds": 6.472,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/crew-flight/native",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunCrewFlight.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_crew_flight_images",
+    "exit": 0,
+    "seconds": 0.673,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_crew_flight_captures.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/crew-flight/native"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_crew_trade_loop",
+    "exit": 0,
+    "seconds": 7.982,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/crew-trade/native",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunCrewTrade.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_crew_trade_images",
+    "exit": 0,
+    "seconds": 0.546,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_crew_trade_captures.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/crew-trade/native"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_crew_loop",
+    "exit": 0,
+    "seconds": 7.377,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/crew/native",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunCrew.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_crew_images",
+    "exit": 0,
+    "seconds": 0.615,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_crew_captures.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/crew/native"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_npc_combat_loop",
+    "exit": 0,
+    "seconds": 7.726,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/npc-combat/native",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunNpcCombat.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_npc_combat_images",
+    "exit": 0,
+    "seconds": 0.729,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_npc_captures.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/npc-combat/native"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_hyperion_settings",
+    "exit": 0,
+    "seconds": 6.533,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/hyperion-settings",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunHyperionSettings.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_cockpit_motion",
+    "exit": 0,
+    "seconds": 17.226,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/cockpit-motion-native",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunCockpitMotion.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_cockpit_motion_images",
+    "exit": 0,
+    "seconds": 1.494,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_cockpit_motion.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/cockpit-motion-native/captures"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_economic_loop",
+    "exit": 0,
+    "seconds": 44.9,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/economy/native",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunEconomy.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_economic_images",
+    "exit": 0,
+    "seconds": 5.28,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_economy_captures.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/economy/native"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_stellar_diversity",
+    "exit": 0,
+    "seconds": 14.14,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/star-diversity/native",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunStellarDiversity.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_stellar_diversity_images",
+    "exit": 0,
+    "seconds": 0.29,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_stellar_diversity.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/star-diversity/native"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_planet_diversity",
+    "exit": 0,
+    "seconds": 53.847,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/planet-diversity/native",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunPlanetDiversity.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_planet_diversity_images",
+    "exit": 0,
+    "seconds": 2.304,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_planet_diversity.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/planet-diversity/native"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_weather_visibility",
+    "exit": 0,
+    "seconds": 102.97,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/weather-visibility",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunWeatherVisibility.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_weather_visibility_images",
+    "exit": 0,
+    "seconds": 11.827,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_weather_visibility.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/weather-visibility"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_landing_light",
+    "exit": 0,
+    "seconds": 28.536,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/landing-light",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunLandingLight.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_landing_light_images",
+    "exit": 0,
+    "seconds": 7.644,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_landing_light.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/landing-light"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_celestial_optics",
+    "exit": 0,
+    "seconds": 52.146,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/post-fix/native/celestial-optics",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunCelestialOptics.cmake"
+    ],
+    "pass_source": "final 0.53.1 repeat"
+  },
+  {
+    "name": "native_celestial_optics_images",
+    "exit": 0,
+    "seconds": 9.076,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_celestial_optics.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/post-fix/native/celestial-optics"
+    ],
+    "pass_source": "final 0.53.1 repeat"
+  },
+  {
+    "name": "native_cloud_volumes",
+    "exit": 0,
+    "seconds": 55.941,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/cloud-volumes",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunCloudVolume.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_cloud_volume_images",
+    "exit": 0,
+    "seconds": 10.469,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_cloud_volumes.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/cloud-volumes"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_polar_optics",
+    "exit": 0,
+    "seconds": 37.63,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/polar-optics",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunPolarOptics.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_polar_optics_images",
+    "exit": 0,
+    "seconds": 8.573,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_polar_optics.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/polar-optics"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_ui_fit",
+    "exit": 0,
+    "seconds": 15.48,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/ui-fit-native",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunUiFit.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_ui_fit_images",
+    "exit": 0,
+    "seconds": 0.235,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_ui_fit.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/ui-fit-native"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_planet_stability",
+    "exit": 0,
+    "seconds": 16.058,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/planet-stability",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunPlanetStability.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_planet_stability_images",
+    "exit": 0,
+    "seconds": 0.289,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_planet_stability.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/planet-stability/captures"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_weather_and_surface_life",
+    "exit": 0,
+    "seconds": 94.918,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/surface-native",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunSurfaceLife.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_weather_and_surface_images",
+    "exit": 0,
+    "seconds": 1.206,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_surface_captures.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/surface-native"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_solid_terrain",
+    "exit": 0,
+    "seconds": 38.762,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/post-fix/native/terrain-native",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunTerrain.cmake"
+    ],
+    "pass_source": "final 0.53.1 repeat"
+  },
+  {
+    "name": "native_solid_terrain_images",
+    "exit": 0,
+    "seconds": 0.401,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_terrain_captures.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/post-fix/native/terrain-native"
+    ],
+    "pass_source": "final 0.53.1 repeat"
+  },
+  {
+    "name": "native_surface_quality",
+    "exit": 0,
+    "seconds": 22.879,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/surface-quality",
+      "-DQUALITY=ON",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunTerrain.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_surface_quality_images",
+    "exit": 0,
+    "seconds": 0.504,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_surface_quality.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/surface-quality"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_surface_frame_and_retina",
+    "exit": 0,
+    "seconds": 40.353,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/surface-frame-retina",
+      "-DSURFACE_FRAME=ON",
+      "-DWIDTH=2840",
+      "-DHEIGHT=1800",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunTerrain.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_surface_frame_and_retina_images",
+    "exit": 0,
+    "seconds": 1.254,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_surface_quality.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/surface-frame-retina",
+      "2840",
+      "1800"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_grazing_sun_receivers",
+    "exit": 0,
+    "seconds": 35.17,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/grazing-surface",
+      "-DVIEW_PATH=/Users/user/Documents/SC tutorial/Infinite/tests/data/surface-view-0.23.txt",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunGrazingSurface.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_grazing_sun_images",
+    "exit": 0,
+    "seconds": 0.293,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_grazing_surface.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/grazing-surface"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_terrain_cast_shadows",
+    "exit": 0,
+    "seconds": 17.107,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/terrain-cast-shadow",
+      "-DVIEW_PATH=/Users/user/Documents/SC tutorial/Infinite/tests/data/terrain-shadow-view-0.23.txt",
+      "-DWIDTH=1440",
+      "-DHEIGHT=900",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunGrazingSurface.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_terrain_cast_shadow_images",
+    "exit": 0,
+    "seconds": 0.296,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_cast_shadow.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/terrain-cast-shadow"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_piloting_loop",
+    "exit": 0,
+    "seconds": 37.241,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/pilot-native",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunPilot.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_cockpit_images",
+    "exit": 0,
+    "seconds": 3.661,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_cockpit_captures.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/pilot-native/captures"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_boundary_streaming",
+    "exit": 0,
+    "seconds": 15.248,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/streaming-native",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunStreaming.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_boundary_pixels",
+    "exit": 0,
+    "seconds": 2.62,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_streaming_captures.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/streaming-native/captures"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_seamless_scale_flight",
+    "exit": 0,
+    "seconds": 32.715,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/seamless-flight",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunFlightTour.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_cross_scale_round_trip",
+    "exit": 0,
+    "seconds": 37.486,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/native-continuity",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunNativeTour.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_atomic_visibility",
+    "exit": 0,
+    "seconds": 1.268,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_continuity_captures.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/native-continuity/captures",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/native-continuity/native.log"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_hyperion_round_trip",
+    "exit": 0,
+    "seconds": 51.729,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/hyperion-presentation",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunPresentationTour.cmake"
+    ],
+    "pass_source": "full native suite"
+  },
+  {
+    "name": "native_hyperion_images",
+    "exit": 0,
+    "seconds": 3.351,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_presentation_captures.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/hyperion-presentation/captures",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/native/hyperion-presentation/native.log"
+    ],
+    "pass_source": "full native suite"
+  }
+]

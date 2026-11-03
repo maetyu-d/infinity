@@ -1,0 +1,36 @@
+{
+  "universe.sqlite": {
+    "quick_check": [
+      [
+        "ok"
+      ]
+    ]
+  },
+  "economy.sqlite": {
+    "quick_check": [
+      [
+        "ok"
+      ]
+    ],
+    "payloads": [
+      {
+        "key": "wallet",
+        "header": [
+          "INFINITE_WALLET",
+          "9"
+        ],
+        "bytes": 112,
+        "sha256": "48903e79f6ea12d8493028419ef993ce0d91a8a8e4a438b8f282f0442765e5ba"
+      },
+      {
+        "key": "0,0,0/1:0/2:9",
+        "header": [
+          "INFINITE_ECONOMY",
+          "9"
+        ],
+        "bytes": 52073,
+        "sha256": "a6c0a9d6eef6bcd0269b4413b7be6336425bef023c0eec6f4c1c2ad94dd67351"
+      }
+    ]
+  }
+}

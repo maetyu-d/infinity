@@ -1,0 +1,68 @@
+[
+  {
+    "name": "native_exploration_loop",
+    "exit": 0,
+    "seconds": 40.413,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/post-fix/native/exploration/native",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunExploration.cmake"
+    ]
+  },
+  {
+    "name": "native_exploration_images",
+    "exit": 0,
+    "seconds": 1.007,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_exploration_captures.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/post-fix/native/exploration/native"
+    ]
+  },
+  {
+    "name": "native_celestial_optics",
+    "exit": 0,
+    "seconds": 52.146,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/post-fix/native/celestial-optics",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunCelestialOptics.cmake"
+    ]
+  },
+  {
+    "name": "native_celestial_optics_images",
+    "exit": 0,
+    "seconds": 9.076,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_celestial_optics.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/post-fix/native/celestial-optics"
+    ]
+  },
+  {
+    "name": "native_solid_terrain",
+    "exit": 0,
+    "seconds": 38.762,
+    "command": [
+      "/Users/user/.local/opt/cmake/CMake.app/Contents/bin/cmake",
+      "-DINFINITE_EXE=/Users/user/Documents/SC tutorial/Infinite/build/infinite",
+      "-DOUTPUT=/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/post-fix/native/terrain-native",
+      "-P",
+      "/Users/user/Documents/SC tutorial/Infinite/cmake/RunTerrain.cmake"
+    ]
+  },
+  {
+    "name": "native_solid_terrain_images",
+    "exit": 0,
+    "seconds": 0.401,
+    "command": [
+      "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9",
+      "/Users/user/Documents/SC tutorial/Infinite/tools/check_terrain_captures.py",
+      "/Users/user/Documents/SC tutorial/Infinite/build/audit-2026-11-03/post-fix/native/terrain-native"
+    ]
+  }
+]

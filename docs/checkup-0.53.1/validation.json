@@ -1,0 +1,20 @@
+{
+  "date": "2026-11-03",
+  "version": "0.53.1",
+  "build": 61,
+  "baseline_commit": "798acbe",
+  "core_suites_passed": 55,
+  "native_checks_passed": 62,
+  "affected_native_checks_repeated_on_final_binary": 6,
+  "focused_exploration_assertions": 61,
+  "sanitizers": "ASan/UBSan: Exploration, ExplorationEconomy, ExplorationView, Weapons and ExplorationTests; remaining core linked in Release mode",
+  "saved_flight_backup_load": "navigation, ship, activity, crew, weapons, fire control, NPC combat and economy passed",
+  "existing_save_database_quick_check": "both ok",
+  "original_save_writes": false,
+  "normal_packaged_app_frames": 240,
+  "preserved_runtime_sources_and_shaders": 218,
+  "matching_packaged_code_and_data_sections": 28,
+  "binary_sha256": "fcff599cbd7912fc7da02e43df97753d64c582640349193d3e149f7b692adbad",
+  "platform": "macOS / Metal",
+  "initial_native_failures": "Two validators retained removed graphics-mode expectations; corrected and rerun. Original outcomes retained in native-initial-results.json."
+}

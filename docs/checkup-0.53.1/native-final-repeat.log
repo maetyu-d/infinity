@@ -1,0 +1,13 @@
+RUN native_exploration_loop
+PASS native_exploration_loop 40.413
+RUN native_exploration_images
+PASS native_exploration_images 1.007
+RUN native_celestial_optics
+PASS native_celestial_optics 52.146
+RUN native_celestial_optics_images
+PASS native_celestial_optics_images 9.076
+RUN native_solid_terrain
+PASS native_solid_terrain 38.762
+RUN native_solid_terrain_images
+PASS native_solid_terrain_images 0.401
+RESULT 6 passed of 6

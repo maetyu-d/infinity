@@ -74,6 +74,23 @@ int main() {
         while (!fast.update(u, eye, planet, 2, 1.3, .1, true))
             ++fastFrames;
         check(fastFrames < slowFrames, "Scanner equipment and crew skill do not improve scan time");
+        SurveyController busy;
+        for (unsigned i = 0; i < 70; ++i)
+            busy.update(u, eye, planet, 1, 1, .1, true);
+        const auto partial = busy.progress();
+        unsigned premature = 0;
+        for (unsigned i = 0; i < 100; ++i)
+            premature += busy.update(u, eye, planet, 1, 1, .1, true, false);
+        check(!premature && busy.progress() == partial && busy.status().starts_with("SCAN WAITING"),
+              "Busy flight computer consumed a scan before its command could be submitted");
+        unsigned resumed = 0;
+        for (unsigned i = 0; i < 30; ++i)
+            resumed += busy.update(u, eye, planet, 1, 1, .1, true, true);
+        check(resumed == 1 && busy.progress() == 8,
+              "Pending scan failed to resume exactly once after the flight computer became ready");
+        busy.update(u, eye, planet, 1, 1, .1, false, false);
+        check(busy.progress() == 0,
+              "Release failed to cancel an observation while the flight computer was busy");
         auto net = network(u, planet);
         Economy e(net);
         EconomyPlayer player;
@@ -198,6 +215,22 @@ int main() {
         for (unsigned i = 0; i < 400; ++i)
             tool.update(access, 1, 1, .1, true);
         check(tool.heat() <= 100, "Mining ignored heat cap");
+        MiningController busyTool;
+        for (unsigned i = 0; i < 15; ++i)
+            busyTool.update(access, 1, 1, .1, true);
+        const auto partialWork = busyTool.progress();
+        unsigned interruptedWork = 0;
+        for (unsigned i = 0; i < 100; ++i)
+            interruptedWork += busyTool.update(access, 1, 1, .1, true, false);
+        check(!interruptedWork && busyTool.progress() == partialWork &&
+                  busyTool.status().starts_with("MINING WAITING"),
+              "Background ledger traffic discarded or completed pending mining work");
+        unsigned resumedWork = 0;
+        for (unsigned i = 0; i < 60; ++i)
+            resumedWork += busyTool.update(access, 1, 1, .1, true, true);
+        check(resumedWork == 1, "Pending mining work did not resume once after ledger acknowledgement");
+        busyTool.update(access, 1, 1, .1, false, false);
+        check(busyTool.progress() == 0, "Releasing the mining trigger while busy retained work");
         auto unsafe = ground;
         unsafe.size = .1;
         check(!miningAccess(u, unsafe, patch, 1).allowed, "Shrunken ship extracted full-size cargo");

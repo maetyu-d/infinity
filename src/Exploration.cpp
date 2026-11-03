@@ -180,7 +180,7 @@ void SurveyController::reset() {
 }
 bool SurveyController::update(const Universe& u, const SurveyObserver& o,
                               const std::optional<Address>& target, unsigned grade, double quality, double dt,
-                              bool held) {
+                              bool held, bool submissionReady) {
     if (!std::isfinite(dt) || dt <= 0 || dt > 1)
         return false;
     if (!held) {
@@ -201,6 +201,10 @@ bool SurveyController::update(const Universe& u, const SurveyObserver& o,
         status_ = "SURVEY SUBMITTED / RELEASE F12";
         return false;
     }
+    if (!submissionReady) {
+        status_ = "SCAN WAITING / FLIGHT COMPUTER BUSY";
+        return false;
+    }
     const double rate =
         std::clamp(grade, 1u, 3u) * (.55 + .45 * std::clamp(std::isfinite(quality) ? quality : 0., 0., 1.5));
     progress_ = std::min(8., progress_ + dt * rate);
@@ -210,7 +214,8 @@ bool SurveyController::update(const Universe& u, const SurveyObserver& o,
     submitted_ = true;
     return true;
 }
-bool MiningController::update(const MiningAccess& a, unsigned level, double readiness, double dt, bool held) {
+bool MiningController::update(const MiningAccess& a, unsigned level, double readiness, double dt, bool held,
+                              bool submissionReady) {
     if (!std::isfinite(dt) || dt <= 0 || dt > 1)
         return false;
     heat_ = std::max(0., heat_ - 18 * dt);
@@ -234,6 +239,10 @@ bool MiningController::update(const MiningAccess& a, unsigned level, double read
     if (!target_ || *target_ != a.deposit) {
         reset();
         target_ = a.deposit;
+    }
+    if (!submissionReady) {
+        status_ = "MINING WAITING / FLIGHT COMPUTER BUSY";
+        return false;
     }
     if (overheated_) {
         status_ = "MINING / COOLING";

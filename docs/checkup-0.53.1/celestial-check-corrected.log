@@ -1,0 +1,35 @@
+{
+  "sun": {
+    "changed_pixels": 746541,
+    "rebase_rms_255": 0.02173067468400883,
+    "large_error_fraction": 0.0
+  },
+  "eclipse": {
+    "changed_pixels": 0,
+    "rebase_rms_255": 0.006573421981221795,
+    "large_error_fraction": 0.0
+  },
+  "away": {
+    "changed_pixels": 0,
+    "rebase_rms_255": 0.015214515486254614,
+    "large_error_fraction": 0.0
+  },
+  "day": {
+    "changed_pixels": 3606,
+    "rebase_rms_255": 0.0035136418446315323,
+    "large_error_fraction": 0.0
+  },
+  "ice": {
+    "changed_pixels": 0,
+    "rebase_rms_255": 0.03861011189754234,
+    "large_error_fraction": 0.0,
+    "cold_material_pixels": 341812,
+    "material_luminance_range_255": 83.66666666666667
+  },
+  "partial": {
+    "changed_pixels": 1523,
+    "rebase_rms_255": 0.011111111111111112,
+    "large_error_fraction": 0.0
+  }
+}
+PASS: addressed sun and ice; exact planetary eclipse/behind-camera controls; stable magnification

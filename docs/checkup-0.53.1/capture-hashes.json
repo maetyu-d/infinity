@@ -1,0 +1,1980 @@
+[
+  {
+    "scenario": "native/celestial-optics",
+    "files": [
+      {
+        "name": "sun-2.ppm",
+        "bytes": 3888016,
+        "sha256": "73cac5b1c25499217abe1a5201d4180dc91668f7ae83507ffb1703c9ae33846e"
+      },
+      {
+        "name": "partial-1.ppm",
+        "bytes": 3888016,
+        "sha256": "b69b2ee44dbae87e0b65896cc8c43cbc18619c153e519230696b83d4558fe4fe"
+      },
+      {
+        "name": "partial-0.ppm",
+        "bytes": 3888016,
+        "sha256": "cef3bb88af1a6ad8fca702d4bfc5d254dfd5887b74460297d49abf9aa34d1c4d"
+      },
+      {
+        "name": "ice-2.ppm",
+        "bytes": 3888016,
+        "sha256": "e0855fba1445b3b68c2406fcc20296f7c00353393f7bd2152f7b413c85a17c5e"
+      },
+      {
+        "name": "ice-0.ppm",
+        "bytes": 3888016,
+        "sha256": "b1c72dd006c968a574c47865c11104574e631430616bba1ddf0789cb2a5d0941"
+      },
+      {
+        "name": "sun-1.ppm",
+        "bytes": 3888016,
+        "sha256": "a231f3d32fa3eecef6eff0a3bad6fcdb73818a7667e5c9ec6f05af5ade30462c"
+      },
+      {
+        "name": "partial-2.ppm",
+        "bytes": 3888016,
+        "sha256": "e0e370332c86e1195466c311e8f132f50ec25e6616ea3e5acb95067e5c06bfca"
+      },
+      {
+        "name": "sun-0.ppm",
+        "bytes": 3888016,
+        "sha256": "1a4d4834b9dd63f3d721fea39017601268b81a21173332d05d05d4390295c68f"
+      },
+      {
+        "name": "ice-1.ppm",
+        "bytes": 3888016,
+        "sha256": "b1c72dd006c968a574c47865c11104574e631430616bba1ddf0789cb2a5d0941"
+      },
+      {
+        "name": "day-1.ppm",
+        "bytes": 3888016,
+        "sha256": "260ad7b660f8f911fcb768851f50b51a8d80f7a79bb433f3ff01b11f834d442f"
+      },
+      {
+        "name": "day-0.ppm",
+        "bytes": 3888016,
+        "sha256": "6e844228bc6b8275d67f78bf1562f332f76e6e2ea9ce34b2fb1801fa86213e53"
+      },
+      {
+        "name": "day-2.ppm",
+        "bytes": 3888016,
+        "sha256": "023dc45f6c7b1fc0de5e73ccd502095dc34e83485d2c5149a05bfee36cbd0c9e"
+      },
+      {
+        "name": "away-1.ppm",
+        "bytes": 3888016,
+        "sha256": "69e7f96bb8716c9247c38484222d46d70ad46512bbc15837695e455a008ae5aa"
+      },
+      {
+        "name": "away-0.ppm",
+        "bytes": 3888016,
+        "sha256": "69e7f96bb8716c9247c38484222d46d70ad46512bbc15837695e455a008ae5aa"
+      },
+      {
+        "name": "eclipse-2.ppm",
+        "bytes": 3888016,
+        "sha256": "ceffd0748638c782f9b2a7a584b814d525cadee905dff7337427d6d8dff0f63d"
+      },
+      {
+        "name": "eclipse-0.ppm",
+        "bytes": 3888016,
+        "sha256": "96ea9ea3e3dc7dc5e97484056e61855984a2199e4c189cf0e12d12b268eebd03"
+      },
+      {
+        "name": "away-2.ppm",
+        "bytes": 3888016,
+        "sha256": "1d731f94579d613f79840f8cef41ea0727c5554ecf470c575611d635a7bf2d10"
+      },
+      {
+        "name": "eclipse-1.ppm",
+        "bytes": 3888016,
+        "sha256": "96ea9ea3e3dc7dc5e97484056e61855984a2199e4c189cf0e12d12b268eebd03"
+      }
+    ]
+  },
+  {
+    "scenario": "native/surface-native",
+    "files": [
+      {
+        "name": "0-weather-orbit-HYPERION.ppm",
+        "bytes": 3888016,
+        "sha256": "748e8878328d8b4cc26dd17ced22f8424d5f60f73ee3d28b5735bca7c5d9b276"
+      },
+      {
+        "name": "1-city-approach-HYPERION.ppm",
+        "bytes": 3888016,
+        "sha256": "b604983c601fbd211530fea6dbfd8c80fcb734fc04798a0e5a2ea67c584583df"
+      },
+      {
+        "name": "2-inhabitants-HYPERION.ppm",
+        "bytes": 3888016,
+        "sha256": "49a064ec18c65106c47417f13bc4be4472197f6e711ae709611b8c0ccff3708a"
+      },
+      {
+        "name": "3-sealed-colony-HYPERION.ppm",
+        "bytes": 3888016,
+        "sha256": "952c6d3cae7a0aad2decd10e45fc486ec832d66604d7b2a364b1afc956ba56bc"
+      },
+      {
+        "name": "4-precipitation-HYPERION.ppm",
+        "bytes": 3888016,
+        "sha256": "a0615a5002a3ffe37e132306e478aaf95c978f44de4f77109d1b46f319849721"
+      },
+      {
+        "name": "5-organic-overview-HYPERION.ppm",
+        "bytes": 3888016,
+        "sha256": "a55a499a8ecb31420413a6c4a14ce2b9d1b5f2a9a63151a622f62424b8fe9b2a"
+      },
+      {
+        "name": "6-planned-overview-HYPERION.ppm",
+        "bytes": 3888016,
+        "sha256": "0c51bacf1ba1977dab695bd15ccb8b9fa616ea20adfce27c35b55d873c42e006"
+      }
+    ]
+  },
+  {
+    "scenario": "native/economy/native",
+    "files": [
+      {
+        "name": "economic-city-offline.ppm.z",
+        "bytes": 1034017,
+        "sha256": "bd1dcf58152188b2d159e200667d56d6c3e383606920e4c87f7dd4645b1949ab"
+      },
+      {
+        "name": "economic-city-powered.ppm.z",
+        "bytes": 1042980,
+        "sha256": "df79de7bc3fd5999cf2a2c37b7251582bcf0fc2b91d79d1f2e0b444ac80e6ce8"
+      },
+      {
+        "name": "economic-city-restored.ppm.z",
+        "bytes": 1065042,
+        "sha256": "ed8f70e2b6e37b7e194208656b112e07bda9f99e1d12d47e1de3c0b26d4cd5e3"
+      },
+      {
+        "name": "economic-freight-hud.ppm.z",
+        "bytes": 1068761,
+        "sha256": "393a57171d55bcad4d7d78316775e0c9938cd7a3acbf7264354a12351af3af4a"
+      },
+      {
+        "name": "economic-freight-portrait.ppm.z",
+        "bytes": 781400,
+        "sha256": "6358f4ea017b718be1a212b80e340ae722f856a2e22e4095263c92ccba175c7c"
+      },
+      {
+        "name": "jobs-board.ppm.z",
+        "bytes": 893934,
+        "sha256": "6cb683dcf5f01d0e73a8408dee57e3dbf3d54178d74c11ef0ae7cea907ac970f"
+      },
+      {
+        "name": "jobs-paid.ppm.z",
+        "bytes": 1107207,
+        "sha256": "b00e0ac784ae4d21b87c7d521b8440dd44ae02f42f9c912dc417b37fc6f74167"
+      },
+      {
+        "name": "jobs-portrait.ppm.z",
+        "bytes": 719120,
+        "sha256": "e0af8cf01814c884e484bfedca3c5fc6c1f4e201a7e51ff6c5e56709f8ff1128"
+      },
+      {
+        "name": "jobs-sealed-cargo.ppm.z",
+        "bytes": 941943,
+        "sha256": "0eee2c9250ad95edfa9b93bb3519151433d0e7d42e91a041069156f646c2f751"
+      },
+      {
+        "name": "market-cargo.ppm.z",
+        "bytes": 860564,
+        "sha256": "69fefd4b5e60834e7ec34fe650457b2a9f46eea8d8de031b734ec66f0194fd2c"
+      },
+      {
+        "name": "market-hyperion.ppm.z",
+        "bytes": 859640,
+        "sha256": "48192047345a5cf57c9d2e339fda599835345af3ef3befb5132cbc1fd38bf518"
+      },
+      {
+        "name": "market-industry-portrait.ppm.z",
+        "bytes": 537316,
+        "sha256": "3e2cac2836bc5ee20685284cbc91016faf0c9ad9aeb0837970f5820be71489fd"
+      },
+      {
+        "name": "market-industry.ppm.z",
+        "bytes": 857778,
+        "sha256": "220e7958422adf4fbf4393d802a80661e404e78fe60d972f2265936d78d78817"
+      },
+      {
+        "name": "market-live-supply.ppm.z",
+        "bytes": 543270,
+        "sha256": "68507c1b4a6766b5b51a82f8400498e11ee0e80b5c567a358934af330fc4c93f"
+      },
+      {
+        "name": "market-portrait.ppm.z",
+        "bytes": 542098,
+        "sha256": "7f6775d9f5f410709bb82240a560ac0e62e60fa4675abf639bfef42acc8ee324"
+      },
+      {
+        "name": "market-refit-complete.ppm.z",
+        "bytes": 861788,
+        "sha256": "86bc13e02d068d5ec2440b08c2a63499c51c15e3d22a6f984bdf642b1d19057b"
+      },
+      {
+        "name": "market-routes-portrait.ppm.z",
+        "bytes": 562863,
+        "sha256": "4ef93a059db695ea26951cd8f06aac1502a7fc50231a5ce9c566f7878233df9f"
+      },
+      {
+        "name": "market-routes.ppm.z",
+        "bytes": 883653,
+        "sha256": "231073f858c858aacbf8d5f08305e742c8b6d438ec5488f68dada9dbb306a93d"
+      },
+      {
+        "name": "recovery-jobs-portrait.ppm.z",
+        "bytes": 588188,
+        "sha256": "d6078592d717e7fed09ea53c3b375cb3bfaeb30988cb856dd3acdc7bd90fc59c"
+      },
+      {
+        "name": "recovery-outcome-portrait.ppm.z",
+        "bytes": 572562,
+        "sha256": "41fe4371c61104395b553aae838be9c24045fd4814d4da35ba01f6b006086dcf"
+      },
+      {
+        "name": "recovery-outcome.ppm.z",
+        "bytes": 866240,
+        "sha256": "387229964ed116099a28c96174358e7760e993dc6dbae2c5151076db7cb9b67c"
+      },
+      {
+        "name": "recovery-working-portrait.ppm.z",
+        "bytes": 572935,
+        "sha256": "55921a8492db330fc666ac1a6e15903625c61f768497108f9a2dfb876b144434"
+      },
+      {
+        "name": "services-before.ppm.z",
+        "bytes": 856056,
+        "sha256": "e330f3caf85f45e03602e4384241b8e9c8c21fbb3a416971a4cff40f70db9a89"
+      },
+      {
+        "name": "services-portrait.ppm.z",
+        "bytes": 527213,
+        "sha256": "9861a23985075e51e921d5f3b7d31b40159ea570d1df623dea300d30f6fe736d"
+      },
+      {
+        "name": "services-repaired.ppm.z",
+        "bytes": 856565,
+        "sha256": "f04b47abf5c97124bd4be8576c3771aff3254ea48d22f16b777dcbe72ad17906"
+      },
+      {
+        "name": "services-upgraded.ppm.z",
+        "bytes": 856476,
+        "sha256": "eeb590e6ad40bda29046fdfd3502a27470c6ee2c5b15df4fc346c20278d9329b"
+      },
+      {
+        "name": "weapons-disabled-portrait.ppm.z",
+        "bytes": 1206579,
+        "sha256": "7b4190b33e90a4609edce33eac01907a5fb77be995a2aab47c48305ab152b6ca"
+      },
+      {
+        "name": "weapons-disabled.ppm.z",
+        "bytes": 1638848,
+        "sha256": "5820df7178a717a4543cfe1ffff5faf3302e47da9fa9663f03d5cc9a1bad97a0"
+      },
+      {
+        "name": "weapons-fire.ppm.z",
+        "bytes": 1638128,
+        "sha256": "f0eeacefc367c97c23b868b8340e6c2e10ae7bccec642d1882f11378b87f9e6b"
+      },
+      {
+        "name": "weapons-idle.ppm.z",
+        "bytes": 1638251,
+        "sha256": "2d88341ff0c24f459950054f82872b48c491f7f6f2a392e58d28a919678f6adc"
+      },
+      {
+        "name": "weapons-rearmed-portrait.ppm.z",
+        "bytes": 540836,
+        "sha256": "3aa52f37d2437068a112abe92fc2bba590979b9e06afe507feea88a85bf3787e"
+      },
+      {
+        "name": "weapons-shop-portrait.ppm.z",
+        "bytes": 543452,
+        "sha256": "f923785704fd0801e9f3be3bf3714a196c828222d0614ac1a2bba585ce9646ee"
+      },
+      {
+        "name": "weapons-upgraded-portrait.ppm.z",
+        "bytes": 542172,
+        "sha256": "2ab150fbd970a5ba2ce036614788bc24de25a4db55f6bdaedb8203e8995a5d4a"
+      }
+    ]
+  },
+  {
+    "scenario": "native/terrain-cast-shadow",
+    "files": []
+  },
+  {
+    "scenario": "native/crew-guns/native",
+    "files": [
+      {
+        "name": "gun-battery-disabled.ppm.z",
+        "bytes": 1521745,
+        "sha256": "89cc0d1995dab6230d6612d36ee179a1120bd81743bf453f6c4267dd4e43e89d"
+      },
+      {
+        "name": "gun-battery-fire.ppm.z",
+        "bytes": 1523457,
+        "sha256": "77ed498c09978116fa86aa5173c7d866192a73cc46942463fc02e7b4d7323010"
+      },
+      {
+        "name": "gun-battery-ready.ppm.z",
+        "bytes": 1521107,
+        "sha256": "54c2aeceffa57a6f3aed72eb691766d9da2c7f5af406b9278b230cbfcd3f3324"
+      },
+      {
+        "name": "gun-battery-relief.ppm.z",
+        "bytes": 1522642,
+        "sha256": "716437cc7626d2b7c226e4e90a78ce4b283ec6813e7840bf1daf9f06446ec109"
+      },
+      {
+        "name": "gun-station-shop.ppm.z",
+        "bytes": 850973,
+        "sha256": "4f826a369a22b08c6db2a2376b3d21194a555c175744820994d964024f15142e"
+      },
+      {
+        "name": "gun-stations-manned.ppm.z",
+        "bytes": 1515780,
+        "sha256": "f6150ad21885be7137a27fe1a7f12b00aba483445503df0660f23e4b296f315d"
+      },
+      {
+        "name": "gun-stations-moving.ppm.z",
+        "bytes": 985148,
+        "sha256": "3f8a7bbe32fd642d9592fb14d8129b07f20c333f023cdfdf6e8bd0b8a4395f9f"
+      },
+      {
+        "name": "gun-stations-portrait.ppm.z",
+        "bytes": 1086996,
+        "sha256": "27dd908388a2788a91a20b8638a147eb4cae0e5c54cf6bfe318392255bc48310"
+      },
+      {
+        "name": "gun-stations-unmanned.ppm.z",
+        "bytes": 984354,
+        "sha256": "8c26a89c014374d4f193b1cd3a8ae5ee693afaf70937c85ec1700920542909fe"
+      }
+    ]
+  },
+  {
+    "scenario": "native/cloud-volumes",
+    "files": [
+      {
+        "name": "airless-0.ppm",
+        "bytes": 3888016,
+        "sha256": "20f79c02df12bd16466d6c165e141fac173bd632ad814cc7869f3165c4194900"
+      },
+      {
+        "name": "airless-1.ppm",
+        "bytes": 3888016,
+        "sha256": "20f79c02df12bd16466d6c165e141fac173bd632ad814cc7869f3165c4194900"
+      },
+      {
+        "name": "airless-2.ppm",
+        "bytes": 3888016,
+        "sha256": "c9cd1eb0ffaa5c7dd02f1cff1cafcd3953048e5c33152111d7e6f7f9b2ea4541"
+      },
+      {
+        "name": "below-0.ppm",
+        "bytes": 3888016,
+        "sha256": "3ecd4270d4ded094a80ce2237b8dbff8db9cc503724c6378f1d47328044cd358"
+      },
+      {
+        "name": "below-1.ppm",
+        "bytes": 3888016,
+        "sha256": "b579e99be832c840cbfe3961dcb0cf4e715024528428109a4ac181f4b2bb39cd"
+      },
+      {
+        "name": "below-2.ppm",
+        "bytes": 3888016,
+        "sha256": "84392f7cc0cdd81b5380c5400b5cfe8f36da2cd3a71adea1a3b9affa58df0c7b"
+      },
+      {
+        "name": "blocked-0.ppm",
+        "bytes": 3888016,
+        "sha256": "b773243a18691ce11c43f7197a852fa49fbc926da56c1239a7c7bcac43a03dfa"
+      },
+      {
+        "name": "blocked-1.ppm",
+        "bytes": 3888016,
+        "sha256": "b773243a18691ce11c43f7197a852fa49fbc926da56c1239a7c7bcac43a03dfa"
+      },
+      {
+        "name": "blocked-2.ppm",
+        "bytes": 3888016,
+        "sha256": "135d02b282da15fc56aef0e6b30f27f440462e73366ec05329678fb0423f25da"
+      },
+      {
+        "name": "inside-0.ppm",
+        "bytes": 3888016,
+        "sha256": "c9efc8fb7e383325b4b1e0a1aa9b44556ac06bd67f45f7d5ccc320b31083159d"
+      },
+      {
+        "name": "inside-1.ppm",
+        "bytes": 3888016,
+        "sha256": "e45ba60ee8692b56b2d46275c77d700bc9329442a542d799b0778da567f5d07d"
+      },
+      {
+        "name": "inside-2.ppm",
+        "bytes": 3888016,
+        "sha256": "0380ee71a5c210e0b6fd3399032cf2449ffec1a1788eb33e642a58e9bfe5127e"
+      },
+      {
+        "name": "orbit-0.ppm",
+        "bytes": 3888016,
+        "sha256": "b86c12961dbd416d14ce6a6e84460b3ba56e0dde7b443e2894aa47909a9489b2"
+      },
+      {
+        "name": "orbit-1.ppm",
+        "bytes": 3888016,
+        "sha256": "237ebc5a0dcfe01050cf2dea90702aabb1c61183de0daae695116f473ebe23f0"
+      },
+      {
+        "name": "orbit-2.ppm",
+        "bytes": 3888016,
+        "sha256": "5d65abbf3ce44dbfa232f97c6d2116f0dd80c04a2d05a4bd07bf88c7b7108139"
+      }
+    ]
+  },
+  {
+    "scenario": "native/crew-flight/native",
+    "files": [
+      {
+        "name": "crew-flight-emergency.ppm.z",
+        "bytes": 1448930,
+        "sha256": "a6880ebd3584a3c7defa940d31b1bf477d5995297d85d4f237658c811a395dbb"
+      },
+      {
+        "name": "crew-flight-orders.ppm.z",
+        "bytes": 1454987,
+        "sha256": "feb97ea1ccccaea783c2970cb744ce09bfe0de9ca77630fc3f2389ab1e9cf0eb"
+      },
+      {
+        "name": "crew-flight-portrait.ppm.z",
+        "bytes": 1030561,
+        "sha256": "a2af7ed67137718dd07082d2a82e2eee68265e215e64a92bcce54b015d13bdb4"
+      },
+      {
+        "name": "crew-flight-response.ppm.z",
+        "bytes": 1447153,
+        "sha256": "b37b42c443d70b6be6265fcbe6bc227aff7d3ec09060375facf07c3a0146a315"
+      },
+      {
+        "name": "crew-flight-stations.ppm.z",
+        "bytes": 1460070,
+        "sha256": "a8f0c260f3cdc85036a80b0ef2881be08c50c5ab765a1f09bfcad0435aa50fe1"
+      }
+    ]
+  },
+  {
+    "scenario": "native/landing-light",
+    "files": [
+      {
+        "name": "distant-0.ppm",
+        "bytes": 3888016,
+        "sha256": "e78ba545f0ded77b64b832c3e1af8101179125a6c71cfcc3891751a1871afd03"
+      },
+      {
+        "name": "distant-1.ppm",
+        "bytes": 3888016,
+        "sha256": "e78ba545f0ded77b64b832c3e1af8101179125a6c71cfcc3891751a1871afd03"
+      },
+      {
+        "name": "distant-2.ppm",
+        "bytes": 3888016,
+        "sha256": "688eb0249b4cea14d08c62fdc59e122d95988c3d0e1840ee610d1a44ba8452e0"
+      },
+      {
+        "name": "near-0.ppm",
+        "bytes": 3888016,
+        "sha256": "b89ad522d6f7cc0aa8744f0710a813d31c9de4143d08219655340868708ab539"
+      },
+      {
+        "name": "near-1.ppm",
+        "bytes": 3888016,
+        "sha256": "832b29e80663b019300324f46b93d83b54e7503808303a6f1955a1a5f973e77a"
+      },
+      {
+        "name": "near-2.ppm",
+        "bytes": 3888016,
+        "sha256": "484c775a70adb51febb67bff0b1e7ed91a88ded8a2df78c91d7fc83abafc63e3"
+      }
+    ]
+  },
+  {
+    "scenario": "native/star-diversity/native",
+    "files": [
+      {
+        "name": "spectral-A.ppm",
+        "bytes": 3888016,
+        "sha256": "80d9ff72bd033847816dd094b7fb6a50f4606f37b3a69aeaad8d0858742b3b8b"
+      },
+      {
+        "name": "spectral-B.ppm",
+        "bytes": 3888016,
+        "sha256": "5b9aedd9f3b100334bd897d329ed65ca5ac68605985c0406e6ec5ac88b0d0d3c"
+      },
+      {
+        "name": "spectral-F.ppm",
+        "bytes": 3888016,
+        "sha256": "2d33b6e476e55401dc2ba7d31682588d4ed4790127358d0757c5f5e49fe225b2"
+      },
+      {
+        "name": "spectral-G.ppm",
+        "bytes": 3888016,
+        "sha256": "7aca23c80d926322af4235840b9853b13c91035050bd1d0e42f119791a50a17e"
+      },
+      {
+        "name": "spectral-K.ppm",
+        "bytes": 3888016,
+        "sha256": "2397849eca5a73e923e2865199ce9535f70ec8dd71e13563e9f20ebb1050c35b"
+      },
+      {
+        "name": "spectral-M.ppm",
+        "bytes": 3888016,
+        "sha256": "9e678916882ecefdc08c513c28ca1d55e7cbea0da281d0871c6f54e0e552fdba"
+      },
+      {
+        "name": "spectral-O.ppm",
+        "bytes": 3888016,
+        "sha256": "5d729b68043b7e5dfce20be45277633dfc16eb788fb1b390c2e40387cf09483b"
+      },
+      {
+        "name": "star-0.ppm",
+        "bytes": 3888016,
+        "sha256": "7fac6d6bfe155944dcf221b9ebc2e9ebd41eeebae953d9ad2343facc69ffddca"
+      },
+      {
+        "name": "star-1.ppm",
+        "bytes": 3888016,
+        "sha256": "a16ce28b1e95a057b38ddbfeddc99a9ca44b7e1ec60677a47370f90b793073af"
+      },
+      {
+        "name": "star-2.ppm",
+        "bytes": 3888016,
+        "sha256": "b48bd8e8e4b35bd31f9ab6f0493fb18cae26dfb8f12f321884aa54f0f74cab6c"
+      },
+      {
+        "name": "star-3-no-optics.ppm",
+        "bytes": 3888016,
+        "sha256": "aa80d3f8d5a45f9975317e2f171587c388f380253981409e69618ed189dbf37e"
+      },
+      {
+        "name": "star-3.ppm",
+        "bytes": 3888016,
+        "sha256": "074bb3f5ecc64eae2ce6fede2272f24bb995db4daa3b4666c1f077834fb7897f"
+      },
+      {
+        "name": "star-4.ppm",
+        "bytes": 3888016,
+        "sha256": "947837e37949efbe2bf4f59a6ec0abafd236cdd1b8e0c402b36088288a4263b6"
+      },
+      {
+        "name": "star-5.ppm",
+        "bytes": 3888016,
+        "sha256": "20e7548ef54a5347231a3c2958dea5ae1de0f6dae441d3a7e6a51ddd1f237155"
+      },
+      {
+        "name": "star-6-rebased.ppm",
+        "bytes": 3888016,
+        "sha256": "4c44ef6cd99c95a2a175fdcc167fec5abdd50e1c86f7021dc6ed35e6b25ff6d3"
+      },
+      {
+        "name": "star-6.ppm",
+        "bytes": 3888016,
+        "sha256": "b3694b6e573a348310b6154d3310ce87b733b308c466f5b38002faf0a106f604"
+      },
+      {
+        "name": "star-7-rebased.ppm",
+        "bytes": 3888016,
+        "sha256": "dde7422ad01de5ee8eddf41e897e75cd3a6d711eefa304ba467466b6b53d7b0c"
+      },
+      {
+        "name": "star-7.ppm",
+        "bytes": 3888016,
+        "sha256": "5bb88960bb1b4cd0df928ab378d1738119d81b018266e15a98b2979960d22aca"
+      },
+      {
+        "name": "star-8.ppm",
+        "bytes": 3888016,
+        "sha256": "7ba56f02169a9028ff51ed4ee5846cb5ed87be8bf63431cbe72e057b6bd32788"
+      },
+      {
+        "name": "star-9.ppm",
+        "bytes": 3888016,
+        "sha256": "29b15bd02e1bfe16426291b4a35e3c5915598280a85504a71bf870d51ff55813"
+      }
+    ]
+  },
+  {
+    "scenario": "native/star-stability/native",
+    "files": [
+      {
+        "name": "filtered-idle-0.ppm.z",
+        "bytes": 1597004,
+        "sha256": "e20cf8d215abe40ef74ccdcfca4f84ed5bcc1e19803089afed3691570963f31c"
+      },
+      {
+        "name": "filtered-idle-1.ppm.z",
+        "bytes": 1596810,
+        "sha256": "095ed8ee2f98a4282bf0577f07e99b773670d7da1455fa704ea837fa6e181b9e"
+      },
+      {
+        "name": "filtered-idle-10.ppm.z",
+        "bytes": 1597077,
+        "sha256": "fdd6a666a448a998d868b78761ecd09641872ea52b5f8bd57b23e527187ca91c"
+      },
+      {
+        "name": "filtered-idle-11.ppm.z",
+        "bytes": 1596777,
+        "sha256": "3e96544bba40e66ae6c24c01c58718cd8a176ada380c847984651216cd95911d"
+      },
+      {
+        "name": "filtered-idle-12.ppm.z",
+        "bytes": 1598035,
+        "sha256": "4b5b83d532a72fea057a04a8760812b89cfd3828f9a6f264f3328fb1162fdf72"
+      },
+      {
+        "name": "filtered-idle-13.ppm.z",
+        "bytes": 1596991,
+        "sha256": "bae880496e22de77b9eaa9f52086804b2e13c7f2abd3ba854bd99cf09a69da25"
+      },
+      {
+        "name": "filtered-idle-14.ppm.z",
+        "bytes": 1597093,
+        "sha256": "d0ca7f2c6944b844c0b13fb1e2129a67bf477394b7fc5ddef3725d03c625c8e0"
+      },
+      {
+        "name": "filtered-idle-15.ppm.z",
+        "bytes": 1597399,
+        "sha256": "24f0caf0d1946cf3c2c841205ec844f6f26cd90a5257ab2739360222dcb67a3b"
+      },
+      {
+        "name": "filtered-idle-2.ppm.z",
+        "bytes": 1597468,
+        "sha256": "42cbc9b729f6ec35ae47aca1b946b34b492259d777036b7a5e5d7b9920933705"
+      },
+      {
+        "name": "filtered-idle-3.ppm.z",
+        "bytes": 1597282,
+        "sha256": "21d76e7dd4856d09afe9373a8c3004f3c2a800c50a503da96c1d1e67f850f2cc"
+      },
+      {
+        "name": "filtered-idle-4.ppm.z",
+        "bytes": 1597364,
+        "sha256": "2a11012f0ba5b03c22304546f660e6029d25de71bb6859fe0cfdebc266772e7c"
+      },
+      {
+        "name": "filtered-idle-5.ppm.z",
+        "bytes": 1597312,
+        "sha256": "3e89b5b995c55c6c426e3f5a1bd3cebc925edaadba5db12c6f26b5467f5e7049"
+      },
+      {
+        "name": "filtered-idle-6.ppm.z",
+        "bytes": 1597608,
+        "sha256": "60175262dd773fae1f8cdb514266c30cbbfc2d6a77e697c0c9b56f6471355ef3"
+      },
+      {
+        "name": "filtered-idle-7.ppm.z",
+        "bytes": 1597126,
+        "sha256": "d79d31fff02a25ac4fb48a93dc5a799e1de9de6eb38ad67741153b698ab52560"
+      },
+      {
+        "name": "filtered-idle-8.ppm.z",
+        "bytes": 1597332,
+        "sha256": "468086c0e447f04bf4659dbb1065d828114869772892702bb0053a880a8b162f"
+      },
+      {
+        "name": "filtered-idle-9.ppm.z",
+        "bytes": 1597308,
+        "sha256": "e9cfd5c33c1291d3d56fc132234932961d0c5decafba76879aad9a9f7ad62b0c"
+      },
+      {
+        "name": "filtered-still-0.ppm.z",
+        "bytes": 1604904,
+        "sha256": "1c26bc00f0e950ff098f01f11624995d52269d0898357f09d3a0f9ff1d6d90e5"
+      },
+      {
+        "name": "filtered-still-1.ppm.z",
+        "bytes": 1604904,
+        "sha256": "1c26bc00f0e950ff098f01f11624995d52269d0898357f09d3a0f9ff1d6d90e5"
+      },
+      {
+        "name": "legacy-idle-0.ppm.z",
+        "bytes": 1568787,
+        "sha256": "be738887df9c36776113296d1820ab1457ae510f41f1725f2b3a371b47912078"
+      },
+      {
+        "name": "legacy-idle-1.ppm.z",
+        "bytes": 1568246,
+        "sha256": "3b98808a7a7736f59df779641e5ff8bcf4a1c904ae061e438bbbec37b544aa96"
+      },
+      {
+        "name": "legacy-idle-10.ppm.z",
+        "bytes": 1568778,
+        "sha256": "f73ac05f520232b68dce905f2666ba04b091694662ebd5a53c56e95c2f6b10e4"
+      },
+      {
+        "name": "legacy-idle-11.ppm.z",
+        "bytes": 1568482,
+        "sha256": "c3577c849c3ca12345e38ca29e601e340f296ae10316a7d2951587991a5815b3"
+      },
+      {
+        "name": "legacy-idle-12.ppm.z",
+        "bytes": 1569200,
+        "sha256": "8e5244b64bab944cde61d9fa75d9d2aecebae5b1da0bc4a35075a5e26d45da34"
+      },
+      {
+        "name": "legacy-idle-13.ppm.z",
+        "bytes": 1568493,
+        "sha256": "2736b9f0a0728fec6e2713ca97d84e788a9edfed753afeba65230fc821a2fe7b"
+      },
+      {
+        "name": "legacy-idle-14.ppm.z",
+        "bytes": 1568825,
+        "sha256": "743eef2130b2a32aea43332cd0adb47c40c1ea08ead98e99d368dcf4f3e5dc26"
+      },
+      {
+        "name": "legacy-idle-15.ppm.z",
+        "bytes": 1569653,
+        "sha256": "f3dc500bbbaa3121567998be31774e669075c360a52810e67af6b358cccb31c7"
+      },
+      {
+        "name": "legacy-idle-2.ppm.z",
+        "bytes": 1569021,
+        "sha256": "47660b8e6b820b310de624eb36fa9cee20afd63b99ff94767f5c691d2d643497"
+      },
+      {
+        "name": "legacy-idle-3.ppm.z",
+        "bytes": 1568641,
+        "sha256": "a00616d6f5f497fe29c370115bded800d973aa509d8f71511149280e65715d96"
+      },
+      {
+        "name": "legacy-idle-4.ppm.z",
+        "bytes": 1568977,
+        "sha256": "eef44521120fe5f80874d694a36a96371e69110af51257f7df966f5fe40d7309"
+      },
+      {
+        "name": "legacy-idle-5.ppm.z",
+        "bytes": 1568450,
+        "sha256": "ec1cd4c8054ba0b5508c646c3fa74d8cd746901a2e7cd472841f5e25efed23f2"
+      },
+      {
+        "name": "legacy-idle-6.ppm.z",
+        "bytes": 1569340,
+        "sha256": "767b5db79bbfa201249d31a05407ca8eefb4c6838dd825bfd511c30b2cc741c1"
+      },
+      {
+        "name": "legacy-idle-7.ppm.z",
+        "bytes": 1568567,
+        "sha256": "de261bc02cfa16ed1385e2d1d70747fc5ccc3d88294beee38407c290f4987c7a"
+      },
+      {
+        "name": "legacy-idle-8.ppm.z",
+        "bytes": 1569378,
+        "sha256": "94029bf876d8fb8351691358894879bc378320b2745c46eaf0ff386fb3634f69"
+      },
+      {
+        "name": "legacy-idle-9.ppm.z",
+        "bytes": 1569071,
+        "sha256": "5f963122f18d60837f72f59377244df83940200c201d72012a703624e33a744e"
+      },
+      {
+        "name": "legacy-still-0.ppm.z",
+        "bytes": 1576199,
+        "sha256": "8a7fe955fcf1e9bee1df9baa0a689cc7fab2e19ee2687dd053dd331ee78707df"
+      },
+      {
+        "name": "legacy-still-1.ppm.z",
+        "bytes": 1576199,
+        "sha256": "8a7fe955fcf1e9bee1df9baa0a689cc7fab2e19ee2687dd053dd331ee78707df"
+      }
+    ]
+  },
+  {
+    "scenario": "native/cockpit-motion-native",
+    "files": [
+      {
+        "name": "hyperion-damage.ppm",
+        "bytes": 3888016,
+        "sha256": "e0786868b4748ff64c8b53758faac82751de5ac83dc9763f6f440b11adb020e0"
+      },
+      {
+        "name": "hyperion-impact.ppm",
+        "bytes": 3888016,
+        "sha256": "44a4f3cf5d1f87add12d63df425885c98daf9f455159ebfe345a3483e0a8cf35"
+      },
+      {
+        "name": "hyperion-neutral.ppm",
+        "bytes": 3888016,
+        "sha256": "7e6b5641a98469a276534a2181ffcc29b582d236e9a3738053d9489a0fb3a900"
+      },
+      {
+        "name": "hyperion-recoil.ppm",
+        "bytes": 3888016,
+        "sha256": "3deffe5d093e4a0a170c5b346d2f100d4608896c3b7c2b19a2cf1cd0b427327b"
+      },
+      {
+        "name": "hyperion-recovery.ppm",
+        "bytes": 3888016,
+        "sha256": "7e6b5641a98469a276534a2181ffcc29b582d236e9a3738053d9489a0fb3a900"
+      },
+      {
+        "name": "hyperion-turn.ppm",
+        "bytes": 3888016,
+        "sha256": "ecc5c666a25b4aaeccd7cde4577c636ef0f9ecef768c8a04038c33fe7194b5a8"
+      }
+    ]
+  },
+  {
+    "scenario": "native/weather-visibility",
+    "files": [
+      {
+        "name": "dust-0.ppm",
+        "bytes": 3888016,
+        "sha256": "00c37887092c506730eca90fc718be5083f6a6cba9fef2dbe5b83c3514d55f2a"
+      },
+      {
+        "name": "dust-1.ppm",
+        "bytes": 3888016,
+        "sha256": "5881c82d894c7e8c1eeb9deb99441e03d224c549a21adc772eca4e7c96bde40d"
+      },
+      {
+        "name": "dust-2.ppm",
+        "bytes": 3888016,
+        "sha256": "fb40cf683ad1e1a0e51503fd23b07bf9d642281085960d4cfa0660594a4ea129"
+      },
+      {
+        "name": "rain-0.ppm",
+        "bytes": 3888016,
+        "sha256": "3870656d7bb9cf12a92fb7470e330b0a973cfba29c0303421f5ffeb7b25e950d"
+      },
+      {
+        "name": "rain-1.ppm",
+        "bytes": 3888016,
+        "sha256": "f09f309fb2bebf89d90926fbe2175487d9c4be064c82449b44932fa3a0f24c22"
+      },
+      {
+        "name": "rain-2.ppm",
+        "bytes": 3888016,
+        "sha256": "f009be5d122ac7f1ab897f2072132c71b1e82bbd7032cf04060f757186ed7476"
+      },
+      {
+        "name": "snow-0.ppm",
+        "bytes": 3888016,
+        "sha256": "107aa1535c0a80cebd0eb03b1a3dde051df149d8c999123eb8f799c720aad853"
+      },
+      {
+        "name": "snow-1.ppm",
+        "bytes": 3888016,
+        "sha256": "ed263e3a7db0d467c8e5dbdf1b67c54fe260701b1377f352ddd2964c032ce6d1"
+      },
+      {
+        "name": "snow-2.ppm",
+        "bytes": 3888016,
+        "sha256": "7117c8818d45c285bc35c17691f630162705c49d216dcf56cc9b2da15026945c"
+      },
+      {
+        "name": "storm-0.ppm",
+        "bytes": 3888016,
+        "sha256": "9d009feead0cb8e143e35b1218ca130fcd7fafca5fe44143a8e323dfe4e611af"
+      },
+      {
+        "name": "storm-1.ppm",
+        "bytes": 3888016,
+        "sha256": "281efa26c7bdb879ea1de9922b0f64ef430b1d8d3b7ffd186d22349c325b286b"
+      },
+      {
+        "name": "storm-2.ppm",
+        "bytes": 3888016,
+        "sha256": "2008e178a7068f6b1a5b025d23d9751b126bb7d0bba9b18d9dfa48f61ec0add3"
+      },
+      {
+        "name": "vacuum-0.ppm",
+        "bytes": 3888016,
+        "sha256": "84896abdef069a9e69f8e8dd718ec2916b180d2d2581cd259546dcfa046cb930"
+      },
+      {
+        "name": "vacuum-1.ppm",
+        "bytes": 3888016,
+        "sha256": "84896abdef069a9e69f8e8dd718ec2916b180d2d2581cd259546dcfa046cb930"
+      },
+      {
+        "name": "vacuum-2.ppm",
+        "bytes": 3888016,
+        "sha256": "9f4f98582607bed381cf51969aca5a174e798558275b0b7102b1aace219b9c67"
+      }
+    ]
+  },
+  {
+    "scenario": "native/native-continuity",
+    "files": [
+      {
+        "name": "0-1.ppm",
+        "bytes": 6220817,
+        "sha256": "6f23cbe96726963ff2680ebb0c40bc5936014018614040b9fe31888f58524f54"
+      },
+      {
+        "name": "1-2.ppm",
+        "bytes": 6220817,
+        "sha256": "aabd3303df4f55b879b079ec7d665e2df4c5bf113a75eaca34047950a2489085"
+      },
+      {
+        "name": "10-5.ppm",
+        "bytes": 6220817,
+        "sha256": "b4c53ab922be4fe0de3a9dc517cdda0cfbf495970c3c02054b082366b439c894"
+      },
+      {
+        "name": "11-4.ppm",
+        "bytes": 6220817,
+        "sha256": "b75f475302799d758fc1775843c1616c8457242b7f37e1e00c11fbe0ae37ac96"
+      },
+      {
+        "name": "12-3.ppm",
+        "bytes": 6220817,
+        "sha256": "2c2fa13104a1ae8f7448773e37445f846c642ef54d017194fb7a3e04f267c474"
+      },
+      {
+        "name": "13-2.ppm",
+        "bytes": 6220817,
+        "sha256": "da02942e766378d77466eaf8d969c885b041f752e9cd507b0436cbb86605f918"
+      },
+      {
+        "name": "14-1.ppm",
+        "bytes": 6220817,
+        "sha256": "4b60e0572c5bbc62ed63c9b7e08848c4799dd015695466df627d2f7ce2ee5236"
+      },
+      {
+        "name": "2-3.ppm",
+        "bytes": 6220817,
+        "sha256": "9c83c59f47c972a259c584459980b6174de2f455d7c1276a9ef4530e7f1fac4d"
+      },
+      {
+        "name": "3-4.ppm",
+        "bytes": 6220817,
+        "sha256": "a3faf265e35a1eaabdea7da71a1a59e41c6802ef0fdef9406c728b3f8e7b27d5"
+      },
+      {
+        "name": "4-5.ppm",
+        "bytes": 6220817,
+        "sha256": "035b29741caaf1f89d7c123ffaf0dbbe93ec9813fac18fb2f117c148f2895d30"
+      },
+      {
+        "name": "5-6.ppm",
+        "bytes": 6220817,
+        "sha256": "21931dbb4e5099c1bcd56f583e29afd761fe89c73cf128bc3fcce963a9161bbb"
+      },
+      {
+        "name": "6-7.ppm",
+        "bytes": 6220817,
+        "sha256": "d3f8d37520e966c09aade4d1d4d7ebc1dbff0430ae035b9e2ea898c71d268fc1"
+      },
+      {
+        "name": "7-8.ppm",
+        "bytes": 6220817,
+        "sha256": "6eed37bb9813f461af5482e8d4a155341040366c28794450d82f0d68132a0ab9"
+      },
+      {
+        "name": "8-7.ppm",
+        "bytes": 6220817,
+        "sha256": "fda0dea0b323781fc626ba438d4e402acd20524c10307244e2c14fd168df5d20"
+      },
+      {
+        "name": "9-6.ppm",
+        "bytes": 6220817,
+        "sha256": "a7e8eca92cd1b8e48ce95283b8f15349c851bd51c7f74eac645b4251df0e2f88"
+      }
+    ]
+  },
+  {
+    "scenario": "native/crew/native",
+    "files": [
+      {
+        "name": "crew-emergency.ppm.z",
+        "bytes": 1020453,
+        "sha256": "e7eeee16daf5fd0963beee05c7e9326515b8dc88ee36ac5ab2f84bfb6af8d336"
+      },
+      {
+        "name": "crew-portrait.ppm.z",
+        "bytes": 741816,
+        "sha256": "32b8a76347d20be3000de49145c786fc9073e70948ce50234249a7f639fdf2c7"
+      },
+      {
+        "name": "crew-recovered.ppm.z",
+        "bytes": 1064303,
+        "sha256": "405bad36d94e31c8392ef1052f7bde9d2e42ae30791ccf9688b1639caac770c4"
+      },
+      {
+        "name": "crew-responders.ppm.z",
+        "bytes": 1018695,
+        "sha256": "6d274005cbff44866a2cbbcb60641d2e34b221f1d30eee55a3bbe758e6c95743"
+      },
+      {
+        "name": "crew-stations.ppm.z",
+        "bytes": 1018166,
+        "sha256": "35cfc90ad47dd8347c68dda1d07a6fe5ecd3e603cd66a87f614ca7694051c920"
+      }
+    ]
+  },
+  {
+    "scenario": "native/planet-diversity/native",
+    "files": [
+      {
+        "name": "gas-hyperion.ppm",
+        "bytes": 3888016,
+        "sha256": "b4f2e0ed4cac29577513ba88cd7f832345a20327b969bfe8002f7b31491465cd"
+      },
+      {
+        "name": "hot-giant.ppm",
+        "bytes": 3888016,
+        "sha256": "8ebc5a09d69b3a974023728ac1e5a602aa197626bce656b5a99a8e1c9470922d"
+      },
+      {
+        "name": "ice-giant-hyperion.ppm",
+        "bytes": 3888016,
+        "sha256": "7ec488c86e35a6796d38af1ec9a60ae4a212ae1905b7003f8b24deb0b77aca47"
+      },
+      {
+        "name": "rings-off.ppm",
+        "bytes": 3888016,
+        "sha256": "2fa0ae931ec125efe44f1f2968544f2cd79e6e6bd6b0f0995adec76bbbf8cff2"
+      },
+      {
+        "name": "rings-rebased.ppm",
+        "bytes": 3888016,
+        "sha256": "bd22ac97ecc5bc253bcae4640785d234aab4c0fc30007e8da9279f28f19849ed"
+      },
+      {
+        "name": "solid-0.ppm",
+        "bytes": 3888016,
+        "sha256": "194e07296cded6c4be16cbbb33f591c6a2eb3762bc795a5dc488b8fb0e56edba"
+      },
+      {
+        "name": "solid-1.ppm",
+        "bytes": 3888016,
+        "sha256": "5757ba933209670239af71b7bb638597d45bffbedd65dc210c627134d5e1d3d6"
+      },
+      {
+        "name": "solid-2.ppm",
+        "bytes": 3888016,
+        "sha256": "5a58142cecb0d5f6c5848a29960b32f7db95a8cf4c744e343418c67339639519"
+      },
+      {
+        "name": "solid-3.ppm",
+        "bytes": 3888016,
+        "sha256": "08bbe021e02f06e8904567813db7605f4fda6baa6e4d76ad9b75becf294c66ed"
+      },
+      {
+        "name": "solid-4.ppm",
+        "bytes": 3888016,
+        "sha256": "232c3785ae46efc643ba240eb6c477bd8c1ab3941c22b98d545739b21273c8ae"
+      },
+      {
+        "name": "solid-5.ppm",
+        "bytes": 3888016,
+        "sha256": "181ba57935f231148540ff68827a09e7441dbd42dabd39a308aa1966fad7fb75"
+      },
+      {
+        "name": "sub-neptune-hyperion.ppm",
+        "bytes": 3888016,
+        "sha256": "16e82928c9ba777592899e01a65591c313a23bebeb1ad8f239d100484ba53f6d"
+      }
+    ]
+  },
+  {
+    "scenario": "native/planet-stability",
+    "files": [
+      {
+        "name": "moon-HYPERION-0.ppm",
+        "bytes": 1728015,
+        "sha256": "fdf590c806633d303c0f60528e2ecde00aba0dcad28019a1982f9aea3f6f0c42"
+      },
+      {
+        "name": "moon-HYPERION-1.ppm",
+        "bytes": 1728015,
+        "sha256": "f06c1f533e62b2fe6a26c60a9629c1655b8ac71a6cb50a63a1681125a5dfcd60"
+      },
+      {
+        "name": "moon-HYPERION-2.ppm",
+        "bytes": 1728015,
+        "sha256": "d1d96e27ace006b4d660edbf8c1b492973a52117f6429879e47ac000f0b70f33"
+      },
+      {
+        "name": "solid-HYPERION-0.ppm",
+        "bytes": 1728015,
+        "sha256": "cfbbc3c103f4fa2e00fad0d51f261a5d7d737ec2f1f6e4090eef000c2f9e41a0"
+      },
+      {
+        "name": "solid-HYPERION-1.ppm",
+        "bytes": 1728015,
+        "sha256": "1b30be86257e564f9c5af7abead376ae92ed7d9c6dce459e8318359b45f83396"
+      },
+      {
+        "name": "solid-HYPERION-2.ppm",
+        "bytes": 1728015,
+        "sha256": "fad01baea6f8ebba14d00a55e9e3894e4948c35000ab0fe2a72ee12e5cb9cd71"
+      }
+    ]
+  },
+  {
+    "scenario": "native/exploration/native",
+    "files": [
+      {
+        "name": "survey-contract-paid.ppm.z",
+        "bytes": 859784,
+        "sha256": "1c9c6bc6a4f3a5f5b1f99e6b22a6153527d32545f806e1b12c079c07a41be67d"
+      },
+      {
+        "name": "survey-equipment.ppm.z",
+        "bytes": 858969,
+        "sha256": "8be957960cccec6867bf10465941eb13d400102ac9a2c09531c408cc2a99c820"
+      },
+      {
+        "name": "survey-extracted-cargo.ppm.z",
+        "bytes": 874446,
+        "sha256": "08da98687d05ff7447229028d8cebfd91955ae9cc6156f2a58ad38a192c34bf9"
+      },
+      {
+        "name": "survey-journal-portrait.ppm.z",
+        "bytes": 308080,
+        "sha256": "a8c42ed5d5542acce99a7868151e6239ec403e0fbb17ea211642897744aca2ab"
+      },
+      {
+        "name": "survey-mining-beam.ppm.z",
+        "bytes": 1225932,
+        "sha256": "bcc5ce68c95f5a52a452030d233d55d9a0abd68321c5fbd9192ad3741f0ee82b"
+      },
+      {
+        "name": "survey-orbit-scan.ppm.z",
+        "bytes": 1751717,
+        "sha256": "53713fd5bd09be1234dc7fce316692bbbecdfbf24bad143902b8fb0bfaa47159"
+      },
+      {
+        "name": "survey-surface-scan.ppm.z",
+        "bytes": 1218343,
+        "sha256": "4b22e1280dd154eb8b85f809bbf65bddcd53b7996d9d04ceba6cc5352821a76c"
+      },
+      {
+        "name": "survey-world-journal.ppm.z",
+        "bytes": 1276888,
+        "sha256": "7c114e941ed7bf7e95550ed33bf35ae82e51525368593b63161cfaf6ed4326cd"
+      }
+    ]
+  },
+  {
+    "scenario": "native/station-swap/native",
+    "files": [
+      {
+        "name": "swap-crew-circle.ppm.z",
+        "bytes": 1481231,
+        "sha256": "ea4693f03b3e1ef3cddf51deb00bcedf2ef2a045e9744666bfc75e0a1b457e65"
+      },
+      {
+        "name": "swap-crew-evade.ppm.z",
+        "bytes": 1512927,
+        "sha256": "ba1a8da10654b10de48bfaff3ac032e27ebe25e21b95bdc56aee07e037fd3cea"
+      },
+      {
+        "name": "swap-crew-retreat.ppm.z",
+        "bytes": 1366737,
+        "sha256": "e6892e9a0bd10b0df4bbca97a36d16639aee76efa117d390be870bacb38dd64b"
+      },
+      {
+        "name": "swap-gun-aim.ppm.z",
+        "bytes": 1354438,
+        "sha256": "adb5d7684f75ca7f6b93ae891e880db25c822027bad603e752707e38e327e442"
+      },
+      {
+        "name": "swap-gun-fire.ppm.z",
+        "bytes": 1509558,
+        "sha256": "70a52a66dc01a87125267afd81ca04e3ce832cad49e73302cc7fa76b61ac1b20"
+      },
+      {
+        "name": "swap-gun-ready.ppm.z",
+        "bytes": 1405596,
+        "sha256": "fc723bb30d56d4faebe77de55ff85cd057c04e8903db072dd831bedbc59fbb5f"
+      },
+      {
+        "name": "swap-helm.ppm.z",
+        "bytes": 1659719,
+        "sha256": "aa0729c14c0c64ca4c3dafa9e935684a3d7f407f6ce4af94b935a23d89b14a3c"
+      },
+      {
+        "name": "swap-pilot-unavailable.ppm.z",
+        "bytes": 1098968,
+        "sha256": "09428a209a63e8f3cece668bbdff2b1e42c21ef0fdc5ae1cac79054fab6d1bbb"
+      },
+      {
+        "name": "swap-portrait.ppm.z",
+        "bytes": 959928,
+        "sha256": "377c35cb3f08c1ec73ebf8fad72ca439e48ba40de357222dc7f011a7470b5be0"
+      },
+      {
+        "name": "swap-relief-walking.ppm.z",
+        "bytes": 1516148,
+        "sha256": "f088103b5755d882cc089771cbd8b19f40e042c2c3722e7b2a38a9fa7020df23"
+      },
+      {
+        "name": "swap-returned-helm.ppm.z",
+        "bytes": 1526927,
+        "sha256": "90799f94e15eb46a0e6fbd61b91162f2aec7980a19c463ee18af61f207026852"
+      },
+      {
+        "name": "swap-security-jobs.ppm.z",
+        "bytes": 1172406,
+        "sha256": "fae459fbf8519ab1bc77687e0c3c5a211eb83d6c13ddd4404dad661742637e4e"
+      }
+    ]
+  },
+  {
+    "scenario": "native/polar-optics",
+    "files": [
+      {
+        "name": "airless-0.ppm",
+        "bytes": 3888016,
+        "sha256": "b4ce23a490351907a310a1330954797deaaabcc72ee75be1355bd24ebae087fa"
+      },
+      {
+        "name": "airless-1.ppm",
+        "bytes": 3888016,
+        "sha256": "b4ce23a490351907a310a1330954797deaaabcc72ee75be1355bd24ebae087fa"
+      },
+      {
+        "name": "airless-2.ppm",
+        "bytes": 3888016,
+        "sha256": "9d4c1287f52d3dec4910bc61ae1ba232bbacebbe450b09f8591e61c020d8cd1c"
+      },
+      {
+        "name": "blocked-0.ppm",
+        "bytes": 3888016,
+        "sha256": "ae599d37a033330a1e43ee331604d647001a907c6d45f5fa9d94296b794a09ac"
+      },
+      {
+        "name": "blocked-1.ppm",
+        "bytes": 3888016,
+        "sha256": "ae599d37a033330a1e43ee331604d647001a907c6d45f5fa9d94296b794a09ac"
+      },
+      {
+        "name": "blocked-2.ppm",
+        "bytes": 3888016,
+        "sha256": "4128e9c9b0dbc3378e88133c6b31b2a486545232aaff7fe056d3b4d083c4c162"
+      },
+      {
+        "name": "day-0.ppm",
+        "bytes": 3888016,
+        "sha256": "3153bf05e865abe816668c9b751f08241e8bebf31604df33e71f178880be0e5e"
+      },
+      {
+        "name": "day-1.ppm",
+        "bytes": 3888016,
+        "sha256": "3153bf05e865abe816668c9b751f08241e8bebf31604df33e71f178880be0e5e"
+      },
+      {
+        "name": "day-2.ppm",
+        "bytes": 3888016,
+        "sha256": "661dea39d28110cd11e19041e07524e2172d2b6d41a3860b1935ab55a0d98cd5"
+      },
+      {
+        "name": "ground-0.ppm",
+        "bytes": 3888016,
+        "sha256": "13820230063196ebb5b8479bf248f1ffe590384a019d35a93c338015c0624344"
+      },
+      {
+        "name": "ground-1.ppm",
+        "bytes": 3888016,
+        "sha256": "d77140951c189f867480be2c5ffbf22af44f8a13d538cb64ae62469307e4737b"
+      },
+      {
+        "name": "ground-2.ppm",
+        "bytes": 3888016,
+        "sha256": "1d4b3fff29ea6a8a7a4a08f1ed32c77bd91d70af9bba4c24b83fe22d746bacda"
+      },
+      {
+        "name": "night-0.ppm",
+        "bytes": 3888016,
+        "sha256": "2e676a73489e67b8d6f1dbcdb605106eefc4366263b31b019483a5e396426c58"
+      },
+      {
+        "name": "night-1.ppm",
+        "bytes": 3888016,
+        "sha256": "d1fd9134cb4cbe08d3d7a0f0630b566143644a8aa9082efe77e3a79cd7e8f20f"
+      },
+      {
+        "name": "night-2.ppm",
+        "bytes": 3888016,
+        "sha256": "cf998812dfc307603df233ce5faa22547a8cf290423b44a393103048e978c0e8"
+      }
+    ]
+  },
+  {
+    "scenario": "native/terrain-native",
+    "files": [
+      {
+        "name": "3-Ice ridges-HYPERION.ppm",
+        "bytes": 3888016,
+        "sha256": "650caf93200d5ac9395e17b26930b5156466cfbeecc86e7391ab79b46d9601ae"
+      },
+      {
+        "name": "2-Canyons-HYPERION.ppm",
+        "bytes": 3888016,
+        "sha256": "78269aa4a413f73f2adfd945085733681ffa667eb1c280e1b791fe32d17cf1ca"
+      },
+      {
+        "name": "1-Volcanic-HYPERION.ppm",
+        "bytes": 3888016,
+        "sha256": "4d556de56d620820b7d9de5f60e8bd150a9227fcc9d5c78f1de5580989213a29"
+      },
+      {
+        "name": "0-Highlands-HYPERION.ppm",
+        "bytes": 3888016,
+        "sha256": "5b646429794dfb289dd717bf84d377dc19de9e6ea5c653326862ed88037d01a8"
+      }
+    ]
+  },
+  {
+    "scenario": "native/seamless-flight",
+    "files": [
+      {
+        "name": "flight-3.ppm",
+        "bytes": 6220817,
+        "sha256": "ca48bfbc805565b70d2a6db65c3a8404825f29ca0964646dad52d492bfdb3513"
+      },
+      {
+        "name": "flight-2.ppm",
+        "bytes": 6220817,
+        "sha256": "3c18538aaeff934a8bbac28bc4166d9ca9309fbcbbbe5bddab7484e3e7c7febd"
+      },
+      {
+        "name": "flight-0.ppm",
+        "bytes": 6220817,
+        "sha256": "33ec55598acff9ed7f0945494eca1d29393d437f3af3ca3356d15cdbf7b7fcac"
+      },
+      {
+        "name": "flight-1.ppm",
+        "bytes": 6220817,
+        "sha256": "f4a0b4ab730280e62b2d75c83ec191fd426f9debf725a3a9517ab89e5ae7455d"
+      },
+      {
+        "name": "flight-5.ppm",
+        "bytes": 6220817,
+        "sha256": "b92bde43e83df583fcdc72c69d229af5ac43eb5d54dcf75a7fc05ff62be0901d"
+      },
+      {
+        "name": "flight-4.ppm",
+        "bytes": 6220817,
+        "sha256": "e3bd970d09c2703a57830d9a1fbc363e146ab94928af32a77a6813044861c37a"
+      },
+      {
+        "name": "flight-6.ppm",
+        "bytes": 6220817,
+        "sha256": "bbbd97685c27f746e2456e7f410fed299022fba8dd6cce0744af2d3888d2a043"
+      },
+      {
+        "name": "flight-7.ppm",
+        "bytes": 6220817,
+        "sha256": "90276be0860c843620d62cd1e306f4d0d7b1de6e66837cee7c2ff7c3f8e6fd4a"
+      },
+      {
+        "name": "flight-8.ppm",
+        "bytes": 6220817,
+        "sha256": "73deaf0be78eb6595266dd65bb2145cd66e3f243753fe2cd988eaa856af82453"
+      }
+    ]
+  },
+  {
+    "scenario": "native/pilot-native",
+    "files": [
+      {
+        "name": "atomic-shrink.ppm",
+        "bytes": 3888016,
+        "sha256": "31e26a813cda1164389b73718ac16b90ee353ca290266bfbf9a1b9a527867e83"
+      },
+      {
+        "name": "busy-orbit.ppm",
+        "bytes": 3888016,
+        "sha256": "12ea99e9a22469189e96ab827a3a098dc028b3c6ee28d5f51848b6c42018a632"
+      },
+      {
+        "name": "controls.ppm",
+        "bytes": 3888016,
+        "sha256": "02a6a5975e31ceb2797a4df34d29623ee93605fdf17a6eea67df7676d7d14e7e"
+      },
+      {
+        "name": "departure.ppm",
+        "bytes": 3888016,
+        "sha256": "c8f622e63a8bbd1f1db5d968a7b784e79a361b80ca46c1fe8ca6edafba10b229"
+      },
+      {
+        "name": "landed.ppm",
+        "bytes": 3888016,
+        "sha256": "e795316608dcec4d012ec49d4394892eebd5c73ec5eee77a6a00eb5e698767ae"
+      },
+      {
+        "name": "landing-approach.ppm",
+        "bytes": 3888016,
+        "sha256": "94d6e286fdf6b79a3d03a4f6e11b5e51aa157ad854990777320580ec0748709f"
+      },
+      {
+        "name": "micro-shrink.ppm",
+        "bytes": 3888016,
+        "sha256": "8e238814c7ebf902f4701e48c761132ddd684c35603df570d8b6d526b45ffd74"
+      },
+      {
+        "name": "moon-family.ppm",
+        "bytes": 3888016,
+        "sha256": "187cf685a66c1d89898e1718ae551516d2f015a18ad9c5e8d2d08c44ad5bfa42"
+      },
+      {
+        "name": "orbit-hyperion.ppm",
+        "bytes": 3888016,
+        "sha256": "fa3815c00fcb078793f6d76560f75bec192bf5fb4a13908b76f552f753fff28c"
+      },
+      {
+        "name": "orbital-activity.ppm",
+        "bytes": 3888016,
+        "sha256": "9f25fc1c512b5e7aa129bafbad63999e03f7e9fccbf08bb81f28ef032dbdc097"
+      },
+      {
+        "name": "roll-left.ppm",
+        "bytes": 3888016,
+        "sha256": "f880c3fa2195fd752901e07db742e1a89501af3af3032c98f11159c1d5565456"
+      },
+      {
+        "name": "roll-right.ppm",
+        "bytes": 3888016,
+        "sha256": "2849310c102dd2248f5423ff02d1ed13b339cc459119dbd066dcad4ffcdee2a5"
+      },
+      {
+        "name": "roll-stopped.ppm",
+        "bytes": 3888016,
+        "sha256": "88805b0d56f87b9d26ecdb6b31fae97d57da94dd005037be1dc01beeeb693f87"
+      },
+      {
+        "name": "stellar-background.ppm",
+        "bytes": 3888016,
+        "sha256": "fe84a12d91df9e548aa0a428c007622e69d8185a635d884cd75dd91631ef6b9d"
+      },
+      {
+        "name": "system-contacts.ppm",
+        "bytes": 3888016,
+        "sha256": "95a7263a479a215f2e9cb7f1afabe2015fbd7632e951646676f1261e59402272"
+      }
+    ]
+  },
+  {
+    "scenario": "native/crew-trade/native",
+    "files": [
+      {
+        "name": "crew-trade-aboard.ppm.z",
+        "bytes": 861194,
+        "sha256": "74898d631e147c8cd2823d6fbe6ccfe98316fb7dab20909d0ff1ff624b4d066b"
+      },
+      {
+        "name": "crew-trade-buy.ppm.z",
+        "bytes": 859603,
+        "sha256": "2c169317acaa696c4c3e3124d930317a2e5a9e303363bed6edf5dc3505409135"
+      },
+      {
+        "name": "crew-trade-portrait.ppm.z",
+        "bytes": 536295,
+        "sha256": "040e1a167baa11d51c777bd95c043907efcb563ef8c3d7e0835f40d4ced1405e"
+      },
+      {
+        "name": "crew-trade-sold.ppm.z",
+        "bytes": 858949,
+        "sha256": "7c8fb17774593409291ec8f91980e8643b31c91b2659751d0f39e53f92ebf970"
+      }
+    ]
+  },
+  {
+    "scenario": "native/surface-frame-retina",
+    "files": [
+      {
+        "name": "0-0-Plains-HYPERION.ppm",
+        "bytes": 15336017,
+        "sha256": "5fb9a99193afbef757870961661c21a92a02c05b5bf710daf80c2211b31d544a"
+      },
+      {
+        "name": "0-1-Plains-HYPERION.ppm",
+        "bytes": 15336017,
+        "sha256": "20d12751cbe33cf0d6c6efa55da20df9b861f9a4887e750143f508b6b3793ab3"
+      },
+      {
+        "name": "0-2-Plains-HYPERION.ppm",
+        "bytes": 15336017,
+        "sha256": "37043270b4698d9bd6bd1126f6a5e00b395b29c690f9be52f5024f91016de22a"
+      },
+      {
+        "name": "1-0-Highlands-HYPERION.ppm",
+        "bytes": 15336017,
+        "sha256": "87faf8bbca5dd1c229804843a2772238b39f32c79f95e0415ccd644468f69253"
+      },
+      {
+        "name": "1-1-Highlands-HYPERION.ppm",
+        "bytes": 15336017,
+        "sha256": "a3556c5c08f2cb660f9d0e8f7da25632f188957c6c13522d00664eb9b33dc114"
+      },
+      {
+        "name": "1-2-Highlands-HYPERION.ppm",
+        "bytes": 15336017,
+        "sha256": "2c6bd310f9819a49af4eec302af21a744a242865e7bf945067360c9c3d939435"
+      }
+    ]
+  },
+  {
+    "scenario": "native/hyperion-presentation",
+    "files": [
+      {
+        "name": "0-COSMIC WEB-HYPERION.ppm",
+        "bytes": 6220817,
+        "sha256": "b1bed32503dd070bdfd97c2f37d2f02ae4fa28105e6a3c574ec25dd44e9fc9fd"
+      },
+      {
+        "name": "1-GALAXY-HYPERION.ppm",
+        "bytes": 6220817,
+        "sha256": "ecd8e66fc5e2e8e127c51c0ea3b6a5d059eb937391fc0e1662ae5d56b3fe5cab"
+      },
+      {
+        "name": "10-ROCK-HYPERION.ppm",
+        "bytes": 6220817,
+        "sha256": "a71fb639f91eb500508a6ce15a8009ecedcbb3a583ddf0dc713669d01b86dffc"
+      },
+      {
+        "name": "11-MOUNTAIN-HYPERION.ppm",
+        "bytes": 6220817,
+        "sha256": "2f948d3a399fc1a6d3edfcad89fd394c2a80aec8304bf883212de1bcd644fbee"
+      },
+      {
+        "name": "12-SURFACE-HYPERION.ppm",
+        "bytes": 6220817,
+        "sha256": "d4edff6bd94b06413336919b1215b7e847e5ecb0afb7a91674881f3edf05ab58"
+      },
+      {
+        "name": "13-PLANET-HYPERION.ppm",
+        "bytes": 6220817,
+        "sha256": "f1f7b1a5910eca374cb813118feea17bf6494f3981ec7b176b184863db79da45"
+      },
+      {
+        "name": "14-STAR SYSTEM-HYPERION.ppm",
+        "bytes": 6220817,
+        "sha256": "880739a454000541a1c0f5b3a351167bbb4a7086bb08bc9fe753a1a51eedac42"
+      },
+      {
+        "name": "15-GALAXY-HYPERION.ppm",
+        "bytes": 6220817,
+        "sha256": "0039e4ee1d33424c4d3898f06ecbc1314f1f9931822a5436f9a17316d1778631"
+      },
+      {
+        "name": "16-COSMIC WEB-HYPERION.ppm",
+        "bytes": 6220817,
+        "sha256": "29a178b5812ed4862ea076d2b4abb019beeb90bb61194721fa266620478779a8"
+      },
+      {
+        "name": "2-STAR SYSTEM-HYPERION.ppm",
+        "bytes": 6220817,
+        "sha256": "985e688cf14b061579154b02b7bec606b7a30218b2b28db44773a3c1d10874ed"
+      },
+      {
+        "name": "3-PLANET-HYPERION.ppm",
+        "bytes": 6220817,
+        "sha256": "014b67b62dd16ef7b8b74f33dee8e1871003ed37e064fbd04ebe9c23f8229284"
+      },
+      {
+        "name": "4-SURFACE-HYPERION.ppm",
+        "bytes": 6220817,
+        "sha256": "544277ca583c5f625f4b26ffdd58d08846e89ca8a4167ef8ebaacd7bafe885cc"
+      },
+      {
+        "name": "5-MOUNTAIN-HYPERION.ppm",
+        "bytes": 6220817,
+        "sha256": "cb2ed7f4bea266665b8173d3bf706c6028cd1201e9ca21b11181ab5e6ad68fea"
+      },
+      {
+        "name": "6-ROCK-HYPERION.ppm",
+        "bytes": 6220817,
+        "sha256": "c5f4c376c81cf5e720f8ad700c172e2ede31a2cfc7a0b7775a24a19ee7b019f2"
+      },
+      {
+        "name": "7-MINERAL GRAIN-HYPERION.ppm",
+        "bytes": 6220817,
+        "sha256": "6f11fcb0d7c0809c57c6edced1cf9ad680552e7a598d0069c32534432a1efcb8"
+      },
+      {
+        "name": "8-CRYSTAL LATTICE-HYPERION.ppm",
+        "bytes": 6220817,
+        "sha256": "a5f2117afe136dcc608845ab355725cb4a46e886d2c701b92567adc9a2d3d29c"
+      },
+      {
+        "name": "9-MINERAL GRAIN-HYPERION.ppm",
+        "bytes": 6220817,
+        "sha256": "a2bffc823e15f860f4f4a77ed4f0e25aeb404950fe890c1880402d55e64af7cf"
+      }
+    ]
+  },
+  {
+    "scenario": "native/npc-combat/native",
+    "files": [
+      {
+        "name": "npc-attack.ppm.z",
+        "bytes": 1546317,
+        "sha256": "3507dfd017d3da781caf58ad2c20738a9078793dfdcedaaa15d2361cfde00f93"
+      },
+      {
+        "name": "npc-evade.ppm.z",
+        "bytes": 1558261,
+        "sha256": "134675bd714e4074e2185765911e1de49bd266190bd6ffc831cd4ac3f972de71"
+      },
+      {
+        "name": "npc-patrol-friendly.ppm.z",
+        "bytes": 1162366,
+        "sha256": "3a74fe121382f0a7732aa91b3ce885702741e00a09022424989a1790b53b5a01"
+      },
+      {
+        "name": "npc-patrol-portrait.ppm.z",
+        "bytes": 825328,
+        "sha256": "fb64ebdcc401b75340f3f8e648f547a93651f188a783e261f9183d7a7498538b"
+      },
+      {
+        "name": "npc-patrol-response.ppm.z",
+        "bytes": 1140537,
+        "sha256": "eee0782ac40dd06d60f7158a28954ae284147fc31754cb12596fa8cf42c947f5"
+      },
+      {
+        "name": "npc-retreat.ppm.z",
+        "bytes": 1598603,
+        "sha256": "f5d5ec28a2ab36c277d569ea6192cc48e67ad53b519dea97e6bb33e963859910"
+      }
+    ]
+  },
+  {
+    "scenario": "native/surface-quality",
+    "files": [
+      {
+        "name": "0-0-Plains-HYPERION.ppm",
+        "bytes": 3888016,
+        "sha256": "69a707be18fa59b58c6d0bcc0f5d663d121d5e39c7d0432ecef8359b7781a194"
+      },
+      {
+        "name": "0-1-Plains-HYPERION.ppm",
+        "bytes": 3888016,
+        "sha256": "aa72ef53593e736785a38f03b4d6acfb2a49b6fa903a2d74984cb1a7f532b185"
+      },
+      {
+        "name": "0-2-Plains-HYPERION.ppm",
+        "bytes": 3888016,
+        "sha256": "edb6f68622ee3d1075b4c2a823163db7d2eb4d6863a31e6930fbf07bd1eb29ab"
+      },
+      {
+        "name": "1-0-Highlands-HYPERION.ppm",
+        "bytes": 3888016,
+        "sha256": "48e5e6312d1442cf78c45f51cae71ed6df40dbcb01a0414f33877d73969c7821"
+      },
+      {
+        "name": "1-1-Highlands-HYPERION.ppm",
+        "bytes": 3888016,
+        "sha256": "18e276aa3890955405fe13903d7a59d7bf61a0315743a638694e91d19e103d2f"
+      },
+      {
+        "name": "1-2-Highlands-HYPERION.ppm",
+        "bytes": 3888016,
+        "sha256": "23158f986a7b94ec1f24a1064dcd2b1d43f298e9246ba218812a362c124d2b9e"
+      }
+    ]
+  },
+  {
+    "scenario": "native/streaming-native",
+    "files": [
+      {
+        "name": "coverage-HYPERION.ppm",
+        "bytes": 6220817,
+        "sha256": "2ab2cd8fe5349a8c2eb05fb5658540de1f9f19fb845e73e886c945cf39fef40b"
+      },
+      {
+        "name": "coverage-before.ppm",
+        "bytes": 6220817,
+        "sha256": "3178a6896b43428d87a385ba0643fab46488efb241017cb3d9746abb6039f2c0"
+      },
+      {
+        "name": "root-a.ppm",
+        "bytes": 6220817,
+        "sha256": "dcdb4f694750c46275db611cca833a524b50d65830a195bc36da18735bab67fe"
+      },
+      {
+        "name": "root-b.ppm",
+        "bytes": 6220817,
+        "sha256": "be55fc8fcaa8d74f79b58acd6f9561062d84fae98bb39201b70b954a5b7b97f6"
+      },
+      {
+        "name": "terrain-HYPERION.ppm",
+        "bytes": 6220817,
+        "sha256": "e3b10beb6a81117dc17e4e25284414f2950c0d65ae465475009f721d2de7bd7e"
+      },
+      {
+        "name": "terrain-before.ppm",
+        "bytes": 6220817,
+        "sha256": "35d17cf06eb728b5511ce38a7fd98a395b81197bd946de79827d43401ee3050b"
+      }
+    ]
+  },
+  {
+    "scenario": "native/ui-fit-native",
+    "files": [
+      {
+        "name": "controls.ppm",
+        "bytes": 1200015,
+        "sha256": "5704080f98ec3fa059c6a443a18c39f332e4f797567b388d6b8c666b043c076e"
+      },
+      {
+        "name": "portrait.ppm",
+        "bytes": 1620015,
+        "sha256": "de4f834465c07eb4ff0805866d3af8d9ad7276336b6e5154b51c905df605847b"
+      },
+      {
+        "name": "retina.ppm",
+        "bytes": 6912017,
+        "sha256": "6a4a6fd244bbd8cd8c6b35977fa46e929cd3bd988830c3c96d6246c61fd30a49"
+      },
+      {
+        "name": "small.ppm",
+        "bytes": 1200015,
+        "sha256": "30e93fb8d87cd030c5bffe0efeb1094774b0607f745b66c71f5a6a9fcf90754c"
+      },
+      {
+        "name": "square.ppm",
+        "bytes": 1080015,
+        "sha256": "ea768557ddb0c02b597533f1e4facb1c008a8b3c85d20348011295166ac5481a"
+      },
+      {
+        "name": "wide.ppm",
+        "bytes": 3888016,
+        "sha256": "9750ae8ed8c1f358fec7cf2f0fdf2fbb673c5efb1426a7469570927120fae68f"
+      }
+    ]
+  },
+  {
+    "scenario": "native/grazing-surface",
+    "files": []
+  },
+  {
+    "scenario": "native/combat-operations/native",
+    "files": [
+      {
+        "name": "ops-autonomous-gunners.ppm.z",
+        "bytes": 1519909,
+        "sha256": "a08b6747c1b3b98e147532ce02dc8a5c87b3e7de21779805bac2cda726449ce2"
+      },
+      {
+        "name": "ops-component-damage.ppm.z",
+        "bytes": 1526042,
+        "sha256": "7ec28b2fa74bb5e07bee2960230a9b7cdfb4c7837ddc71c1ed3a36c5a7a7b107"
+      },
+      {
+        "name": "ops-crew-repaired.ppm.z",
+        "bytes": 1525167,
+        "sha256": "d488731775d457be4caf3241cf7002838418a43629a2766da761bdce3ee17c7e"
+      },
+      {
+        "name": "ops-hold-fire.ppm.z",
+        "bytes": 1535718,
+        "sha256": "3c7d4ac3e19dcebd0a4172aa94f8be647da5b07fb636c411604afdc732211fb1"
+      },
+      {
+        "name": "ops-recovery-progress.ppm.z",
+        "bytes": 1615077,
+        "sha256": "b3a37f962a54a3cce0b17465d1ec6346774e1816e25c22703f20c7d5f13de5ae"
+      },
+      {
+        "name": "ops-rescue-crew-office.ppm.z",
+        "bytes": 314641,
+        "sha256": "650e48a8d4d7fc8f8b3e267e06867923e37404bf71cbf439303f80a618dde158"
+      },
+      {
+        "name": "ops-rescue-port.ppm.z",
+        "bytes": 317040,
+        "sha256": "309df41ed514a025ab9bf8d3a2bdcea20e36e589d8d1b96786e70fe6d8e04371"
+      },
+      {
+        "name": "ops-salvage-rescued.ppm.z",
+        "bytes": 1615515,
+        "sha256": "35b762c2a7d3e93b7769399b3bbc79f00a595d087028436b6de4104d2b016730"
+      },
+      {
+        "name": "ops-targeted-engines.ppm.z",
+        "bytes": 1519865,
+        "sha256": "fcedf7f18a1eced5fd4f46495dc583aad7a0b44d26821a30d70d6dc183215de0"
+      },
+      {
+        "name": "ops-wreck-approach.ppm.z",
+        "bytes": 1615560,
+        "sha256": "c0b385b8500e1485dfaf991b3ff8ac0981e7a65f9d1294269c424711e9103edd"
+      }
+    ]
+  },
+  {
+    "scenario": "post-fix/native/celestial-optics",
+    "files": [
+      {
+        "name": "away-0.ppm",
+        "bytes": 3888016,
+        "sha256": "69e7f96bb8716c9247c38484222d46d70ad46512bbc15837695e455a008ae5aa"
+      },
+      {
+        "name": "away-1.ppm",
+        "bytes": 3888016,
+        "sha256": "69e7f96bb8716c9247c38484222d46d70ad46512bbc15837695e455a008ae5aa"
+      },
+      {
+        "name": "away-2.ppm",
+        "bytes": 3888016,
+        "sha256": "1d731f94579d613f79840f8cef41ea0727c5554ecf470c575611d635a7bf2d10"
+      },
+      {
+        "name": "day-0.ppm",
+        "bytes": 3888016,
+        "sha256": "6e844228bc6b8275d67f78bf1562f332f76e6e2ea9ce34b2fb1801fa86213e53"
+      },
+      {
+        "name": "day-1.ppm",
+        "bytes": 3888016,
+        "sha256": "260ad7b660f8f911fcb768851f50b51a8d80f7a79bb433f3ff01b11f834d442f"
+      },
+      {
+        "name": "day-2.ppm",
+        "bytes": 3888016,
+        "sha256": "023dc45f6c7b1fc0de5e73ccd502095dc34e83485d2c5149a05bfee36cbd0c9e"
+      },
+      {
+        "name": "eclipse-0.ppm",
+        "bytes": 3888016,
+        "sha256": "96ea9ea3e3dc7dc5e97484056e61855984a2199e4c189cf0e12d12b268eebd03"
+      },
+      {
+        "name": "eclipse-1.ppm",
+        "bytes": 3888016,
+        "sha256": "96ea9ea3e3dc7dc5e97484056e61855984a2199e4c189cf0e12d12b268eebd03"
+      },
+      {
+        "name": "eclipse-2.ppm",
+        "bytes": 3888016,
+        "sha256": "ceffd0748638c782f9b2a7a584b814d525cadee905dff7337427d6d8dff0f63d"
+      },
+      {
+        "name": "ice-0.ppm",
+        "bytes": 3888016,
+        "sha256": "b1c72dd006c968a574c47865c11104574e631430616bba1ddf0789cb2a5d0941"
+      },
+      {
+        "name": "ice-1.ppm",
+        "bytes": 3888016,
+        "sha256": "b1c72dd006c968a574c47865c11104574e631430616bba1ddf0789cb2a5d0941"
+      },
+      {
+        "name": "ice-2.ppm",
+        "bytes": 3888016,
+        "sha256": "e0855fba1445b3b68c2406fcc20296f7c00353393f7bd2152f7b413c85a17c5e"
+      },
+      {
+        "name": "partial-0.ppm",
+        "bytes": 3888016,
+        "sha256": "cef3bb88af1a6ad8fca702d4bfc5d254dfd5887b74460297d49abf9aa34d1c4d"
+      },
+      {
+        "name": "partial-1.ppm",
+        "bytes": 3888016,
+        "sha256": "b69b2ee44dbae87e0b65896cc8c43cbc18619c153e519230696b83d4558fe4fe"
+      },
+      {
+        "name": "partial-2.ppm",
+        "bytes": 3888016,
+        "sha256": "e0e370332c86e1195466c311e8f132f50ec25e6616ea3e5acb95067e5c06bfca"
+      },
+      {
+        "name": "sun-0.ppm",
+        "bytes": 3888016,
+        "sha256": "1a4d4834b9dd63f3d721fea39017601268b81a21173332d05d05d4390295c68f"
+      },
+      {
+        "name": "sun-1.ppm",
+        "bytes": 3888016,
+        "sha256": "a231f3d32fa3eecef6eff0a3bad6fcdb73818a7667e5c9ec6f05af5ade30462c"
+      },
+      {
+        "name": "sun-2.ppm",
+        "bytes": 3888016,
+        "sha256": "73cac5b1c25499217abe1a5201d4180dc91668f7ae83507ffb1703c9ae33846e"
+      }
+    ]
+  },
+  {
+    "scenario": "post-fix/native/exploration/native",
+    "files": [
+      {
+        "name": "survey-contract-paid.ppm.z",
+        "bytes": 859784,
+        "sha256": "1c9c6bc6a4f3a5f5b1f99e6b22a6153527d32545f806e1b12c079c07a41be67d"
+      },
+      {
+        "name": "survey-equipment.ppm.z",
+        "bytes": 858969,
+        "sha256": "8be957960cccec6867bf10465941eb13d400102ac9a2c09531c408cc2a99c820"
+      },
+      {
+        "name": "survey-extracted-cargo.ppm.z",
+        "bytes": 874446,
+        "sha256": "08da98687d05ff7447229028d8cebfd91955ae9cc6156f2a58ad38a192c34bf9"
+      },
+      {
+        "name": "survey-journal-portrait.ppm.z",
+        "bytes": 308080,
+        "sha256": "a8c42ed5d5542acce99a7868151e6239ec403e0fbb17ea211642897744aca2ab"
+      },
+      {
+        "name": "survey-mining-beam.ppm.z",
+        "bytes": 1225932,
+        "sha256": "bcc5ce68c95f5a52a452030d233d55d9a0abd68321c5fbd9192ad3741f0ee82b"
+      },
+      {
+        "name": "survey-orbit-scan.ppm.z",
+        "bytes": 1751717,
+        "sha256": "53713fd5bd09be1234dc7fce316692bbbecdfbf24bad143902b8fb0bfaa47159"
+      },
+      {
+        "name": "survey-surface-scan.ppm.z",
+        "bytes": 1218343,
+        "sha256": "4b22e1280dd154eb8b85f809bbf65bddcd53b7996d9d04ceba6cc5352821a76c"
+      },
+      {
+        "name": "survey-world-journal.ppm.z",
+        "bytes": 1276888,
+        "sha256": "7c114e941ed7bf7e95550ed33bf35ae82e51525368593b63161cfaf6ed4326cd"
+      }
+    ]
+  },
+  {
+    "scenario": "post-fix/native/terrain-native",
+    "files": [
+      {
+        "name": "0-Highlands-HYPERION.ppm",
+        "bytes": 3888016,
+        "sha256": "48e5e6312d1442cf78c45f51cae71ed6df40dbcb01a0414f33877d73969c7821"
+      },
+      {
+        "name": "1-Volcanic-HYPERION.ppm",
+        "bytes": 3888016,
+        "sha256": "4d556de56d620820b7d9de5f60e8bd150a9227fcc9d5c78f1de5580989213a29"
+      },
+      {
+        "name": "2-Canyons-HYPERION.ppm",
+        "bytes": 3888016,
+        "sha256": "78269aa4a413f73f2adfd945085733681ffa667eb1c280e1b791fe32d17cf1ca"
+      },
+      {
+        "name": "3-Ice ridges-HYPERION.ppm",
+        "bytes": 3888016,
+        "sha256": "650caf93200d5ac9395e17b26930b5156466cfbeecc86e7391ab79b46d9601ae"
+      }
+    ]
+  }
+]

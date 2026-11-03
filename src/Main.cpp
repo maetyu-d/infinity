@@ -2211,14 +2211,15 @@ int main(int argc, char** argv) {
                             target = nav.anchor;
                     }
                     const auto* exploration = economicSnapshot ? &economicSnapshot->exploration : nullptr;
-                    const bool canSubmit = economy && economicSnapshot && !economicSnapshot->catchingUp &&
+                    const bool canSubmit = economy && economicSnapshot && economicSnapshot->network &&
+                                           target && economicSnapshot->network->system.ancestorOf(*target) &&
+                                           !economicSnapshot->catchingUp &&
                                            !pendingEconomicSequence && !pendingCrewSequence &&
                                            !pendingSecuritySequence && !pendingRecoverySequence &&
                                            !pendingWreck;
                     const bool scanComplete = surveyController.update(
                         universe, observer, target, exploration ? exploration->scannerLevel : 1,
-                        crew.efficiency(CrewStation::Navigation),
-                        pendingEconomicSequence && scanHeld ? 0 : dt, scanHeld);
+                        crew.efficiency(CrewStation::Navigation), dt, scanHeld, canSubmit);
                     MiningAccess access;
                     double readiness = 0;
                     if (mineHeld && target && exploration && exploration->miningLevel) {
@@ -2233,11 +2234,13 @@ int main(int argc, char** argv) {
                         if (bay.fire >= 25 || bay.oxygen < 18 || bay.integrity <= 0)
                             readiness = 0;
                     }
+                    // Submit one operation per frame without discarding the other one's work.
+                    const bool miningSubmissionReady = canSubmit && !scanComplete;
                     const bool extracted =
                         miningController.update(access, exploration ? exploration->miningLevel : 0, readiness,
-                                                dt, mineHeld && canSubmit);
-                    if (mineHeld && access.allowed && readiness > 0 && miningController.progress() > 0 &&
-                        miningController.heat() < 100)
+                                                dt, mineHeld, miningSubmissionReady);
+                    if (mineHeld && miningSubmissionReady && access.allowed && readiness > 0 &&
+                        miningController.progress() > 0 && miningController.heat() < 100)
                         weapons.utilityBeam(access.ray, access.endpoint, exploration->miningMount);
                     if ((scanComplete || extracted) && canSubmit && target) {
                         EconomicCommand c;

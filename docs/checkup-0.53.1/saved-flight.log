@@ -1,0 +1,2 @@
+PASS: actual saved navigation, ship, activity, crew, weapons, fire control, NPC combat and economy load; scanner migration valid
+Test used a SQLite online backup and copied text saves; original files untouched
