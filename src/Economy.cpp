@@ -115,10 +115,10 @@ std::span<const ProductionRecipe> productionRecipes() {
     return recipes;
 }
 int64_t EconomyPlayer::massKg() const {
-    return total(cargo);
+    return total(cargo) + specimenKg;
 }
 int64_t EconomyPlayer::volumeLitres() const {
-    int64_t n = 0;
+    int64_t n = specimenLitres;
     for (size_t g = 0; g < goodCount; g++)
         n += cargo[g] * goods[g].litresPerKg;
     return n;
@@ -1136,6 +1136,7 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
     v.capacityLitres = s->player.capacityLitres;
     v.tick = s->tick;
     v.message = s->message;
+    if(page==MarketPage::Expeditions){expeditionMarketView(v,*s,selected);return v;}
     if(page==MarketPage::Journal){explorationMarketView(v,*s,true,selected,context.weaponMount);return v;}
     if (s->player.combatJob)
         v.activeJob = "SECURITY ACTIVE / F2 JOBS / F4 TARGET";

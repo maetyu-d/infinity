@@ -71,6 +71,7 @@ class Renderer {
     std::span<const ActivityBody> combatBodies() const;
     void setWeapons(const WeaponSystem*);
     void setActivity(const ActivityState*);
+    void setSpecimen(std::optional<Address>);
     void setEconomy(std::shared_ptr<const EconomySnapshot>, const MarketView*);
     void setMode(RenderMode);
     RenderMode mode() const;

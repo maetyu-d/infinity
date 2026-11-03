@@ -115,6 +115,7 @@ class Pilot {
     void selectPlanet(const Address&);
     void selectNextMoon();
     void fitToView(); // Explicit deployment from the legacy inspector, not a flight rebase.
+    void deploySpecimenProbe(const Address&); // only called after parking/saving the real ship
     double sizeRatio() const {
         return std::pow(10., ship_.logSize);
     }

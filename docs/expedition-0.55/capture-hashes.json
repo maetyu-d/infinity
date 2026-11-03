@@ -1,0 +1,34 @@
+[
+  {
+    "stage": 0,
+    "sha256": "74d56595461786250efb769f53ea5c355b5b99b16870a095581111366016f4e9"
+  },
+  {
+    "stage": 1,
+    "sha256": "9f0ad81aede9c508067badca1c4207fdea310f189fb5770dafdb010639b69faf"
+  },
+  {
+    "stage": 2,
+    "sha256": "08d9b292f74210ff677a2b2487ff02977153538bc36a76974a96afe38d28a03a"
+  },
+  {
+    "stage": 3,
+    "sha256": "3382d1120b9d0e06079dc49b7de89bd9154118a5d8725f837de920a0df6071f3"
+  },
+  {
+    "stage": 4,
+    "sha256": "a1ae2a8d1ffa5e106d4c4fa12bd6c01731fc8d56fa8f88d075c3b1954cf42521"
+  },
+  {
+    "stage": 5,
+    "sha256": "b2b0df9ec6afb1913fc3478b6fd4f72b559e25e3bd2862f26ac5c2bc4986cd7f"
+  },
+  {
+    "stage": 6,
+    "sha256": "8f1708f61f878d12c7c1b3ff4305971d1ec355b033afc47524d98acf26e15557"
+  },
+  {
+    "stage": 7,
+    "sha256": "5fff83c8280d7b316f56e33de18b488ba3a7191aa212e6d9820c446ae6f590cf"
+  }
+]

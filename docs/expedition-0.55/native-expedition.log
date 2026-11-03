@@ -1,0 +1,8 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+SPECIMEN_ID ROCK address=0,0,0/1:0/2:9/3:0/4:979510287489940/5:0/6:0 descriptor=17940071816253843805 geometry=10666484853320403992
+SPECIMEN_ID MINERAL GRAIN address=0,0,0/1:0/2:9/3:0/4:979510287489940/5:0/6:0/7:0 descriptor=7955229902619297370 geometry=4543833725536790165
+SPECIMEN_ID CRYSTAL LATTICE address=0,0,0/1:0/2:9/3:0/4:979510287489940/5:0/6:0/7:0/8:0 descriptor=9384850480986244227 geometry=7873356995640274909
+PASS: native colony diagnosis, finite core recovery, source rock/mineral/atomic assays, parked-ship round trip, funded repair and portrait expedition HUD
+FRAME median_ms=14.529 p95_ms=30.732 frames=1068 cache_bytes=12591048
+peak_rss_bytes=143851520

@@ -394,6 +394,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     const auto aimPoint =
         cockpitTargetMarker(eyeFromShip * (t.gunAim * glm::dvec3(0, 0, -1)), aspect, projectionScale).point;
     const double ratio = std::max(1e-12, t.hullMetres / 12);
+    const bool specimen = t.phase == "SPECIMEN INSPECTION";
     const bool docking = t.docking.active ||
                          (t.docking.available && !t.shrinking && t.docking.range < 3000);
     const bool surface = !docking && t.altitude >= 0 && (t.gear || t.altitude < 5000 * ratio);
@@ -437,7 +438,8 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     h.hitRegions.push_back({0, 0, w, 46});
     text(h.lettering, "INFINITE", 26, 15, 17.5, pearl);
     fitted(h.lettering,
-           t.playerGun < maxWeaponMounts ? std::string(weaponMountName(t.playerGun)) + " / CAPTAIN"
+           specimen ? "SPECIMEN PROBE / SHIP PARKED"
+           : t.playerGun < maxWeaponMounts ? std::string(weaponMountName(t.playerGun)) + " / CAPTAIN"
            : t.docking.docked ? "BERTH SECURE"
            : t.docking.phase == DockingPhase::Departure ? "HARBOUR DEPARTURE"
            : docking ? "HARBOUR APPROACH" : t.drive,
@@ -446,13 +448,13 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
            : t.shrinking                 ? amber
                                          : ice);
     line(h.strokes, 24, 45, w - 24, 45, muted * .3f);
-    fitted(h.lettering, t.crewFire, w - 360, 20, 336, 8, mint);
+    fitted(h.lettering, specimen ? "SOURCE ROCK > MINERAL > ATOMS" : t.crewFire, w - 360, 20, 336, 8, mint);
 
     // Scale changes and physical ship size share one backed instrument. They
     // remain separate quantities; reference-frame refinement never resizes it.
     const CockpitRect scale{24, 64, 274, t.shrinking ? 96. : 76.};
     card(h, scale, t.shrinking ? amber : ice);
-    label(t.shrinking ? "SHRINK FIELD / HULL" : "SHIP / FULL SIZE", 38, 75, 245, t.shrinking ? amber : muted);
+    label(specimen ? "INSPECTION PROBE / HULL" : t.shrinking ? "SHRINK FIELD / HULL" : "SHIP / FULL SIZE", 38, 75, 245, t.shrinking ? amber : muted);
     quantity(flightQuantity(t.hullMetres), 38, 94, 245, 17.5, t.shrinking ? amber : pearl);
     quantity("VIEW " + flightQuantity(std::pow(10., t.logMetres)), 38, 120, 166, 10.5, muted);
     label(std::abs(t.scaleRate) <= .02 ? "STABLE"
@@ -511,14 +513,16 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     }
     const auto phase = t.phase.starts_with("PLANETARY FLIGHT / Y") ? "PLANETARY FLIGHT" : t.phase;
     label(phase, nav.x + 14, nav.y + 81, nav.w - 28, t.landed ? mint : muted);
-    const auto primary = t.docking.docked ? "ENTER  UNDOCK"
+    const auto primary = specimen ? "J MAGNIFY / B STOP"
+                         : t.docking.docked ? "ENTER  UNDOCK"
                          : t.landed          ? "ENTER  LAUNCH"
                          : t.navigating    ? "B  TAKE HELM"
                          : t.docking.available ? "J  DOCK"
                          : t.targetVisible ? "J  APPROACH"
                                            : "Y  NEXT WORLD";
     label(primary, nav.x + 14, nav.y + 105, nav.w * .52, mint);
-    label(t.landed          ? ""
+    label(specimen ? "F4 NEXT"
+          : t.landed          ? ""
           : surface         ? "L  LAND"
           : t.targetVisible ? "Y  WORLDS"
                             : "K  TRAFFIC",
@@ -839,16 +843,17 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
         card(h, panel, m.connected ? mint : amber);
         h.hitRegions.push_back(panel);
         label("F2 CLOSE / F5 " +
-                  std::string(m.page == MarketPage::Goods      ? "GOODS"
-                              : m.page == MarketPage::Routes   ? "TRADE ROUTES"
-                              : m.page == MarketPage::Industry ? "INDUSTRY"
-                              : m.page == MarketPage::Jobs     ? "JOBS"
-                              : m.page == MarketPage::Outcomes ? "OUTCOMES"
-                              : m.page == MarketPage::Weapons  ? "WEAPONS"
-                              : m.page == MarketPage::Crew     ? "CREW MARKET"
-                              : m.page == MarketPage::Survey   ? "SURVEY AND EQUIPMENT"
-                              : m.page == MarketPage::Journal  ? "SURVEY JOURNAL"
-                                                               : "SERVICES") +
+                  std::string(m.page == MarketPage::Goods         ? "GOODS"
+                              : m.page == MarketPage::Routes      ? "TRADE ROUTES"
+                              : m.page == MarketPage::Industry    ? "INDUSTRY"
+                              : m.page == MarketPage::Jobs        ? "JOBS"
+                              : m.page == MarketPage::Outcomes    ? "OUTCOMES"
+                              : m.page == MarketPage::Weapons     ? "WEAPONS"
+                              : m.page == MarketPage::Crew        ? "CREW MARKET"
+                              : m.page == MarketPage::Survey      ? "SURVEY AND EQUIPMENT"
+                              : m.page == MarketPage::Journal     ? "SURVEY JOURNAL"
+                              : m.page == MarketPage::Expeditions ? "MATERIAL EXPEDITIONS"
+                                                                  : "SERVICES") +
                   " / ECON " + std::to_string(m.tick * 5 / 60) + "H",
               panel.x + 18, panel.y + 16, panel.w - 36, mint);
         quantity(m.ready ? m.site : "LOCAL ECONOMY", panel.x + 18, panel.y + 39, panel.w - 36, 14, pearl);
@@ -878,21 +883,26 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
                   panel.w - 36, pearl);
             fitted(h.lettering, m.summary.empty() ? m.contract : m.summary, panel.x + 18, panel.y + 512,
                    panel.w - 36, 8.4, amber);
-        } else if (m.page == MarketPage::Journal || m.page == MarketPage::Survey) {
+        } else if (m.page == MarketPage::Journal || m.page == MarketPage::Survey ||
+                   m.page == MarketPage::Expeditions) {
             const bool journal = m.page == MarketPage::Journal;
+            const bool expedition = m.page == MarketPage::Expeditions;
             fitted(h.lettering,
-                   journal ? "UP-DOWN RECORDS / F4 VISIT / ENTER SELL DATA"
-                           : "UP-DOWN EQUIPMENT OR CONTRACT / LEFT-RIGHT MOUNT",
+                   expedition ? "F4 DESTINATION / SHIFT-F4 COLONY / ENTER ACTION / SHIFT-F11 EXIT PROBE"
+                   : journal  ? "UP-DOWN RECORDS / F4 VISIT / ENTER SELL DATA"
+                              : "UP-DOWN EQUIPMENT OR CONTRACT / LEFT-RIGHT MOUNT",
                    panel.x + 18, panel.y + 112, panel.w - 36, 9, mint);
             for (size_t i = 0; i < m.detail.size(); ++i)
                 fitted(h.lettering, m.detail[i], panel.x + 18, panel.y + 140 + i * (journal ? 25 : 18),
                        panel.w - 36, i == 0 ? 9.4 : 8.4, i % 2 ? ice : pearl);
             fitted(h.lettering, m.summary, panel.x + 18, panel.y + 472, panel.w - 36, 8.4, mint);
             fitted(h.lettering,
-                   journal ? "F11 CLOSE / F12 SCAN / CTRL-SPACE EXTRACT"
+                   expedition ? "ENTER DIAGNOSE, OPEN LAB OR FIT REPAIR / BACKSPACE CANCEL"
+                   : journal ? "F11 CLOSE / F12 SCAN / CTRL-SPACE EXTRACT"
                            : "ENTER FIT OR ACCEPT-CLAIM / BACKSPACE CANCEL / F4 TARGET",
                    panel.x + 18, panel.y + 492, panel.w - 36, 9, pearl);
-            fitted(h.lettering, "SCAN AT ANY SCALE / EXTRACTION AT FULL SIZE / DEPLETION PERSISTS",
+            fitted(h.lettering, expedition ? "SEALED CORE / SAME SOURCE GEOMETRY / PARKED SHIP / SAVED COLONY OUTCOME"
+                                         : "SCAN AT ANY SCALE / EXTRACTION AT FULL SIZE / DEPLETION PERSISTS",
                    panel.x + 18, panel.y + 512, panel.w - 36, 8.4, amber);
         } else if (m.page == MarketPage::Crew) {
             fitted(h.lettering, m.summary, panel.x + 18, panel.y + 112, panel.w - 36, 9.5, mint);
@@ -1000,7 +1010,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             {"F8", "CREW / STATIONS / DAMAGE CONTROL"},
             {"F9", "IN-FLIGHT CREW ORDERS / HELM LIVE"},
             {"F10", "SWAP WITH READY GUNNER / RETURN TO HELM"},
-            {"F11 / F12", "SURVEY JOURNAL / HOLD TO SCAN"},
+            {"F11 / F12", "JOURNAL / HOLD TO SCAN / SHIFT-F11 EXPEDITION"},
             {"CTRL+SPACE", "OPERATE FITTED MINING HEAD"},
             {"SPACE", "FIRE FITTED LASER"},
             {"H", "TARGET NEAREST HOSTILE"},

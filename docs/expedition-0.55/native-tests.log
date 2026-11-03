@@ -1,0 +1,17 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 67: native_material_expedition
+1/6 Test #67: native_material_expedition ..........   Passed   21.94 sec
+    Start 68: native_material_expedition_images
+2/6 Test #68: native_material_expedition_images ...   Passed    1.40 sec
+    Start 69: native_graceful_docking
+3/6 Test #69: native_graceful_docking .............   Passed   38.54 sec
+    Start 70: native_docking_images
+4/6 Test #70: native_docking_images ...............   Passed    0.56 sec
+    Start 73: native_exploration_loop
+5/6 Test #73: native_exploration_loop .............   Passed   40.68 sec
+    Start 74: native_exploration_images
+6/6 Test #74: native_exploration_images ...........   Passed    1.03 sec
+
+100% tests passed, 0 tests failed out of 6
+
+Total Test time (real) = 104.18 sec

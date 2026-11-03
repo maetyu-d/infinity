@@ -125,6 +125,7 @@ class ExplorationLedger {
     size_t residentBytes() const;
 
   private:
+    friend class ExpeditionLedger;
     ExplorationState state_;
 };
 void explorationMarketView(MarketView&, const EconomySnapshot&, bool journal, size_t selected, unsigned mount,

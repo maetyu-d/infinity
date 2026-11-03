@@ -278,6 +278,23 @@ void Pilot::fitToView() {
     phase_ = "SCALED SHIP DEPLOYED / SHRINK FIELD";
     instrument();
 }
+void Pilot::deploySpecimenProbe(const Address& source) {
+    const auto rock = universe_.describe(source);
+    if (source.kind() < Kind::Rock)
+        throw std::invalid_argument("Specimen probe requires a canonical material source");
+    ship_ = ShipState{};
+    ship_.frame = source;
+    ship_.shrinking = true;
+    ship_.logSize = ship_.targetLogSize = std::clamp(rock.frame.logRadius - 2.6, -12., -1.);
+    cargoMassKg_ = 0;
+    docking_.cancel();
+    dockingArmed_ = restoredDockCandidate_ = false;
+    destination_.reset(); landingPlanet_.reset(); waypoint_.reset();
+    autopilot_ = landing_ = false;
+    clearAssistCapture();
+    phase_ = "SPECIMEN PROBE / SHIP PARKED AT LAB";
+    instrument();
+}
 void Pilot::startInSystem() {
     Address galaxy = nav_.anchor;
     while (galaxy.kind() > Kind::Galaxy)

@@ -1,0 +1,121 @@
+{
+  "version": "0.55.0",
+  "build": "63",
+  "date": "2026-11-03",
+  "core_suites_passed": 58,
+  "native_checks_passed": 6,
+  "sanitizer": {
+    "address": true,
+    "undefined_behaviour": true,
+    "instrumented_translation_units": 61,
+    "expedition_assertions": 52,
+    "worker_restart_assertions": 36,
+    "leak_check": "unavailable in the installed macOS sanitizer runtime"
+  },
+  "native": {
+    "backend": "Metal",
+    "median_frame_ms": 14.529,
+    "p95_frame_ms": 30.732,
+    "frames": 1068,
+    "cpu_cache_bytes": 12591048,
+    "peak_rss_bytes": 143851520,
+    "viewport": [
+      1440,
+      900
+    ],
+    "portrait_viewport": [
+      600,
+      1000
+    ],
+    "source_mesh_matches": 3
+  },
+  "executable_sha256": "c6c5008bc5bdc380cb877f3abd8059d4b42e8f02960dc7d77c16a87f8f8b77fb",
+  "signed_app_executable_sha256": "dd646949799bad57648a129fa7ba8991b468245ce40de1cef9e141045ea21586",
+  "user_save_files_modified_by_validation": false,
+  "signed_package_matching_macho_sections": 28,
+  "normal_packaged_startup_frames": 240,
+  "generation_and_navigation_preserved": [
+    {
+      "path": "src/Core.cpp",
+      "sha256": "8b6e0854d8e8dfdfde2cc78494a31907cedab63d1512020d66c94f6d1d690cb9"
+    },
+    {
+      "path": "src/Universe.cpp",
+      "sha256": "bd3e3bff5292637763e59edc734be90b92f89075687c28a8b59efc9fd68dde97"
+    },
+    {
+      "path": "src/Processes.cpp",
+      "sha256": "0c57a71c3e7c31928c8b777abf4abb777a3e53fb86c0cddb58238a39a1ccfb8e"
+    },
+    {
+      "path": "src/Planetology.cpp",
+      "sha256": "f5c862a7bb652adc5c43f98c2bf99fa1bed1bc4c9157eb9c7b868569408ef014"
+    },
+    {
+      "path": "src/StellarEvolution.cpp",
+      "sha256": "3b99aef93167545a452f49508da1b8c358c53d62b615441bc3103e2b83a74045"
+    },
+    {
+      "path": "src/Terrain.cpp",
+      "sha256": "a9fbba49d7deef7e1c5eead2cc8c8ab20f20a8756775bd5aab3c8abe2bb438c3"
+    },
+    {
+      "path": "src/Crystallography.cpp",
+      "sha256": "1d135fa1218cea466673723063267fcacdb5c6c56d4240ab5ca00eb0eb042dab"
+    },
+    {
+      "path": "src/Geometry.cpp",
+      "sha256": "ee2e10876440287d69ad039d002fbe2dabe869f58d46ae9b4c738891c693ab78"
+    },
+    {
+      "path": "src/World.cpp",
+      "sha256": "a9bb5755250f322b75ed0e1c131e68d7b535ed8964620743f5c95a8f96572077"
+    },
+    {
+      "path": "src/Navigation.cpp",
+      "sha256": "4a7cf18ebc5bb4755564fbda15a2d7943fa7ef626d5e789e83ce3f7e9a786c6e"
+    },
+    {
+      "path": "src/Flight.cpp",
+      "sha256": "310f2089c2704b1a506eca9499db54d02e6762935e6664874947f372c2158783"
+    },
+    {
+      "path": "src/Streaming.cpp",
+      "sha256": "73064638f21264848cc9273e58f61c1557ce6ce7eaefa47ee6cb495964681a2a"
+    },
+    {
+      "path": "src/Continuity.cpp",
+      "sha256": "c09a15bdb8c237eb59dc66f88ad9efef7863e93db3e957b20d120d49e152d4a8"
+    },
+    {
+      "path": "src/Weather.cpp",
+      "sha256": "d1cd08524047a345132cba0bc60fae4b26c14f8e421075a103df73516380a719"
+    },
+    {
+      "path": "src/WeatherField.cpp",
+      "sha256": "7b127e91a0896df36e0a1b9ef990f6017fb7642ca6a89c0e7e35932dfa4de0ce"
+    },
+    {
+      "path": "src/SurfaceLife.cpp",
+      "sha256": "2e43b919df66e77d39930fcc0bcdf2571186a17cd49733ca42f14da51d8c77dc"
+    },
+    {
+      "path": "src/SurfaceLifeCache.cpp",
+      "sha256": "b62708aa72a4529584cd7c0301e5f2409e7119253a881db29649a950421b6b31"
+    },
+    {
+      "path": "src/SurfaceMeshes.cpp",
+      "sha256": "3c674d43f6eb4aadbdfa9b0eb0c63edec4d712a6248489e81b8091c8f75e88b4"
+    },
+    {
+      "path": "src/City.cpp",
+      "sha256": "f4c5f1c4ccd6ff54bec592dc53d024de3bb5796dd3d47d7dd88f3f05f8a41601"
+    },
+    {
+      "path": "src/CityMeshes.cpp",
+      "sha256": "94e95870dc24ebf433de592ef6ba1fc6b2d01b50909aa2d2b3bcd8b916049b31"
+    }
+  ],
+  "baseline_commit": "c1ddafeb81e46ab451987bbe32c14801c5890853",
+  "normal_startup_persisted_expedition_ledger": true
+}

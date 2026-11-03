@@ -75,6 +75,21 @@ std::vector<EconomicPortSignal> economicPortSignals(const EconomySnapshot& s) {
             signal.brief = "SERVICE CREW UNAVAILABLE";
             signal.alert = .65f;
         }
+        const auto expedition = std::find_if(s.expeditions.jobs.begin(), s.expeditions.jobs.end(),
+                                             [&](const auto& j) { return j.colony == d.id; });
+        if (expedition != s.expeditions.jobs.end()) {
+            if (expedition->phase == ExpeditionPhase::Complete) {
+                signal.report[0] += " / ADAPTED EXCHANGER / +25% BASE POWER";
+                signal.report[2] += " / YOUR CORE / REPAIR RETAINED";
+                // The completed utility installation has a modest, power-dependent light budget.
+                signal.lighting *= 1.f + .15f * signal.power;
+                if (!signal.alert)
+                    signal.brief = "YOUR EXCHANGER ONLINE";
+            } else if (expedition->phase >= ExpeditionPhase::Survey &&
+                       expedition->phase <= ExpeditionPhase::Return) {
+                signal.report[1] = "EXCHANGER REPAIR FUNDED / CORE EXPEDITION / SHIFT-F11";
+            }
+        }
         result.push_back(std::move(signal));
     }
     return result;

@@ -181,6 +181,7 @@ struct Renderer::Impl {
     double weatherSeverity = 0, weatherPriority = 1e100;
     std::unique_ptr<HyperionRenderer> hyperion;
     static constexpr RenderMode mode = RenderMode::Hyperion;
+    std::optional<Address> specimen;
     double visualTime = 0, fixedVisualTime = -1;
     bgfx::ViewId atomView = 2;
     std::map<const Geometry*, GPUGeometry> gpu;
@@ -1459,6 +1460,7 @@ std::span<const CelestialContact> Renderer::celestialContacts() const {
 std::span<const ActivityContact> Renderer::activityContacts() const {
     return impl_->activityContacts;
 }
+void Renderer::setSpecimen(std::optional<Address> source) { impl_->specimen = std::move(source); }
 std::shared_ptr<const SurfaceWorld> Renderer::surfaceWorld(const Address& planet) const {
     return impl_->surfaceLife.find(planet);
 }
@@ -1612,6 +1614,10 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         p.anchorFrames.push_back(node.frame);
         p.frameFrames.emplace(node.address, p.anchorFrames);
     }
+    if (p.specimen) {
+        std::erase_if(nodes, [&](const Node& node) { return !p.specimen->ancestorOf(node.address); });
+        if (nodes.empty()) throw std::runtime_error("Specimen view escaped its source lineage");
+    }
     cache.beginFrame();
     const auto stationAim = p.instruments ? p.instruments->gunAim : glm::dquat(1, 0, 0, 0);
     p.cameraQ = nav.orientation * stationAim * p.head.orientation;
@@ -1677,6 +1683,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
     p.stellarExposure = 1;
     {
         auto sky = extractSpectralSky(p.universe, nav);
+        if (p.specimen) sky.strength = 0;
         sky.cameraToField = sky.cameraToField * stationAim * p.head.orientation;
         for (const auto& planet : nodes)
             if (planet.address.kind() == Kind::Planet && hasSolidSurface(planet)) {
@@ -1801,7 +1808,7 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         nav.anchor, p.eye * std::pow(10., nav.logDistance - nodes.back().frame.logRadius), anchorRoot,
         rootCellLogMetres);
     const auto [root, rootEye] = canonicalRoot(anchorRoot, anchorRootEye);
-    for (const auto& address : rootNeighborhood(root)) {
+    for (const auto& address : p.specimen ? std::vector<Address>{} : rootNeighborhood(root)) {
         auto node = p.universe.describe(address);
         p.galaxySky(node, nav, cache,
                     celestialCellWeight(cellDisplacement(address.cell, root.cell), rootEye));

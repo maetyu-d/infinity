@@ -175,6 +175,7 @@ struct EconomyRuntime::Impl {
     std::map<Address, uint64_t> used;
     EconomyPlayer player;
     ExplorationLedger exploration;
+    ExpeditionLedger expeditions;
     sqlite3* db = nullptr;
     std::string message;
     Impl(const Universe& world, std::filesystem::path directory)
@@ -204,6 +205,7 @@ struct EconomyRuntime::Impl {
         try {
             write("wallet", player.serialize());
             write("exploration", exploration.serialize());
+            write("expeditions", expeditions.serialize());
             for (const auto& [a, e] : active)
                 write(a.str(), e->serialize());
             sql(db, "COMMIT");
@@ -216,6 +218,7 @@ struct EconomyRuntime::Impl {
         auto s = std::make_shared<EconomySnapshot>();
         s->player = player;
         s->exploration = exploration.state();
+        s->expeditions = expeditions.state();
         s->message = message;
         if (e) {
             // Alias ownership is avoided: the definition already has immutable shared lifetime.
@@ -292,7 +295,7 @@ struct EconomyRuntime::Impl {
             bytes += economy->residentBytes();
         bytes += player.crewTitles.capacity() * sizeof(CrewTitle) +
                  player.crewBoarding.capacity() * sizeof(CrewBoarding);
-        workerBytes = bytes + exploration.residentBytes();
+        workerBytes = bytes + exploration.residentBytes() + expeditions.residentBytes();
         std::lock_guard lock(mutex);
         published = std::move(s);
     }
@@ -309,6 +312,11 @@ struct EconomyRuntime::Impl {
                 throw std::runtime_error("ECONOMY SAVE INVALID / original ledger retained");
             if (auto text = read("exploration"); text && !exploration.restore(*text, u))
                 throw std::runtime_error("EXPLORATION SAVE INVALID / original ledger retained");
+            if (auto text = read("expeditions"); text && !expeditions.restore(*text, u))
+                throw std::runtime_error("EXPEDITION SAVE INVALID / original ledger retained");
+            expeditions.reconcilePlayer(player);
+            if (player.massKg() > player.capacityKg || player.volumeLitres() > player.capacityLitres)
+                throw std::runtime_error("SPECIMEN CUSTODY EXCEEDS HOLD CAPACITY / original ledger retained");
             publish(nullptr, 0);
             uint64_t handled = 0;
             bool catching = false;
@@ -371,14 +379,29 @@ struct EconomyRuntime::Impl {
                     throw std::runtime_error("HAUL SAVE MISMATCH / original ledger retained");
                 economy.advanceTo(goal, 16);
                 exploration.offer(u, economy);
+                expeditions.offer(u, economy);
                 if (!economy.reconcilePlayer(player))
                     throw std::runtime_error("HAUL SAVE MISMATCH / original ledger retained");
                 catching = economy.tick() < goal;
                 if (!catching)
                     for (const auto& c : orders) {
+                        if (c.action >= EconomicAction::DiagnoseExpedition) {
+                            message = expeditions.execute(u, economy, exploration, player, c);
+                            continue;
+                        }
                         if (c.action >= EconomicAction::ScanSurvey &&
                             c.action <= EconomicAction::SellSurvey) {
                             message = exploration.execute(u, economy, player, c);
+                            continue;
+                        }
+                        if (c.action == EconomicAction::Invest && c.module == FacilityModule::Power &&
+                            std::any_of(expeditions.state().jobs.begin(), expeditions.state().jobs.end(),
+                                        [&](const auto& j) {
+                                            return j.colony == c.port && j.phase >= ExpeditionPhase::Survey &&
+                                                   j.phase <= ExpeditionPhase::Return;
+                                        })) {
+                            player.lastCommand = std::max(player.lastCommand, c.sequence);
+                            message = "UTILITY REFIT RESERVED FOR MATERIAL EXPEDITION / SHIFT-F11";
                             continue;
                         }
                         if (c.action == EconomicAction::FitWeapon && exploration.state().miningLevel &&
@@ -486,6 +509,12 @@ size_t EconomyRuntime::residentBytes() const {
     for (const auto& c : s->exploration.contracts)
         extras +=
             (c.issuer.home.path.capacity() + c.target.path.capacity()) * sizeof(Segment) + c.name.capacity();
+    extras += s->expeditions.jobs.capacity() * sizeof(MaterialExpedition);
+    for (const auto& j : s->expeditions.jobs)
+        extras += j.colonyName.capacity() + j.materialDescription.capacity() +
+                  (j.source.path.capacity() + j.colony.home.path.capacity() +
+                   (j.lab ? j.lab->home.path.capacity() : 0)) *
+                      sizeof(Segment);
     for (const auto& job : s->jobs)
         extras +=
             job.title.capacity() + job.route.capacity() + job.target.home.path.capacity() * sizeof(Segment);

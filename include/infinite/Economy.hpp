@@ -1,4 +1,5 @@
 #pragma once
+#include "Expedition.hpp"
 #include "Crew.hpp"
 #include "Exploration.hpp"
 #include "ShipDynamics.hpp"
@@ -194,6 +195,7 @@ struct EconomicEvent {
     std::string text;
 };
 struct EconomyPlayer {
+    int64_t specimenKg = 0, specimenLitres = 0; // derived from the separately persisted custody ledger
     int64_t credits = 250000, capacityKg = 4000, capacityLitres = 8000;
     Stock cargo{};
     uint64_t lastCommand = 0;
@@ -269,7 +271,8 @@ enum class EconomicAction : uint8_t {
     AcceptSurvey,
     ClaimSurvey,
     CancelSurvey,
-    SellSurvey
+    SellSurvey,
+    DiagnoseExpedition, RecoverCore, OpenSpecimen, AssaySpecimen, RepairExpedition, CancelExpedition
 };
 struct EconomicCommand {
     uint64_t sequence = 0;
@@ -293,6 +296,7 @@ struct EconomicCommand {
     std::optional<Address> surveyTarget;
     std::optional<SurveyObserver> observer;
     double workSeconds = 0;
+    std::optional<ActivityId> specimenLab;
 };
 inline constexpr size_t maxPortCrew = 16, maxCrewMarkets = 128, maxCrewTitles = 8192;
 struct PortCrewMarket {
@@ -402,6 +406,7 @@ class Economy {
 
   private:
     friend class ExplorationLedger;
+    friend class ExpeditionLedger;
     std::shared_ptr<const EconomicNetwork> network_;
     std::vector<EconomicSiteState> sites_;
     std::vector<EconomicFreight> freight_;
@@ -486,6 +491,7 @@ struct EconomySnapshot {
     std::vector<CombatContract> combatContracts;
     std::vector<WreckRecovery> wrecks;
     ExplorationState exploration;
+    ExpeditionState expeditions;
     std::vector<EconomicPortSignal> portSignals; // same ordering as network->sites
     EconomyPlayer player;
     uint64_t tick = 0;
@@ -553,7 +559,7 @@ class EconomyRuntime {
 class Pilot;
 class Navigation;
 bool economicTradeAccess(const Universe&, const Navigation&, const Pilot&, const EconomicSite&);
-enum class MarketPage : uint8_t { Goods, Routes, Industry, Jobs, Services, Outcomes, Weapons, Crew, Survey, Journal };
+enum class MarketPage : uint8_t { Goods, Routes, Industry, Jobs, Services, Outcomes, Weapons, Crew, Survey, Journal, Expeditions };
 struct MarketView {
     bool open = false, connected = false, ready = false;
     std::string site, role, message, bottleneck, contract;
