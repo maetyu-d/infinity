@@ -1,0 +1,5 @@
+GRAIN 0,0,0/1:0/2:9/3:0/4:61516819435380/5:4/6:4611686018427387905/7:0/8:0 radius=1.7196e-09 descriptor=17571375822033655771
+AXES 0.975468 1.00989 1.08097 mineral=1 sdf_eye=0.297601 sdf_origin=-0.72
+MICRO full triangles=2944 sections=1 lod=0 cpu=21.3048
+MICRO grain-only triangles=0 sections=0 lod=0 cpu=0.492
+MICRO rock-only triangles=0 sections=1 lod=0 cpu=0.466292

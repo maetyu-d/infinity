@@ -13,6 +13,7 @@
 #include "infinity/StellarEvolution.hpp"
 #include "infinity/Streaming.hpp"
 #include "infinity/SurfaceShading.hpp"
+#include "infinity/MicroView.hpp"
 #include "infinity/Weapons.hpp"
 #include "infinity/WorldDepth.hpp"
 #include "infinity/SurfaceOperations.hpp"
@@ -557,8 +558,8 @@ struct Renderer::Impl {
             float relief = 0;
             if (node.address.kind() >= Kind::Planet) {
                 const double materialRadius = std::pow(10., materialFrames.back().logRadius);
-                const double spacing =
-                    materialAddress.kind() == Kind::Planet ? 8. : std::max(1e-12, materialRadius * .02);
+                const double spacing = materialDetailSpacing(materialAddress.kind(), materialRadius,
+                    node.address.kind(), std::pow(10., node.frame.logRadius));
                 const auto localEye = glm::inverse(pose.orientation) * (eye - pose.position) / radius;
                 const auto canonical = mapping * glm::dvec4(localEye, 1);
                 const auto materialPose = poseFor(materialAddress, nav);
@@ -613,7 +614,15 @@ struct Renderer::Impl {
         drawMesh(item.solid, model, opacity, false, item.normals, node.address.kind() == Kind::System,wearTint);
         if (bgfx::isValid(item.lines.vertices))
             bindPresentation(*geometry, node, nav, model, pose, r, 2);
-        drawMesh(item.lines, model, opacity, true);
+        float lineOpacity=opacity;
+        if(!geometry->lattice.bonds.empty()){
+            const auto bond=geometry->lattice.bonds.front();
+            const double span=glm::length(geometry->lattice.atoms[bond.a].position-
+                                          geometry->lattice.atoms[bond.b].position)*r;
+            const double depth=std::max(worldNearPlane,-cameraSpace(pose.position).z);
+            lineOpacity*=latticeBondOpacity(LOD::pixels(span*.5,depth,height,fieldOfView));
+        }
+        if(lineOpacity>.001f)drawMesh(item.lines, model, lineOpacity, true);
         const auto& sourceFrames = framesFor(geometry->referenceFrame);
         double sourceFactor = std::pow(10.0, geometry->logUnits - sourceFrames.back().logRadius);
         auto transform =
@@ -3220,9 +3229,13 @@ FrameStats Renderer::render(const Navigation& nav, RegionCache& cache, bool over
         if(cockpit.environmentalHeat>.15||cockpit.electricalCharge>.15||cockpit.surfaceScanQuality<.8)
             cockpit.weatherDetail="HEAT "+std::to_string(int(cockpit.environmentalHeat*100))+"% / CHARGE "+
                 std::to_string(int(cockpit.electricalCharge*100))+"% / SCAN "+std::to_string(int(cockpit.surfaceScanQuality*100))+"%";
+        MicroView micro;
+        if(cockpit.shrinking){const auto current=p.details.find(nav.anchor);
+            const auto geometry=current==p.details.end()?std::shared_ptr<const Geometry>{}:current->second.blend.current;
+            micro=extractMicroView(p.universe,nav,cockpit.hullMetres,geometry.get());}
         const auto hud = cockpitOverlay(cockpit, aspect, renderModeName(p.mode), notice, p.contacts,
                                         p.activityContacts, p.cockpitHelp, viewport.projectionScale, p.market,
-                                        stationAim * p.head.orientation, p.crew,p.expeditionPlan);
+                                        stationAim * p.head.orientation, p.crew,p.expeditionPlan,&micro);
         if (p.validateCockpit) {
             const auto conflicts = cockpitTextConflicts(hud);
             if (!conflicts.empty()) {

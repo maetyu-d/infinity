@@ -1,0 +1,17 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start  62: operating_regimes_and_shrinking
+    Start  70: rendering_preserves_universe
+    Start  71: performance_invariants
+1/6 Test  #71: performance_invariants ............   Passed    1.43 sec
+    Start  12: shrinking_seam_expedition
+2/6 Test  #70: rendering_preserves_universe ......   Passed    2.44 sec
+    Start  69: surface_shading_preserves_mesh
+3/6 Test  #12: shrinking_seam_expedition .........   Passed    1.03 sec
+    Start 155: micro_surface_facet_precision
+4/6 Test  #69: surface_shading_preserves_mesh ....   Passed    0.52 sec
+5/6 Test #155: micro_surface_facet_precision .....   Passed    1.42 sec
+6/6 Test  #62: operating_regimes_and_shrinking ...   Passed    4.11 sec
+
+100% tests passed, 0 tests failed out of 6
+
+Total Test time (real) =   4.12 sec

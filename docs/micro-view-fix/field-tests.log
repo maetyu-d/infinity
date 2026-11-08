@@ -1,0 +1,4 @@
+MICRO_MESH lod=1 vertices=1254 triangles=2504 max_field_error=1.8294e-06 error_metres=7.38922e-08
+MICRO_MESH lod=2 vertices=5074 triangles=10144 max_field_error=1.00703e-06 error_metres=4.06755e-08
+MICRO_MESH lod=3 vertices=21486 triangles=42968 max_field_error=5.25599e-07 error_metres=2.12297e-08
+PASS micro facet precision, all mineral habits, retained coarse geometry, cancellation and atomic identity

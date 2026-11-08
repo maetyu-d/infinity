@@ -8,10 +8,15 @@ struct ShadingNormal {
     int16_t x = 0, y = 0;
 };
 static_assert(sizeof(ShadingNormal) == 4);
+// Keep inherited material coordinates, but resolve inclusions within a grain
+// at the grain's physical scale rather than applying metre-sized rock relief.
+double materialDetailSpacing(Kind materialKind, double materialRadiusMetres,
+                             Kind surfaceKind, double surfaceRadiusMetres);
 ShadingNormal packNormal(glm::vec3);
 glm::vec3 unpackNormal(ShadingNormal);
 std::vector<ShadingNormal> surfaceNormals(const Mesh&, const std::atomic<bool>* cancel = nullptr);
 unsigned atomPresentationLevel(double diameterPixels, bool original);
+float latticeBondOpacity(double spanPixels);
 bool streamedTerrainCovers(const Address& object, const Address& focus, bool original);
 
 // Render-only light frame. Snapping happens in the planet's double-precision

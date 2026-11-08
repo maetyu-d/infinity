@@ -6,6 +6,7 @@
 namespace infinity {
 struct MarketView;
 struct ExpeditionPlan;
+struct MicroView;
 struct CockpitRect {
     double x, y, w, h;
     bool contains(glm::dvec2) const;
@@ -109,6 +110,6 @@ CockpitOverlay cockpitOverlay(const FlightInstruments&, double aspect, std::stri
                               glm::dquat headInShip = {1, 0, 0, 0}, const CrewView* crew = nullptr);
 CockpitOverlay cockpitOverlay(const FlightInstruments&,double aspect,std::string_view mode,std::string_view notice,
                               std::span<const CelestialContact>,std::span<const ActivityContact>,bool help,
-                              double projectionScale,const MarketView*,glm::dquat headInShip,const CrewView*,const ExpeditionPlan*);
+                              double projectionScale,const MarketView*,glm::dquat headInShip,const CrewView*,const ExpeditionPlan*,const MicroView* = nullptr);
 std::string flightQuantity(double value, bool speed = false);
 } // namespace infinity

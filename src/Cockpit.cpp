@@ -1,4 +1,5 @@
 #include "infinity/Cockpit.hpp"
+#include "infinity/MicroView.hpp"
 #include "infinity/CockpitContext.hpp"
 #include "infinity/Economy.hpp"
 #include "infinity/ExpeditionPlanner.hpp"
@@ -649,7 +650,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t,double aspect,std::stri
 CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::string_view,
                               std::string_view notice, std::span<const CelestialContact> contacts,
                               std::span<const ActivityContact> activity, bool help, double projectionScale,
-                              const MarketView* market, glm::dquat headInShip, const CrewView* crew,const ExpeditionPlan* planner) {
+                              const MarketView* market, glm::dquat headInShip, const CrewView* crew,const ExpeditionPlan* planner,const MicroView* micro) {
     CockpitOverlay h;
     std::optional<CockpitRect> economicPanel;
     std::optional<CockpitRect> crewCommandPanel;
@@ -663,6 +664,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     const double ratio = std::max(1e-12, t.hullMetres / 12);
     const bool specimen = t.phase == "SPECIMEN INSPECTION";
     const auto focus=cockpitFocus(t);
+    const bool microActive=micro&&micro->active&&t.shrinking&&focus.mode==CockpitMode::Surface;
     const bool docking=focus.mode==CockpitMode::Docking;
     const auto landing=t.landing.phase;
     const bool surface=!focus.warp&&(focus.mode==CockpitMode::Landing||focus.mode==CockpitMode::Surface)&&t.altitude>=0;
@@ -715,7 +717,7 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     char value[96];
     rect(h.panels,0,0,w,46,ink,.98f);h.hitRegions.push_back({0,0,w,46});
     text(h,"INFINITY",26,15,17.5,pearl);
-    fitted(h,focus.title,center-160,17,320,13,focus.mode==CockpitMode::Combat?danger:ice);
+    fitted(h,specimen?focus.title:microActive?(micro->atomic?"ATOMIC FLIGHT":micro->address.kind()==Kind::Grain?"MINERAL FLIGHT":"MICRO FLIGHT"):focus.title,center-160,17,320,13,focus.mode==CockpitMode::Combat?danger:ice);
     const auto headerHint=focus.mode==CockpitMode::Combat&&!t.crewFire.empty()?t.crewFire.substr(0,t.crewFire.find(" / "))+" / 6 7 8":t.contactsExpanded?"CTRL-TAB CLOSE CONTACTS":"CTRL-TAB CONTACTS";
     fitted(h,headerHint,w-264,20,240,8.5,muted);
     line(h.strokes,24,45,w-24,45,muted*.3f);
@@ -728,12 +730,15 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
             "VIEW "+flightQuantity(std::pow(10.,t.logMetres))+(t.scaleRate<0?" / REFINING":" / WIDENING");
         quantity(note,38,123,246,9.5,t.shrinking?amber:ice);
     }
-    const bool showClearance=t.altitude>=0&&!focus.warp&&(focus.mode==CockpitMode::Approach||focus.mode==CockpitMode::Landing||focus.mode==CockpitMode::Surface);
+    const bool showClearance=(t.altitude>=0||microActive)&&!focus.warp&&(focus.mode==CockpitMode::Approach||focus.mode==CockpitMode::Landing||focus.mode==CockpitMode::Surface);
     if(showClearance){
         card(h,{w-310,64,286,92},ice);
-        label(t.phase=="CAVERN EXPLORATION"?"WALL CLEARANCE":t.shrinking?"PARENT TERRAIN / AGL":"ALTITUDE / AGL",w-296,76,258);
-        quantity(flightQuantity(t.landed?0.:std::max(0.,t.altitude)),w-296,96,258,28,pearl);
-        quantity(std::string(t.descent<0?"UP ":"DOWN ")+flightQuantity(std::abs(t.descent),true)+" / DRIFT "+flightQuantity(t.drift,true),w-296,135,258,9.5,ice);
+        label(microActive?(micro->atomic?"LOCAL ATOM GAP":"SURFACE ESTIMATE"):t.phase=="CAVERN EXPLORATION"?"WALL CLEARANCE":t.shrinking?"PARENT TERRAIN / AGL":"ALTITUDE / AGL",w-296,76,258);
+        const auto proximity=microActive?(!micro->proximityKnown?"SAMPLING...":micro->insideMaterial?"IN MATERIAL":
+            (micro->atomic?std::string{}:std::string("~ "))+flightQuantity(micro->proximityMetres)):flightQuantity(t.landed?0.:std::max(0.,t.altitude));
+        quantity(proximity,w-296,96,258,28,microActive&&micro->insideMaterial?amber:pearl);
+        quantity(microActive?(micro->atomic?"TO HULL / LOCAL RESOLVED ATOMS":"APPROXIMATE MATERIAL PROXIMITY"):
+            std::string(t.descent<0?"UP ":"DOWN ")+flightQuantity(std::abs(t.descent),true)+" / DRIFT "+flightQuantity(t.drift,true),w-296,135,258,9.5,ice);
     }
     const bool weatherUseful=!catalogues&&!focus.warp&&!t.weather.empty()&&(focus.mode==CockpitMode::Surface||focus.mode==CockpitMode::Landing||t.weatherSeverity>.35||t.environmentalHeat>.2||t.electricalCharge>.2);
     if(weatherUseful){
@@ -745,12 +750,12 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     const auto& nav=l.navigation;const auto& flight=l.flight;const auto& scope=l.scope;const auto& systems=l.systems;
     for(const auto panel:{nav,flight,scope,systems})card(h,panel,ice);
     label(focus.mode==CockpitMode::Combat?"TARGET":focus.mode==CockpitMode::Surface?"WORKSITE":"DESTINATION",nav.x+14,nav.y+12,nav.w-28,ice);
-    const auto destination=cockpitDestination(t);
+    const auto destination=microActive?micro->name:cockpitDestination(t);
     const double nameSize=destination.size()*18*6/7.<=nav.w-28?18.:13.;
     const auto destinationLines=wrapped(destination,nav.w-28,nameSize,2);
     for(size_t i=0;i<destinationLines.size();++i)fitted(h,destinationLines[i],nav.x+14,nav.y+34+i*17,nav.w-28,nameSize,pearl);
-    const auto range=t.targetVisible||t.navigating?flightQuantity(t.range):std::string("SELECT WITH Y / K");
-    const auto eta=t.etaSeconds>=0&&t.etaSeconds<10000?" / ETA "+std::to_string(int(std::ceil(t.etaSeconds)))+"S":"";
+    const auto range=microActive?"FIELD "+flightQuantity(micro->fieldMetres):t.targetVisible||t.navigating?flightQuantity(t.range):std::string("SELECT WITH Y / K");
+    const auto eta=!microActive&&t.etaSeconds>=0&&t.etaSeconds<10000?" / ETA "+std::to_string(int(std::ceil(t.etaSeconds)))+"S":"";
     quantity(range+eta,nav.x+14,nav.y+73,nav.w-28,12,ice);
     fitted(h,focus.nextAction,nav.x+14,nav.y+105,nav.w-28,10.5,ice);
 
@@ -770,14 +775,25 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
     const double radarRadius=std::min(90.,(scope.w-28)*.5);
     const bool landingDirector=focus.mode==CockpitMode::Landing;
     const bool dockingDirector=focus.mode==CockpitMode::Docking;
-    label(dockingDirector?"DOCKING DIRECTOR":landingDirector?"LANDING DIRECTOR":focus.mode==CockpitMode::Combat?"TACTICAL SCOPE":focus.mode==CockpitMode::Surface?"LOCAL SURVEY":"NAVIGATION SCOPE",scope.x+14,scope.y+12,scope.w-28,ice);
-    for(double r:{.5,1.})for(int i=0;i<48;++i){const double a=i*6.283185307/48,b=(i+1)*6.283185307/48;
+    label(microActive?"REFERENCE CELL":dockingDirector?"DOCKING DIRECTOR":landingDirector?"LANDING DIRECTOR":focus.mode==CockpitMode::Combat?"TACTICAL SCOPE":focus.mode==CockpitMode::Surface?"LOCAL SURVEY":"NAVIGATION SCOPE",scope.x+14,scope.y+12,scope.w-28,ice);
+    if(!microActive)for(double r:{.5,1.})for(int i=0;i<48;++i){const double a=i*6.283185307/48,b=(i+1)*6.283185307/48;
         line(h.strokes,radarX+std::cos(a)*radarRadius*r,radarY+std::sin(a)*23*r,radarX+std::cos(b)*radarRadius*r,radarY+std::sin(b)*23*r,muted*float(r==1?.65:.22));}
     auto scopePoint=[&](glm::dvec3 p,glm::vec3 color,bool selected){
         const auto base=glm::dvec2(radarX+p.x*radarRadius*.85,radarY+p.z*20);const auto tip=base-glm::dvec2(0,p.y*17);
         line(h.strokes,base.x,base.y,tip.x,tip.y,color*.5f);diamond(h.strokes,tip,selected?5.:2.5,color);
     };
-    if(dockingDirector){const auto& d=t.docking;const bool aligned=d.heading<.045&&std::abs(d.roll)<.06;
+    if(microActive){
+        fitted(h,"SCHEMATIC / "+micro->phase,scope.x+14,scope.y+32,scope.w-28,8.5,muted);
+        const auto cellRotation=glm::angleAxis(-.42,glm::dvec3(1,0,0))*glm::angleAxis(.62,glm::dvec3(0,1,0));
+        const auto projectCell=[&](glm::vec3 p){const auto q=cellRotation*glm::dvec3(p);
+            return glm::dvec2(radarX+q.x*30,radarY-q.y*27);};
+        for(unsigned i=0;i<8;++i)for(unsigned axis=0;axis<3;++axis)if(!(i&(1u<<axis))){
+            const auto a=projectCell(micro->cellCorners[i]),b=projectCell(micro->cellCorners[i|(1u<<axis)]);
+            line(h.strokes,a.x,a.y,b.x,b.y,ice*.55f);}
+        for(const auto& site:micro->cellSites)diamond(h.strokes,projectCell(site.position),2.5,elementColor(site.element));
+        fitted(h,micro->atomic?(micro->atomsKnown?std::to_string(micro->atoms)+" ATOMS / "+std::to_string(micro->bonds)+" LINKS":"LOCAL ATOMS LOADING"):
+            "CELL "+flightQuantity(micro->cellMetres),scope.x+14,scope.y+105,scope.w-28,9,ice);
+    }else if(dockingDirector){const auto& d=t.docking;const bool aligned=d.heading<.045&&std::abs(d.roll)<.06;
         diamond(h.strokes,{radarX+std::clamp(d.offset.x/std::max(1.,d.width),-1.,1.)*radarRadius*.78,radarY-std::clamp(d.offset.y/std::max(1.,d.width*.52),-1.,1.)*21},5,aligned?mint:ice);
         const double angle=std::clamp(d.roll,-1.4,1.4);line(h.strokes,radarX-19*std::cos(angle),radarY+19*std::sin(angle),radarX+19*std::cos(angle),radarY-19*std::sin(angle),ice);
         fitted(h,d.docked?"CLAMPS SECURE":dockingPhaseName(d.phase),scope.x+14,scope.y+32,scope.w-28,11,mint);
@@ -1435,7 +1451,15 @@ CockpitOverlay cockpitOverlay(const FlightInstruments& t, double aspect, std::st
         fitted(h, "CTRL1-3 MAN GUN / F10 SWAP / F9 CLOSE", p.x + 12, p.y + 560, p.w - 24, 7.4,
                muted);
     }
-    if(!modal&&!flightCommands&&!reconOpen&&!catalogues)drawContactSummary(h,aspect,contacts,activity);
+    if(!modal&&!flightCommands&&!reconOpen&&!catalogues){
+        if(microActive){const auto panel=cockpitContactsSummary();card(h,panel,ice);
+            fitted(h,"LOCAL MATERIAL",38,155,160,10,ice);fitted(h,"CTRL-TAB",213,155,71,8.5,muted);
+            quantity(micro->mineral+" / "+micro->formula,38,181,246,12,pearl);
+            fitted(h,micro->phase,38,207,246,10,mint);
+            quantity("CELL "+flightQuantity(micro->cellMetres)+" / FIELD "+flightQuantity(micro->fieldMetres),38,240,246,9.5,ice);
+            h.contactHits.push_back({panel,{},{},true,false});
+        }else drawContactSummary(h,aspect,contacts,activity);
+    }
     if (catalogues && !flightCommands && !activity.empty()) {
         card(h, l.traffic, trafficInk);
         label("PORTS / TRAFFIC", 38, 188, 160, trafficInk);

@@ -25,6 +25,13 @@ struct PositionHash {
     }
 };
 } // namespace
+double materialDetailSpacing(Kind materialKind, double materialRadius, Kind surfaceKind,
+                             double surfaceRadius) {
+    if (materialKind == Kind::Planet)
+        return 8.;
+    const double radius = surfaceKind == Kind::Grain ? std::min(materialRadius, surfaceRadius) : materialRadius;
+    return std::max(1e-12, radius * .02);
+}
 ShadingNormal packNormal(glm::vec3 n) {
     n = unit(n);
     n /= std::abs(n.x) + std::abs(n.y) + std::abs(n.z);
@@ -105,6 +112,10 @@ std::vector<ShadingNormal> surfaceNormals(const Mesh& mesh, const std::atomic<bo
         result.push_back(packNormal(glm::dot(original, smooth) > .642788f ? smooth : original));
     }
     return result;
+}
+float latticeBondOpacity(double pixels) {
+    if(!std::isfinite(pixels)||pixels<=0)return 0;
+    return float(.65*smoothstep(.75,3.,pixels)*(.5+.5*smoothstep(8.,32.,pixels)));
 }
 unsigned atomPresentationLevel(double pixels, bool original) {
     if (!original && pixels > 48)

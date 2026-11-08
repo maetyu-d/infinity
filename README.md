@@ -14,6 +14,9 @@ A deterministic procedural universe, from spiral galaxies and ringed worlds to t
 
 [Download the latest release](https://github.com/maetyu-d/infinity/releases/latest)
 
+**Development 0.61.1 — clearer micro/nano flight.** Grain edges are refined against the existing material field, with grain-sized surface detail. The cockpit identifies the local mineral and crystal phase, shows a reference-cell schematic, and reports estimated surface proximity or the local resolved atom gap. **Ctrl-Tab** still opens the complete world/traffic catalogue. Lattice links fade by screen size while atom sites and the bond graph stay intact. [Before/after views and validation](docs/MICRO_VIEW_FIX.md).
+
+
 ---
 
 The pulse laser’s cockpit readout shows effective reach, target range and heat. A subsystem hit names the damaged part and throws amber sparks at impact. Press **9** to cycle the target subsystem.

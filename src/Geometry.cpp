@@ -130,7 +130,8 @@ static void terrainGrid(Mesh& mesh, const Universe& universe, const Node& n, uns
 }
 static void sdfMesh(Mesh& mesh, const std::function<double(glm::dvec3)>& sdf, unsigned cells,
                     const std::function<glm::vec3(glm::dvec3)>& color, const std::atomic<bool>* cancel,
-                    double halfExtent = 1.3, glm::dquat lightFrame = {1, 0, 0, 0}) {
+                    double halfExtent = 1.3, glm::dquat lightFrame = {1, 0, 0, 0},
+                    bool refineEdges = false) {
     constexpr int tetra[6][4] = {{0, 5, 1, 6}, {0, 1, 2, 6}, {0, 2, 3, 6},
                                  {0, 3, 7, 6}, {0, 7, 4, 6}, {0, 4, 5, 6}};
     constexpr int offsets[8][3] = {{0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0},
@@ -196,6 +197,24 @@ static void sdfMesh(Mesh& mesh, const std::function<double(glm::dvec3)>& sdf, un
                         return found->second;
                     double t = v[a] / (v[a] - v[b]);
                     auto point = glm::mix(p[a], p[b], t);
+                    if (refineEdges && std::abs(sdf(point)) > step * 1e-7) {
+                        // A max of intersecting crystal/host faces is not linear
+                        // along a tetrahedron edge. Linear interpolation creates
+                        // alternating false bevels that flash under facet light.
+                        // Refine the same zero crossing, without new vertices,
+                        // density rules or changes to the retained coarse recipe.
+                        double lo = 0, hi = 1;
+                        const bool negative = sdf(p[a]) < 0;
+                        for (unsigned iteration = 0; iteration < 16; ++iteration) {
+                            const double mid = (lo + hi) * .5;
+                            if ((sdf(glm::mix(p[a], p[b], mid)) < 0) == negative)
+                                lo = mid;
+                            else
+                                hi = mid;
+                        }
+                        t = (lo + hi) * .5;
+                        point = glm::mix(p[a], p[b], t);
+                    }
                     auto grad = [&](int i) {
                         auto& o = offsets[i];
                         return gradient(x + o[0], y + o[1], z + o[2]);
@@ -481,7 +500,8 @@ std::shared_ptr<Geometry> GeometryGenerator::generate(const Node& n, unsigned lo
             }
             return color;
         };
-        sdfMesh(g->solid, densityField(universe_, n, 8 * 2.6 / (8u << lod)), 8u << lod, albedo, cancel);
+        sdfMesh(g->solid, densityField(universe_, n, 8 * 2.6 / (8u << lod)), 8u << lod, albedo, cancel,
+                1.3, {1, 0, 0, 0}, kind == Kind::Grain && lod > 0);
         if (kind == Kind::Grain)
             microTint(g->solid, n, [](glm::dvec3 p) { return p; });
     } else if (kind == Kind::Lattice) {

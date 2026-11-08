@@ -25,6 +25,19 @@ int main() {
                   "Packed normal lost angular precision");
             check(std::abs(glm::length(decoded) - 1) < 1e-6, "Decoded normal is not unit length");
         }
+        check(materialDetailSpacing(Kind::Planet,6e6,Kind::Surface,100.)==8.,
+              "Micro fix altered metre-anchored planetary materials");
+        check(materialDetailSpacing(Kind::Rock,10.,Kind::Rock,10.)==.2,
+              "Micro fix altered the existing rock material wavelength");
+        for(double radius:{1e-9,1e-6,.04,1.}){
+            const double spacing=materialDetailSpacing(Kind::Rock,100.,Kind::Grain,radius);
+            check(std::isfinite(spacing)&&spacing>0&&spacing<=radius*.020001,
+                  "Inherited rock relief overwhelmed a smaller grain");
+            check(std::abs(spacing/radius-.02)<1e-12,
+                  "Grain material wavelength does not follow its physical size");
+        }
+        check(materialDetailSpacing(Kind::Rock,.001,Kind::Grain,.1)==.00002,
+              "Grain material grew beyond its inherited rock scale");
         auto mesh = seam(.4f);
         const auto before = mesh.vertices;
         const auto indices = mesh.indices;

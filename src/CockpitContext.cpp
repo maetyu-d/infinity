@@ -18,7 +18,7 @@ CockpitFocus cockpitFocus(const FlightInstruments& t){
     else if(t.docking.active||t.docking.docked||(t.docking.available&&!t.shrinking&&t.docking.range<3000)){
         f.mode=CockpitMode::Docking;f.title=t.docking.docked?"BERTH SECURE":"DOCKING";
         f.nextAction=t.docking.docked?"ENTER UNDOCK / F2 SERVICES":t.docking.active?"B TAKE HELM":"J DOCK / L CAPTURE";}
-    else if(t.hostileContacts||t.incomingFire>.02||glm::length(t.localMissile)>.5||t.playerGun<maxWeaponMounts||t.weaponHeat>5){
+    else if((t.hostileContacts&&!t.shrinking)||t.incomingFire>.02||glm::length(t.localMissile)>.5||t.playerGun<maxWeaponMounts||t.weaponHeat>5){
         f.mode=CockpitMode::Combat;f.title=t.playerGun<maxWeaponMounts?"WEAPON STATION":"COMBAT";f.nextAction="SPACE FIRE / H HOSTILE";}
     else if(t.landing.phase!=LandingPhase::None&&(t.landing.phase!=LandingPhase::Landed||t.landing.settle>0)){
         f.mode=CockpitMode::Landing;f.title=t.landed?"TOUCHDOWN":"LANDING";f.nextAction=t.landed?"ENTER LAUNCH":"B TAKE HELM";}
