@@ -1,6 +1,6 @@
-# Stellar diversity — Infinite 0.36
+# Stellar diversity — Infinity 0.36
 
-Infinite adds **192 persistent stellar destinations per galaxy**, separate from the established catalogue. New objects appear in galaxy geometry, celestial contacts and the normal approach system. **Shift+N** cycles stellar destinations in the current galaxy; **J** uses the existing navigation drive. Plain **N** continues to toggle long-range cruise.
+Infinity adds **192 persistent stellar destinations per galaxy**, separate from the established catalogue. New objects appear in galaxy geometry, celestial contacts and the normal approach system. **Shift+N** cycles stellar destinations in the current galaxy; **J** uses the existing navigation drive. Plain **N** continues to toggle long-range cruise.
 
 ## Research translated into generation
 
@@ -31,7 +31,7 @@ The additive catalogue deliberately stratifies rare classes to make them discove
 
 ## Preservation and planetary inheritance
 
-The local checkpoint is `checkpoint/infinite-0.35-before-stellar-diversity`, at `1b8004b`. The baseline executable and all 32 baseline core checks were preserved before editing. A new **2,258-record frozen snapshot** records existing stars, planets, moons and representative galaxy/planet geometry across three universe seeds.
+The local checkpoint is `checkpoint/infinity-0.35-before-stellar-diversity`, at `1b8004b`. The baseline executable and all 32 baseline core checks were preserved before editing. A new **2,258-record frozen snapshot** records existing stars, planets, moons and representative galaxy/planet geometry across three universe seeds.
 
 Existing seeds, addresses, positions, masses, orbits and generation recipes remain unchanged. A separate System-ID namespace (`1 << 62`) supplies the additions. Existing galaxy particles retain their order; new stellar particles follow the established stars and gas. Historical galaxy-geometry checks exclude exactly these additional emitters and compare all original geometry. Old system and planetary fingerprints remain exact.
 

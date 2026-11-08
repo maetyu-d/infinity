@@ -1,9 +1,9 @@
-#include "infinite/SurfaceLife.hpp"
+#include "infinity/SurfaceLife.hpp"
 #include <algorithm>
 #include <cmath>
 #include <numbers>
 
-namespace infinite {
+namespace infinity {
 Mesh cityMesh(SurfaceMesh, unsigned);
 namespace {
 void triangle(Mesh& mesh, glm::dvec3 a, glm::dvec3 b, glm::dvec3 c, glm::vec3 color) {
@@ -110,4 +110,4 @@ Mesh surfaceMesh(SurfaceMesh kind, unsigned detail) {
     m.compact();
     return m;
 }
-} // namespace infinite
+} // namespace infinity

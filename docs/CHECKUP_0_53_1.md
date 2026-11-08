@@ -1,6 +1,6 @@
-# Infinite 0.53.1 checkup
+# Infinity 0.53.1 checkup
 
-The checkup covers the current Infinite game: generation and continuity, flight and landing, crew and weapons, combat and recovery, economy, exploration, saved-flight recovery and native Metal rendering. The separate Dune Breaker, ellipsoid and fractal experiments in the shared checkout are outside this game checkup.
+The checkup covers the current Infinity game: generation and continuity, flight and landing, crew and weapons, combat and recovery, economy, exploration, saved-flight recovery and native Metal rendering. The separate Dune Breaker, ellipsoid and fractal experiments in the shared checkout are outside this game checkup.
 
 ## Fixes
 

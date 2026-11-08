@@ -1,10 +1,11 @@
-#include "infinite/SurfaceShading.hpp"
+#include "infinity/SurfaceShading.hpp"
 #include <algorithm>
 #include <cmath>
 #include <glm/gtc/matrix_transform.hpp>
+#include <numbers>
 #include <unordered_map>
 
-namespace infinite {
+namespace infinity {
 namespace {
 float signNZ(float x) {
     return x < 0 ? -1.f : 1.f;
@@ -128,6 +129,19 @@ glm::mat4 periodicMaterialFrame(const glm::dmat4& mapping, double radius, double
     result[3] = glm::vec4(glm::vec3(glm::mod(glm::dvec3(mapping[3]) * frequency, glm::dvec3(period))), 1);
     return result;
 }
+float atmosphericOpticalStrength(double pressure, double temperature, double altitude,
+                                 double radius, double height, double sun) {
+    const double strength = std::clamp(pressure * 288. / std::max(60., temperature), 0., 6.);
+    // The direct-light pass has no diffuse fill in the planet's shadow. Its
+    // long tangent path can extinguish the sky abruptly next to opaque terrain.
+    // Limit the unlit limb's blue optical depth using the near-surface tangent
+    // column of an exponential atmosphere, in kilometres.
+    const double tangentKm = std::sqrt(2. * std::numbers::pi * radius * height) / 1000.;
+    const double nightStrength = std::min(strength, 1.5 / (.029 * tangentKm));
+    const double nearSurface = 1. - smoothstep(1., 4.444, altitude / height);
+    const double deepNight = 1. - smoothstep(-.26, -.10, sun);
+    return float(std::lerp(strength, nightStrength, nearSurface * deepNight));
+}
 float daylightSkyTransmission(double pressure, double altitude, double height, double sun) {
     const double density = pressure * std::exp(-std::max(0., altitude) / std::max(1., height));
     const double daylight = smoothstep(-.16, .08, sun);
@@ -171,4 +185,4 @@ SunShadowFrame sunShadowFrame(glm::dvec3 anchor, glm::dvec3 light, glm::dquat ro
     result.textureFromWorld = bias * result.projection * result.view;
     return result;
 }
-} // namespace infinite
+} // namespace infinity

@@ -1,0 +1,13 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start  8: expedition_planner_and_objectives
+    Start  4: warp_destination_and_arrival_encounters
+1/4 Test  #8: expedition_planner_and_objectives .........   Passed    1.51 sec
+    Start 55: cockpit_layout_and_targeting
+2/4 Test  #4: warp_destination_and_arrival_encounters ...   Passed    1.82 sec
+    Start 56: cockpit_popup_and_text_collisions
+3/4 Test #55: cockpit_layout_and_targeting ..............   Passed    1.08 sec
+4/4 Test #56: cockpit_popup_and_text_collisions .........   Passed    1.55 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   3.39 sec

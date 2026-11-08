@@ -1,13 +1,13 @@
 #pragma once
-#include "infinite/Flight.hpp"
-#include "infinite/Renderer.hpp"
+#include "infinity/Flight.hpp"
+#include "infinity/Renderer.hpp"
 #include <cmath>
 #include <filesystem>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 
-namespace infinite {
+namespace infinity {
 class StreamingValidation {
   public:
     StreamingValidation(const Universe& u, Navigation& nav, RegionCache& cache)
@@ -161,4 +161,4 @@ class StreamingValidation {
         nav_.offset = eye - nav_.orientation * glm::dvec3(0, 0, 1);
     }
 };
-} // namespace infinite
+} // namespace infinity

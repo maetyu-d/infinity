@@ -1,10 +1,10 @@
 #pragma once
-#include "infinite/Renderer.hpp"
+#include "infinity/Renderer.hpp"
 #include <filesystem>
 #include <iostream>
 #include <sstream>
 
-namespace infinite {
+namespace infinity {
 // A real, landable airless world isolates the source's gear contact treatment
 // from moving weather, atmosphere and cockpit labels. No generated data changes.
 class LandingLightValidation {
@@ -134,4 +134,4 @@ class LandingLightValidation {
         stable_ = 0;
     }
 };
-} // namespace infinite
+} // namespace infinity

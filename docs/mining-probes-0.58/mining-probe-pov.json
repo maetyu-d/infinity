@@ -1,0 +1,19 @@
+{
+  "source": "Native Infinite mining-probe camera, deterministic gameplay deployment",
+  "resolution": [
+    1280,
+    720
+  ],
+  "fps": 30,
+  "frames": 639,
+  "duration_seconds": 21.3,
+  "stages": [
+    "surface approach",
+    "boring",
+    "armed charge",
+    "detonation",
+    "cavern survey beacon"
+  ],
+  "audio": false,
+  "synthetic_frames": false
+}

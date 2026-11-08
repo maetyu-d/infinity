@@ -1,6 +1,6 @@
-# Planetary flight, long voyages and a shrinking ship — Infinite 0.10
+# Planetary flight, long voyages and a shrinking ship — Infinity 0.10
 
-Current handling and roll controls: [Ship handling, Infinite 0.25](SHIP_HANDLING.md).
+Current handling and roll controls: [Ship handling, Infinity 0.25](SHIP_HANDLING.md).
 
 The universe remains generation recipe 3. Its geometry generators, physical descriptors, spatial addresses, histories, procedural seeds, orbital snapshots, terrain/geology and crystallography are unchanged. Checkpoint `4906530` preserves the working 0.9 ship integration. This change replaces the always-scaling cruise/probe model with three explicit operating regimes.
 
@@ -8,7 +8,7 @@ The universe remains generation recipe 3. Its geometry generators, physical desc
 
 New games start in orbit around an existing temperate planet, selected deterministically from the existing galaxy. The ship has a nominal **12 m hull** and **2 m contact radius**, with long-range cruise off. Merely approaching an object or changing camera/render units does not shrink it.
 
-The nominal open-space envelope is **85 km/s**, based on Hyperion's local-flight pacing. It reduces continuously toward **350 m/s** near terrain; boost and the existing speed multiplier remain available. This preserves Infinite's actual planetary sizes and orbital distances. It does not compress a star system into a replacement Hyperion world.
+The nominal open-space envelope is **85 km/s**, based on Hyperion's local-flight pacing. It reduces continuously toward **350 m/s** near terrain; boost and the existing speed multiplier remain available. This preserves Infinity's actual planetary sizes and orbital distances. It does not compress a star system into a replacement Hyperion world.
 
 **Y** cycles the current system's existing planets, including targets too distant to resolve as meshes. **J** selects assisted transit toward that address. The approach/landing loop, persistent throttle, inertial/assisted handling, braking, gear and launch remain available. Selecting a departure destination while landed first releases the clamps and performs the ordinary thrust-driven lift-off. Paths below a planetary horizon receive above-surface waypoints.
 
@@ -40,7 +40,7 @@ Planetary atmosphere follows the actual medium and observer location, not the sh
 
 ## Persistence and compatibility
 
-`ship-<seed>.txt` now uses `INFINITE_SHIP 3`. It stores size, requested size, automatic/manual fitting, drive selection and ceiling, voyage counters, velocity, angular velocity, thruster effort, hull, gear and destination alongside the existing camera database. Versions 1 and 2 remain readable. Old overview saves migrate into planetary play on first upgrade; current saves preserve an ongoing large-scale voyage exactly.
+`ship-<seed>.txt` now uses `INFINITY_SHIP 3`. It stores size, requested size, automatic/manual fitting, drive selection and ceiling, voyage counters, velocity, angular velocity, thruster effort, hull, gear and destination alongside the existing camera database. Versions 1 and 2 remain readable. Old overview saves migrate into planetary play on first upgrade; current saves preserve an ongoing large-scale voyage exactly.
 
 **V**, F, Backspace, wheel navigation and the guided tour retain the original inspector. Returning from a micro/nano inspector explicitly deploys a correctly scaled ship at that view. This compatibility operation is separate from activating the gradual shrinking power during flight.
 

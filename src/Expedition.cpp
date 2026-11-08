@@ -1,11 +1,12 @@
-#include "infinite/Economy.hpp"
-#include "infinite/Planetology.hpp"
+#include "infinity/SaveTag.hpp"
+#include "infinity/Economy.hpp"
+#include "infinity/Planetology.hpp"
 #include <algorithm>
 #include <iomanip>
 #include <set>
 #include <sstream>
 
-namespace infinite {
+namespace infinity {
 namespace {
 constexpr std::array resources{Good::Ice, Good::Ore, Good::Silicate, Good::Carbon};
 bool linked(const Universe& u, const SurveyObserver& o, const EconomicSite& s) {
@@ -296,7 +297,7 @@ std::string ExpeditionLedger::execute(const Universe& u, Economy& e, Exploration
 std::string ExpeditionLedger::serialize() const {
     std::ostringstream o;
     o.imbue(std::locale::classic());
-    o << "INFINITE_EXPEDITIONS 1 " << state_.jobs.size();
+    o << "INFINITY_EXPEDITIONS 1 " << state_.jobs.size();
     for (const auto& j : state_.jobs)
         o << ' ' << j.id << ' ' << std::quoted(j.colony.home.str()) << ' ' << j.colony.slot << ' '
           << std::quoted(j.source.str()) << ' ' << unsigned(j.phase) << ' ' << j.reward << ' ' << j.escrow
@@ -313,7 +314,7 @@ bool ExpeditionLedger::restore(std::string_view text, const Universe& u) {
         std::string tag;
         unsigned version;
         size_t count;
-        if (!(in >> tag >> version >> count) || tag != "INFINITE_EXPEDITIONS" || version != 1 ||
+        if (!(in >> tag >> version >> count) || !matchesSaveTag(tag, "INFINITY_EXPEDITIONS") || version != 1 ||
             count > maxMaterialExpeditions)
             return false;
         ExpeditionState candidate;
@@ -384,4 +385,4 @@ size_t ExpeditionLedger::residentBytes() const {
                  (j.lab ? j.lab->home.path.capacity() * sizeof(Segment) : 0);
     return bytes;
 }
-} // namespace infinite
+} // namespace infinity

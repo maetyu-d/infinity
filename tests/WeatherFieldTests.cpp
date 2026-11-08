@@ -1,9 +1,9 @@
-#include "infinite/WeatherField.hpp"
+#include "infinity/WeatherField.hpp"
 #include <cmath>
 #include <iostream>
 #include <numbers>
 #include <stdexcept>
-using namespace infinite;
+using namespace infinity;
 static void check(bool value, const char* message) {
     if (!value)
         throw std::runtime_error(message);

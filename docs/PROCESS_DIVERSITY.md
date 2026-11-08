@@ -62,13 +62,13 @@ Captures: [galaxy](diversity-captures/galaxy.png), [icy planet](diversity-captur
 Process-specific streams use named feature domains. Atomic vacancies, thermal displacement and substitution use exact unit-cell/motif identities, independently of enumeration bounds. Structural descriptors participate in the identity fingerprint. Fresh-world tests and the native proof do not depend on memoized descriptors.
 
 ```sh
-cmake -S . -B build -DINFINITE_VIEWER=ON -DINFINITE_GPU_TESTS=ON
-cmake --build build --target infinite infinite_tests infinite_continuity_tests infinite_process_tests infinite_benchmark -j 4
+cmake -S . -B build -DINFINITY_VIEWER=ON -DINFINITY_GPU_TESTS=ON
+cmake --build build --target infinity infinity_tests infinity_continuity_tests infinity_process_tests infinity_benchmark -j 4
 ctest --test-dir build --output-on-failure
-./build/infinite_benchmark > build/generation.csv
+./build/infinity_benchmark > build/generation.csv
 ```
 
-The GPU fixtures require an active desktop. Set `INFINITE_GPU_TESTS=OFF` for the seven headless cases; `INFINITE_VIEWER=OFF` also avoids building the renderer. On this machine, `ctest` is `/Users/user/.local/opt/cmake/CMake.app/Contents/bin/ctest`.
+The GPU fixtures require an active desktop. Set `INFINITY_GPU_TESTS=OFF` for the seven headless cases; `INFINITY_VIEWER=OFF` also avoids building the renderer. On this machine, `ctest` is `/Users/user/.local/opt/cmake/CMake.app/Contents/bin/ctest`.
 
 ## Scientific basis and approximation boundaries
 

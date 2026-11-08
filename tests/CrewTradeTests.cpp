@@ -1,11 +1,11 @@
-#include "infinite/Cockpit.hpp"
-#include "infinite/Economy.hpp"
+#include "infinity/Cockpit.hpp"
+#include "infinity/Economy.hpp"
 #include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <thread>
-using namespace infinite;
+using namespace infinity;
 namespace {
 unsigned checks = 0;
 void check(bool b, const char* why) {
@@ -253,10 +253,16 @@ int main(int argc, char** argv) {
         ShipCrew migrated(47);
         check(migrated.restore(oldShip), "Crew v1 save no longer loads");
         check(migrated.members()[2].weaponMount == 0, "Legacy gunner lost primary console assignment");
-        auto legacy = e.serialize();
-        legacy.erase(legacy.find("CREW_MARKETS"));
-        legacy.replace(0, 18, "INFINITE_ECONOMY 6");
+        auto originalBrand = e.serialize();
+        originalBrand.replace(0, 8, "INFINITE");
+        Economy renamed(net);
+        check(renamed.restore(originalBrand) && renamed.serialize() == e.serialize(),
+              "Original economy save did not load under the new brand");
         Economy old(net);
+        // A fresh ledger has no newer recovery rows to strip from the v6 fixture.
+        auto legacy = old.serialize();
+        legacy.erase(legacy.find("CREW_MARKETS"));
+        legacy.replace(0, legacy.find(' ', legacy.find(' ') + 1), "INFINITE_ECONOMY 6");
         check(old.restore(legacy), "Legacy v6 economy stopped loading");
         auto view = snapshot(e, p);
         MarketContext context;

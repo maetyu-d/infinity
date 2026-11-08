@@ -1,11 +1,25 @@
-#include "infinite/Economy.hpp"
+#include "infinity/Economy.hpp"
 #include <algorithm>
 #include <numeric>
-namespace infinite {
+namespace infinity {
 Stock weaponMaterials(unsigned level) {
     Stock s{};
     if (level > maxWeaponLevel)
         return s;
+    if (level >= missileLauncher) {
+        s[size_t(Good::Alloy)] = level == missileLauncher ? 18 : 10;
+        s[size_t(Good::Silicon)] = 4;
+        s[size_t(Good::Electronics)] = level == missileLauncher ? 6 : 9;
+        s[size_t(Good::Machinery)] = 3;
+        return s;
+    }
+    if (level == ionDisruptor) {
+        s[size_t(Good::Alloy)] = 12;
+        s[size_t(Good::Silicon)] = 3;
+        s[size_t(Good::Electronics)] = 7;
+        s[size_t(Good::Machinery)] = 2;
+        return s;
+    }
     s[size_t(Good::Alloy)] = 8 * level;
     s[size_t(Good::Silicon)] = level;
     s[size_t(Good::Electronics)] = 2 * level;
@@ -19,13 +33,25 @@ WeaponQuote economicWeaponQuote(const EconomySnapshot& s, size_t i, unsigned lev
         q.status = "INVALID WEAPON GRADE";
         return q;
     }
+    if (!sell && level == pointDefence && mount == 0) {
+        q.status = "POINT DEFENCE REQUIRES A CREW TURRET";
+        return q;
+    }
     const auto& site = s.sites[i];
     const auto current = s.player.weaponAt(mount);
+    if (!sell && s.exploration.probes.launchers[mount]) {
+        q.status = "PROBE LAUNCHER FITTED / REMOVE IN SURVEY SERVICES FIRST";
+        return q;
+    }
     if(!sell&&s.exploration.miningLevel&&s.exploration.miningMount==mount){
         q.status="MINING HEAD FITTED / F2 SURVEY TO SELL FIRST";return q;
     }
     if (sell && (!current || current != level)) {
         q.status = "NO MATCHING WEAPON FITTED";
+        return q;
+    }
+    if (!sell && current && level != current && (level >= ionDisruptor || current >= ionDisruptor)) {
+        q.status = "SELL CURRENT WEAPON BEFORE SWITCHING TYPE";
         return q;
     }
     if (!sell && level <= current) {
@@ -59,7 +85,7 @@ WeaponQuote economicWeaponQuote(const EconomySnapshot& s, size_t i, unsigned lev
                : sell && site.cash < q.sellCents ? "PORT CANNOT FUND WEAPON BUYBACK"
                : !sell && !stock                 ? "PORT NEEDS UNRESERVED WEAPON PARTS"
                : !sell && s.player.credits < q.totalCents() ? "INSUFFICIENT CREDITS"
-               : sell                                       ? "SELL FITTED LASER / HARDWARE RETURNED TO PORT"
+               : sell                                       ? "SELL FITTED WEAPON / HARDWARE RETURNED TO PORT"
                                                             : "READY / PARTS AND INSTALLATION INCLUDED";
     return q;
 }
@@ -120,7 +146,8 @@ std::string Economy::disableVessel(const EconomicCommand& c) {
     sites_[f->destination].cash += f->payment + f->fee;
     f->payment = f->fee = 0;
     f->disabledAt = c.impactSeconds;
+    openIncident(unsigned(f - freight_.begin()) + 1);
     event("FREIGHTER DISABLED / onboard cargo retained / uncollected orders refunded");
     return "FREIGHTER DISABLED / CARGO REMAINS ABOARD THE WRECK";
 }
-} // namespace infinite
+} // namespace infinity

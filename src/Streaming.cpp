@@ -1,4 +1,4 @@
-#include "infinite/Streaming.hpp"
+#include "infinity/Streaming.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -6,7 +6,7 @@
 #include <set>
 #include <stdexcept>
 
-namespace infinite {
+namespace infinity {
 std::pair<Address, glm::dvec3> canonicalRoot(const Address& address, glm::dvec3 point) {
     if (!std::isfinite(glm::length(point)))
         throw std::invalid_argument("Non-finite root location");
@@ -341,9 +341,9 @@ std::shared_ptr<Geometry> terrainGeometry(const Universe& u, const Node& planet,
             return {};
         for (unsigned x = 0; x <= 8; ++x) {
             const auto d = terrainVertexDirection(terrainVertexKey(tile, x, y));
-            const auto p = d * (1 + u.terrainHeight(planet, d) / radius);
-            const auto normal = u.terrainNormal(planet, d);
             const auto field = geologySample(*planet.geology, d);
+            const auto p = d * (1 + field.heightMetres / radius);
+            const auto normal = u.terrainNormal(planet, d);
             const auto albedo = u.terrainAlbedo(planet, d, field);
             const auto color =
                 albedo *
@@ -517,4 +517,4 @@ void TerrainStreamer::update(const Node& planet, glm::dvec3 eye, double height, 
     starts_ = std::move(starts);
     morph_ = starts_.empty() ? 1 : 0;
 }
-} // namespace infinite
+} // namespace infinity

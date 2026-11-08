@@ -1,4 +1,4 @@
-#include "infinite/Geometry.hpp"
+#include "infinity/Geometry.hpp"
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -9,7 +9,7 @@
 #include <set>
 #include <stdexcept>
 
-using namespace infinite;
+using namespace infinity;
 static size_t checks = 0;
 static void check(bool condition, const char* message) {
     ++checks;

@@ -1,9 +1,9 @@
-#include "infinite/Crew.hpp"
+#include "infinity/Crew.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <limits>
-namespace infinite {
+namespace infinity {
 CrewTaskView ShipCrew::task(size_t i) const {
     CrewTaskView v;
     if (i >= members_.size()) {
@@ -227,4 +227,4 @@ std::string ShipCrew::command(CrewCommand c, size_t i, CrewStation room) {
         return "UNKNOWN CREW COMMAND";
     }
 }
-} // namespace infinite
+} // namespace infinity

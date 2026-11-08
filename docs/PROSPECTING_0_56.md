@@ -27,7 +27,7 @@ New colony expedition offers also examine nearby terrain before choosing their s
 
 Each canonical level-seven surface district has one recoverable stock shared across all its outcrops and finer scales. Newly worked districts derive their composition and accessible material volume from the geological field, with a bounded recoverable mass of 100–5000 kg. This is the accessible reserve, not the total mass of the landscape or an entire boulder.
 
-The reserve is frozen when extraction first begins, including when a colony core is recovered. `INFINITE_EXPLORATION 2` saves that capacity alongside extraction. Version-one records migrate with their original capacities, so exhausted old deposits remain exhausted. Resurveying, zooming, changing outcrops or restarting cannot refill them. The cockpit directs prospecting toward a neighbouring district when the current one is exhausted.
+The reserve is frozen when extraction first begins, including when a colony core is recovered. `INFINITY_EXPLORATION 2` saves that capacity alongside extraction. Version-one records migrate with their original capacities, so exhausted old deposits remain exhausted. Resurveying, zooming, changing outcrops or restarting cannot refill them. The cockpit directs prospecting toward a neighbouring district when the current one is exhausted.
 
 The new ledger remains in the existing atomic SQLite transaction with the wallet and economies. Wallet, ship, navigation and expedition save formats are unchanged.
 

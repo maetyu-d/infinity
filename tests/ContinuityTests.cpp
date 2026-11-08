@@ -1,6 +1,6 @@
-#include "infinite/Continuity.hpp"
-#include "infinite/Navigation.hpp"
-#include "infinite/World.hpp"
+#include "infinity/Continuity.hpp"
+#include "infinity/Navigation.hpp"
+#include "infinity/World.hpp"
 #include <algorithm>
 #include <bit>
 #include <filesystem>
@@ -12,7 +12,7 @@
 #include <sstream>
 #include <stdexcept>
 
-using namespace infinite;
+using namespace infinity;
 static size_t checks = 0;
 static void check(bool ok, const char* message) {
     ++checks;

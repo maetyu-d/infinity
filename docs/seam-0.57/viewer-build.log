@@ -1,0 +1,8 @@
+ld: write() failed, errno=28 (No space left on device)
+clang++: error: linker command failed with exit code 1 (use -v to see invocation)
+Traceback (most recent call last):
+  File "<stdin>", line 9, in <module>
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py", line 528, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command ': && /usr/bin/c++ -O3 -DNDEBUG -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/infinite_tests.dir/tests/Tests.cpp.o -o infinite_tests  libinfinite_core.a  external/FastNoise2/src/libFastNoise.a  appleclang_21.0_cxx20_64_release/libtbb.a  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libsqlite3.tbd  external/zstd/build/cmake/lib/libzstd.a && :' returned non-zero exit status 1.
+PASS: completed linking 6 remaining targets; all 55 targets present

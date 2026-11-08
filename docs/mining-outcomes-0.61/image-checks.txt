@@ -1,0 +1,3 @@
+PASS: 20 real refit, drilling, cavern, portrait and portal visibility views
+PASS: 18 native minimal/detail planner, delivery, portrait and objective-tracker views
+PASS: six actual surface, tiny rock, mineral, marked seam, full-size mining and portrait journal views

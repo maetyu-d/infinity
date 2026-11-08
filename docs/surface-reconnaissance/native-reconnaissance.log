@@ -1,0 +1,4 @@
+RECON_NATIVE stage=0 selected=12709452623623216516 points=4 terrain=5149391451716758143 cpu_ms=15.115 gpu=179352
+RECON_NATIVE stage=1 selected=7817579010490846464 points=4 terrain=5149391451716758143 cpu_ms=14.1044 gpu=165024
+RECON_NATIVE stage=2 selected=12709452623623216516 points=4 terrain=5149391451716758143 cpu_ms=12.3111 gpu=179352
+PASS: native terrain scanner / crew assessments / recorded assay / real recovery / portrait HUD / unchanged generated world

@@ -1,0 +1,1 @@
+PASS: 18 native minimal/detail planner, delivery, portrait and objective-tracker views

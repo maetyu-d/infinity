@@ -1,8 +1,8 @@
-#include "infinite/Economy.hpp"
+#include "infinity/Economy.hpp"
 #include <algorithm>
 #include <istream>
 #include <ostream>
-namespace infinite {
+namespace infinity {
 namespace {
 void write(std::ostream& o, const Stock& s) {
     for (auto n : s)
@@ -33,7 +33,7 @@ void Economy::writeRecovery(std::ostream& o) const {
         write(o, j.required);
         write(o, j.delivered);
         write(o, j.rates);
-        o << '\n';
+        o << ' ' << j.recipe << '\n';
     }
     o << "OUTCOMES " << nextOutcome_ << ' ' << outcomes_.size() << '\n';
     for (const auto& r : outcomes_) {
@@ -46,28 +46,38 @@ void Economy::writeRecovery(std::ostream& o) const {
         o << '\n';
     }
 }
-bool Economy::readRecovery(std::istream& in) {
+bool Economy::readRecovery(std::istream& in, bool dynamicJobs) {
     std::string tag;
     size_t count;
     constexpr uint64_t max = 1000000000000ULL;
     if (!(in >> tag >> nextRecovery_ >> count) || tag != "RECOVERY" || !nextRecovery_ ||
         nextRecovery_ > max || count > 32)
         return false;
-    unsigned active = 0;
+    unsigned active = 0, restarts = 0;
     for (size_t n = 0; n < count; ++n) {
         RecoveryJob j;
         unsigned kind, phase;
         if (!(in >> j.id >> j.deadline >> j.outageUntil >> j.outcome >> j.site >> j.pairs >> j.progress >>
               kind >> phase >> j.escrow) ||
             !j.id || j.id >= nextRecovery_ || j.deadline > max || j.outageUntil > max ||
-            j.site >= sites_.size() || j.pairs > 50 || j.progress > j.pairs || kind > 1 ||
+            j.site >= sites_.size() || j.pairs > 50 || j.progress > j.pairs ||
+            kind > unsigned(dynamicJobs ? RecoveryKind::Restart : RecoveryKind::Maintenance) ||
             phase > unsigned(RecoveryPhase::Expired) || j.escrow < 0 || j.escrow > 1000000000 ||
             !read(in, j.required, 1000) || !read(in, j.delivered, 1000) || !read(in, j.rates, 100000))
             return false;
         j.kind = RecoveryKind(kind);
         j.phase = RecoveryPhase(phase);
-        if (network_->sites[j.site].orbital || !network_->sites[j.site].population)
+        if (dynamicJobs && (!(in >> j.recipe) || j.recipe > productionRecipes().size()))
             return false;
+        const auto& site = network_->sites[j.site];
+        if (site.orbital || !site.population || bool(j.recipe) != (j.kind == RecoveryKind::Restart))
+            return false;
+        if (j.recipe) {
+            const bool formerlyAvailable = (site.originalRecipes & (uint32_t(1) << (j.recipe - 1))) != 0;
+            const bool currentlyAvailable = std::find(site.recipes.begin(), site.recipes.end(), j.recipe - 1) != site.recipes.end();
+            if (j.outageUntil || (!formerlyAvailable && !currentlyAvailable))
+                return false;
+        }
         int64_t escrow = j.kind == RecoveryKind::Maintenance ? (j.pairs - j.progress) * 100 : 0;
         bool any = false;
         for (size_t g = 0; g < goodCount; ++g) {
@@ -86,11 +96,13 @@ bool Economy::readRecovery(std::istream& in) {
                                   : Good(g) == Good::Filters ? int64_t(j.pairs)
                                                              : 0))
                 return false;
+            if (j.recipe && j.required[g] > productionRecipes()[j.recipe - 1].inputs[g] * 6)
+                return false;
             if (j.phase == RecoveryPhase::Open && j.delivered[g])
                 return false;
         }
         if (!any ||
-            (j.kind == RecoveryKind::Relief &&
+            (j.kind != RecoveryKind::Maintenance &&
              (j.pairs || j.progress || j.phase == RecoveryPhase::Working)) ||
             (j.kind == RecoveryKind::Maintenance && j.pairs < 8) ||
             (j.progress && j.delivered != j.required) ||
@@ -98,8 +110,10 @@ bool Economy::readRecovery(std::istream& in) {
             (j.phase == RecoveryPhase::Complete && (j.delivered != j.required || j.progress != j.pairs)) ||
             (j.phase <= RecoveryPhase::Working ? j.escrow != escrow : j.escrow != 0))
             return false;
-        if (j.phase <= RecoveryPhase::Working)
+        if (j.phase <= RecoveryPhase::Working) {
             ++active;
+            restarts += j.kind == RecoveryKind::Restart;
+        }
         if (std::any_of(recoveries_.begin(), recoveries_.end(), [&](const auto& x) {
                 return x.id == j.id ||
                        (x.site == j.site && x.kind == j.kind && x.phase <= RecoveryPhase::Working &&
@@ -108,7 +122,7 @@ bool Economy::readRecovery(std::istream& in) {
             return false;
         recoveries_.push_back(j);
     }
-    if (active > 8 || !(in >> tag >> nextOutcome_ >> count) || tag != "OUTCOMES" || !nextOutcome_ ||
+    if (active - restarts > 8 || restarts > 2 || !(in >> tag >> nextOutcome_ >> count) || tag != "OUTCOMES" || !nextOutcome_ ||
         nextOutcome_ > max || count > 16)
         return false;
     for (size_t n = 0; n < count; ++n) {
@@ -118,7 +132,8 @@ bool Economy::readRecovery(std::istream& in) {
               r.payment >> r.crewPaid >> r.conditionRestored >> working >> cleared) ||
             !r.id || r.id >= nextOutcome_ || !r.command || r.tick > tick_ || r.updated < r.tick ||
             r.updated > tick_ || r.observeUntil > max || r.observeUntil < r.tick || r.site >= sites_.size() ||
-            kind > unsigned(OutcomeKind::Bounty) || r.payment < 0 || r.payment > 1000000000 ||
+            kind > unsigned(dynamicJobs ? OutcomeKind::Rescue : OutcomeKind::Bounty) ||
+            r.payment < 0 || r.payment > 1000000000 ||
             r.crewPaid < 0 || r.crewPaid > 90000 || r.crewPaid % 100 || r.conditionRestored > 750 ||
             working > 1 || cleared > 1 || !read(in, r.delivered, maxShipPayloadKg) || !read(in, r.before) ||
             !read(in, r.after))
@@ -153,4 +168,4 @@ bool Economy::readRecovery(std::istream& in) {
             return false;
     return true;
 }
-} // namespace infinite
+} // namespace infinity

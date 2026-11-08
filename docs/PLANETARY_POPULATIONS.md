@@ -1,4 +1,4 @@
-# Planetary populations — Infinite 0.13
+# Planetary populations — Infinity 0.13
 
 The former system catalogue contained 5–9 planets and no addressable moons. Each system now retains those exact worlds and appends 8–12 primary worlds, for **13–21 total**. Regular moon families are generated where the host's gravity permits them. The default starting system has **13 primary worlds and 44 moons**, compared with five planets before this change.
 
@@ -16,7 +16,7 @@ These are analytic, physically constrained procedural recipes, rather than a lon
 
 ## Identity and continuity
 
-Checkpoint `b6dd70c` preserves the working 0.12 tree. Before changing the generator, `infinite_population_snapshot` recorded **120 descriptor and geometry fingerprints** from that implementation. The checked-in [legacy snapshot](../tests/data/legacy-0.12.txt) covers three seeds, galaxy/system descriptors, every original planet in nine systems, and full surface-to-lattice specimen branches. The preservation test compares current output against those frozen values; it does not regenerate its expectations.
+Checkpoint `b6dd70c` preserves the working 0.12 tree. Before changing the generator, `infinity_population_snapshot` recorded **120 descriptor and geometry fingerprints** from that implementation. The checked-in [legacy snapshot](../tests/data/legacy-0.12.txt) covers three seeds, galaxy/system descriptors, every original planet in nine systems, and full surface-to-lattice specimen branches. The preservation test compares current output against those frozen values; it does not regenerate its expectations.
 
 The original generation recipe remains 3. The population extension has its own version 1. Original IDs and their `childSeed(parent, kind, id)` values remain unchanged. Additional primaries use appended integer IDs. Moons use a reserved high-bit ID containing the primary ID and moon ordinal. They occupy the existing `Planet` body level under `System`, with an explicit `satelliteOf` relationship. No hierarchy levels or enum values move, so all original surface, rock, grain and lattice addresses remain valid. A moon refines through that same material hierarchy.
 

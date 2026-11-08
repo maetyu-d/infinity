@@ -1,4 +1,5 @@
-#include "infinite/Navigation.hpp"
+#include "infinity/SaveTag.hpp"
+#include "infinity/Navigation.hpp"
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
@@ -6,7 +7,7 @@
 #include <sstream>
 #include <stdexcept>
 
-namespace infinite {
+namespace infinity {
 Navigation::Navigation(const Universe& u) : universe_(u) {
     reset();
 }
@@ -233,7 +234,7 @@ std::string Navigation::serialize() const {
           << ' ' << v.orientation.y << ' ' << v.orientation.z << ' ' << v.offset.x << ' ' << v.offset.y << ' '
           << v.offset.z << ' ' << (v.selected ? v.selected->str() : "-") << '\n';
     };
-    s << "INFINITE_NAV_2\n";
+    s << "INFINITY_NAV_2\n";
     write(view());
     s << views_.size() << '\n';
     for (const auto& [address, v] : views_)
@@ -271,7 +272,7 @@ bool Navigation::restore(std::string_view text) {
         };
         std::string first;
         s >> first;
-        bool modern = first == "INFINITE_NAV_2";
+        bool modern = matchesSaveTag(first, "INFINITY_NAV_2");
         if (!modern) {
             s.clear();
             s.seekg(0);
@@ -308,4 +309,4 @@ bool Navigation::restore(std::string_view text) {
         return false;
     }
 }
-} // namespace infinite
+} // namespace infinity

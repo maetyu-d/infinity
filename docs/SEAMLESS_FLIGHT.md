@@ -16,7 +16,7 @@ Explicit click selection stays selected. An explicit focus/parent/zoom view rema
 
 ## Verification
 
-`infinite_flight_tests` performs 24,816 checks. It flies from a cosmic region to an atomic specimen and back for three seeds at signed root-cell extremes, using only steering and forward movement during the journeys. It checks every level, saved camera state, descriptor/geometry fingerprints, unit/frame continuity, finite orientations, bounded cache concurrency, stationary hysteresis, cube-face/tile boundaries, lateral terrain handoffs, explicit selection/manual views and switching to a displayed star outside the locator catalog.
+`infinity_flight_tests` performs 24,816 checks. It flies from a cosmic region to an atomic specimen and back for three seeds at signed root-cell extremes, using only steering and forward movement during the journeys. It checks every level, saved camera state, descriptor/geometry fingerprints, unit/frame continuity, finite orientations, bounded cache concurrency, stationary hysteresis, cube-face/tile boundaries, lateral terrain handoffs, explicit selection/manual views and switching to a displayed star outside the locator catalog.
 
 `--flight-test` runs an independent flight through the real SDL3/bgfx renderer. The fixture steers physical waypoints; the production controller decides scale and frame transitions. It requires all nine levels to render, actual atom instances at the final level, and successful outward return, without focus or wheel commands. The automated native case uses Hyperion at 1920×1080. The existing native round-trip and three-mode image tests check the original procedural scene and rendering compatibility.
 
@@ -29,11 +29,11 @@ Reproduce:
 ```sh
 cmake --build build -j 4
 ctest --test-dir build --output-on-failure
-./build/infinite --flight-test --render-mode hyperion --width 1920 --height 1080 \
+./build/infinity --flight-test --render-mode hyperion --width 1920 --height 1080 \
   --capture-dir build/seamless-flight/captures --profile build/seamless-flight/frames.csv
 ```
 
-Enable `INFINITE_GPU_TESTS` at configure time to include the native cases. Those cases require an active desktop. The automated pilot is a validation fixture; normal flight remains user-steered.
+Enable `INFINITY_GPU_TESTS` at configure time to include the native cases. Those cases require an active desktop. The automated pilot is a validation fixture; normal flight remains user-steered.
 
 ## Existing model boundaries
 

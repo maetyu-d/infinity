@@ -1,0 +1,42 @@
+Running 18 regression tests
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+      Start  7: graceful_docking_and_departure
+      Start 34: persistent_economic_supply_chains
+ 1/18 Test #34: persistent_economic_supply_chains .....   Passed   15.46 sec
+      Start 32: economic_hauling_and_career
+ 2/18 Test #32: economic_hauling_and_career ...........   Passed   22.49 sec
+      Start 33: economic_investment_and_trade
+ 3/18 Test  #7: graceful_docking_and_departure ........   Passed   38.99 sec
+      Start 27: weapons_combat_and_equipment
+ 4/18 Test #27: weapons_combat_and_equipment ..........   Passed    6.97 sec
+      Start 30: economic_ship_services_and_planning
+ 5/18 Test #33: economic_investment_and_trade .........   Passed    8.36 sec
+      Start  9: exploration_worker_and_restart
+ 6/18 Test #30: economic_ship_services_and_planning ...   Passed    8.76 sec
+      Start 25: player_crew_and_damage_control
+ 7/18 Test #25: player_crew_and_damage_control ........   Passed    4.26 sec
+      Start 21: captain_gunner_station_swap
+ 8/18 Test #21: captain_gunner_station_swap ...........   Passed    1.08 sec
+      Start 19: crew_fire_control_and_ship_systems
+ 9/18 Test #19: crew_fire_control_and_ship_systems ....   Passed    1.13 sec
+      Start 48: cockpit_layout_and_targeting
+10/18 Test #48: cockpit_layout_and_targeting ..........   Passed    1.24 sec
+      Start 28: economic_recovery_and_outcomes
+11/18 Test  #9: exploration_worker_and_restart ........   Passed   16.32 sec
+      Start 29: economic_world_feedback
+12/18 Test #28: economic_recovery_and_outcomes ........   Passed    0.80 sec
+      Start 26: npc_combat_behaviour
+13/18 Test #29: economic_world_feedback ...............   Passed    1.26 sec
+      Start 31: cockpit_motion_and_feedback
+14/18 Test #26: npc_combat_behaviour ..................   Passed    1.40 sec
+      Start 55: ship_dynamics_and_landing
+15/18 Test #31: cockpit_motion_and_feedback ...........   Passed    1.93 sec
+      Start 23: inflight_crew_management
+16/18 Test #23: inflight_crew_management ..............   Passed    1.74 sec
+      Start 49: cockpit_popup_and_text_collisions
+17/18 Test #55: ship_dynamics_and_landing .............   Passed    3.39 sec
+18/18 Test #49: cockpit_popup_and_text_collisions .....   Passed    1.07 sec
+
+100% tests passed, 0 tests failed out of 18
+
+Total Test time (real) =  68.73 sec

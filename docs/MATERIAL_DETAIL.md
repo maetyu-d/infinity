@@ -1,12 +1,12 @@
-# Close material rendering — Infinite 0.17
+# Close material rendering — Infinity 0.17
 
-The next graphics pass ports the original Hyperion game's packed close-material texture. Existing terrain, rocks, mineral grains, cavities and lattice geometry remain authoritative. The source checkpoint is `b0dfeb7` (Infinite 0.16).
+The next graphics pass ports the original Hyperion game's packed close-material texture. Existing terrain, rocks, mineral grains, cavities and lattice geometry remain authoritative. The source checkpoint is `b0dfeb7` (Infinity 0.16).
 
 ## Source and translation
 
 The source is `../Hyperion/src/flight/surface_detail.hpp`: `detailBakeFragment` constructs a periodic cellular field with skipped cells, nearest/second-nearest mineral boundaries, domed grains, chips and fine grain. Its four channels store height, fracture, mineral tint and grain. `closeMaterial` samples that field in three planes. `../Hyperion/src/flight/renderer.cpp::lookupNoise` supplies the source's exact integer lookup; `renderer.cpp` builds mipmaps and enables anisotropic filtering for its highest graphics quality.
 
-Infinite translates the bake into C++20 and runs it once in an existing oneTBB background task. The shader samples a shared 512×512 RGBA8 texture, including every mip level through 1×1. Compared with Hyperion's larger quality-dependent textures, this uses **1,398,100 bytes (1.33 MiB)**. There is no per-object texture allocation or extra render target.
+Infinity translates the bake into C++20 and runs it once in an existing oneTBB background task. The shader samples a shared 512×512 RGBA8 texture, including every mip level through 1×1. Compared with Hyperion's larger quality-dependent textures, this uses **1,398,100 bytes (1.33 MiB)**. There is no per-object texture allocation or extra render target.
 
 The original generated vertex colours, mineral type, temperature, water activity, strain and inherited material phase cross the read-only adapter. Source-inspired close shading uses the texture's mineral relief, dark fractures, frost and roughness. Frost respects temperature; strain controls fracture contrast. The effects change illumination and surface colour only. The generator still determines all geometric cracks, cavities and mineral boundaries.
 

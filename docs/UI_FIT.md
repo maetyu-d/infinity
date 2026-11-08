@@ -1,4 +1,4 @@
-# Display and HUD fitting — Infinite 0.29
+# Display and HUD fitting — Infinity 0.29
 
 The previous 1440 × 900 startup request used logical window points without reserving desktop decorations. On smaller desktops the title bar, menu bar and Dock could leave lower instruments outside the usable screen. Tall windows also produced invalid instrument widths because the cockpit assumed at least a square drawing area.
 
@@ -20,4 +20,4 @@ The native fixture first exercises production startup fitting against the actual
 
 [Native fit proofs](ui-fit-0.29/native.log) · [Native tests](ui-fit-0.29/native-tests.log) · [CPU tests](ui-fit-0.29/cpu-tests.log)
 
-Checkpoint: `checkpoint/infinite-0.28-before-ui-fit`. The rebuilt local app is 0.29.0, build 29, ad-hoc signed and strictly verified.
+Checkpoint: `checkpoint/infinity-0.28-before-ui-fit`. The rebuilt local app is 0.29.0, build 29, ad-hoc signed and strictly verified.

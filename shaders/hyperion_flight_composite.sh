@@ -42,11 +42,11 @@ vec3 atmosphere(vec2 uv, vec2 cloudClip, out vec3 transmission) {
     return scattering;
 }
 #include "hyperion_display.sh"
-#define INFINITE_POLAR_RESOLVE 1
+#define INFINITY_POLAR_RESOLVE 1
 #include "hyperion_polar.sh"
 #include "hyperion_cloud_resolve.sh"
 #include "hyperion_stellar_optics.sh"
-#if INFINITE_WEATHER_VISIBILITY
+#if INFINITY_WEATHER_VISIBILITY
 #include "hyperion_weather_visibility.sh"
 #endif
 void main() {
@@ -58,7 +58,7 @@ void main() {
         vec2 cloudClip;vec4 clouds=resolveClouds(uv,cloudClip);c=(c+resolvePolar(uv))*clouds.a+clouds.rgb;
         vec3 transmission;vec3 air=atmosphere(uv,cloudClip,transmission);c=c*transmission+air;
     }
-#if INFINITE_WEATHER_VISIBILITY
+#if INFINITY_WEATHER_VISIBILITY
     c=weatherVisibility(c,uv);
 #endif
     c=displayTransform(c,uv);

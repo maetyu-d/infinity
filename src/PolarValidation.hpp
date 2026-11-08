@@ -1,10 +1,10 @@
 #pragma once
-#include "infinite/Renderer.hpp"
+#include "infinity/Renderer.hpp"
 #include <filesystem>
 #include <iostream>
 #include <sstream>
 
-namespace infinite {
+namespace infinity {
 class PolarValidation {
   public:
     PolarValidation(const Universe& u, Navigation& nav, Pilot& pilot) : u_(u), nav_(nav), pilot_(pilot) {
@@ -150,4 +150,4 @@ class PolarValidation {
         stable_ = 0;
     }
 };
-} // namespace infinite
+} // namespace infinity

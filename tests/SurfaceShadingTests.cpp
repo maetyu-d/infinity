@@ -1,8 +1,8 @@
-#include "infinite/SurfaceShading.hpp"
+#include "infinity/SurfaceShading.hpp"
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
-using namespace infinite;
+using namespace infinity;
 static void check(bool value, const char* message) {
     if (!value)
         throw std::runtime_error(message);
@@ -74,6 +74,18 @@ int main() {
                   !streamedTerrainCovers(mountain.child(Kind::Rock, 0), surface, false) &&
                   !streamedTerrainCovers(planet.parent().child(Kind::Planet, 1), surface, false),
               "Overlapping hierarchy terrain draws or unrelated geometry was hidden");
+        constexpr double radius = 5.5e6, height = 1.7e4;
+        const auto optical = [&](double altitude, double sun, double pressure = .8) {
+            return atmosphericOpticalStrength(pressure, 255, altitude, radius, height, sun);
+        };
+        const auto full = optical(10200, .4);
+        const auto darkLimb = optical(10200, -.8);
+        check(darkLimb > 0 && darkLimb < full * .25f, "Unlit tangent path still crushes the sky");
+        check(optical(10200, -.17) > darkLimb && optical(10200, -.17) < full &&
+                  optical(10200, -.08) == full && optical(5 * height, -.8) == full,
+              "Night extinction correction changed daylight, orbit, or the twilight transition");
+        check(optical(10200, -.8, .001) == optical(10200, .4, .001),
+              "Thin atmospheres acquired an artificial night transition");
         // Periodic triplanar fields retain phase across camera subtraction,
         // scale changes and wrapping, including large translated origins.
         for (double tile : {8., 256.})

@@ -1,5 +1,5 @@
-#include "infinite/Piloting.hpp"
-#include "infinite/SurfaceLife.hpp"
+#include "infinity/Piloting.hpp"
+#include "infinity/SurfaceLife.hpp"
 #include <bit>
 #include <chrono>
 #include <iostream>
@@ -8,7 +8,7 @@
 #include <sstream>
 #include <stdexcept>
 
-using namespace infinite;
+using namespace infinity;
 namespace {
 size_t checks = 0;
 void check(bool value, const char* message) {

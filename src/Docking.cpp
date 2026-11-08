@@ -1,9 +1,9 @@
-#include "infinite/Docking.hpp"
+#include "infinity/Docking.hpp"
 #include <algorithm>
 #include <cmath>
 #include <numbers>
 
-namespace infinite {
+namespace infinity {
 namespace {
 glm::dvec3 limited(glm::dvec3 v, double cap) {
     const double length = glm::length(v);
@@ -208,4 +208,4 @@ Mesh dockingLane(const DockingBerth& b, double seconds, DockingPhase phase) {
     }
     return m;
 }
-} // namespace infinite
+} // namespace infinity

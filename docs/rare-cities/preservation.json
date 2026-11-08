@@ -1,0 +1,11 @@
+{
+  "src/Universe.cpp": "d8854224a26d21f6589059ea21ddc3ec31c4303337971d1ec9a2163f95653ee6",
+  "src/Processes.cpp": "29dbb0684451717634add8e472e5a58420c30965ce842247f54548e2946b4c8a",
+  "src/Terrain.cpp": "2fc590ed378619a7cdd389109d6c73128f8dcecc6911bd4e6e69b3551d3dc08a",
+  "src/Planetology.cpp": "116adfbc9e37e3ef35814e4ff9181ea41caa4af70699fc598248db2934cbad75",
+  "src/City.cpp": "1d67046130d497ca6a7852a606efd0d8273ca77712f5b76bdff2dbaa0697ad0f",
+  "src/CityMeshes.cpp": "b1b62f8fa4d5124e442c6003835e10b778837a1c0869a0b3bd777eefa1daa8fc",
+  "src/Piloting.cpp": "ecb688a84c17fe365dd587d5e7343da5cced585f30e5e5e0ab795f18a24028c9",
+  "src/ShipDynamics.cpp": "384e5f5ec4f5945b5ed8dd53642a591103aa4a2b78f46f00c09941ab3e08718b",
+  "src/Core.cpp": "38c306d83be7de5bb676da7e5c6c729c27b1d2a19e334237c756b65a18128b7d"
+}

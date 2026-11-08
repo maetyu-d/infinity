@@ -9,7 +9,7 @@ vec3 weatherVisibility(vec3 colour,vec2 uv){
  vec3 o=u_atmosphere[0].xyz,d=normalize(mul(u_atmosphereRotation,vec4(ray,0.)).xyz);
  float H=max(1e-7,u_weatherVisual[0].y);
  // The local layer follows the ship's actual ground elevation, including
- // high plateaus and depressions in Infinite's unchanged terrain.
+ // high plateaus and depressions in Infinity's unchanged terrain.
  vec2 span=sphereSpan(o,d,max(1.,length(o))+H*4.);
  float start=max(0.,span.x),end=span.y;
  float depth=texture2D(s_opaqueDepth,uv).r;

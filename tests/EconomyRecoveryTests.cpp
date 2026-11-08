@@ -1,9 +1,9 @@
-#include "infinite/Cockpit.hpp"
-#include "infinite/Economy.hpp"
+#include "infinity/Cockpit.hpp"
+#include "infinity/Economy.hpp"
 #include <algorithm>
 #include <iostream>
 #include <sstream>
-using namespace infinite;
+using namespace infinity;
 namespace {
 unsigned checks = 0;
 void check(bool yes, const char* why) {
@@ -49,6 +49,7 @@ EconomySnapshot snapshot(const Economy& e, const EconomyPlayer& p) {
     s.contracts = e.contracts();
     s.hauls = e.hauls();
     s.recoveries = e.recoveries();
+    s.wrecks = e.wrecks();
     s.outcomes = e.outcomes();
     s.player = p;
     s.tick = e.tick();
@@ -101,9 +102,57 @@ void damage(Economy& e, unsigned condition, unsigned health) {
                      " " + std::to_string(health) + tail);
     check(e.restore(text), "Controlled damaged-plant fixture invalid");
 }
+void checkProductionRestart() {
+    auto n = fixture(true);
+    auto& plant = n->sites[1];
+    plant.recipes = {11}; // existing electronics recipe
+    plant.target[size_t(Good::Electronics)] = 80;
+    Economy e(n), control(n);
+    EconomyPlayer player;
+    player.credits = 10000000;
+    const auto money = e.moneyTotal() + player.credits;
+    auto legacy = e.serialize();
+    legacy.erase(legacy.find("FREIGHT_INCIDENTS "));
+    legacy.replace(17, legacy.find(' ', 17) - 17, "9");
+    check(control.restore(legacy) && control.serialize() == e.serialize(), "Version 9 economy did not migrate");
+    e.advanceTo(12);
+    control.advanceTo(12);
+    check(control.serialize() == e.serialize(), "Identical plants produce different restart offers");
+    const auto job = std::find_if(e.recoveries().begin(), e.recoveries().end(),
+                                  [](const auto& j) { return j.kind == RecoveryKind::Restart; });
+    check(job != e.recoveries().end() && job->recipe == 12, "Stalled electronics plant did not tender restart inputs");
+    const auto restart = *job;
+    check(restart.required[size_t(Good::Silicon)] > 0 && restart.required[size_t(Good::Polymers)] > 0 &&
+              !restart.required[size_t(Good::Alloy)], "Restart requested inputs already in stock or missed shortages");
+    const auto board = snapshot(e, player);
+    check(std::any_of(board.jobs.begin(), board.jobs.end(), [&](const auto& offer) {
+              return offer.id == restart.id && offer.route.find("INPUT SHORTAGE / Electronics") != std::string::npos;
+          }), "Restart board omitted the actual stalled process");
+    check(order(e, player, EconomicAction::AcceptRecovery, restart.id).starts_with("RECOVERY ACCEPTED"),
+          "Restart tender could not be accepted");
+    audit(e, player, money);
+    source(e, player, restart.required);
+    check(order(e, player, EconomicAction::DeliverRecovery, restart.id).starts_with("RECOVERY DELIVERED") &&
+              e.outcomes().back().kind == OutcomeKind::Restart, "Restart handover did not close the tender");
+    const auto output = e.sites()[1].produced[size_t(Good::Electronics)];
+    e.advanceTo(13);
+    check(e.sites()[1].produced[size_t(Good::Electronics)] > output &&
+              e.outcomes().back().after.outputKg > e.outcomes().back().before.outputKg,
+          "Delivered inputs did not feed actual manufacturing");
+    audit(e, player, money);
+    auto healthy = fixture(true);
+    healthy->sites[1] = plant;
+    healthy->sites[1].initial[size_t(Good::Electronics)] = 240;
+    Economy stocked(healthy);
+    stocked.advanceTo(12);
+    check(std::none_of(stocked.recoveries().begin(), stocked.recoveries().end(),
+                        [](const auto& j) { return j.kind == RecoveryKind::Restart; }),
+          "A stocked plant posted a restart tender");
+}
 } // namespace
 int main() {
     try {
+        checkProductionRestart();
         auto n = fixture();
         Economy e(n);
         EconomyPlayer p;
@@ -312,7 +361,7 @@ int main() {
         // A v4 ledger restores with no synthetic jobs or reports.
         auto old = Economy(m).serialize();
         old.erase(old.find("RECOVERY "));
-        old.replace(17, 1, "4");
+        old.replace(17, old.find(' ', 17) - 17, "4");
         Economy migrated(m);
         check(migrated.restore(old) && migrated.outcomes().empty() && migrated.recoveries().empty(),
               "v4 ledger migration failed");

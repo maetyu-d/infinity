@@ -1,5 +1,5 @@
-if(NOT INFINITE_EXE OR NOT OUTPUT OR NOT VIEW_PATH)
-  message(FATAL_ERROR "INFINITE_EXE, OUTPUT and VIEW_PATH are required")
+if(NOT INFINITY_EXE OR NOT OUTPUT OR NOT VIEW_PATH)
+  message(FATAL_ERROR "INFINITY_EXE, OUTPUT and VIEW_PATH are required")
 endif()
 if(NOT WIDTH)
   set(WIDTH 2840)
@@ -11,7 +11,7 @@ foreach(mode on off)
   if(mode STREQUAL "off")
     list(APPEND flags --no-sun-shadows)
   endif()
-  execute_process(COMMAND "${INFINITE_EXE}" --terrain-saved-view-test "${VIEW_PATH}" ${flags}
+  execute_process(COMMAND "${INFINITY_EXE}" --terrain-saved-view-test "${VIEW_PATH}" ${flags}
     --width ${WIDTH} --height ${HEIGHT} --capture-dir "${OUTPUT}/${mode}/captures"
     --profile "${OUTPUT}/${mode}/frames.csv" --data "${OUTPUT}/${mode}/data"
     OUTPUT_FILE "${OUTPUT}/${mode}/native.log" ERROR_FILE "${OUTPUT}/${mode}/native.log"

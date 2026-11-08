@@ -1,4 +1,4 @@
-#include "infinite/SurfaceLife.hpp"
+#include "infinity/SurfaceLife.hpp"
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
@@ -7,7 +7,7 @@
 #include <set>
 #include <stdexcept>
 
-using namespace infinite;
+using namespace infinity;
 namespace {
 size_t checks = 0;
 void check(bool value, const char* message) {
@@ -59,6 +59,7 @@ int main(int argc, char** argv) {
               "Urban descriptions exceed the unchanged cache budget");
         std::set<uint64_t> fingerprints;
         unsigned architecturalTypes = 0;
+        unsigned yards = 0;
         for (unsigned pattern = 0; pattern < 4; pattern++) {
             auto city = world->settlements.front();
             const auto seed = city.seed;
@@ -68,6 +69,12 @@ int main(int argc, char** argv) {
                   "City pattern did not generate");
             check(city.seed == seed && city.landingPoint == port && city.orientation == orientation,
                   "City growth moved its port or changed its seed");
+            for (const auto& prop : city.props) {
+                if (prop.kind != SurfaceMesh::Utility && prop.kind != SurfaceMesh::Warehouse)
+                    continue;
+                ++yards;
+                check(glm::length(prop.position - port) >= 124., "Regional works yard obstructs the landing approach");
+            }
             check(city.buildings.size() > 30 && city.layoutRecipe == cityRecipeVersion,
                   "City is still a sparse prop grid");
             check(city.junctions.size() > 20 && city.streets.size() > 25,
@@ -176,6 +183,7 @@ int main(int argc, char** argv) {
                      std::filesystem::path(argv[2]) / (std::string(cityPatternName(city.pattern)) + ".svg"));
             }
         }
+        check(yards > 0, "Generated industrial districts never found room for a local works yard");
         check(descriptorFingerprint(u.describe(address)) == before,
               "Urban growth modified the underlying planet");
         std::cout << "PASS: " << checks

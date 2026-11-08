@@ -32,12 +32,18 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('executable')
     parser.add_argument('output', type=Path)
-    parser.add_argument('--scenario', choices=('economy-test', 'npc-combat-test', 'crew-test','crew-trade-test','crew-flight-test','crew-guns-test','station-swap-test','star-stability-test','combat-operations-test','exploration-test','docking-test','expedition-test','prospecting-test'), default='economy-test')
+    parser.add_argument('--probe-reference-render',action='store_true')
+    parser.add_argument('--scenario', choices=('economy-test', 'npc-combat-test', 'crew-test','crew-trade-test','crew-flight-test','crew-guns-test','station-swap-test','star-stability-test','combat-operations-test','exploration-test','docking-test','expedition-test','prospecting-test','seam-test','probe-test','planner-test'), default='economy-test')
+    parser.add_argument('--probe-benchmark',action='store_true')
     args = parser.parse_args()
     root = args.output
     command = [args.executable, '--' + args.scenario, '--render-mode', 'hyperion',
                '--width', '1440', '--height', '900', '--capture-dir', str(root / 'captures'),
                '--data', str(root / 'data'), '--profile', str(root / 'frames.csv')]
+    if args.probe_reference_render:
+        command.append('--probe-reference-render')
+    if args.probe_benchmark:
+        command.append('--probe-benchmark')
     process = subprocess.Popen(command)
     signal.signal(signal.SIGTERM, lambda *_: process.terminate())
     deadline = time.monotonic() + 350

@@ -1,4 +1,4 @@
-# Recovery work and delivery outcomes — Infinite 0.43
+# Recovery work and delivery outcomes — Infinity 0.43
 
 Recovery jobs use existing inhabited, landable surface settlements. They do not add worlds, buildings or people, manufacture emergencies or alter procedural seeds. The restored flight controls, universe structures and colourful renderer are retained.
 
@@ -30,7 +30,7 @@ The [preservation manifest](economy-0.43/preservation.json) confirms **186 prote
 
 The representative hauling-worker fixture grows from **530,445 to 535,797 bytes**, an increase of **5,352 bytes (5.2 KiB)**. The existing four-system cache test remains below its **4 MiB** budget. Job and report storage is bounded. The final native run records **1,649 frames**, **65.83 ms median / 142.55 ms p95** raw frame time and **157,351,936 bytes peak RSS**. These include loading, gameplay, resize and capture stages on a shared machine; they are diagnostic measurements, not a rendering speedup claim. [Measurements and hashes](economy-0.43/validation.json), [frame data](economy-0.43/native-frames.csv).
 
-**Infinite 0.43.0 / build 48** is packaged, ad-hoc signed and verified. All **28 code/data sections** match the tested executable, and the native test copy has the same complete SHA-256 hash. Tests use isolated saves. [Final build](economy-0.43/final-build.log), [package verification](economy-0.43/package.json), [signature](economy-0.43/signing.log).
+**Infinity 0.43.0 / build 48** is packaged, ad-hoc signed and verified. All **28 code/data sections** match the tested executable, and the native test copy has the same complete SHA-256 hash. Tests use isolated saves. [Final build](economy-0.43/final-build.log), [package verification](economy-0.43/package.json), [signature](economy-0.43/signing.log).
 
 ![Recovery work at existing settlements](economy-0.43/recovery-jobs-portrait.png)
 

@@ -1,11 +1,11 @@
 #pragma once
-#include "infinite/NpcCombat.hpp"
-#include "infinite/Renderer.hpp"
+#include "infinity/NpcCombat.hpp"
+#include "infinity/Renderer.hpp"
 #include <SDL3/SDL.h>
 #include <filesystem>
 #include <iostream>
 #include <sstream>
-namespace infinite {
+namespace infinity {
 class NpcValidation {
     const Universe& u_;
     Navigation& nav_;
@@ -237,4 +237,4 @@ class NpcValidation {
         return finished_;
     }
 };
-} // namespace infinite
+} // namespace infinity

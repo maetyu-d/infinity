@@ -1,23 +1,23 @@
-# Psychedelic presentation — Infinite 0.15
+# Psychedelic presentation — Infinity 0.15
 
-Infinite now renders its existing universe with the psychedelic branch of the user's Hyperion game. The previous port explicitly set `psychedelic` to zero and mixed much of the old vertex colour back into the result. This release enables the actual interference tapestry, stronger material pigments and hue-preserving highlights, while retaining dark gaps and physical lighting contrast.
+Infinity now renders its existing universe with the psychedelic branch of the user's Hyperion game. The previous port explicitly set `psychedelic` to zero and mixed much of the old vertex colour back into the result. This release enables the actual interference tapestry, stronger material pigments and hue-preserving highlights, while retaining dark gaps and physical lighting contrast.
 
-Checkpoint `db01c26` preserves the working 0.14 cockpit release. Its executable is frozen as `build/infinite-aesthetic-baseline-0.14`. **No universe geometry, coordinates, identities, seeds, generator results, histories, or ship dynamics are changed.**
+Checkpoint `db01c26` preserves the working 0.14 cockpit release. Its executable is frozen as `build/infinity-aesthetic-baseline-0.14`. **No universe geometry, coordinates, identities, seeds, generator results, histories, or ship dynamics are changed.**
 
 ## Actual Hyperion source
 
 The reference remains `/Users/user/Documents/SC tutorial/Hyperion`, the user's native game. The source shaders were inspected again and the running game was opened to compare the luminous ribbons, dark space and material contrast. Its look preference was left unchanged. [Reference source hashes and preservation evidence](psychedelic/preservation.json) record the files used.
 
-| Source | Application to Infinite |
+| Source | Application to Infinity |
 |---|---|
 | `src/flight/shaders.hpp`, `PRISM_PIGMENT_GLSL::ecstatic`, `silk`, `thread`, `pigment` | The actual warped interference folds, spectral sheets, filtered fine fibres and exponent-1.85 psychedelic pigment palette. |
-| `skyFragment` | Direction-anchored folded light with ink gaps and dust extinction. Infinite's existing host galaxy supplies orientation, palette key and gas abundance. The shader does not synthesize stars or celestial objects. |
+| `skyFragment` | Direction-anchored folded light with ink gaps and dust extinction. Infinity's existing host galaxy supplies orientation, palette key and gas abundance. The shader does not synthesize stars or celestial objects. |
 | `worldFragment`, psychedelic mineral and filtered-vein branches | Material pigments, terrain-anchored interference seams and coloured grazing light on the existing meshes. Terrain colour follows its actual sampled radial elevation, rather than an unrelated replacement height field. |
 | `src/flight/surface_detail.hpp::closeMaterial` | Filtered close mineral grain, seam colour, small emissive accents and opalescent grazing sheen. Existing material coordinates and inherited material response remain authoritative. |
 | `atmoFragment` | Spectral scattering tint within the existing depth-limited atmospheric ray integration. Existing inherited warmth and water still gate the atmosphere. |
 | `postFragment`, psychedelic branch | Saturation 1.19, bloom weight .82, peripheral subpixel colour fringes and .86 hue-preserving ACES highlight blending. The cockpit and instruments are composed afterwards. |
 
-Infinite adapts brightness because its vertex colours already include baked illumination. Dark gaps, reduced broad albedo and derivative-filtered veins preserve shape and depth instead of covering every surface in a uniform bright wash. The standard and psychedelic source algorithms remain recognisable; Hyperion's world generation, buildings, planetary geography, stars and simulation are not imported.
+Infinity adapts brightness because its vertex colours already include baked illumination. Dark gaps, reduced broad albedo and derivative-filtered veins preserve shape and depth instead of covering every surface in a uniform bright wash. The standard and psychedelic source algorithms remain recognisable; Hyperion's world generation, buildings, planetary geography, stars and simulation are not imported.
 
 ## Different treatment at each scale
 

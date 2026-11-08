@@ -12,7 +12,7 @@ The hierarchy now uses the same addressed objects and fields from the galaxy to 
 | Coordinates | Distant galaxy samples stored positions as floats, losing detail before camera-relative conversion. First divergent translations were scaled before subtraction. | Double-precision sample positions, addressed system IDs and a point transform that subtracts the first divergent terms in local units before scaling. Only final GPU coordinates become floats. |
 | Navigation | Backspace selected child zero, losing a deliberately chosen system/planet/rock. Ancestor camera poses were not retained. Outward zoom stayed anchored to an atom indefinitely. | Remembered branch selections and exact local camera views; physically invariant rebasing; outward zoom promotes frames when the parent is numerically well-conditioned. |
 | Outward focus | Interpolating a parent-sized offset in atomic render units could send the camera beyond the parent. | Expand around the departing child first, then recenter when the parent becomes visible. Saved parent views are restored exactly. |
-| Persistence | Only the current camera was saved, so the return path could not survive restart. | Versioned `INFINITE_NAV_2` state retains bounded breadcrumbs and selections. Legacy single-view saves still load. Separate writer/reader processes test a restart at the lattice followed by the full ascent. |
+| Persistence | Only the current camera was saved, so the return path could not survive restart. | Versioned `INFINITY_NAV_2` state retains bounded breadcrumbs and selections. Legacy single-view saves still load. Separate writer/reader processes test a restart at the lattice followed by the full ascent. |
 | Terrain frames | Recomputing tangent bases could flip heading at a polar basis seam. | Child tangent frames are parallel-transported from the parent; height, material colour and lighting normals use the same planet-space fields. |
 | Terrain LOD | Region grids used unrelated resolutions and region-specific colour noise. | Nested power-of-two samples and shared planetary colour/normal queries. Fine grids retain the coarse sample locations. |
 | Stellar appearance | A galaxy dot and its detailed star used different colour recipes. | One temperature-based stellar colour function and the same physical system descriptor. The coarse addressed emitter hands over to its detailed representation at the same location. |
@@ -54,20 +54,20 @@ The full verification tour also regenerates all recipes and writes fifteen lossl
 Headless continuity and restart tests:
 
 ```sh
-cmake -S . -B build -DINFINITE_GPU_TESTS=OFF
-cmake --build build --target infinite_tests infinite_continuity_tests -j 4
+cmake -S . -B build -DINFINITY_GPU_TESTS=OFF
+cmake --build build --target infinity_tests infinity_continuity_tests -j 4
 ctest --test-dir build --output-on-failure
 ```
 
 Complete desktop validation, including the native renderer and pixels:
 
 ```sh
-cmake -S . -B build -DINFINITE_VIEWER=ON -DINFINITE_GPU_TESTS=ON
-cmake --build build --target infinite infinite_tests infinite_continuity_tests -j 4
+cmake -S . -B build -DINFINITY_VIEWER=ON -DINFINITY_GPU_TESTS=ON
+cmake --build build --target infinity infinity_tests infinity_continuity_tests -j 4
 ctest --test-dir build --output-on-failure
 ```
 
-The GPU pair requires an active desktop. On this Mac, `ctest` is `/Users/user/.local/opt/cmake/CMake.app/Contents/bin/ctest`. Native artifacts are written below `build/native-continuity/`. `infinite --smoke-test` also enables the complete background regeneration proof without CTest.
+The GPU pair requires an active desktop. On this Mac, `ctest` is `/Users/user/.local/opt/cmake/CMake.app/Contents/bin/ctest`. Native artifacts are written below `build/native-continuity/`. `infinity --smoke-test` also enables the complete background regeneration proof without CTest.
 
 ## Remaining limits
 

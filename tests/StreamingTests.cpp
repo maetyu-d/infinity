@@ -1,5 +1,5 @@
-#include "infinite/Flight.hpp"
-#include "infinite/Streaming.hpp"
+#include "infinity/Flight.hpp"
+#include "infinity/Streaming.hpp"
 #include <iostream>
 #include <map>
 #include <oneapi/tbb/global_control.h>
@@ -7,7 +7,7 @@
 #include <sstream>
 #include <stdexcept>
 
-using namespace infinite;
+using namespace infinity;
 static size_t checks = 0;
 static void check(bool ok, const char* message) {
     ++checks;

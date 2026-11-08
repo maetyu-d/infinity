@@ -1,12 +1,13 @@
-#include "infinite/Cockpit.hpp"
-#include "infinite/Economy.hpp"
-#include "infinite/Piloting.hpp"
+#include "infinity/Cockpit.hpp"
+#include "infinity/Economy.hpp"
+#include "infinity/Piloting.hpp"
 #include <chrono>
 #include <iostream>
 #include <numeric>
+#include <set>
 #include <sstream>
 #include <thread>
-using namespace infinite;
+using namespace infinity;
 namespace {
 unsigned checks = 0;
 void check(bool b, const char* why) {
@@ -68,6 +69,90 @@ void audit(const Economy& e, int64_t money) {
         for (size_t g = 0; g < goodCount; g++)
             check(s.stock[g] >= s.reserved[g] && s.reserved[g] >= 0, "Invalid inventory reservation");
 }
+void checkRegionalFreight() {
+    auto n = fixture();
+    n->sites.resize(3);
+    n->vessels.resize(1);
+    const auto water = size_t(Good::Water);
+    for (unsigned i = 0; i < 3; ++i) {
+        auto& site = n->sites[i];
+        site.id.slot = i < 2 ? i : surfaceActivitySlot;
+        site.orbital = i < 2;
+        site.population = i == 2 ? 250 : 0;
+        site.recipes.clear();
+        site.target.fill(0);
+        site.initial.fill(400);
+    }
+    auto& destination = n->sites[2];
+    destination.target[water] = 80;
+    destination.initial[water] = 0;
+    destination.lanes[water] = {1, 2};
+    auto& climate = destination.climate;
+    climate.seed = 3728941;
+    climate.solid = true;
+    climate.temperatureK = 292;
+    climate.pressureBar = 1;
+    climate.scaleHeightMetres = 8500;
+    climate.moisture = 0;
+    climate.daySeconds = 900;
+    climate.radiusMetres = 25000;
+    climate.windMetresPerSecond = 35;
+    unsigned clear = 0;
+    for (unsigned i = 0; i < 256 && !clear; ++i) {
+        const double y = 1 - 2 * (i + .5) / 256., a = i * 2.399963229728653;
+        destination.metres = climate.radiusMetres * glm::dvec3(std::sqrt(1 - y*y) * std::cos(a), y,
+                                                               std::sqrt(1 - y*y) * std::sin(a));
+        if (!economicWeatherHold(destination, 6) || !economicWeatherHold(destination, 12))
+            continue;
+        for (unsigned t = 13; t <= 120; ++t) {
+            if (!economicWeatherHold(destination, t)) {
+                clear = t;
+                break;
+            }
+        }
+    }
+    check(clear > 12, "No deterministic storm window followed by a landing clearance");
+    Economy scheduled(n);
+    const auto money = scheduled.moneyTotal();
+    scheduled.advanceTo(6);
+    check(scheduled.freight()[0].phase == FreightPhase::Holding && scheduled.freight()[0].source == 0 &&
+              scheduled.sites()[2].stock[water] == 0, "Main supply lane did not hold its cargo over a storm");
+    scheduled.advanceTo(12);
+    check(std::any_of(scheduled.recoveries().begin(), scheduled.recoveries().end(), [&](const auto& j) {
+              return j.site == 2 && j.kind == RecoveryKind::Relief && j.required[water] > 0;
+          }), "Weather-held cargo did not leave real unmet demand for relief");
+    Economy restored(n);
+    check(restored.restore(scheduled.serialize()), "Weather holding pattern failed save reload");
+    while (restored.tick() < clear)
+        restored.advanceTo(clear);
+    check(restored.sites()[2].stock[water] > 0 && restored.freight()[0].trips == 1,
+          "Clearing weather did not deliver the held cargo exactly once");
+    audit(restored, money);
+    auto fallback = std::make_shared<EconomicNetwork>(*n);
+    fallback->sites[0].initial[water] = 0;
+    Economy rerouted(fallback);
+    rerouted.advanceTo(3);
+    check(rerouted.freight()[0].source == 1 && rerouted.freight()[0].destination == 2,
+          "Empty main source blocked an available alternate supply lane");
+}
+
+void checkLegacyDepletion() {
+    auto original = fixture();
+    original->sites[0].initial[size_t(Good::Ore)] = 0;
+    Economy mined(original);
+    mined.advanceTo(1);
+    const auto extracted = mined.sites()[0].extracted;
+    check(extracted[size_t(Good::Ore)] > 0, "Legacy fixture did not extract from its original reserve");
+    auto updated = std::make_shared<EconomicNetwork>(*original);
+    updated->sites[0].originalReserves = original->sites[0].reserves;
+    updated->sites[0].reserves[size_t(Good::Ore)] = 0;
+    Economy restored(updated);
+    check(restored.restore(mined.serialize()) && restored.inventoryTotal() == mined.inventoryTotal(),
+          "Local reserve migration rejected or changed an existing extraction record");
+    restored.advanceTo(2);
+    check(restored.sites()[0].extracted[size_t(Good::Ore)] == extracted[size_t(Good::Ore)],
+          "An exhausted local reserve refilled after migration");
+}
 std::shared_ptr<const EconomySnapshot> wait(EconomyRuntime& r, const Address& a, uint64_t tick,
                                             uint64_t command = 0) {
     auto end = std::chrono::steady_clock::now() + std::chrono::seconds(50);
@@ -84,6 +169,8 @@ std::shared_ptr<const EconomySnapshot> wait(EconomyRuntime& r, const Address& a,
 } // namespace
 int main(int argc, char** argv) {
     try {
+        checkRegionalFreight();
+        checkLegacyDepletion();
         for (const auto& r : productionRecipes())
             if (sum(r.inputs))
                 check(sum(r.inputs) == sum(r.outputs) + r.wasteKg,
@@ -196,6 +283,22 @@ int main(int argc, char** argv) {
         auto address = fixture()->system;
         const auto before = descriptorFingerprint(u.describe(address));
         auto network = generateEconomicNetwork(u, address);
+        size_t sitesWithLanes = 0;
+        std::set<std::string> works;
+        for (size_t i = 0; i < network->sites.size(); ++i) {
+            const auto& site = network->sites[i];
+            if (site.orbital)
+                continue;
+            check(!site.localWorks.empty(), "Generated landable settlement has no local industry profile");
+            works.insert(site.localWorks);
+            sitesWithLanes += site.lanes[size_t(Good::Water)][0] != 0;
+            for (const auto& lane : site.lanes) {
+                check(lane[0] != i + 1 && lane[1] != i + 1 && lane[0] <= network->sites.size() &&
+                          lane[1] <= network->sites.size() && (!lane[1] || lane[0] != lane[1]),
+                      "Generated supply lane has a self-link, duplicate or missing port");
+            }
+        }
+        check(works.size() >= 3 && sitesWithLanes > 5, "Actual generated worlds lack differentiated industry or trade dependencies");
         check(network && network->sites.size() > 10, "Universe adapter produced no actual ports");
         check(descriptorFingerprint(u.describe(address)) == before, "Economy extraction altered generation");
         check(std::all_of(network->sites.begin(), network->sites.end(),

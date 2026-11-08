@@ -1,9 +1,9 @@
-#include "infinite/Economy.hpp"
+#include "infinity/Economy.hpp"
 #include <chrono>
 #include <filesystem>
 #include <iostream>
 #include <thread>
-using namespace infinite;
+using namespace infinity;
 namespace {
 unsigned checks = 0;
 void check(bool b, const char* why) {

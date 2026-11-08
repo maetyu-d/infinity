@@ -1,0 +1,19 @@
+WINDOW_FIT client=28,78,1383,758 usable=0,30,1440,830 borders=32,8,8,8
+BACKBUFFER 2766x1516 (requested 1440x900)
+UI_STARTUP window_and_decorations=inside_work_area
+Infinite / Metal / seed 5282236693612155973
+UI_FIT case=small pixels=800,500 viewport=0,0,800,500 projection=1 hit_testing=PASS camera=unchanged text_overlap=0
+UI_FIT case=square pixels=600,600 viewport=0,0,600,600 projection=1 hit_testing=PASS camera=unchanged text_overlap=0
+UI_FIT case=portrait pixels=600,900 viewport=0,150,600,600 projection=1.5 hit_testing=PASS camera=unchanged text_overlap=0
+UI_FIT case=retina pixels=1920,1200 viewport=0,0,1920,1200 projection=1 hit_testing=PASS camera=unchanged text_overlap=0
+UI_FIT case=wide pixels=1440,900 viewport=0,0,1440,900 projection=1 hit_testing=PASS camera=unchanged text_overlap=0
+UI_FIT case=controls pixels=800,500 viewport=0,0,800,500 projection=1 hit_testing=PASS camera=unchanged text_overlap=0
+UI_FIT case=crowded pixels=800,500 viewport=0,0,800,500 projection=1 hit_testing=PASS camera=unchanged text_overlap=0
+UI_FIT case=station pixels=600,600 viewport=0,0,600,600 projection=1 hit_testing=PASS camera=unchanged text_overlap=0
+UI_FIT case=crew pixels=600,900 viewport=0,150,600,600 projection=1.5 hit_testing=PASS camera=unchanged text_overlap=0
+UI_FIT case=market pixels=800,500 viewport=0,0,800,500 projection=1 hit_testing=PASS camera=unchanged text_overlap=0
+UI_FIT case=probe pixels=800,500 viewport=0,0,800,500 projection=1 hit_testing=PASS camera=unchanged text_overlap=0
+UI_FIT case=probe_portrait pixels=600,900 viewport=0,150,600,600 projection=1.5 hit_testing=PASS camera=unchanged text_overlap=0
+PASS: native UI fit / twelve layouts and popups / world and traffic hit testing / camera unchanged
+FRAME median_ms=11.0185 p95_ms=19.1003 frames=1094 cache_bytes=11782314
+peak_rss_bytes=154435584

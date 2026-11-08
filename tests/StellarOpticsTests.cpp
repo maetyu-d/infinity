@@ -1,13 +1,13 @@
-#include "infinite/Navigation.hpp"
-#include "infinite/Presentation.hpp"
-#include "infinite/SurfaceLife.hpp"
+#include "infinity/Navigation.hpp"
+#include "infinity/Presentation.hpp"
+#include "infinity/SurfaceLife.hpp"
 #include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <numbers>
 #include <sstream>
 #include <stdexcept>
-using namespace infinite;
+using namespace infinity;
 static void check(bool v, const char* m) {
     if (!v)
         throw std::runtime_error(m);

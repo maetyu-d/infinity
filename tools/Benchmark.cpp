@@ -1,4 +1,4 @@
-#include "infinite/World.hpp"
+#include "infinity/World.hpp"
 #include <algorithm>
 #include <chrono>
 #include <iomanip>
@@ -6,7 +6,7 @@
 #if defined(__APPLE__) || defined(__linux__)
 #include <sys/resource.h>
 #endif
-using namespace infinite;
+using namespace infinity;
 int main() {
     Universe u;
     GeometryGenerator generator(u);

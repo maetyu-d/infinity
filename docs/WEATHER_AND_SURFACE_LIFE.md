@@ -1,4 +1,4 @@
-# Weather and inhabited surfaces — Infinite 0.19
+# Weather and inhabited surfaces — Infinity 0.19
 
 Solid worlds can now have weather, surface cities, sealed colonies, mining and research outposts, terrain-fitted buildings and moving inhabitants. Availability follows the existing world's size, chemistry, temperature, water inventory, geology and landing conditions. Many worlds remain wilderness; gas envelopes have neither settlements nor a landable weather layer.
 
@@ -10,7 +10,7 @@ Climate and society are read-only additions in `SurfaceLife.hpp`, `Weather.cpp`,
 
 The existing universe, population and terrain recipes remain **3 / 1 / 1**. The new climate and society recipes each start at **1**, using isolated `PlanetClimate` and `SurfaceSociety` feature keys. Existing feature constants, hierarchical seeds, descriptor fingerprints and generator outputs are unchanged. Weather uses the saved activity clock; neither weather evolution nor changing display modes modifies geology, history, orbits or atomic structure.
 
-`Core.cpp`, `Universe.cpp`, `Processes.cpp`, `Terrain.cpp`, `Crystallography.cpp`, `Geometry.cpp`, `Navigation.cpp` and `Streaming.cpp` remain byte-identical to `d5cb05b`. Branch `checkpoint/infinite-0.18-before-weather-settlements` preserves that baseline. Source hashes and the legacy descriptor/geometry snapshot provide independent preservation checks.
+`Core.cpp`, `Universe.cpp`, `Processes.cpp`, `Terrain.cpp`, `Crystallography.cpp`, `Geometry.cpp`, `Navigation.cpp` and `Streaming.cpp` remain byte-identical to `d5cb05b`. Branch `checkpoint/infinity-0.18-before-weather-settlements` preserves that baseline. Source hashes and the legacy descriptor/geometry snapshot provide independent preservation checks.
 
 ## Weather generation
 
@@ -32,7 +32,7 @@ Population derives from usable floors and building function. Resident IDs and ho
 
 ## Rendering and budgets
 
-All three rendering modes consume the same structures. The existing Hyperion material, colour and compositing passes shade shared surface templates; Original retains its existing shading path. Hyperion's original `src/flight/settlements.cpp::buildPort`, `pavedRoad` and terrain-following `surface` frame were inspected as references for paved access, clear landing space and grounded facilities. Infinite's own society generation supplies the structures; Hyperion's world simulation is not imported.
+All three rendering modes consume the same structures. The existing Hyperion material, colour and compositing passes shade shared surface templates; Original retains its existing shading path. Hyperion's original `src/flight/settlements.cpp::buildPort`, `pavedRoad` and terrain-following `surface` frame were inspected as references for paved access, clear landing space and grounded facilities. Infinity's own society generation supplies the structures; Hyperion's world simulation is not imported.
 
 Settlement descriptions generate on the existing oneTBB runtime, with at most two jobs and a **4 MiB LRU cache**. Leaving a planet cancels stale work. Completed publication also enforces the memory cap. Screen-space selection uses shared GPU templates at three detail levels; at most 6,000 surface instances and 96 resident samples per nearby settlement are considered. A global instance cap still applies. Clouds are bounded to 512 cells, local precipitation to 96 marks. No new shader dependency, render-target family or external library is introduced.
 
@@ -41,7 +41,7 @@ Settlement descriptions generate on the existing oneTBB runtime, with at most tw
 ```sh
 cmake --build build -j 4
 ctest --test-dir build --output-on-failure
-build/infinite --surface-test --capture-dir build/surface-demo/captures --profile build/surface-demo/frames.csv --data build/surface-demo/data
+build/infinity --surface-test --capture-dir build/surface-demo/captures --profile build/surface-demo/frames.csv --data build/surface-demo/data
 ```
 
 The native demonstration uses separate data and does not reset the normal saved flight. It finds real catalogue examples of an open city and sealed colony, and captures weather from orbit, city approach, inhabitants, colony approach and a precipitation front in Original, Hyperion and Hybrid. The camera and actual streamed terrain geometry are compared across modes.

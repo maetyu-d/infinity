@@ -1,8 +1,8 @@
-# Material depth and light — Infinite 0.26
+# Material depth and light — Infinity 0.26
 
 This pass improves the visible scene rather than increasing global saturation or exposure. The previous broad ground emission obscured terrain relief and gave many surfaces a similar pastel finish. Terrain is now more matte, recesses are darker, glass and polished materials have directional reflections, and bright emitters keep their own colour through bloom. The spectral Hyperion palette remains in the sky, coatings and highlights.
 
-Baseline **5dc5789** is retained by `checkpoint/infinite-0.25-before-material-depth`. The same universe, geometry, positions, seeds, climate, simulation, navigation and 0.25 ship handling remain authoritative. [Source-preservation hashes](graphics-0.26/preservation.json).
+Baseline **5dc5789** is retained by `checkpoint/infinity-0.25-before-material-depth`. The same universe, geometry, positions, seeds, climate, simulation, navigation and 0.25 ship handling remain authoritative. [Source-preservation hashes](graphics-0.26/preservation.json).
 
 ## Material and lighting changes
 
@@ -13,7 +13,7 @@ Baseline **5dc5789** is retained by `checkpoint/infinite-0.25-before-material-de
 - **Atoms:** reduced flat-colour fill and stronger directional material response make the same atomic spheres read as volumes. Lattice sites, element hues, bonds and enclosing sections are retained, including the precision fix for nano-scale material interpolation.
 - **Bloom:** a soft threshold scales all channels together, preserving an emitter's hue. Ordinary materials no longer acquire as much coloured glow. The existing two low-resolution targets and pass count are unchanged.
 
-The actual source reference is the sibling Hyperion game: `src/flight/shaders.hpp::worldFragment` supplies hemispherical irradiance, surface cavity/relief and roughness filtering; `src/flight/architecture.hpp::structureLight` supplies panel relief, reflected sky and film response. These are adapted to Infinite's existing materials and geometry. [Hyperion flight reference](hyperion/reference-flight.png). No Hyperion generator is imported.
+The actual source reference is the sibling Hyperion game: `src/flight/shaders.hpp::worldFragment` supplies hemispherical irradiance, surface cavity/relief and roughness filtering; `src/flight/architecture.hpp::structureLight` supplies panel relief, reflected sky and film response. These are adapted to Infinity's existing materials and geometry. [Hyperion flight reference](hyperion/reference-flight.png). No Hyperion generator is imported.
 
 Original rendering bypasses the new shaders. Hybrid uses the existing restrained effect weights. H still cycles Original / Hyperion / Hybrid; U/O and Alt+A/D still roll the ship.
 
@@ -30,7 +30,7 @@ The 0.25 baseline executable is frozen before any shader changes. The same fixtu
 | Planet from space | [Before](graphics-0.26/before-3-PLANET-HYPERION.png) | [After](graphics-0.26/after-3-PLANET-HYPERION.png) |
 | Atomic lattice | [Before](graphics-0.26/before-8-CRYSTAL%20LATTICE-HYPERION.png) | [After](graphics-0.26/after-8-CRYSTAL%20LATTICE-HYPERION.png) |
 
-Smooth generated ground remains smooth; this pass does not invent mountains or change geology. Facades and lattice organization remain Infinite's existing structures. The intentionally reduced terrain glow keeps the spectral palette concentrated in illumination and material response.
+Smooth generated ground remains smooth; this pass does not invent mountains or change geology. Facades and lattice organization remain Infinity's existing structures. The intentionally reduced terrain glow keeps the spectral palette concentrated in illumination and material response.
 
 ## Measured cost
 
@@ -61,4 +61,4 @@ The complete run initially passed 45 of 46 checks; the colour-based boundary heu
 
 **All 46 checks are verified**, combining the complete run with the corrected coverage checks and final CPU/mode rechecks. All **23 Original world crops are pixel-identical** to the frozen 0.25 executable: six surface views and 17 stops in the nine-scale return tour. [Combined validation](graphics-0.26/validation.json), [pixel comparisons](graphics-0.26/original-comparison.json). Terrain uncovered-mask fractions are below 0.000003 in every mode; the root-reference image RMS difference is 0.00255/255.
 
-The packaged local `Infinite.app` is **0.26.0, build 26**, signed and verified. It resumes the existing flight and save format. [Retina surface capture](graphics-0.26/final-retina.png), [native cockpit orbit](graphics-0.26/final-orbit.png).
+The packaged local `Infinity.app` is **0.26.0, build 26**, signed and verified. It resumes the existing flight and save format. [Retina surface capture](graphics-0.26/final-retina.png), [native cockpit orbit](graphics-0.26/final-orbit.png).

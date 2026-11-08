@@ -1,12 +1,12 @@
-#include "infinite/Cockpit.hpp"
-#include "infinite/Piloting.hpp"
+#include "infinity/Cockpit.hpp"
+#include "infinity/Piloting.hpp"
 #include <iostream>
 #include <oneapi/tbb/global_control.h>
 #include <set>
 #include <sstream>
 #include <stdexcept>
 
-using namespace infinite;
+using namespace infinity;
 static size_t checks = 0;
 static void check(bool b, const char* message) {
     ++checks;
@@ -155,17 +155,33 @@ int main() {
         pilot.resetMotion();
         check(pilot.land(), "landing did not acquire the existing planet");
         const auto before = descriptorFingerprint(u.describe(planet));
+        bool aligned = false, flared = false;
         for (int i = 0; i < 3000 && !pilot.ship().landed; i++) {
             cache.beginFrame();
             pilot.update({}, 1. / 60);
             cache.finishFrame();
+            const auto& approach = pilot.instruments().landing;
+            if (approach.phase == LandingPhase::Align) {
+                check(approach.body == planet && glm::dot(approach.direction, direction) > .99999,
+                      "Landing lights did not stay at the selected touchdown point");
+                aligned = true;
+            }
+            if (approach.phase == LandingPhase::Flare) {
+                check(pilot.instruments().safe && pilot.instruments().altitude < 8,
+                      "Flare cue appeared outside the safe final descent");
+                flared = true;
+            }
         }
+        check(aligned && flared, "Landing readout skipped the alignment or flare cue");
         check(pilot.ship().landed, "automatic approach failed to settle on real terrain");
         check(std::abs(pilot.instruments().altitude) < .12,
               "landing gear did not contact the real geological surface");
         check(pilot.ship().hull == 100, "safe landing damaged hull");
         check(pilot.instruments().contactSequence > 0 && glm::length(pilot.instruments().contactImpulse) > 0,
               "Actual terrain touchdown did not publish a contact feedback event");
+        check(pilot.instruments().landing.phase == LandingPhase::Landed &&
+                  pilot.instruments().landing.settle > .99 && pilot.instruments().landing.body == planet,
+              "Safe live touchdown did not trigger the ground light response");
         check(glm::length(pilot.instruments().localAngularVelocity - pilot.ship().angularVelocity) < 1e-12 &&
                   std::abs(glm::length(pilot.instruments().localAcceleration) / 9.80665 -
                            pilot.instruments().properG) < 1e-12,
@@ -173,6 +189,9 @@ int main() {
         check(descriptorFingerprint(u.describe(planet)) == before, "landing modified procedural planet");
         auto landed = pilot.serialize();
         check(pilot.restore(landed) && pilot.ship().landed, "landed save did not restore");
+        check(pilot.instruments().landing.phase == LandingPhase::Landed &&
+                  pilot.instruments().landing.settle == 0 && !pilot.instruments().landing.body,
+              "Restoring a parked ship replayed its touchdown light response");
         const auto physicalEye = nav.cameraPosition();
         pilot.navigate(planet.parent());
         check(pilot.instruments().navigating && !pilot.ship().landed,

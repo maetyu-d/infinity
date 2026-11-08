@@ -1,0 +1,14 @@
+{
+  "core_suites_passed": 60,
+  "native_stages_passed": 6,
+  "direct_seam_checks": 47,
+  "full_size_extracted_kg": 20,
+  "source_geometry": "canonical mesh fingerprints verified at rock and mineral scales",
+  "legacy_saves": "versions 1 and 2 retained",
+  "tiny_damage_cap_multiplier": 25,
+  "signed_app_matching_sections": 28,
+  "user_saves_modified": false,
+  "build_recovery": "regenerable test executables and old raw framebuffer captures removed after disk-full error; all targets relinked",
+  "signed_startup_frames": 120,
+  "signed_startup_and_save": "passed"
+}

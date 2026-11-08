@@ -1,6 +1,6 @@
 # Screenshot gallery
 
-Five full-frame views from Infinite 0.52.1, rendered at 1920 × 1080 using the production Hyperion renderer on Metal. The HUD is hidden, as it is when toggled off with Tab during play. Images retain their original framing and colours and are encoded as JPEG at quality 88 for the repository landing page.
+Five full-frame views from Infinity 0.52.1, rendered at 1920 × 1080 using the production Hyperion renderer on Metal. The HUD is hidden, as it is when toggled off with Tab during play. Images retain their original framing and colours and are encoded as JPEG at quality 88 for the repository landing page.
 
 | Image | Scene |
 |---|---|

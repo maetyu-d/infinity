@@ -3,7 +3,7 @@
 // Only material presentation; local metre coordinates never follow the camera.
 float structureHash(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}
 // Hyperion architecture.hpp::windowInterior, adapted from model UVs to
-// Infinite's existing metre-grid facades. The room is optical presentation
+// Infinity's existing metre-grid facades. The room is optical presentation
 // behind an existing glass surface; no building or simulation is generated.
 vec3 windowInterior(vec3 V,vec3 N,vec2 grid,vec3 position,vec3 accent,float identity,float working){
  vec2 du=dFdx(grid),dv=dFdy(grid);float det=du.x*dv.y-du.y*dv.x;

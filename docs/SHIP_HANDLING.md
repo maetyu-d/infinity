@@ -1,6 +1,6 @@
 # Ship handling and roll
 
-## Restored classic controls — Infinite 0.39.1
+## Restored classic controls — Infinity 0.39.1
 
 At the user's request, ordinary assisted manual flight now uses the pre-0.37 controller again. This restores the actual implementation from `7a35cf7`, rather than changing gains in the newer physical controller. Mouse response is linear at the original gain, pitch/yaw/roll return to 1.20/1.10/1.80 rad/s, and the original bounded exponential rate servo controls attitude independently of the translation jets. The velocity-scaled 44/48/52 lateral/vertical/forward jet envelope, 32 reverse authority and 120 ms spool restore the previous translation and drift-correction response. The later normal-flight finite-braking speed cap applies to navigation/departure/inertial regimes, while manual assistance uses the original proximity-governed speed limit.
 
@@ -14,7 +14,7 @@ All **38 core tests** and **four native gameplay/image tests** pass. The handlin
 
 **190 protected source files** remain byte-identical to `3b22781`, including every universe generator, spatial address/hierarchy implementation, procedural seed, city/terrain/weather mesh, renderer/shader, economic system, underlying force math and cockpit-motion controller. Only the piloting/controller source changes in that source set. [Preservation hashes](classic-handling-0.39.1/preservation.json). The signed local app is **0.39.1 / build 44**; its 28 Mach-O code/data sections match the tested executable. [Package verification](classic-handling-0.39.1/package.json).
 
-## Hyperion-only graphics — Infinite 0.38.3
+## Hyperion-only graphics — Infinity 0.38.3
 
 Full-strength, colourful Hyperion rendering is the sole graphics style. The Original and Hybrid enum values, renderer branches, legacy instancing program and billboard buffer, H toggle, HUD hints and old mode-comparison utilities have been removed. Existing `display.txt` preferences are ignored and are no longer written. `--render-mode hyperion` remains a compatible explicit launch argument; `original` and `hybrid` are refused. The control guide and README list the current controls. F7 cockpit motion, physical ship handling, saved flights, universe generation and deterministic seeds remain intact.
 
@@ -24,7 +24,7 @@ Validation: [37 core tests](hyperion-only-0.38.3/core-tests.log), [72,521 presen
 
 The [matched Hyperion world crop](hyperion-only-0.38.3/visual-preservation.json) is bit-identical to 0.38.2 across 1,362,750 colour channels. [138 universe, physics, economy, shader and cockpit-motion source files](hyperion-only-0.38.3/preservation.json) remain unchanged. The [signed 0.38.3 / build 41 app](hyperion-only-0.38.3/package.json) matches all 28 tested code/data sections.
 
-## Cockpit inertia and feedback — Infinite 0.38.2
+## Cockpit inertia and feedback — Infinity 0.38.2
 
 The cockpit now has a separate presentation-only head-motion controller. It reads actual body-axis proper acceleration, angular velocity, engine demand, hull loss and transient collision impulses. Exact damped springs provide a small lean against applied forces, a lag during turns, cabin parallax and short recoil/impact jolts. Smooth, band-limited vibration grows above 1.3 G and remains quiet during idle/coasting. Soft landings receive a much smaller impulse than a hard contact. No ship force, torque, inertia, control gain, seed or generator was changed.
 
@@ -42,7 +42,7 @@ All [37 core tests](cockpit-motion-0.38.2/core-tests.log) and the expanded [6,01
 
 Same physical camera and world: [neutral cockpit](cockpit-motion-0.38.2/hyperion-neutral.png), [high-G head motion](cockpit-motion-0.38.2/hyperion-turn.png). The change is deliberately small in a still image; the spring's lag and settling supply the movement during play.
 
-## Control recovery — Infinite 0.38.1
+## Control recovery — Infinity 0.38.1
 
 The physical torque/inertia model introduced in 0.37 retained the earlier fast helm settings. Combined pitch/yaw/roll commands could reach 2.46 rad/s, and releasing roll at 1.8 rad/s allowed a further 13.3 degrees of rotation. B enabled braking but did not suppress a concurrently held turn or throttle command. Returning from the explorer camera with V could also retain the previous assist-off setting.
 
@@ -71,9 +71,9 @@ Evidence: [before](control-recovery-0.38.1/before.json), [after](control-recover
 
 All [36 core tests](control-recovery-0.38.1/core-tests.log) and [seven native checks](control-recovery-0.38.1/native-tests.log) passed. The native run verifies both roll directions at 0.95 rad/s, release to rest, landing/launch, the fitted cockpit, seamless flight and the galaxy-to-atomic return. The [signed 0.38.1 / build 39 package](control-recovery-0.38.1/package.json) matches all 28 code/data sections of the tested executable.
 
-## Original handling upgrade — Infinite 0.25
+## Original handling upgrade — Infinity 0.25
 
-The existing ship already had U/O roll, but its slow shared rate governor and remote keyboard position made it easy to miss. This update improves manual handling and makes roll visible in the cockpit. Generation, coordinates, orbital snapshots, geology, cities, object identities, seeds and rendering are retained. Baseline **8d3bf01** is saved at `checkpoint/infinite-0.24-before-handling`.
+The existing ship already had U/O roll, but its slow shared rate governor and remote keyboard position made it easy to miss. This update improves manual handling and makes roll visible in the cockpit. Generation, coordinates, orbital snapshots, geology, cities, object identities, seeds and rendering are retained. Baseline **8d3bf01** is saved at `checkpoint/infinity-0.24-before-handling`.
 
 ## Controls
 
@@ -128,4 +128,4 @@ Tests cover both bindings, opposing inputs, 30/60/144 Hz input, both roll direct
 
 Native captures show [right roll](handling-0.25/roll-right.png), [left roll](handling-0.25/roll-left.png), [released roll](handling-0.25/roll-stopped.png) and the [updated controls guide](handling-0.25/controls.png). The native proof measures ±1.8 rad/s and confirms retained forward heading in both directions, then a residual roll rate below 7e-11 rad/s after release. Twenty generation, spatial, simulation and renderer sources remain byte-identical to the baseline; see [preservation hashes](handling-0.25/preservation.json).
 
-The signed local `Infinite.app` is version **0.25.0, build 25**. It resumes the existing flight and ship save.
+The signed local `Infinity.app` is version **0.25.0, build 25**. It resumes the existing flight and ship save.

@@ -1,14 +1,14 @@
 #include "HyperionRenderer.hpp"
-#include "infinite/MaterialTexture.hpp"
-#include "infinite/StellarEvolution.hpp"
-#include "infinite/WorldDepth.hpp"
+#include "infinity/MaterialTexture.hpp"
+#include "infinity/StellarEvolution.hpp"
+#include "infinity/WorldDepth.hpp"
 #include <HyperionShaders.hpp>
 #include <algorithm>
 #include <cstring>
 #include <glm/gtc/type_ptr.hpp>
 #include <stdexcept>
 
-namespace infinite {
+namespace infinity {
 namespace {
 bgfx::ShaderHandle shader(const char* name) {
 #define LOAD_SHADER(NAME, BACKEND)                                                                           \
@@ -116,6 +116,7 @@ void HyperionRenderer::init() {
     planetRingsParams_ = bgfx::createUniform("u_planetRings", bgfx::UniformType::Vec4, 2);
     ringParams_ = bgfx::createUniform("u_rings", bgfx::UniformType::Vec4, 4);
     surface_ = bgfx::createUniform("u_surface", bgfx::UniformType::Vec4);
+    terrainMaterial_ = bgfx::createUniform("u_terrainMaterial", bgfx::UniformType::Vec4, 4);
     const uint8_t average[] = {128, 0, 128, 128};
     detail_ = bgfx::createTexture2D(1, 1, false, 1, bgfx::TextureFormat::RGBA8, 0,
                                     bgfx::copy(average, sizeof(average)));
@@ -225,7 +226,7 @@ HyperionRenderer::~HyperionRenderer() {
                    pattern_,        postParams_,
                    cavity_,         depthSampler_,
                    atmosphere_,     atmosphereRotation_,
-                   micro_,          microParams_,
+                   micro_,          microParams_, terrainMaterial_,
                    meso_,           domain_,
                    skyParams_,      skyRotation_,
                    sunSampler_,     sunMatrix_,
@@ -313,7 +314,7 @@ void HyperionRenderer::begin(RenderMode, int width, int height, bool opticalDept
         }
     }
     if (replaceTarget)
-        for (bgfx::ViewId id = 0; id < 66; ++id)
+        for (bgfx::ViewId id = 0; id < 67; ++id)
             bgfx::setViewFrameBuffer(id, scene_);
     // Hyperion skyFragment's linear ink (.004,.007,.016), rounded to the
     // clear API's RGBA8 input; the HDR display transform is applied later.
@@ -499,6 +500,14 @@ void HyperionRenderer::prepareWeather(const Node& planet, const glm::dmat4& mapp
 float HyperionRenderer::weatherBlend(const Address& planet) const {
     return weatherPlanet_ && *weatherPlanet_ == planet ? weatherData_[0].w : 0.f;
 }
+void HyperionRenderer::localLamp() {
+    const glm::vec4 shadow{};
+    const std::array<glm::vec4,4> weather{};
+    const std::array<glm::vec4,3> visual{};
+    bgfx::setUniform(sunParams_,glm::value_ptr(shadow));
+    bgfx::setUniform(weatherParams_,weather.data(),4);
+    bgfx::setUniform(weatherVisualParams_,visual.data(),3);
+}
 void HyperionRenderer::bind(const ScenePresentation& p, const glm::vec3& eye, const glm::vec3& light,
                             const glm::mat4& pattern, float primitive, double seconds, glm::vec4 cavity,
                             const glm::mat4& micro, float relief, const glm::mat4& meso, float mesoRelief) {
@@ -512,6 +521,7 @@ void HyperionRenderer::bind(const ScenePresentation& p, const glm::vec3& eye, co
     bgfx::setUniform(pattern_, glm::value_ptr(pattern));
     bgfx::setUniform(domain_, glm::value_ptr(p.domain));
     bgfx::setUniform(surface_, glm::value_ptr(p.surface));
+    bgfx::setUniform(terrainMaterial_, p.terrainMaterial.data(), 4);
     bgfx::setUniform(environment_, glm::value_ptr(p.environment));
     const auto contact =
         landingPlanet_ && *landingPlanet_ == p.materialFrame ? landingData_ : std::array<glm::vec4, 2>{};
@@ -707,4 +717,4 @@ void HyperionRenderer::finish() {
     }
     screen(83, finalProgram);
 }
-} // namespace infinite
+} // namespace infinity

@@ -1,9 +1,9 @@
-#include "infinite/Cockpit.hpp"
-#include "infinite/Piloting.hpp"
+#include "infinity/Cockpit.hpp"
+#include "infinity/Piloting.hpp"
 #include <iostream>
 #include <set>
 #include <sstream>
-using namespace infinite;
+using namespace infinity;
 namespace {
 unsigned checks = 0;
 void check(bool ok, const char* why) {
@@ -100,7 +100,7 @@ int main() {
             const auto state = pilot.serialize();
             const auto dockedNav = nav.serialize();
             const auto capturedBody = body;
-            check(state.starts_with("INFINITE_SHIP 5 "), "Docking rewrote the established ship-save format");
+            check(state.starts_with("INFINITY_SHIP 5 "), "Docking rewrote the established ship-save format");
             for (auto size : {glm::ivec2(600, 1000), glm::ivec2(1440, 900)}) {
                 CockpitViewport viewport(size.x, size.y, {0, 0, double(size.x), double(size.y)});
                 auto ui = cockpitOverlay(pilot.instruments(), viewport.aspect(), "", {}, {}, {}, false,

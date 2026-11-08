@@ -1,4 +1,4 @@
-# Ship weapons and equipment trade — Infinite 0.44
+# Ship weapons and equipment trade — Infinity 0.44
 
 Version 0.49 adds [individually fitted, crewed port/starboard mounts](CREW_GUNS_0_49.md). Left/Right selects a mount at the armourer; F9 Ctrl+1/2/3 assigns gun crew. The single-mount controls below describe the original 0.44 release.
 
@@ -40,7 +40,7 @@ The representative hauling-worker fixture grows from **535,797 to 537,845 bytes*
 
 The native runner losslessly compresses completed test frames to avoid accumulating large raw captures. It leaves incomplete GPU writes untouched, verifies decompression byte-for-byte and runs the same pixel checks on decoded images. This affects test storage only. [Compression check](weapons-0.44/capture-compression.log).
 
-**Infinite 0.44.0 / build 49** is packaged, ad-hoc signed and verified. All **28 code/data sections** match the build, and the final native copy has the same full executable SHA-256. Tests use isolated saves. [Full build](weapons-0.44/final-build.log), [final visual/capture build](weapons-0.44/capture-build.log), [package](weapons-0.44/package.json), [signature](weapons-0.44/signing.log).
+**Infinity 0.44.0 / build 49** is packaged, ad-hoc signed and verified. All **28 code/data sections** match the build, and the final native copy has the same full executable SHA-256. Tests use isolated saves. [Full build](weapons-0.44/final-build.log), [final visual/capture build](weapons-0.44/capture-build.log), [package](weapons-0.44/package.json), [signature](weapons-0.44/signing.log).
 
 ![Weapon shop before the upgrade](weapons-0.44/weapons-shop-portrait.png)
 

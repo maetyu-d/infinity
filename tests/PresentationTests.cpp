@@ -1,13 +1,13 @@
-#include "infinite/Navigation.hpp"
-#include "infinite/Presentation.hpp"
-#include "infinite/SurfaceLife.hpp"
-#include "infinite/World.hpp"
+#include "infinity/Navigation.hpp"
+#include "infinity/Presentation.hpp"
+#include "infinity/SurfaceLife.hpp"
+#include "infinity/World.hpp"
 #include <iostream>
 #include <map>
 #include <sstream>
 #include <stdexcept>
 
-using namespace infinite;
+using namespace infinity;
 static size_t checks = 0;
 static void check(bool v, const char* message) {
     ++checks;

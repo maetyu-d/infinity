@@ -1,0 +1,22 @@
+{
+  "2": {
+    "bit_identical": true,
+    "sha256": "4c0f00ef6640d3d9db30b74a49eb1f215e45710e417cc43184508ea30ef1338f"
+  },
+  "3": {
+    "bit_identical": true,
+    "sha256": "5d8820c20b4b3e4dc5b2652729e433832818cddfead93367efbe04eb21d131c4"
+  },
+  "4": {
+    "bit_identical": true,
+    "sha256": "746aeacd615fbbd8a9ac7bb63a3f2af417833ad02d75302b3f8baef69e9f111b"
+  },
+  "5": {
+    "bit_identical": true,
+    "sha256": "0c82b12f30f78b6f506248d93a702f0a0d3448bbe4b298eb8c9f3d135d7d83b5"
+  },
+  "8": {
+    "bit_identical": true,
+    "sha256": "74820412a555e1ebb6a51744f230543295acbb036d87c31db5b55345ef6eb9b2"
+  }
+}

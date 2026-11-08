@@ -1,0 +1,20 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinity / Metal / seed 5282236693612155973
+WEATHER_VISIBILITY scene=rain sample=0 planet=0,0,0/1:0/2:36/3:0 particles=0 cloud=0.880141 storm=0.276516 visibility_m=8489.54 terrain=3530980634703544589 frame=696 camera=unchanged
+WEATHER_VISIBILITY scene=rain sample=1 planet=0,0,0/1:0/2:36/3:0 particles=70 cloud=0.880141 storm=0.276516 visibility_m=8489.54 terrain=3530980634703544589 frame=727 camera=unchanged
+WEATHER_VISIBILITY scene=rain sample=2 planet=0,0,0/1:0/2:36/3:0 particles=64 cloud=0.880141 storm=0.276516 visibility_m=8489.54 terrain=3530980634703544589 frame=758 camera=unchanged
+WEATHER_VISIBILITY scene=snow sample=0 planet=0,0,0/1:0/2:1/3:2 particles=0 cloud=0.992525 storm=0.180009 visibility_m=3478.93 terrain=2209049766922462549 frame=2264 camera=unchanged
+WEATHER_VISIBILITY scene=snow sample=1 planet=0,0,0/1:0/2:1/3:2 particles=79 cloud=0.992525 storm=0.180009 visibility_m=3478.93 terrain=2209049766922462549 frame=2295 camera=unchanged
+WEATHER_VISIBILITY scene=snow sample=2 planet=0,0,0/1:0/2:1/3:2 particles=78 cloud=0.992525 storm=0.180009 visibility_m=3478.93 terrain=2209049766922462549 frame=2326 camera=unchanged
+WEATHER_VISIBILITY scene=dust sample=0 planet=0,0,0/1:0/2:1/3:0 particles=0 cloud=0.113846 storm=0.705217 visibility_m=1083.78 terrain=501600642965333506 frame=3145 camera=unchanged
+WEATHER_VISIBILITY scene=dust sample=1 planet=0,0,0/1:0/2:1/3:0 particles=71 cloud=0.113846 storm=0.705217 visibility_m=1083.78 terrain=501600642965333506 frame=3176 camera=unchanged
+WEATHER_VISIBILITY scene=dust sample=2 planet=0,0,0/1:0/2:1/3:0 particles=70 cloud=0.113846 storm=0.705217 visibility_m=1083.78 terrain=501600642965333506 frame=3207 camera=unchanged
+WEATHER_VISIBILITY scene=storm sample=0 planet=0,0,0/1:0/2:47/3:9 particles=0 cloud=0.885412 storm=0.586759 visibility_m=5802.93 terrain=12144859467720632113 frame=3960 camera=unchanged
+WEATHER_VISIBILITY scene=storm sample=1 planet=0,0,0/1:0/2:47/3:9 particles=0 cloud=0.885412 storm=0.586759 visibility_m=5802.93 terrain=12144859467720632113 frame=3991 camera=unchanged
+WEATHER_VISIBILITY scene=storm sample=2 planet=0,0,0/1:0/2:47/3:9 particles=0 cloud=0.885412 storm=0.586759 visibility_m=5802.93 terrain=12144859467720632113 frame=4022 camera=unchanged
+WEATHER_VISIBILITY scene=vacuum sample=0 planet=0,0,0/1:0/2:1/3:10 particles=0 cloud=0 storm=0 visibility_m=1e+09 terrain=17178616737888302295 frame=4460 camera=unchanged
+WEATHER_VISIBILITY scene=vacuum sample=1 planet=0,0,0/1:0/2:1/3:10 particles=0 cloud=0 storm=0 visibility_m=1e+09 terrain=17178616737888302295 frame=4491 camera=unchanged
+WEATHER_VISIBILITY scene=vacuum sample=2 planet=0,0,0/1:0/2:1/3:10 particles=0 cloud=0 storm=0 visibility_m=1e+09 terrain=17178616737888302295 frame=4522 camera=unchanged
+PASS: real planetary rain, snow, dust, storm discharge and vacuum / same terrain and physical camera
+FRAME median_ms=20.3172 p95_ms=34.1005 frames=4529 cache_bytes=11538896
+peak_rss_bytes=142000128

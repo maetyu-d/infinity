@@ -33,7 +33,7 @@ Implemented camera-facing/projected-size LOD, higher sampling limits, shared fie
 
 ## Hyperion presentation — version 0.5
 
-Inspected the actual Hyperion game, recorded its complete source inventory and rendering architecture, and preserved Infinite 0.4 in Git checkpoint `0d61030`. Added read-only scene presentation, source-traced pigment/silk/BRDF/glow shaders, HDR bloom and flight display processing. H selects original, Hyperion or hybrid presentation without regenerating geometry or moving the camera. Canonical planet/host-rock material frames span sampling windows and nested scales. The original generator, coordinate, history, navigation, persistence and cache sources remain unchanged. See HYPERION_RENDERING.md for source mapping, native mode proofs, image comparisons and measured cost.
+Inspected the actual Hyperion game, recorded its complete source inventory and rendering architecture, and preserved Infinity 0.4 in Git checkpoint `0d61030`. Added read-only scene presentation, source-traced pigment/silk/BRDF/glow shaders, HDR bloom and flight display processing. H selects original, Hyperion or hybrid presentation without regenerating geometry or moving the camera. Canonical planet/host-rock material frames span sampling windows and nested scales. The original generator, coordinate, history, navigation, persistence and cache sources remain unchanged. See HYPERION_RENDERING.md for source mapping, native mode proofs, image comparisons and measured cost.
 
 ## Free flight — version 0.6
 

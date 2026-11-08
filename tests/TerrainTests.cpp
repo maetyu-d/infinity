@@ -1,17 +1,101 @@
-#include "infinite/Piloting.hpp"
-#include "infinite/Streaming.hpp"
+#include "infinity/Piloting.hpp"
+#include "infinity/Streaming.hpp"
+#include "infinity/SurfaceProvince.hpp"
+#include "infinity/MajorLandforms.hpp"
+#include "infinity/Exploration.hpp"
 #include <iostream>
 #include <map>
+#include <set>
 #include <sstream>
 #include <stdexcept>
 
-using namespace infinite;
+using namespace infinity;
 static void check(bool value, const char* message) {
     if (!value)
         throw std::runtime_error(message);
 }
 static glm::dvec3 direction(unsigned i) {
     return glm::normalize(glm::dvec3(std::sin(i * 1.7), .35 + std::sin(i * .37), std::cos(i * 2.1)));
+}
+static void provinceTests(const Universe& u) {
+    Environment environment;
+    auto dry = *planetProcess(9, 6.4, environment);
+    dry.liquidWater = 0;
+    dry.ice = 0;
+    const auto pole = glm::normalize(dry.plates.front().angularVelocity);
+    GeologySample g;
+    check(surfaceProvince(dry, pole, g).dominant() == SurfaceProvince::Bedrock,
+          "Dry quiescent surface did not retain its weathered bedrock");
+    g.convergence = .6;
+    check(surfaceProvince(dry, pole, g).dominant() == SurfaceProvince::Upland,
+          "Plate convergence did not build an upland province");
+    g = {};
+    g.volcanism = .4;
+    check(surfaceProvince(dry, pole, g).dominant() == SurfaceProvince::Volcanic,
+          "Volcanic field did not follow its hotspot");
+    g = {};
+    g.cratering = .0007;
+    check(surfaceProvince(dry, pole, g).dominant() == SurfaceProvince::Impact,
+          "Impact field did not follow surviving relief");
+    auto wet = dry;
+    wet.liquidWater = .7;
+    g = {};
+    g.sediment = .4;
+    check(surfaceProvince(wet, pole, g).dominant() == SurfaceProvince::Basin,
+          "Lowland sediment did not form a basin province");
+    auto ice = dry;
+    ice.type = GeologyType::IceShell;
+    g = {};
+    check(surfaceProvince(ice, pole, g).dominant() == SurfaceProvince::Frost,
+          "Ice shell did not retain its frost belt");
+
+    std::set<SurfaceProvince> varieties;
+    unsigned surveyed = 0;
+    const Universe regenerated(u.seed());
+    const auto galaxy = Address{}.child(Kind::Galaxy, 0);
+    for (uint64_t i : {0, 1, 2, 9}) {
+        for (const auto& address : u.children(u.describe(galaxy.child(Kind::System, i)))) {
+            const auto planet = u.describe(address);
+            const auto sites = geologicalLandmarks(u, planet, 5);
+            if (!hasSolidSurface(planet)) {
+                check(sites.empty(), "A gas giant generated a surface landmark");
+                continue;
+            }
+            check(sites == geologicalLandmarks(regenerated, regenerated.describe(address), 5),
+                  "Regenerating a world changed its landmarks");
+            const auto legacy = u.children(planet, 18);
+            const auto catalog = u.children(planet);
+            auto expected = legacy;
+            expected.insert(expected.end(), sites.begin(), sites.end());
+            if (planet.geology->landform) expected.push_back(majorLandformAddress(planet));
+            check(catalog == expected && std::set(catalog.begin(), catalog.end()).size() == catalog.size(),
+                  "Landmarks moved existing surface targets or duplicated a tile");
+            std::set<SurfaceProvince> onWorld;
+            for (const auto& site : sites) {
+                const auto node = u.describe(site);
+                const auto d = node.geographicDirection;
+                const auto field = geologySample(*planet.geology, d);
+                const auto profile = surfaceProvince(*planet.geology, d, field);
+                const auto type = profile.dominant();
+                check(site.parent() == address && decodeTile(site.id()).level == 7 &&
+                          type != SurfaceProvince::Bedrock && onWorld.insert(type).second,
+                      "A landmark did not resolve to a distinct canonical province");
+                check(glm::dot(d, u.terrainNormal(planet, d)) > .96 &&
+                          (planet.geology->liquidWater <= .1 ||
+                           field.heightMetres / std::pow(10., planet.frame.logRadius) >= -.0008),
+                      "Landmark was placed on steep or submerged terrain");
+                const auto base = u.terrainAlbedo(planet, d, field);
+                check(exposureColor(planet, d, field, base) == exposureColor(node, d, field, base),
+                      "Orbital and surface material queries disagreed on a province");
+                check(surveyReading(u, site, 1, 100).formation.starts_with(provinceName(type)),
+                      "A survey record lost its generated province");
+                varieties.insert(type);
+                ++surveyed;
+            }
+        }
+    }
+    check(varieties.size() >= 4 && surveyed > 20, "Surveyed worlds lack distinct geological regions");
+    std::cout << "landmarks=" << surveyed << " regional_types=" << varieties.size() << '\n';
 }
 int main() {
     try {
@@ -60,6 +144,7 @@ int main() {
                       << " local_range=" << maximumLocalRange << '\n';
         }
         Universe universe;
+        provinceTests(universe);
         const auto system = universe.describe(Address{}.child(Kind::Galaxy, 0).child(Kind::System, 9));
         std::optional<Node> rugged;
         unsigned smooth = 0, rough = 0;
@@ -224,7 +309,14 @@ int main() {
         nav.changeFrame(FlightController::surfaceAt(planet.address, landing));
         nav.setRenderScale(2);
         pilot.resetMotion();
-        check(pilot.land(), "Landing refused the enhanced solid world");
+        // Geometry/collision coverage deliberately accepts this fixture's
+        // inherited surface weather or temperature warning.
+        if(pilot.instruments().surfaceLandingHold){
+            const auto camera=nav.serialize();
+            check(!pilot.land()&&!pilot.ship().landed&&nav.serialize()==camera,
+                  "Hazard hold moved the ship or landed without accepting risk");
+        }
+        check(pilot.land(true), "Landing refused the enhanced solid world");
         for (unsigned i = 0; i < 3000 && !pilot.ship().landed; i++) {
             cache.beginFrame();
             pilot.update({}, 1. / 60);

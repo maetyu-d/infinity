@@ -1,8 +1,8 @@
-#include "infinite/Economy.hpp"
+#include "infinity/Economy.hpp"
 #include <algorithm>
 #include <iomanip>
 #include <sstream>
-namespace infinite {
+namespace infinity {
 namespace {
 template <class Price>
 ShipServiceQuote quoteService(const EconomicSiteState& site, const EconomyPlayer& player, uint64_t tick,
@@ -147,4 +147,4 @@ std::string Economy::service(const EconomicCommand& c, EconomyPlayer& player, si
     return "CARGO REFIT INSTALLED / " + std::to_string(player.capacityKg) + " KG / " +
            std::to_string(player.capacityLitres) + " L";
 }
-} // namespace infinite
+} // namespace infinity

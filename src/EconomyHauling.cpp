@@ -1,7 +1,7 @@
-#include "infinite/Economy.hpp"
+#include "infinity/Economy.hpp"
 #include <algorithm>
 #include <numeric>
-namespace infinite {
+namespace infinity {
 namespace {
 int64_t total(const Stock& s) {
     return std::accumulate(s.begin(), s.end(), int64_t(0));
@@ -61,16 +61,22 @@ bool Economy::reconcilePlayer(EconomyPlayer& player) const {
 }
 void Economy::haulOffers() {
     for (auto& h : hauls_) {
-        if (waiting(h.phase) && tick_ > h.deadline) {
+        const auto* incident = h.interruptedFlight && h.phase == HaulPhase::Open ? incidentFor(h.interruptedFlight) : nullptr;
+        const bool covered = incident && !incident->remainingKg();
+        if (covered || (waiting(h.phase) && tick_ > h.deadline)) {
             sites_[h.source].reserved[size_t(h.good)] -= h.kg;
             sites_[h.destination].cash += h.escrow;
             h.escrow = 0;
-            h.phase = HaulPhase::Expired;
-            event("HAUL EXPIRED / stock released and buyer escrow refunded");
+            h.phase = covered ? HaulPhase::Cancelled : HaulPhase::Expired;
+            event(covered ? "RELAY WITHDRAWN / SHIPMENT ALREADY COVERED"
+                          : "HAUL EXPIRED / stock released and buyer escrow refunded");
         } else if (h.phase == HaulPhase::InTransit && tick_ == h.deadline + 1)
             event("HAUL OVERDUE / cargo remains sealed / late fee reduced");
     }
-    std::erase_if(hauls_, [&](const auto& h) { return !active(h.phase) && tick_ > h.deadline + 24; });
+    std::erase_if(hauls_, [&](const auto& h) {
+        return !active(h.phase) && tick_ > h.deadline + 24 &&
+               (!h.interruptedFlight || tick_ * economyTickSeconds - freight_[h.interruptedFlight - 1].disabledAt > 720);
+    });
     if (tick_ % 12 || sites_.empty())
         return;
     // At most eight funded waiting offers, 32 retained records and two new offers per batch.
@@ -78,9 +84,28 @@ void Economy::haulOffers() {
     if (open >= 8 || hauls_.size() >= 32)
         return;
     std::vector<Stock> inbound(sites_.size());
-    for (const auto& f : freight_)
+    std::vector<std::array<unsigned, goodCount>> interruptions;
+    std::array<bool, 4096> relayed{};
+    for (const auto& h : hauls_)
+        if (h.interruptedFlight)
+            relayed[h.interruptedFlight - 1] = true;
+    for (size_t i = 0; i < freight_.size(); ++i) {
+        const auto& f = freight_[i];
         if (f.phase != FreightPhase::Idle && f.disabledAt < 0)
             inbound[f.destination][size_t(f.good)] += f.kg;
+        const double age = tick_ * economyTickSeconds - f.disabledAt;
+        if (f.disabledAt < 0 || age < 0 || age > 720 || relayed[i] || f.kg < 10 ||
+            (f.phase != FreightPhase::Transit && f.phase != FreightPhase::Holding))
+            continue;
+        const auto* status = incidentFor(unsigned(i + 1));
+        if (status && status->remainingKg() < 10)
+            continue;
+        if (interruptions.empty())
+            interruptions.resize(sites_.size());
+        auto& incident = interruptions[f.destination][size_t(f.good)];
+        if (!incident)
+            incident = unsigned(i + 1);
+    }
     for (const auto& h : hauls_)
         if (active(h.phase) && tick_ <= h.deadline)
             inbound[h.destination][size_t(h.good)] += h.kg;
@@ -104,21 +129,31 @@ void Economy::haulOffers() {
                 auto need = network_->sites[b].target[g] - sites_[b].stock[g] - inbound[b][g];
                 if (need < 10)
                     continue;
-                for (auto a : sellers[g]) {
+                const auto interruption = interruptions.empty() ? 0 : interruptions[b][g];
+                if (interruption) {
+                    need = std::min(need, freight_[interruption - 1].kg);
+                    if (const auto* status = incidentFor(interruption))
+                        need = std::min(need, status->remainingKg());
+                }
+                std::array<size_t, 10> lane;
+                for (auto a : economicLaneSources(network_->sites[b], g, sellers[g], lane)) {
                     if (a == b)
                         continue;
                     const auto surplus =
                         sites_[a].stock[g] - sites_[a].reserved[g] - network_->sites[a].target[g];
                     const auto unit = unitPrice(a, Good(g), sites_[a].stock[g] - sites_[a].reserved[g], true);
-                    const int64_t fee = 30 + int64_t(travelTicks(a, b)) * 2;
+                    const int64_t baseFee = 30 + int64_t(travelTicks(a, b)) * 2;
+                    const int64_t fee = baseFee + (interruption ? baseFee / 2 : 0);
                     auto kg =
                         std::min({maxShipPayloadKg, surplus, need,
                                   economicCapacity(network_->sites[b], sites_[b]) - total(sites_[b].stock),
                                   sites_[b].cash / (unit * 2 + fee)});
                     if (kg < 10)
                         continue;
-                    const double score = double(need) / (1 + travelTicks(a, b));
-                    if (score <= best)
+                    const double score = double(need) * economicLaneWeight(network_->sites[b], g, a) /
+                                         (1 + travelTicks(a, b));
+                    if ((!interruption && chosen.interruptedFlight) ||
+                        (bool(interruption) == bool(chosen.interruptedFlight) && score <= best))
                         continue;
                     // Integrate the locked source price; reduce until the buyer can fund it.
                     auto cost = quote(a, Good(g), kg).buyCents;
@@ -135,19 +170,25 @@ void Economy::haulOffers() {
                     chosen.kg = kg;
                     chosen.cost = cost;
                     chosen.fee = kg * fee;
+                    chosen.interruptedFlight = interruption;
                 }
             }
         if (!chosen.kg)
             break;
         chosen.id = nextHaul_++;
-        chosen.deadline = tick_ + std::max<uint64_t>(144, travelTicks(chosen.source, chosen.destination) * 4);
+        const auto travel = travelTicks(chosen.source, chosen.destination);
+        chosen.deadline = tick_ + (chosen.interruptedFlight ? std::max<uint64_t>(72, travel * 3)
+                                                          : std::max<uint64_t>(144, travel * 4));
         chosen.escrow = chosen.cost + chosen.fee;
         sites_[chosen.source].reserved[size_t(chosen.good)] += chosen.kg;
         sites_[chosen.destination].cash -= chosen.escrow;
         inbound[chosen.destination][size_t(chosen.good)] += chosen.kg;
+        if (chosen.interruptedFlight)
+            interruptions[chosen.destination][size_t(chosen.good)] = 0;
         hauls_.push_back(chosen);
         open++;
-        event(network_->sites[chosen.destination].name + " / FUNDED PLAYER HAUL / " +
+        event(network_->sites[chosen.destination].name +
+              (chosen.interruptedFlight ? " / FUNDED EMERGENCY RELAY / " : " / FUNDED PLAYER HAUL / ") +
               std::to_string(chosen.kg) + " KG " + std::string(goodInfo(chosen.good).name));
     }
 }
@@ -163,6 +204,11 @@ std::string Economy::haulCommand(const EconomicCommand& c, EconomyPlayer& player
     if (c.action == EconomicAction::AcceptHaul) {
         if (h->phase != HaulPhase::Open || tick_ > h->deadline)
             return "HAUL OFFER CLOSED";
+        if (h->interruptedFlight) {
+            const auto* incident = incidentFor(h->interruptedFlight);
+            if (incident && !incident->remainingKg())
+                return "REPLACEMENT SHIPMENT ALREADY RECEIVED";
+        }
         if (player.haul)
             return "FINISH OR RETURN YOUR ACTIVE HAUL FIRST";
         if (c.port != network_->sites[h->source].id)
@@ -211,6 +257,7 @@ std::string Economy::haulCommand(const EconomicCommand& c, EconomyPlayer& player
         const auto payment = late ? h->fee / 2 : h->fee;
         destination.stock[g] += h->kg;
         destination.imported[g] += h->kg;
+        incidentCargo(h->destination, h->good, h->kg, true, h->interruptedFlight);
         player.cargo[g] -= h->kg;
         player.credits += payment;
         source.cash += h->cost;
@@ -224,7 +271,8 @@ std::string Economy::haulCommand(const EconomicCommand& c, EconomyPlayer& player
         player.haul.reset();
         Stock delivery{};
         delivery[g] = h->kg;
-        recordOutcome(c, h->destination, OutcomeKind::Haul, delivery, payment, before);
+        recordOutcome(c, h->destination, h->interruptedFlight ? OutcomeKind::Relay : OutcomeKind::Haul,
+                      delivery, payment, before);
         event("PLAYER HAUL DELIVERED / " + std::to_string(payment / 100) + " CR" +
               (late ? " / LATE" : " / ON TIME"));
         return "HAUL DELIVERED / " + std::to_string(payment / 100) + " CR" +
@@ -262,6 +310,25 @@ std::vector<EconomySnapshot::Job> economicJobs(const EconomySnapshot& s) {
         return deadline < s.tick ? std::string("OVERDUE")
                                  : std::to_string((deadline - s.tick) * 5 / 60) + " ECON H LEFT";
     };
+    const auto addDistress = [&](const WreckRecovery& wreck, bool aboard) {
+        const auto& issuer = s.network->sites[wreck.accountingSite];
+        EconomySnapshot::Job job;
+        job.distress = wreck.id;
+        job.source = job.destination = wreck.accountingSite;
+        job.issuer = issuer.id;
+        job.target = aboard ? issuer.id : wreck.id;
+        job.deadline = wreck.rescueDeadline;
+        job.action = aboard ? EconomicAction::DisembarkRescued : EconomicAction::RecoverWreck;
+        job.title = std::string(aboard ? "RESCUE HANDOVER / " : "DISTRESS RESCUE / ") +
+                    wreck.survivor->name + " / " + std::to_string(wreck.rescueEscrow / 100) + " CR / " + time(job.deadline);
+        job.route = aboard ? "SURVIVOR ABOARD / " + issuer.name
+                         : std::string(wreck.id.slot < 200 ? "FREIGHTER" : "FERRY") + " DISABLED / SURVIVOR SIGNAL";
+        jobs.push_back(std::move(job));
+    };
+    for (const auto& wreck : s.wrecks)
+        if (wreck.rescueEscrow && wreck.survivor && wreck.rescued && jobs.size() < 4 &&
+            std::any_of(s.player.rescued.begin(), s.player.rescued.end(), [&](const auto& p) { return p.source == wreck.id; }))
+            addDistress(wreck, true);
     auto addCombat = [&](const CombatContract& c) {
         EconomySnapshot::Job job;
         job.combat = true;
@@ -291,9 +358,6 @@ std::vector<EconomySnapshot::Job> economicJobs(const EconomySnapshot& s) {
     for (const auto& c : s.combatContracts)
         if (c.phase == CombatJobPhase::Accepted || c.phase == CombatJobPhase::Claimable)
             addCombat(c);
-    for (const auto& c : s.combatContracts)
-        if (c.phase == CombatJobPhase::Open && jobs.size() < 6)
-            addCombat(c);
     auto addHaul = [&](const HaulContract& h) {
         const auto fee = s.tick > h.deadline ? h.fee / 2 : h.fee;
         const bool mine =
@@ -310,11 +374,12 @@ std::vector<EconomySnapshot::Job> economicJobs(const EconomySnapshot& s) {
                      : h.phase == HaulPhase::Reserved ? EconomicAction::PickupHaul
                                                       : EconomicAction::DeliverHaul;
         job.target = s.network->sites[h.phase == HaulPhase::InTransit ? h.destination : h.source].id;
-        job.title =
-            std::string(mine ? h.phase == HaulPhase::InTransit ? "DELIVER SEALED " : "PICKUP " : "HAUL ") +
+        job.title = std::string(h.interruptedFlight ? "RELAY / " : "") +
+            (mine ? h.phase == HaulPhase::InTransit ? "DELIVER SEALED " : "PICKUP " : "HAUL ") +
             std::to_string(h.kg) + "KG " + std::string(goodInfo(h.good).name) + " / FEE " +
             std::to_string(fee / 100) + "CR / " + time(h.deadline);
-        job.route = s.network->sites[h.source].name + " > " + s.network->sites[h.destination].name;
+        job.route = (h.interruptedFlight ? "FREIGHTER DISABLED / " : "") +
+                    s.network->sites[h.source].name + " > " + s.network->sites[h.destination].name;
         jobs.push_back(std::move(job));
     };
     for (const auto& h : s.hauls)
@@ -341,14 +406,20 @@ std::vector<EconomySnapshot::Job> economicJobs(const EconomySnapshot& s) {
                 bundle += std::to_string(job.required[g]) + "KG " + std::string(goodInfo(Good(g)).name) + " ";
             }
         }
-        job.title = std::string(j.kind == RecoveryKind::Relief ? "RELIEF " : "RECOVER PLANT ") +
+        job.title = std::string(j.kind == RecoveryKind::Relief ? "RELIEF "
+                              : j.kind == RecoveryKind::Maintenance ? "RECOVER PLANT " : "RESTART ") +
                     (job.working ? "CREW " + std::to_string(j.progress) + "/" + std::to_string(j.pairs) +
                                        " / ENTER REPORT"
                      : j.phase == RecoveryPhase::Accepted ? "ACTIVE / " + bundle
                                                           : bundle) +
                     (job.working ? "" : " / " + std::to_string(payment / 100) + "CR / " + time(j.deadline));
         job.route = s.network->sites[j.site].name +
-                    (job.working ? " / LOCAL CREW USES RESERVED KIT" : " / SOURCE UNSEALED SUPPLIES");
+                    (j.recipe ? " / INPUT SHORTAGE / " + std::string(productionRecipes()[j.recipe - 1].name)
+                     : job.working ? " / LOCAL CREW USES RESERVED KIT" : " / SOURCE UNSEALED SUPPLIES");
+        if (j.kind == RecoveryKind::Relief && std::any_of(s.flights.begin(), s.flights.end(), [&](const auto& f) {
+                return f.weatherHold && f.destination == j.site && job.required[size_t(f.good)] > 0;
+            }))
+            job.route = s.network->sites[j.site].name + " / SUPPLIES DELAYED BY WEATHER";
         jobs.push_back(std::move(job));
     };
     for (const auto& j : s.recoveries)
@@ -371,15 +442,41 @@ std::vector<EconomySnapshot::Job> economicJobs(const EconomySnapshot& s) {
     for (const auto& c : s.contracts)
         if (c.phase == ContractPhase::Accepted && jobs.size() < 12)
             addSupply(c);
+    unsigned calls = 0;
+    for (const auto& wreck : s.wrecks)
+        if (wreck.rescueEscrow && wreck.survivor && !wreck.rescued && calls < 2 && jobs.size() < 12) {
+            addDistress(wreck, false);
+            ++calls;
+        }
     for (const auto& j : s.recoveries)
-        if (j.phase == RecoveryPhase::Open && jobs.size() < 12)
+        if (j.kind == RecoveryKind::Restart && j.phase == RecoveryPhase::Open && jobs.size() < 12)
+            addRecovery(j);
+    unsigned relays = 0;
+    for (const auto& h : s.hauls)
+        if (h.interruptedFlight && h.phase == HaulPhase::Open && relays < 2 && jobs.size() < 12) {
+            addHaul(h);
+            ++relays;
+        }
+    unsigned security = 0;
+    for (const auto& c : s.combatContracts)
+        if (c.phase == CombatJobPhase::Open && security < 4 && jobs.size() < 12) {
+            addCombat(c);
+            ++security;
+        }
+    for (const auto& j : s.recoveries)
+        if (j.kind != RecoveryKind::Restart && j.phase == RecoveryPhase::Open && jobs.size() < 12)
             addRecovery(j);
     for (const auto& h : s.hauls)
-        if (h.phase == HaulPhase::Open && jobs.size() < 12)
+        if (h.phase == HaulPhase::Open && jobs.size() < 12) {
+            if (h.interruptedFlight && relays) {
+                --relays;
+                continue;
+            }
             addHaul(h);
+        }
     for (const auto& c : s.contracts)
         if (c.phase == ContractPhase::Open && jobs.size() < 12)
             addSupply(c);
     return jobs;
 }
-} // namespace infinite
+} // namespace infinity

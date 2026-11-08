@@ -1,17 +1,17 @@
-# Volumetric weather and construction materials — Infinite 0.31
+# Volumetric weather and construction materials — Infinity 0.31
 
-This upgrade changes how the existing universe is presented. Baseline `726cda0` is retained by `checkpoint/infinite-0.30-before-volume-upgrade` and a frozen executable used for matched captures.
+This upgrade changes how the existing universe is presented. Baseline `726cda0` is retained by `checkpoint/infinity-0.30-before-volume-upgrade` and a frozen executable used for matched captures.
 
 ## Visible changes
 
-- **Fly-through clouds:** Hyperion's actual `cloudFragment` and `cloudResolveFragment` supply hollow-shell ray integration, billow and erosion, density extinction, self-shadow, powder scattering, silver edges, cirrus and spectral sheen. These replace the thin cloud-shell presentation in Hyperion and Hybrid modes. Infinite's existing weather determines coverage, storms and precipitation. Climate pressure, moisture, scale height, cloud altitude, wind and inherited phase constrain the optical volume.
+- **Fly-through clouds:** Hyperion's actual `cloudFragment` and `cloudResolveFragment` supply hollow-shell ray integration, billow and erosion, density extinction, self-shadow, powder scattering, silver edges, cirrus and spectral sheen. These replace the thin cloud-shell presentation in Hyperion and Hybrid modes. Infinity's existing weather determines coverage, storms and precipitation. Climate pressure, moisture, scale height, cloud altitude, wind and inherited phase constrain the optical volume.
 - **Cloud depth and composition:** real opaque depth stops each ray at terrain, buildings and other solid surfaces. Full-resolution occupied-ray rejection and four depth-matched taps reconstruct the lower-resolution cloud image without painting it across foreground silhouettes. Atmospheric perspective shortens through opaque banks, avoiding haze from the hidden ground being applied to foreground clouds. Clouds also occlude auroras.
 - **Cloud shadows:** the same weather snapshots project soft cloud cover along the existing stellar direction onto retained terrain and construction. Structural sunlight shadows remain independent and cached.
 - **Construction finishes:** streets previously used the generic craft material path. The adapter now supplies their actual construction role, planetary environment and stable metre coordinates. Roads, pads, concrete, ceramic, roofs and solar arrays get distinct responses. Filtered aggregate, pores, runoff, wear, joints and fasteners reuse the existing material image. Fixed lighting baked into surface-mesh colours is removed in the shader before directional sun and sky illuminate the same triangles. Glass retains reflected sky and optical room interiors.
 - **Wet surfaces:** Hyperion's `water.hpp` supplies filtered ripple normals on the existing warm, wet lowland coating. Unresolved ripples widen highlights instead of generating point glints. This does not add a sea plane, change terrain heights or alter landing/collision surfaces.
 - **Daylight and projection:** local atmospheric transmission now suppresses actual distant stellar and galaxy sprites as well as the spectral sky field. Local sun proxies remain visible. Planetary optics work with the ship and inspector cameras' actual fields of view. Shrinking views retain their existing material and atomic presentation.
 
-The reference is the user's sibling Hyperion game, including `src/flight/shaders.hpp`, `renderer.cpp`, `architecture.hpp`, `surface_detail.hpp` and `water.hpp`. [Reference hashes and preservation proof](graphics-0.31/preservation.json) record the reference revisions and 24 unchanged Infinite files covering generators, geometry, coordinates, histories, weather, cities, flight, reversed depth and window fitting. The shaders compile for Metal, GLSL and SPIR-V; Metal is runtime-tested.
+The reference is the user's sibling Hyperion game, including `src/flight/shaders.hpp`, `renderer.cpp`, `architecture.hpp`, `surface_detail.hpp` and `water.hpp`. [Reference hashes and preservation proof](graphics-0.31/preservation.json) record the reference revisions and 24 unchanged Infinity files covering generators, geometry, coordinates, histories, weather, cities, flight, reversed depth and window fitting. The shaders compile for Metal, GLSL and SPIR-V; Metal is runtime-tested.
 
 ## Bounded asynchronous work
 
@@ -35,7 +35,7 @@ The cloud fixture also captures an actual atmospheric world [from orbit](graphic
 
 ## Measured cost
 
-Six matched Hyperion terrain views at 1440 × 900 use the last ten fully settled frames with the complete material image published: 60 samples per run. The frozen 0.30 baseline was run twice. Runs are sequential, without a second Infinite instance or CPU test. [Exact sample frames and measurements](graphics-0.31/performance.json), [first baseline](graphics-0.31/baseline-first-frames.csv), [baseline repeat](graphics-0.31/baseline-repeat-frames.csv), [final frames](graphics-0.31/final-frames.csv).
+Six matched Hyperion terrain views at 1440 × 900 use the last ten fully settled frames with the complete material image published: 60 samples per run. The frozen 0.30 baseline was run twice. Runs are sequential, without a second Infinity instance or CPU test. [Exact sample frames and measurements](graphics-0.31/performance.json), [first baseline](graphics-0.31/baseline-first-frames.csv), [baseline repeat](graphics-0.31/baseline-repeat-frames.csv), [final frames](graphics-0.31/final-frames.csv).
 
 | Metric | 0.30 first / repeat | 0.31 final |
 | --- | ---: | ---: |

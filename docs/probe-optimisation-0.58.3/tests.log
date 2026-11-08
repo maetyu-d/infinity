@@ -1,0 +1,9 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 1: mining_probe_excavation_and_camera
+1/2 Test #1: mining_probe_excavation_and_camera .......   Passed    0.02 sec
+    Start 2: mining_probe_camera_lighting_and_blast
+2/2 Test #2: mining_probe_camera_lighting_and_blast ...   Passed    0.04 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =   0.07 sec

@@ -1,11 +1,11 @@
 #pragma once
-#include "infinite/Renderer.hpp"
-#include "infinite/StellarEvolution.hpp"
+#include "infinity/Renderer.hpp"
+#include "infinity/StellarEvolution.hpp"
 #include <filesystem>
 #include <iostream>
 #include <map>
 #include <sstream>
-namespace infinite {
+namespace infinity {
 class StellarDiversityValidation {
   public:
     StellarDiversityValidation(const Universe& u, Navigation& n, Pilot& p, ActivityState& a)
@@ -121,4 +121,4 @@ class StellarDiversityValidation {
         stable_ = 0;
     }
 };
-} // namespace infinite
+} // namespace infinity

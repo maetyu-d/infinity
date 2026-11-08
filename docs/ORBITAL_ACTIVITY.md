@@ -1,6 +1,6 @@
-# Orbital activity — Infinite 0.12
+# Orbital activity — Infinity 0.12
 
-Infinite now has a bounded activity simulation attached to its existing planets, alongside denser sampling of its existing stellar population. Checkpoint `c508f03` preserves the working 0.11 release. No world generator, hierarchical seed, spatial address, planetary orbit, geology field, rock, mineral or atomic lattice is replaced.
+Infinity now has a bounded activity simulation attached to its existing planets, alongside denser sampling of its existing stellar population. Checkpoint `c508f03` preserves the working 0.11 release. No world generator, hierarchical seed, spatial address, planetary orbit, geology field, rock, mineral or atomic lattice is replaced.
 
 ## Hyperion reference
 
@@ -13,7 +13,7 @@ The source reference is the user's native C++ Hyperion game, not Disney's render
 - `Hyperion/src/flight_game.cpp::Game::updateFlight` and its shipment views: stable contact identity, route progress, loading/unloading states and a separate scene description consumed by the renderer.
 - `Hyperion/src/flight_renderer.cpp`: the flattened contact scope, destination selection and contextual contact information.
 
-Infinite ports those presentation techniques to its own bgfx meshes, instancing, HDR/glow shaders and cockpit instruments. It does not import Hyperion's planets, compressed world coordinates, economy or combat simulation.
+Infinity ports those presentation techniques to its own bgfx meshes, instancing, HDR/glow shaders and cockpit instruments. It does not import Hyperion's planets, compressed world coordinates, economy or combat simulation.
 
 ## Activity and density
 
@@ -31,9 +31,9 @@ The left cockpit panel lists nearby traffic and its real loading, transit, patro
 
 Rendezvous targets carry a real reference frame, metre position, SI velocity and stand-off distance. Craft pursuit keeps at least 750 m of stand-off, leaving the ship clearly visible inside the ordinary planetary depth range. Harbour holding points stand four facility radii away. The ordinary ship controller applies finite thrust and braking, adding target velocity as feed-forward during pursuit. It never snaps the ship to a contact. The route remains valid when render units or reference-frame axes change. Hailing is local simulation dialogue; no external messages are sent.
 
-`activity-<seed>.txt` stores `INFINITE_ACTIVITY 1`, elapsed activity time, visibility preference and selected contact. It is saved atomically alongside the existing files. The activity clock advances while the app is open, including while landed or looking down to atoms; hidden activity still advances. Restart restores the clock and selected identity, with navigation assistance disarmed as before. Offline time is not fast-forwarded.
+`activity-<seed>.txt` stores `INFINITY_ACTIVITY 1`, elapsed activity time, visibility preference and selected contact. It is saved atomically alongside the existing files. The activity clock advances while the app is open, including while landed or looking down to atoms; hidden activity still advances. Restart restores the clock and selected identity, with navigation assistance disarmed as before. Offline time is not fast-forwarded.
 
-**F6** hides/shows the layer without changing the world or restarting its schedules. Macro/micro travel leaves the same actor state behind. Orbital facilities and vehicles do not shrink with the player; the microscope view continues to use Infinite's existing material and atomic generators.
+**F6** hides/shows the layer without changing the world or restarting its schedules. Macro/micro travel leaves the same actor state behind. Orbital facilities and vehicles do not shrink with the player; the microscope view continues to use Infinity's existing material and atomic generators.
 
 ## Rendering and scope
 

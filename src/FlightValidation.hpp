@@ -1,13 +1,13 @@
 #pragma once
-#include "infinite/Flight.hpp"
-#include "infinite/Renderer.hpp"
+#include "infinity/Flight.hpp"
+#include "infinity/Renderer.hpp"
 #include <cmath>
 #include <filesystem>
 #include <iostream>
 #include <set>
 #include <stdexcept>
 
-namespace infinite {
+namespace infinity {
 // Offline native-renderer fixture. Steering follows physical waypoints; the
 // production controller alone decides all reference-frame and scale changes.
 class FlightValidation {
@@ -101,4 +101,4 @@ class FlightValidation {
     unsigned inward_ = 0, outward_ = 0;
     bool returning_ = false, finished_ = false;
 };
-} // namespace infinite
+} // namespace infinity

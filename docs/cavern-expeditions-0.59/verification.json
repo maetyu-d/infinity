@@ -1,0 +1,11 @@
+{
+  "version": "0.59.0",
+  "build": "71",
+  "app_sha256": "9c91403aaf2c86ba98469c7059d2d0d65cd6b518258e243583c23e2fb8cba491",
+  "regression_tests": 60,
+  "focused_cavern_checks": 429,
+  "native_drill_views": 16,
+  "native_ui_layouts": 12,
+  "normal_startup_frames": 120,
+  "signature_verified": true
+}

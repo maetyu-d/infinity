@@ -1,4 +1,4 @@
-# Graphics presentation — Infinite 0.21
+# Graphics presentation — Infinity 0.21
 
 This release gives the existing universe stronger light, shadow and material separation. Cities cast real sunlight shadows onto their terrain, glass has a distinct reflection, and clouds have optical structure. The same planets, city layouts, rocks, minerals, atomic sites and flight state remain authoritative. **H** continues to select Original, Hyperion or Hybrid.
 
@@ -11,7 +11,7 @@ The reference remains the user's native game at `../Hyperion`. The relevant impl
 - `src/flight/architecture.hpp`: glass versus rough coatings, room lighting, prismatic paint, grazing reflection and material-scale surface patterns.
 - `src/flight/shaders.hpp::cloudFragment` and `worldFragment`: cloud billow/self-shadow, optical extinction, forward scattering and directional/sky illumination.
 
-Infinite translates these techniques to bgfx rather than importing Hyperion's world model. The depth-only D16 target and the use of the existing opaque depth image for receivers are backend adaptations. This pass does not implement Hyperion's complete volumetric weather system, interiors or terrain shadow caster cache.
+Infinity translates these techniques to bgfx rather than importing Hyperion's world model. The depth-only D16 target and the use of the existing opaque depth image for receivers are backend adaptations. This pass does not implement Hyperion's complete volumetric weather system, interiors or terrain shadow caster cache.
 
 ## Cached sunlight shadows
 
@@ -39,7 +39,7 @@ This uses the existing cloud draw, without a new framebuffer or cloud texture. T
 
 ## Preservation and validation
 
-`checkpoint/infinite-0.20-before-graphics` preserves the working baseline (`335d1ed`). [Source preservation](graphics-0.21/preservation.json) verifies 20 byte-identical generator, geometry, city, simulation and navigation source files. Procedural recipes and save schemas are unchanged.
+`checkpoint/infinity-0.20-before-graphics` preserves the working baseline (`335d1ed`). [Source preservation](graphics-0.21/preservation.json) verifies 20 byte-identical generator, geometry, city, simulation and navigation source files. Procedural recipes and save schemas are unchanged.
 
 The shading test now includes **800 camera-rebase/magnification comparisons** across both clip-depth conventions and texture origins, plus light-frame centring checks. Existing tests continue to cover immutable geometry, deterministic generation, city topology, all surface-site anchors, legacy universe records, landing and the galaxy-to-atomic round trip. Native captures assert matching camera, geometry and city-data fingerprints in all three modes. The surface image test also checks real shadow activation, Original exclusion, the fixed 8 MiB budget and cached reuse.
 
@@ -47,7 +47,7 @@ Metal is exercised on this Mac. Shader binaries are rebuilt for Metal, SPIR-V an
 
 ```sh
 python3 tools/compile_shaders.py --shaderc build/shader-tool/shaderc
-cmake -S . -B build -DINFINITE_GPU_TESTS=ON
+cmake -S . -B build -DINFINITY_GPU_TESTS=ON
 cmake --build build -j 4
 ctest --test-dir build --output-on-failure
 ```

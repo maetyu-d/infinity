@@ -1,8 +1,8 @@
-#include "infinite/Economy.hpp"
+#include "infinity/Economy.hpp"
 #include <algorithm>
 #include <cmath>
 #include <numeric>
-namespace infinite {
+namespace infinity {
 namespace {
 int64_t total(const Stock& s) {
     return std::accumulate(s.begin(), s.end(), int64_t(0));
@@ -126,21 +126,47 @@ void Economy::recoveryWork(std::span<unsigned> crewUsed) {
         }
     }
 }
-void Economy::recoveryOffers() {
+void Economy::recoveryOffers(std::span<const unsigned> stalledRecipes) {
     std::erase_if(recoveries_, [&](const auto& j) { return !active(j.phase) && tick_ > j.deadline + 24; });
     if (tick_ % 12)
         return;
-    auto count =
+    const auto count =
         std::count_if(recoveries_.begin(), recoveries_.end(), [](const auto& j) { return active(j.phase); });
+    auto restarts = std::count_if(recoveries_.begin(), recoveries_.end(), [](const auto& j) {
+        return active(j.phase) && j.kind == RecoveryKind::Restart;
+    });
+    auto ordinary = count - restarts;
+    std::vector<Stock> inbound;
+    if (restarts < 2 && std::any_of(stalledRecipes.begin(), stalledRecipes.end(), [](unsigned r) { return r; })) {
+        inbound.resize(sites_.size());
+        for (const auto& f : freight_)
+            if (f.disabledAt < 0 && f.phase != FreightPhase::Idle)
+                inbound[f.destination][size_t(f.good)] += f.kg;
+        for (const auto& h : hauls_)
+            if (h.phase <= HaulPhase::InTransit && h.deadline >= tick_)
+                inbound[h.destination][size_t(h.good)] += h.kg;
+        for (const auto& c : contracts_)
+            if (c.phase <= ContractPhase::Accepted && c.deadline >= tick_)
+                inbound[c.site][size_t(c.good)] += c.requested - c.delivered;
+    }
     unsigned offered = 0;
-    for (size_t i = 0; i < sites_.size() && count < 8 && offered < 2 && recoveries_.size() < 32; ++i) {
+    bool restartPosted = false;
+    for (size_t i = 0; i < sites_.size() && recoveries_.size() < 32; ++i) {
+        if ((ordinary >= 8 || offered >= 2) && (inbound.empty() || restarts >= 2 || restartPosted))
+            break;
         const auto& d = network_->sites[i];
         auto& s = sites_[i];
         if (d.orbital || !d.population)
             continue;
-        for (auto kind : {RecoveryKind::Relief, RecoveryKind::Maintenance}) {
-            if (count >= 8 || offered >= 2 || recoveries_.size() >= 32)
+        for (auto kind : {RecoveryKind::Relief, RecoveryKind::Maintenance, RecoveryKind::Restart}) {
+            if (recoveries_.size() >= 32)
                 break;
+            if (kind == RecoveryKind::Restart) {
+                if (inbound.empty() || restarts >= 2 || restartPosted || !stalledRecipes[i])
+                    continue;
+            } else if (ordinary >= 8 || offered >= 2) {
+                continue;
+            }
             if (std::any_of(recoveries_.begin(), recoveries_.end(),
                             [&](const auto& j) { return j.site == i && j.kind == kind && active(j.phase); }))
                 continue;
@@ -151,20 +177,17 @@ void Economy::recoveryOffers() {
             if (kind == RecoveryKind::Relief) {
                 bool emergency = s.health < 600;
                 for (auto good : {Good::Food, Good::Water, Good::Oxygen}) {
-                    if (good == Good::Oxygen && !d.sealed)
+                    const auto need = householdRation(d, good);
+                    if (!need)
                         continue;
                     const auto g = size_t(good);
-                    const auto need =
-                        std::max<int64_t>(1, int64_t(d.population) / (good == Good::Food    ? 500
-                                                                      : good == Good::Water ? 150
-                                                                                            : 250));
                     const auto free = s.stock[g] - s.reserved[g];
                     emergency |= free < need * 2;
                     j.required[g] = std::clamp<int64_t>(need * 12 - free, 0, 1000);
                 }
                 if (!emergency || !total(j.required))
                     continue;
-            } else {
+            } else if (kind == RecoveryKind::Maintenance) {
                 if ((s.condition >= 600 && s.outageUntil <= tick_) || d.workers < 2)
                     continue;
                 j.pairs = std::clamp((800 - std::min(s.condition, 800u) + 14) / 15, 8u, 50u);
@@ -172,6 +195,18 @@ void Economy::recoveryOffers() {
                 j.required[filters] = j.pairs;
                 j.outageUntil = s.outageUntil;
                 j.escrow = j.pairs * 100;
+            } else {
+                j.recipe = stalledRecipes[i];
+                const auto& recipe = productionRecipes()[j.recipe - 1];
+                bool uncovered = false;
+                for (size_t g = 0; g < goodCount; ++g) {
+                    const auto available = s.stock[g] - s.reserved[g] + inbound[i][g];
+                    uncovered |= recipe.inputs[g] > available;
+                    j.required[g] = std::max<int64_t>(0, recipe.inputs[g] * 6 - available);
+                }
+                if (!uncovered)
+                    continue;
+                j.deadline = tick_ + 144;
             }
             for (size_t g = 0; g < goodCount; ++g)
                 if (j.required[g]) {
@@ -183,10 +218,21 @@ void Economy::recoveryOffers() {
             j.id = nextRecovery_++;
             s.cash -= j.escrow;
             recoveries_.push_back(j);
-            ++count;
-            ++offered;
-            event(d.name +
-                  (kind == RecoveryKind::Relief ? " / FUNDED HOUSEHOLD RELIEF" : " / FUNDED PLANT RECOVERY"));
+            if (kind == RecoveryKind::Restart) {
+                ++restarts;
+                restartPosted = true;
+            } else {
+                ++ordinary;
+                ++offered;
+            }
+            const bool weatherDelay = kind == RecoveryKind::Relief && std::any_of(freight_.begin(), freight_.end(),
+                [&](const auto& f) { return f.disabledAt < 0 && f.destination == i &&
+                                           f.phase == FreightPhase::Holding && j.required[size_t(f.good)] > 0; }) &&
+                economicWeatherHold(d, tick_);
+            event(d.name + (weatherDelay ? " / FUNDED HOUSEHOLD RELIEF / WEATHER HOLD"
+                           : kind == RecoveryKind::Relief ? " / FUNDED HOUSEHOLD RELIEF"
+                           : kind == RecoveryKind::Maintenance ? " / FUNDED PLANT RECOVERY"
+                                                               : " / FUNDED PRODUCTION RESTART"));
         }
     }
 }
@@ -222,16 +268,18 @@ std::string Economy::recoveryCommand(const EconomicCommand& c, EconomyPlayer& pl
         j.delivered[g] += delivery[g];
         if (j.kind == RecoveryKind::Maintenance)
             s.reserved[g] += delivery[g];
+        else if (delivery[g])
+            incidentCargo(i, Good(g), delivery[g], true);
     }
     player.credits += payment;
     externalMoneyDelta_ -= payment;
     j.escrow -= payment;
-    auto& receipt =
-        recordOutcome(c, i, j.kind == RecoveryKind::Relief ? OutcomeKind::Relief : OutcomeKind::Maintenance,
-                      delivery, payment, before);
+    const auto outcome = j.kind == RecoveryKind::Relief ? OutcomeKind::Relief
+                       : j.kind == RecoveryKind::Maintenance ? OutcomeKind::Maintenance : OutcomeKind::Restart;
+    auto& receipt = recordOutcome(c, i, outcome, delivery, payment, before);
     j.outcome = receipt.id;
     if (j.delivered == j.required) {
-        j.phase = j.kind == RecoveryKind::Relief ? RecoveryPhase::Complete : RecoveryPhase::Working;
+        j.phase = j.kind == RecoveryKind::Maintenance ? RecoveryPhase::Working : RecoveryPhase::Complete;
         receipt.working = j.phase == RecoveryPhase::Working;
     }
     event(network_->sites[i].name + " / PLAYER RECOVERY DELIVERY");
@@ -251,7 +299,10 @@ void economicOutcomeView(MarketView& v, const EconomySnapshot& s, size_t selecte
     const auto pct = [](unsigned a, unsigned b) {
         return std::to_string(a / 10) + "% TO " + std::to_string(b / 10) + "%";
     };
-    v.detail = {std::string(o.kind == OutcomeKind::Relief        ? "HOUSEHOLD RELIEF"
+    v.detail = {std::string(o.kind == OutcomeKind::Restart       ? "PRODUCTION RESTART"
+                            : o.kind == OutcomeKind::Relay      ? "EMERGENCY FREIGHT RELAY"
+                            : o.kind == OutcomeKind::Rescue     ? "DISTRESS RESCUE / SURVIVOR HANDED OVER"
+                            : o.kind == OutcomeKind::Relief     ? "HOUSEHOLD RELIEF"
                             : o.kind == OutcomeKind::Maintenance ? "PLANT RECOVERY"
                             : o.kind == OutcomeKind::Bounty      ? "BOUNTY / WRECK SALVAGE"
                             : o.kind == OutcomeKind::Escort      ? "LANE ESCORT COMPLETE"
@@ -260,7 +311,13 @@ void economicOutcomeView(MarketView& v, const EconomySnapshot& s, size_t selecte
                                                                  : "MARKET SALE") +
                     " / ECON TICK " + std::to_string(o.tick),
                 "PAID " + std::to_string(o.payment / 100) + "." + (o.payment % 100 < 10 ? "0" : "") +
-                    std::to_string(o.payment % 100) + " CR / " + std::to_string(total(o.delivered)) + " KG"};
+                    std::to_string(o.payment % 100) + " CR"};
+    if (o.kind == OutcomeKind::Rescue) {
+        v.detail.push_back("SURVIVOR RECEIVED BY PORT CREW OFFICE");
+        v.summary = "UP-DOWN REPORTS / F4 TARGET THIS PORT / F5 OTHER MARKET PAGES";
+        return;
+    }
+    v.detail.back() += " / " + std::to_string(total(o.delivered)) + " KG";
     std::string goods = "CARGO: ";
     for (size_t g = 0; g < goodCount; ++g)
         if (o.delivered[g])
@@ -304,4 +361,4 @@ void economicOutcomeView(MarketView& v, const EconomySnapshot& s, size_t selecte
     v.summary = "UP-DOWN REPORTS / F4 TARGET THIS PORT / F5 OTHER MARKET PAGES";
     v.bottleneck = "BEFORE HANDOVER / LAST OBSERVATION / RESTOCKING DOES NOT INSTANTLY HEAL HOUSEHOLDS";
 }
-} // namespace infinite
+} // namespace infinity

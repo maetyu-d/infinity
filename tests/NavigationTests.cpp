@@ -1,10 +1,10 @@
-#include "infinite/Navigation.hpp"
+#include "infinity/Navigation.hpp"
 #include <iostream>
 #include <limits>
 #include <sstream>
 #include <stdexcept>
 
-using namespace infinite;
+using namespace infinity;
 static size_t checks = 0;
 static void check(bool value, const char* message) {
     ++checks;

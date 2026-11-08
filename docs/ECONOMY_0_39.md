@@ -1,4 +1,4 @@
-# Economic development — Infinite 0.39
+# Economic development — Infinity 0.39
 
 The next economic layer connects profitable trading to investment in existing settlements and orbital exchanges. Player-owned refits consume delivered materials, pay construction crews and improve real warehouse, utility or manufacturing capacity. A bounded trade board identifies affordable cargo routes from current inventories and prices.
 
@@ -76,7 +76,7 @@ The retained state grows by about 29 KiB per mutable network; the published rout
 
 The larger native economic workload completes **378 frames**, median **22.36 ms**, p95 **40.44 ms**, with **147.08 MB peak process RSS**. It includes streaming, nine readbacks, a window resize, purchases and worker catch-up, so it is not a matched rendering benchmark. [Baseline timing](economy-0.39/baseline.log), [final ledger timing](economy-0.39/economy-tests.log), [trade timing](economy-0.39/development-tests.log), [native profile](economy-0.39/native-frames.csv).
 
-The final build passes **38 core tests**, **64,610 existing economic checks**, **332 new development checks** and **four native gameplay/image checks**. The new native pages were visually inspected at wide and portrait dimensions. The built executable is packaged as **Infinite 0.39.0 / build 43**, ad-hoc signed and verified; all **28 Mach-O code/data sections** match the tested executable. [Build output](economy-0.39/build.log), [package verification](economy-0.39/package.json).
+The final build passes **38 core tests**, **64,610 existing economic checks**, **332 new development checks** and **four native gameplay/image checks**. The new native pages were visually inspected at wide and portrait dimensions. The built executable is packaged as **Infinity 0.39.0 / build 43**, ad-hoc signed and verified; all **28 Mach-O code/data sections** match the tested executable. [Build output](economy-0.39/build.log), [package verification](economy-0.39/package.json).
 
 ![Affordable trading opportunities](economy-0.39/market-routes.png)
 

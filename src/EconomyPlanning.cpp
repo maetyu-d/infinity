@@ -1,7 +1,18 @@
-#include "infinite/Economy.hpp"
+#include "infinity/Economy.hpp"
 #include <algorithm>
 #include <cmath>
-namespace infinite {
+#include <limits>
+namespace infinity {
+double economicFlightLeg(double metres, double cruiseSpeed, int64_t massKg, bool orbital) {
+    if (!std::isfinite(metres) || metres < 0 || !std::isfinite(cruiseSpeed) || cruiseSpeed < 1e6)
+        return std::numeric_limits<double>::infinity();
+    const double acceleration = 384000. / (12000. + massKg);
+    const double localDistance = std::min(metres, orbital ? 1e5 : 2e5);
+    const double local = 2 * std::sqrt(localDistance / acceleration);
+    const double far = std::max(0., metres - localDistance);
+    const double field = far > 0 ? far / cruiseSpeed + 2 * std::log1p(far / 1e5) / .32 : 0;
+    return local + field + (orbital ? 30. : 120.);
+}
 EconomicJobPlan economicPlanJob(const EconomySnapshot& s, const EconomySnapshot::Job& job,
                                 const MarketContext& context) {
     EconomicJobPlan p;
@@ -40,20 +51,12 @@ EconomicJobPlan economicPlanJob(const EconomySnapshot& s, const EconomySnapshot:
     // Flight-time estimate, not the NPC dispatch clock. Include acceleration,
     // field/proximity slow-down and port handling. It assumes N cruise between
     // ports; obstacles, alignment, weather and player choices can take longer.
-    const double acceleration = 384000. / (12000. + s.player.massKg() + incoming);
-    auto leg = [&](double distance, const EconomicSite& port) {
-        const double cap = context.cruiseSpeed;
-        const double localDistance = std::min(distance, port.orbital ? 1e5 : 2e5);
-        const double local = 2 * std::sqrt(localDistance / acceleration);
-        const double far = std::max(0., distance - localDistance);
-        const double field = far > 0 ? far / cap + 2 * std::log1p(far / 1e5) / .32 : 0;
-        return local + field + (port.orbital ? 30. : 120.);
-    };
-    p.seconds = leg(p.deliveryMetres, destination);
+    const auto mass = s.player.massKg() + incoming;
+    p.seconds = economicFlightLeg(p.deliveryMetres, context.cruiseSpeed, mass, destination.orbital);
     if (job.haul && !loaded)
-        p.seconds += leg(p.pickupMetres, source);
+        p.seconds += economicFlightLeg(p.pickupMetres, context.cruiseSpeed, mass, source.orbital);
     p.slackSeconds = (double(job.deadline) - double(s.tick)) * economyTickSeconds - p.seconds;
     p.timed = std::isfinite(p.seconds) && std::isfinite(p.slackSeconds);
     return p;
 }
-} // namespace infinite
+} // namespace infinity

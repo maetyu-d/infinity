@@ -1,18 +1,87 @@
-#include "infinite/Cockpit.hpp"
+#include "infinity/Cockpit.hpp"
+#include "infinity/CockpitContext.hpp"
+#include "infinity/SurfaceRecon.hpp"
 #include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <set>
 #include <stdexcept>
-using namespace infinite;
+using namespace infinity;
 static size_t checks = 0;
 static void check(bool value, const char* message) {
     ++checks;
     if (!value)
         throw std::runtime_error(message);
 }
+static bool containsText(const CockpitOverlay& h,std::string_view value){
+    return std::any_of(h.textRuns.begin(),h.textRuns.end(),[&](const auto& r){return r.value.find(value)!=r.value.npos;});
+}
+static void contextChecks(){
+    FlightInstruments t;t.hull=100;t.hullMetres=12;t.altitude=1630000;t.gear=true;
+    ShipCrew ship;const auto normal=ship.view();
+    check(cockpitAlerts(t,&normal,{}).empty(),"Normal crew status became a persistent warning");
+    check(cockpitFocus(t).mode==CockpitMode::Travel,"Gear alone enabled landing guidance in orbit");
+    t.warp=WarpPhase::Manual;t.landing.phase=LandingPhase::Align;t.docking.active=true;
+    check(cockpitFocus(t).mode==CockpitMode::Travel&&cockpitFocus(t).warp,"Warp must suppress stale landing and docking UI");
+    const auto warp=cockpitOverlay(t,16./9,"HYPERION",{});
+    check(!containsText(warp,"LANDING DIRECTOR")&&!containsText(warp,"DOCKING DIRECTOR")&&!containsText(warp,"ALTITUDE"),"Warp shows irrelevant surface guidance");
+    t={};t.altitude=12000;t.navigating=true;
+    check(cockpitFocus(t).mode==CockpitMode::Approach,"Approach has no cockpit context");
+    t.navigating=false;t.altitude=80;t.gear=true;
+    check(cockpitFocus(t).mode==CockpitMode::Landing,"Low gear approach has no landing director");
+    t.landed=true;t.landing.phase=LandingPhase::Landed;t.landing.settle=0;
+    check(cockpitFocus(t).mode==CockpitMode::Surface,"Landed ship did not become a surface workspace");
+    t={};t.docking.active=true;
+    check(cockpitFocus(t).mode==CockpitMode::Docking,"Docking director missing");
+    t={};t.hostileContacts=2;
+    check(cockpitFocus(t).mode==CockpitMode::Combat,"Threats do not enable tactical instruments");
+    t={};t.shrinking=true;t.hullMetres=1.2e-11;
+    check(cockpitFocus(t).mode==CockpitMode::Surface&&cockpitFocus(t).micro,"Atomic ship lost micro context");
+    t.phase="MINING PROBE CAMERA";
+    check(cockpitFocus(t).mode==CockpitMode::Probe,"Probe feed lost its dedicated context");
+    t={};t.destination="MOUNTAIN 2690 / J NAVIGATE";t.targetVisible=true;
+    check(cockpitDestination(t)=="MOUNTAIN 2690","Instruction suffix leaked into destination name");
+    t.hull=20;t.incomingFire=1;t.localMissile={0,0,-1};t.altitude=20;t.descent=100;t.stoppingDistance=500;
+    t.surfaceSeverity=.9;t.surfaceWarning="ELECTRICAL STORM";t.surfaceAction="LEAVE THE CELL";
+    auto alerts=cockpitAlerts(t,&normal,"SALE COMPLETE / 120 CR CREDITED");
+    check(alerts.front().key=="missile"&&alerts.front().level==CockpitAlertLevel::Critical,"A receipt masked a missile warning");
+    check(std::count_if(alerts.begin(),alerts.end(),[](const auto& a){return a.key=="terrain";})==1,"Terrain warning duplicated or disappeared");
+    check(std::any_of(alerts.begin(),alerts.end(),[](const auto& a){return a.detail=="SALE COMPLETE / 120 CR CREDITED";}),"Full transaction receipt was discarded");
+    const auto warning=cockpitOverlay(t,16./9,"HYPERION","SALE COMPLETE / 120 CR CREDITED",{}, {},false,1,nullptr,{1,0,0,0},&normal);
+    check(warning.popups.size()==1&&warning.popups.front().critical&&containsText(warning,"SALE COMPLETE"),"Alerts must share one prioritized channel without losing the receipt");
+
+    const auto system=Address{}.child(Kind::Galaxy,0).child(Kind::System,9);
+    std::vector<CelestialContact> worlds(20);std::vector<ActivityContact> actors(20);
+    for(unsigned i=0;i<20;++i){auto& w=worlds[i];w.address=system.child(Kind::Planet,i);w.label="PLANET "+std::to_string(i);w.distanceMetres=10000+i;w.life=LifeDetection::Detected;w.population=5000;
+        auto& a=actors[i];a.body.id={worlds[0].address,i};a.body.name="FREIGHTER "+std::to_string(i);a.body.status="LOADING";a.distance=1000+i;}
+    worlds[17].selected=true;actors[15].body.hostile=true;
+    const auto rows=cockpitSummaryRows(worlds,actors);
+    check(rows.size()==3&&!rows[0].activity&&rows[0].index==17&&rows[1].activity&&rows[1].index==15,"Summary must prioritize selected objects and hostiles using canonical indices");
+    t={};t.targetVisible=true;t.destination=worlds[17].label;t.localTarget={0,0,-1};t.range=10000;
+    for(double aspect:{1.,1.2,4./3,16./9,2.4})for(bool expanded:{false,true}){
+        t.contactsExpanded=expanded;const auto h=cockpitOverlay(t,aspect,"HYPERION",{},worlds,actors);
+        check(cockpitTextConflicts(h).empty(),"Contextual cockpit has overlapping text");
+        size_t picked=0;for(const auto& hit:h.contactHits){
+            picked+=bool(hit.world)||bool(hit.activity);
+            if(hit.world)check(std::any_of(worlds.begin(),worlds.end(),[&](const auto& w){return w.address==hit.world;}),"Drawn world hit lost its identity");
+            if(hit.activity)check(std::any_of(actors.begin(),actors.end(),[&](const auto& a){return a.body.id==hit.activity;}),"Drawn activity hit lost its identity");
+        }
+        check(picked==(expanded?14:3),"Hidden catalogue rows remain clickable, or visible rows have no hit target");
+        check(std::count_if(h.contactHits.begin(),h.contactHits.end(),[](const auto& hit){return hit.life;})==1,"Life targeting badge missing or duplicated");
+        check(!containsText(h,"WEAPON INHIBITED"),"Idle armament panel consumes the windscreen");
+        for(const auto& run:h.textRuns)check(run.bounds.x>=0&&run.bounds.y>=0&&run.bounds.x+run.bounds.w<=900*aspect+.01&&run.bounds.y+run.bounds.h<=900.01,"Contextual text outside screen");
+        if(!expanded){size_t chars=0;for(const auto& r:h.textRuns)chars+=r.value.size();check(chars<800,"Flight text was not substantially reduced");}
+    }
+    for(double aspect:{1.,16./9}){
+        const auto guide=cockpitOverlay(t,aspect,"HYPERION",{},worlds,actors,true);
+        check(containsText(guide,"SURFACE MAP / NAV ASSESS / ENGINEER WATCH")&&containsText(guide,"SHIFT-F5 NEXT / F4 ROUTE / HOLD 0 FIELD WORK"),"F1 hides the complete surface controls on a small screen");
+        check(containsText(guide,"HOSTILE / GUNNERS HOLD / DEFEND / FOCUS"),"Gunner fire policies are inaccessible from the guide");
+    }
+    for(unsigned i=0;i<20;++i)check(worlds[i].address==system.child(Kind::Planet,i)&&actors[i].body.id.slot==i,"UI reordered or regenerated canonical contacts");
+}
 int main() {
     try {
+        contextChecks();
         check(flightQuantity(.012, true) == "12.0 mm/s", "Millimetre units are ambiguous");
         check(flightQuantity(1.2e-11) == "12.0 pm", "Atomic hull units are wrong");
         check(flightQuantity(85000, true) == "85.0 km/s", "Flight speed units are wrong");

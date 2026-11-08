@@ -1,0 +1,3 @@
+SURFACE_MISSION_NATIVE stage=0 job=10500151877526703421 kg=40 terrain=5149391451716758143 gpu=179268 cpu_ms=13.2102
+SURFACE_MISSION_NATIVE stage=1 job=10500151877526703421 kg=40 terrain=5149391451716758143 gpu=179268 cpu_ms=14.5757
+PASS: native local supply card and exposure instruments; actual city and terrain, controlled ledger and exposure readouts

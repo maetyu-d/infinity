@@ -1,7 +1,7 @@
-#include "infinite/WindowLayout.hpp"
+#include "infinity/WindowLayout.hpp"
 #include <iostream>
 #include <stdexcept>
-using namespace infinite;
+using namespace infinity;
 static void check(bool value, const char* message) {
     if (!value)
         throw std::runtime_error(message);

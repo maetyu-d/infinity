@@ -1,7 +1,7 @@
-#include "infinite/Economy.hpp"
+#include "infinity/Economy.hpp"
 #include <algorithm>
 #include <numeric>
-namespace infinite {
+namespace infinity {
 namespace {
 int64_t total(const Stock& s) {
     return std::accumulate(s.begin(), s.end(), int64_t(0));
@@ -217,9 +217,10 @@ std::vector<EconomySnapshot::TradeRoute> economicTradeRoutes(const EconomySnapsh
                          [&](size_t a, size_t b) { return spots[a].sellCents > spots[b].sellCents; });
         sellers.resize(std::min<size_t>(4, sellers.size()));
         buyers.resize(std::min<size_t>(4, buyers.size()));
-        for (auto a : sellers)
-            for (auto b : buyers) {
-                if (a == b || spots[a].buyCents >= spots[b].sellCents)
+        for (auto b : buyers) {
+            std::array<size_t, 10> lane;
+            for (auto a : economicLaneSources(s.network->sites[b], g, sellers, lane)) {
+                if (a == b || !spots[a].available || spots[a].buyCents >= spots[b].sellCents)
                     continue;
                 int64_t high = std::min(
                     {maxShipPayloadKg, roomKg, roomLitres / goodInfo(Good(g)).litresPerKg, spots[a].available,
@@ -246,6 +247,7 @@ std::vector<EconomySnapshot::TradeRoute> economicTradeRoutes(const EconomySnapsh
                     {unsigned(a), unsigned(b), Good(g), low, cost, revenue,
                      glm::length(s.network->sites[a].systemMetres - s.network->sites[b].systemMetres)});
             }
+        }
     }
     std::stable_sort(result.begin(), result.end(), [](const auto& a, const auto& b) {
         const auto gainA = a.revenueCents - a.costCents, gainB = b.revenueCents - b.costCents;
@@ -255,4 +257,4 @@ std::vector<EconomySnapshot::TradeRoute> economicTradeRoutes(const EconomySnapsh
         result.resize(12);
     return result;
 }
-} // namespace infinite
+} // namespace infinity

@@ -1,10 +1,10 @@
-#include "infinite/Cockpit.hpp"
-#include "infinite/FireControl.hpp"
-#include "infinite/NpcCombat.hpp"
-#include "infinite/Recovery.hpp"
+#include "infinity/Cockpit.hpp"
+#include "infinity/FireControl.hpp"
+#include "infinity/NpcCombat.hpp"
+#include "infinity/Recovery.hpp"
 #include <iostream>
 #include <limits>
-using namespace infinite;
+using namespace infinity;
 namespace {
 unsigned checks = 0;
 void check(bool x, const char* why) {

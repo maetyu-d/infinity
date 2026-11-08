@@ -1,11 +1,13 @@
-#include "infinite/Economy.hpp"
+#include "infinity/SaveTag.hpp"
+#include "infinity/Economy.hpp"
+#include "infinity/CombatActors.hpp"
 #include <algorithm>
 #include <charconv>
 #include <iomanip>
 #include <numeric>
 #include <set>
 #include <sstream>
-namespace infinite {
+namespace infinity {
 namespace {
 Stock stock(std::initializer_list<std::pair<Good, int64_t>> list) {
     Stock s{};
@@ -19,7 +21,7 @@ const std::array<GoodInfo, goodCount> goods{
      {"POLYMERS", 180, 2},     {"BIOMASS", 90, 3},        {"FOOD", 280, 2},         {"MEDICINE", 1800, 3},
      {"ELECTRONICS", 2300, 2}, {"MACHINERY", 1600, 2},    {"PROPELLANT", 220, 5},   {"FILTERS", 900, 8},
      {"TOOLS", 700, 2},        {"HABITAT PARTS", 650, 3}, {"INSTRUMENTS", 4200, 3}, {"RECYCLATE", 15, 3}}};
-const std::array<ProductionRecipe, 18> recipes{
+const std::array<ProductionRecipe, 21> recipes{
     {{"Ice extraction", {}, stock({{Good::Ice, 30}}), 0, 2, 2},
      {"Metal extraction", {}, stock({{Good::Ore, 20}, {Good::Silicate, 10}, {Good::Carbon, 3}}), 0, 3, 3},
      {"Ice processing", stock({{Good::Ice, 10}}), stock({{Good::Water, 10}}), 0, 2, 2},
@@ -47,7 +49,10 @@ const std::array<ProductionRecipe, 18> recipes{
      {"Scientific instruments", stock({{Good::Silicon, 3}, {Good::Electronics, 3}, {Good::Alloy, 2}}),
       stock({{Good::Instruments, 8}}), 0, 4, 4},
      {"Recycling", stock({{Good::Recyclate, 10}}),
-      stock({{Good::Alloy, 3}, {Good::Silicate, 3}, {Good::Carbon, 1}}), 3, 2, 2}}};
+      stock({{Good::Alloy, 3}, {Good::Silicate, 3}, {Good::Carbon, 1}}), 3, 2, 2},
+     {"Local ore mining", {}, stock({{Good::Ore, 24}}), 0, 3, 3},
+     {"Silicate quarry", {}, stock({{Good::Silicate, 18}}), 0, 2, 2},
+     {"Groundwater works", {}, stock({{Good::Water, 18}}), 0, 2, 2}}};
 int64_t total(const Stock& s) {
     return std::accumulate(s.begin(), s.end(), int64_t(0));
 }
@@ -125,7 +130,7 @@ int64_t EconomyPlayer::volumeLitres() const {
 }
 std::string EconomyPlayer::serialize() const {
     std::ostringstream o;
-    o << "INFINITE_WALLET 9 " << credits << ' ' << lastCommand;
+    o << "INFINITY_WALLET 9 " << credits << ' ' << lastCommand;
     writeStock(o, cargo);
     o << ' ' << deliveries << ' ' << lateDeliveries << ' ' << returnedHauls << ' ' << freightEarnings << ' '
       << bool(haul);
@@ -161,7 +166,7 @@ bool EconomyPlayer::restore(std::string_view text) {
     std::istringstream in{std::string(text)};
     std::string h;
     unsigned v;
-    if (!(in >> h >> v >> p.credits >> p.lastCommand) || h != "INFINITE_WALLET" || (v < 1 || v > 9) ||
+    if (!(in >> h >> v >> p.credits >> p.lastCommand) || !matchesSaveTag(h, "INFINITY_WALLET") || (v < 1 || v > 9) ||
         p.credits < 0 || p.credits > 1000000000000000LL || !readStock(in, p.cargo))
         return false;
     if (v >= 2) {
@@ -281,8 +286,8 @@ Economy::Economy(std::shared_ptr<const EconomicNetwork> n) : network_(std::move(
     for (const auto& d : network_->sites) {
         EconomicSiteState s;
         s.stock = d.initial;
-        s.cash = 2000000 + int64_t(d.population) * 150;
-        s.householdCash = int64_t(d.population) * 500;
+        s.cash = economicInitialFirmCents + int64_t(d.population) * economicFirmPerResidentCents;
+        s.householdCash = int64_t(d.population) * economicHouseholdPerResidentCents;
         s.operatingBaseline = s.cash;
         sites_.push_back(std::move(s));
     }
@@ -324,7 +329,7 @@ void Economy::outage(const ActivityId& id, uint64_t until) {
         event(network_->sites[*i].name + " / production outage");
     }
 }
-void Economy::production(size_t i) {
+unsigned Economy::production(size_t i) {
     const auto& d = network_->sites[i];
     auto& s = sites_[i];
     auto consume = [&](Good good, int64_t wanted, bool paid) {
@@ -343,11 +348,11 @@ void Economy::production(size_t i) {
     };
     bool fed = true;
     if (d.population) {
-        auto need = std::max<int64_t>(1, int64_t(d.population) / 500);
+        auto need = householdRation(d, Good::Food);
         fed = consume(Good::Food, need, true) == need;
-        fed &= consume(Good::Water, std::max<int64_t>(1, int64_t(d.population) / 150), true) > 0;
-        if (d.sealed)
-            fed &= consume(Good::Oxygen, std::max<int64_t>(1, int64_t(d.population) / 250), true) > 0;
+        fed &= consume(Good::Water, householdRation(d, Good::Water), true) > 0;
+        if (const auto oxygen = householdRation(d, Good::Oxygen))
+            fed &= consume(Good::Oxygen, oxygen, true) > 0;
         s.health = unsigned(std::clamp(int(s.health) + (fed ? 2 : -8), 200, 1000));
         if (tick_ % 12 == 0)
             consume(Good::Medicine, std::max<int64_t>(1, int64_t(d.population) / 5000), true);
@@ -378,7 +383,8 @@ void Economy::production(size_t i) {
                    : s.outageUntil > tick_ ? "PLANT OFFLINE"
                                            : "OPERATING";
     if (d.orbital || s.outageUntil > tick_)
-        return;
+        return 0;
+    unsigned stalledRecipe = 0;
     int64_t workers = int64_t(d.workers) * s.health / 1000 *
                       (4 + s.modules[size_t(FacilityModule::Automation)]) / 4,
             power = economicPower(d, s, tick_);
@@ -419,7 +425,7 @@ void Economy::production(size_t i) {
                     shortage = Good(g);
             }
             if (extracting && recipe.outputs[g]) {
-                auto available = (d.reserves[g] - s.extracted[g]) / recipe.outputs[g];
+                auto available = std::max<int64_t>(0, d.reserves[g] - s.extracted[g]) / recipe.outputs[g];
                 batches = std::min(batches, available);
                 if (!available && !shortage) {
                     shortage = Good(g);
@@ -431,6 +437,8 @@ void Economy::production(size_t i) {
         if (delta > 0)
             batches = std::min(batches, (economicCapacity(d, s) - total(s.stock)) / delta);
         if (batches <= 0) {
+            if (!stalledRecipe && shortage && !depleted)
+                stalledRecipe = r + 1;
             if (s.bottleneck == "OPERATING")
                 s.bottleneck = std::string(recipe.name) + " / " +
                                (shortage ? std::string(depleted ? "DEPLETED " : "MISSING ") +
@@ -453,6 +461,7 @@ void Economy::production(size_t i) {
         workers -= batches * recipe.workers;
         power -= batches * recipe.power;
     }
+    return stalledRecipe;
 }
 uint64_t Economy::travelTicks(size_t a, size_t b) const {
     const double distance = glm::length(network_->sites[a].systemMetres - network_->sites[b].systemMetres);
@@ -461,6 +470,16 @@ uint64_t Economy::travelTicks(size_t a, size_t b) const {
 void Economy::logistics() {
     if (sites_.empty())
         return;
+    std::vector<int8_t> weather;
+    const auto weatherHold = [&](size_t site) {
+        if (network_->sites[site].orbital)
+            return false;
+        if (weather.empty())
+            weather.resize(sites_.size(), -1);
+        if (weather[site] < 0)
+            weather[site] = economicWeatherHold(network_->sites[site], tick_);
+        return weather[site] != 0;
+    };
     for (auto& f : freight_) {
         if (f.disabledAt >= 0)
             continue;
@@ -492,11 +511,14 @@ void Economy::logistics() {
             f.endTick = tick_ + travelTicks(f.source, f.destination);
         }
         if ((f.phase == FreightPhase::Transit && tick_ >= f.endTick) || f.phase == FreightPhase::Holding) {
-            if (economicCapacity(network_->sites[f.destination], to) - total(to.stock) < f.kg) {
+            if (weatherHold(f.destination) || economicCapacity(network_->sites[f.destination], to) - total(to.stock) < f.kg) {
+                if (f.phase != FreightPhase::Holding && weatherHold(f.destination))
+                    event(network_->sites[f.destination].name + " / LANDING DELAY / CARGO IN WEATHER HOLD");
                 f.phase = FreightPhase::Holding;
                 continue;
             }
             to.stock[g] += f.kg;
+            incidentCargo(f.destination, f.good, f.kg, false);
             f.location = f.destination;
             f.trips++;
             event(network_->sites[f.destination].name + " / RECEIVED " + std::to_string(f.kg) + " KG " +
@@ -514,7 +536,7 @@ void Economy::logistics() {
         if (f.phase != FreightPhase::Idle && f.disabledAt < 0)
             inbound[f.destination][size_t(f.good)] += f.kg;
     for (const auto& h : hauls_)
-        if (tick_ <= h.deadline &&
+        if (tick_ <= h.deadline && !(h.interruptedFlight && h.phase == HaulPhase::Open) &&
             (h.phase == HaulPhase::Open || h.phase == HaulPhase::Reserved || h.phase == HaulPhase::InTransit))
             inbound[h.destination][size_t(h.good)] += h.kg;
     for (size_t g = 0; g < goodCount; g++) {
@@ -541,7 +563,8 @@ void Economy::logistics() {
                 auto need = network_->sites[b].target[g] - sites_[b].stock[g] - inbound[b][g];
                 if (need < 10)
                     continue;
-                for (size_t a : suppliers[g]) {
+                std::array<size_t, 10> lane;
+                for (size_t a : economicLaneSources(network_->sites[b], g, suppliers[g], lane)) {
                     if (a == b)
                         continue;
                     auto surplus = sites_[a].stock[g] - sites_[a].reserved[g] - network_->sites[a].target[g];
@@ -553,8 +576,8 @@ void Economy::logistics() {
                                   sites_[b].cash / (ask + shipping)});
                     if (n < 10)
                         continue;
-                    const double score =
-                        double(need) * shipping / (1 + travelTicks(f.location, a) + travelTicks(a, b));
+                    const double score = double(need) * shipping * economicLaneWeight(network_->sites[b], g, a) /
+                                         (1 + travelTicks(f.location, a) + travelTicks(a, b));
                     if (score > best) {
                         best = score;
                         source = a;
@@ -601,7 +624,9 @@ void Economy::offers() {
         return;
     for (size_t i = 0; i < sites_.size(); i++) {
         if (std::any_of(recoveries_.begin(), recoveries_.end(),
-                        [&](const auto& j) { return j.site == i && j.phase <= RecoveryPhase::Working; }))
+                        [&](const auto& j) {
+                            return j.site == i && j.phase <= RecoveryPhase::Working && j.kind != RecoveryKind::Restart;
+                        }))
             continue;
         if (std::any_of(contracts_.begin(), contracts_.end(), [&](const auto& c) {
                 return c.site == i && (c.phase == ContractPhase::Open || c.phase == ContractPhase::Accepted);
@@ -609,7 +634,12 @@ void Economy::offers() {
             continue;
         size_t selected = 0;
         int64_t need = 0;
+        const auto restart = std::find_if(recoveries_.begin(), recoveries_.end(), [&](const auto& j) {
+            return j.site == i && j.phase <= RecoveryPhase::Working && j.kind == RecoveryKind::Restart;
+        });
         for (size_t g = 0; g < goodCount; g++) {
+            if (restart != recoveries_.end() && restart->required[g] > restart->delivered[g])
+                continue;
             auto missing = network_->sites[i].target[g] - sites_[i].stock[g];
             if (missing > need) {
                 need = missing;
@@ -640,8 +670,9 @@ void Economy::offers() {
 }
 void Economy::step() {
     tick_++;
+    std::array<unsigned, 4096> stalledRecipes;
     for (size_t i = 0; i < sites_.size(); i++)
-        production(i);
+        stalledRecipes[i] = production(i);
     std::array<unsigned, 4096> crewUsed{};
     recoveryWork(std::span(crewUsed).first(sites_.size()));
     logistics();
@@ -665,16 +696,63 @@ void Economy::step() {
         treasury_ += surplus - distributed;
     }
     development(std::span(crewUsed).first(sites_.size()));
-    recoveryOffers();
+    recoveryOffers(std::span(stalledRecipes).first(sites_.size()));
     offers();
     haulOffers();
     combatOffers();
+    expireDistressCalls();
+    observeIncidents();
     observeOutcomes();
+}
+std::optional<std::pair<Good, int64_t>> raidCargoDemand(const EconomyPlayer& player) {
+    std::optional<std::pair<Good, int64_t>> offer;
+    int64_t best = 1799;
+    for (size_t g = 0; g < goodCount; ++g) {
+        const auto good = Good(g);
+        const auto kg = player.availableCargo(good);
+        const auto value = kg * goodInfo(good).baseCents;
+        if (value > best) {
+            offer = {{good, std::clamp<int64_t>(kg / 4, 1, 30)}};
+            best = value;
+        }
+    }
+    return offer;
 }
 std::string Economy::execute(const EconomicCommand& c, EconomyPlayer& player) {
     if (!c.sequence || c.sequence <= player.lastCommand)
         return "ORDER ALREADY PROCESSED";
     player.lastCommand = c.sequence;
+    if (c.action == EconomicAction::RaiderTribute) {
+        const auto role = raiderRole(c.port);
+        if (!c.combatPresent || (role != RaiderRole::Cargo && role != RaiderRole::Hunter) ||
+            c.port.home.parent() != network_->system || !std::isfinite(c.targetDistance) ||
+            c.targetDistance < 0 || c.targetDistance > 3500 || !std::isfinite(c.impactSeconds) ||
+            c.impactSeconds < 0 || c.impactSeconds > (tick_ + 2) * economyTickSeconds ||
+            !std::isfinite(c.workSeconds) || c.impactSeconds >= c.workSeconds)
+            return "RAIDER DEMAND EXPIRED";
+        if (!reconcilePlayer(player))
+            return "HAUL SAVE MISMATCH / TRADING PAUSED";
+        const bool hunter = role == RaiderRole::Hunter;
+        if (hunter) {
+            if (!c.wreck || !isRaider(c.wreck->id) || c.wreck->id.slot == factionHunterSlot ||
+                c.wreck->id.home != c.port.home || !std::isfinite(c.wreck->hitSeconds) ||
+                c.impactSeconds < c.wreck->hitSeconds || c.impactSeconds - c.wreck->hitSeconds >= 600 ||
+                !std::isfinite(c.wreck->hull) || c.wreck->hull < 50 || c.wreck->hull >= 100 ||
+                c.limitCents != 1200 + int64_t((100 - c.wreck->hull) * 80))
+                return "HUNTER DEMAND CHANGED";
+            if (player.credits < c.limitCents)
+                return "INSUFFICIENT CREDITS / HUNTER STILL HOSTILE";
+            player.credits -= c.limitCents;
+        } else {
+            const auto offer = raidCargoDemand(player);
+            if (!offer || offer->first != c.good || offer->second != c.kg)
+                return "CARGO CHANGED / DEMAND STILL OPEN";
+            player.cargo[size_t(c.good)] -= c.kg;
+        }
+        event("RAIDER TRUCE " + c.port.str() + " " + std::to_string(c.impactSeconds) + " " +
+              std::to_string(c.impactSeconds + (hunter ? 600 : 150)));
+        return hunter ? "RESTITUTION PAID / HUNTER DISENGAGING" : "CARGO SURRENDERED / RAIDER DISENGAGING";
+    }
     if(c.action>=EconomicAction::RegisterWreck && c.action<=EconomicAction::DisembarkRescued) return wreckCommand(c,player);
     if (c.action == EconomicAction::DisableVessel)
         return disableVessel(c);
@@ -732,6 +810,7 @@ std::string Economy::execute(const EconomicCommand& c, EconomyPlayer& player) {
         it->delivered += n;
         // Player transfers are accounted separately from industrial conversion.
         s.imported[g] += n;
+        incidentCargo(i, it->good, n, true);
         externalMoneyDelta_ -= payment;
         if (it->delivered == it->requested)
             it->phase = ContractPhase::Complete;
@@ -774,6 +853,7 @@ std::string Economy::execute(const EconomicCommand& c, EconomyPlayer& player) {
     s.cash -= q.sellCents;
     player.credits += q.sellCents;
     s.imported[g] += c.kg;
+    incidentCargo(i, c.good, c.kg, true);
     externalMoneyDelta_ -= q.sellCents;
     Stock delivery{};
     delivery[g] = c.kg;
@@ -794,6 +874,8 @@ int64_t Economy::moneyTotal() const {
         n += j.escrow;
     for (const auto& c : combatContracts_)
         n += c.escrow;
+    for (const auto& wreck : wrecks_)
+        n += wreck.rescueEscrow;
     return n;
 }
 Stock Economy::inventoryTotal() const {
@@ -810,6 +892,7 @@ Stock Economy::inventoryTotal() const {
     return n;
 }
 Stock Economy::initialTotal() const {
+    if(network_->legacyFingerprint!=network_->fingerprint&&network_->legacyEndowmentMoney>0&&endowmentMoney_==network_->legacyEndowmentMoney)return network_->legacyInitialTotal;
     Stock n{};
     for (const auto& s : network_->sites)
         for (size_t g = 0; g < goodCount; g++)
@@ -831,6 +914,7 @@ size_t Economy::residentBytes() const {
             crewBytes += m.name.capacity();
     }
     return network_->residentBytes() + sites_.capacity() * sizeof(EconomicSiteState) +
+           incidents_.capacity() * sizeof(FreightIncident) +
            freight_.capacity() * sizeof(EconomicFreight) + contracts_.capacity() * sizeof(EconomicContract) +
            events_.capacity() * sizeof(EconomicEvent) + hauls_.capacity() * sizeof(HaulContract) +
            recoveries_.capacity() * sizeof(RecoveryJob) + outcomes_.capacity() * sizeof(EconomicOutcome) +
@@ -838,7 +922,7 @@ size_t Economy::residentBytes() const {
 }
 std::string Economy::serialize() const {
     std::ostringstream o;
-    o << "INFINITE_ECONOMY 9 " << network_->fingerprint << ' ' << tick_ << ' ' << nextContract_ << ' '
+    o << "INFINITY_ECONOMY 11 " << network_->fingerprint << ' ' << tick_ << ' ' << nextContract_ << ' '
       << treasury_ << ' ' << carrierCash_ << ' ' << externalMoneyDelta_ << ' ' << sites_.size() << '\n';
     for (const auto& s : sites_) {
         o << s.cash << ' ' << s.householdCash << ' ' << s.condition << ' ' << s.health << ' '
@@ -874,7 +958,7 @@ std::string Economy::serialize() const {
     for (const auto& h : hauls_)
         o << h.id << ' ' << h.deadline << ' ' << h.source << ' ' << h.destination << ' ' << unsigned(h.good)
           << ' ' << h.kg << ' ' << h.cost << ' ' << h.fee << ' ' << h.escrow << ' ' << unsigned(h.phase)
-          << '\n';
+          << ' ' << h.interruptedFlight << '\n';
     writeRecovery(o);
     o << "WRECKS "
       << std::count_if(freight_.begin(), freight_.end(), [](const auto& f) { return f.disabledAt >= 0; })
@@ -886,6 +970,7 @@ std::string Economy::serialize() const {
     writeCrewMarkets(o);
     writeCombat(o);
     writeWrecks(o);
+    writeIncidents(o);
     return o.str();
 }
 bool Economy::restore(std::string_view text) {
@@ -897,8 +982,8 @@ bool Economy::restore(std::string_view text) {
     size_t count;
     if (!(in >> header >> version >> fingerprint >> candidate.tick_ >> candidate.nextContract_ >>
           candidate.treasury_ >> candidate.carrierCash_ >> candidate.externalMoneyDelta_ >> count) ||
-        header != "INFINITE_ECONOMY" || (version < 1 || version > 9) ||
-        fingerprint != network_->fingerprint || count != sites_.size() || candidate.treasury_ < 0 ||
+        !matchesSaveTag(header, "INFINITY_ECONOMY") || (version < 1 || version > 11) ||
+        (fingerprint != network_->fingerprint && (!network_->legacyFingerprint || fingerprint != network_->legacyFingerprint)) || count != sites_.size() || candidate.treasury_ < 0 ||
         candidate.carrierCash_ < 0 || candidate.treasury_ > 1000000000000000LL ||
         candidate.carrierCash_ > 1000000000000000LL || candidate.externalMoneyDelta_ < -1000000000000000LL ||
         candidate.externalMoneyDelta_ > 1000000000000000LL || candidate.tick_ > 1000000000000ULL)
@@ -1010,6 +1095,8 @@ bool Economy::restore(std::string_view text) {
                 return false;
             h.good = Good(good);
             h.phase = HaulPhase(phase);
+            if (version >= 10 && (!(in >> h.interruptedFlight) || h.interruptedFlight > candidate.freight_.size()))
+                return false;
             const auto expected = h.phase == HaulPhase::Open || h.phase == HaulPhase::Reserved ||
                                           h.phase == HaulPhase::InTransit
                                       ? h.cost + h.fee
@@ -1024,7 +1111,7 @@ bool Economy::restore(std::string_view text) {
             }) > 1)
             return false;
     }
-    if (version >= 5 && !candidate.readRecovery(in))
+    if (version >= 5 && !candidate.readRecovery(in, version >= 10))
         return false;
     if (version >= 6) {
         std::string tag;
@@ -1047,7 +1134,28 @@ bool Economy::restore(std::string_view text) {
         return false;
     if (version >= 8 && !candidate.readCombat(in,version>=9))
         return false;
-    if(version>=9 && !candidate.readWrecks(in))return false;
+    if (version >= 9 && !candidate.readWrecks(in, version >= 10))
+        return false;
+    if (version >= 11) {
+        if (!candidate.readIncidents(in))
+            return false;
+    } else {
+        // Older ledgers retain the cargo still aboard, with no historical incident measurements.
+        for (size_t i = 0; i < candidate.freight_.size(); ++i) {
+            const auto& f = candidate.freight_[i];
+            if (f.disabledAt >= 0 && candidate.tick_ * economyTickSeconds - f.disabledAt <= 720)
+                candidate.openIncident(unsigned(i + 1));
+        }
+    }
+    std::set<unsigned> relayed;
+    for (const auto& h : candidate.hauls_) {
+        if (!h.interruptedFlight)
+            continue;
+        const auto& f = candidate.freight_[h.interruptedFlight - 1];
+        if (f.disabledAt < 0 || !cargoOnboard(f.phase) || f.destination != h.destination || f.good != h.good ||
+            !relayed.insert(h.interruptedFlight).second)
+            return false;
+    }
     in >> std::ws;
     if (!in.eof())
         return false;
@@ -1071,6 +1179,17 @@ bool Economy::restore(std::string_view text) {
             if (reserved != candidate.sites_[i].reserved[g])
                 return false;
         }
+    // Existing ledgers retain the declared material and monetary endowment of
+    // their descriptor epoch. Derive it from conserved saved accounts, accepting
+    // only the current canonical epoch or the explicitly retained predecessor.
+    auto impliedGoods=candidate.inventoryTotal();const auto delta=candidate.externalGoodsDelta();
+    for(size_t g=0;g<goodCount;++g)impliedGoods[g]-=delta[g];
+    const auto impliedMoney=candidate.moneyTotal()-candidate.externalMoneyDelta_;
+    const bool currentBasis=impliedGoods==candidate.initialTotal()&&impliedMoney==candidate.endowmentMoney_;
+    const bool legacyBasis=network_->legacyFingerprint&&network_->legacyFingerprint!=network_->fingerprint&&
+        network_->legacyEndowmentMoney>0&&impliedGoods==network_->legacyInitialTotal&&impliedMoney==network_->legacyEndowmentMoney;
+    if(!currentBasis&&!legacyBasis)return false;
+    if(legacyBasis)candidate.endowmentMoney_=network_->legacyEndowmentMoney;
     if (candidate.inventoryTotal() != ([&] {
             auto a = candidate.initialTotal(), d = candidate.externalGoodsDelta();
             for (size_t g = 0; g < goodCount; g++)
@@ -1084,7 +1203,7 @@ bool Economy::restore(std::string_view text) {
         if (total(candidate.sites_[i].stock) > economicCapacity(network_->sites[i], candidate.sites_[i]))
             return false;
         for (size_t g = 0; g < goodCount; g++)
-            if (candidate.sites_[i].extracted[g] > network_->sites[i].reserves[g])
+            if (candidate.sites_[i].extracted[g] > std::max(network_->sites[i].reserves[g], network_->sites[i].originalReserves[g]))
                 return false;
     }
     *this = std::move(candidate);
@@ -1136,6 +1255,12 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
     v.capacityLitres = s->player.capacityLitres;
     v.tick = s->tick;
     v.message = s->message;
+    if (page == MarketPage::Incidents) {
+        v.ready = s->network != nullptr;
+        if (v.ready)
+            economicIncidentView(v, *s, selected, context);
+        return v;
+    }
     if(page==MarketPage::Expeditions){expeditionMarketView(v,*s,selected);return v;}
     if(page==MarketPage::Journal){explorationMarketView(v,*s,true,selected,context.weaponMount);return v;}
     if (s->player.combatJob)
@@ -1158,6 +1283,14 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
     v.site = s->network->sites[*i].name;
     v.role = s->network->sites[*i].role;
     v.bottleneck = s->sites[*i].bottleneck;
+    if (page == MarketPage::Goods && !s->network->sites[*i].localWorks.empty()) {
+        const auto& d = s->network->sites[*i];
+        const auto g = std::min(selected, goodCount - 1);
+        std::string local = d.localWorks;
+        if (d.lanes[g][0])
+            local += " / SUPPLY LANE " + s->network->sites[d.lanes[g][0] - 1].name;
+        v.bottleneck = std::move(local) + " / " + v.bottleneck;
+    }
     if (s->catchingUp) {
         v.connected = false;
         v.message = "ECONOMY CATCHING UP / TRADING PAUSED";
@@ -1187,7 +1320,14 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
             const auto& spec = weaponSpec(level);
             auto q = economicWeaponQuote(*s, *i, level, false, v.weaponMount);
             v.detail.push_back(std::string(spec.name) + (fitted == level ? " / FITTED" : ""));
-            v.detail.push_back("DAMAGE " + std::to_string(int(spec.damage)) + " / RANGE " +
+            if (level == pointDefence)
+                v.detail.push_back("780 M / CREW INTERCEPTS MISSILES IN TURRET ARC");
+            else if (level == missileLauncher)
+                v.detail.push_back("3.5 KM LOCK / GUIDED FLIGHT / 38 HULL DAMAGE");
+            else if (level == ionDisruptor)
+                v.detail.push_back("1.4 KM / 22S RAIDER DRIVE OUTAGE / NO HULL DAMAGE");
+            else
+                v.detail.push_back("DAMAGE " + std::to_string(int(spec.damage)) + " / RANGE " +
                                std::to_string(int(spec.rangeMetres / 1000)) + " KM / " +
                                std::to_string(int(1 / spec.interval * 10) / 10.) + " SHOTS/S");
             v.detail.push_back("FIT / UPGRADE " + money(q.totalCents()) + " CR / PORT PARTS AND CREW");
@@ -1203,7 +1343,7 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
         v.summary = fitted ? std::string(weaponMountName(v.weaponMount)) + " / " +
                                  std::string(weaponSpec(fitted).name) + " / BUYBACK " +
                                  money(sale.sellCents) + " CR"
-                           : std::string(weaponMountName(v.weaponMount)) + " EMPTY / SELECT A LASER TO BUY";
+                           : std::string(weaponMountName(v.weaponMount)) + " EMPTY / SELECT A WEAPON TO BUY";
         v.bottleneck =
             "ENTER FITS SELECTED GRADE / BACKSPACE SELLS CURRENT WEAPON / PHYSICAL TRADE LINK REQUIRED";
         return v;
@@ -1264,6 +1404,15 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
                      std::to_string(s->player.combatEarnings / 100) + "CR";
         if (!s->jobs.empty()) {
             const auto& job = s->jobs[v.selected];
+            if (job.distress) {
+                const bool aboard = job.action == EconomicAction::DisembarkRescued;
+                v.plan = aboard ? "F4 ISSUING PORT / BERTH OR LAND / ENTER HANDOVER"
+                                : "F4 DISABLED SHIP / MATCH VELOCITY / FREE ONE CREW BERTH";
+                v.planTiming = aboard ? "REWARD RESERVED AT THE ISSUING PORT"
+                                      : "FULL SIZE / WITHIN 120 M OF HULL / BELOW 3 M/S / HOLD 0";
+                v.bottleneck = "RESCUE / LIVE SURVIVOR SIGNAL / FUNDED BY THE LOCAL PORT";
+                return v;
+            }
             if (job.combat) {
                 v.plan = job.title;
                 v.planTiming = job.route;
@@ -1315,8 +1464,12 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
             v.detail.push_back(std::to_string(r.kg) + " KG " + std::string(goodInfo(r.good).name) +
                                " / COST " + std::to_string(r.costCents / 100) + " CR / MARGIN +" +
                                std::to_string((r.revenueCents - r.costCents) / 100) + " CR");
-            v.detail.push_back(s->network->sites[r.source].name + " > " +
-                               s->network->sites[r.destination].name + " / " + flightRange(r.distanceMetres));
+            const auto& buyer = s->network->sites[r.destination];
+            const auto& lane = buyer.lanes[size_t(r.good)];
+            const std::string_view rank = lane[0] == r.source + 1 ? " / MAIN SUPPLY LANE"
+                                         : lane[1] == r.source + 1 ? " / ALTERNATE SUPPLY LANE" : "";
+            v.detail.push_back(s->network->sites[r.source].name + " > " + buyer.name + " / " +
+                               flightRange(r.distanceMetres) + std::string(rank));
         }
         if (v.detail.empty())
             v.message = "NO AFFORDABLE PROFITABLE ROUTES / FREE HOLD SPACE OR BUILD CAPITAL";
@@ -1381,4 +1534,4 @@ MarketView economicMarketView(const EconomySnapshot* s, const std::optional<Acti
         }
     return v;
 }
-} // namespace infinite
+} // namespace infinity

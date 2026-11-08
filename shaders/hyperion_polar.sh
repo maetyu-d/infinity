@@ -31,7 +31,7 @@ bool polarSegmentActive(vec3 o,vec3 d,vec2 span){
  return true;
 }
 
-#if INFINITE_POLAR_RESOLVE
+#if INFINITY_POLAR_RESOLVE
 SAMPLER2D(s_polarLight,6);
 // Hyperion cloudResolveFragment: bilinear weights with depth rejection.
 // The occupied ray is also checked at full resolution so a thin foreground

@@ -1,0 +1,42 @@
+{
+  "version": "0.58.0",
+  "core_suites_passed": 61,
+  "direct_probe_assertions": 117,
+  "native_metal_stages": 9,
+  "native_image_validation": "passed",
+  "median_frame_ms": 17.7766,
+  "p95_frame_ms": 35.3479,
+  "cache_bytes": 13317736,
+  "peak_rss_bytes": 144736256,
+  "camera_ship_independence": "asserted in native test",
+  "canonical_generation_preservation": "descriptor and original terrain fingerprint checks passed",
+  "sqlite_restart": "passed in ExplorationRuntimeTests",
+  "packaged_startup": {
+    "result": "passed",
+    "frames": 120,
+    "temporary_save": "/tmp/infinite58-startup",
+    "exit_code": 0
+  },
+  "video": {
+    "source": "Native Infinite mining-probe camera, deterministic gameplay deployment",
+    "resolution": [
+      1280,
+      720
+    ],
+    "fps": 30,
+    "frames": 639,
+    "duration_seconds": 21.3,
+    "stages": [
+      "surface approach",
+      "boring",
+      "armed charge",
+      "detonation",
+      "cavern survey beacon"
+    ],
+    "audio": false,
+    "synthetic_frames": false
+  },
+  "matching_signed_code_data_sections": 28,
+  "signed_app": "Infinite.app / 0.58.0 / 66",
+  "signature": "codesign --verify --deep --strict passed"
+}

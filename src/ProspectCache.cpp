@@ -1,5 +1,5 @@
-#include "infinite/World.hpp"
-namespace infinite {
+#include "infinity/World.hpp"
+namespace infinity {
 std::shared_ptr<const std::vector<ProspectSite>> RegionCache::prospects(const Node& planet, Tile region) {
     if (!hasSolidSurface(planet))
         return {};
@@ -54,4 +54,4 @@ std::shared_ptr<const std::vector<ProspectSite>> RegionCache::prospects(const No
     });
     return {};
 }
-} // namespace infinite
+} // namespace infinity

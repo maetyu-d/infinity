@@ -1,0 +1,2 @@
+PASS: 18 native minimal/detail planner, delivery, portrait and objective-tracker views
+PASS: twelve native HUD, popup, crew, market and probe layouts; zero text overlaps; real clicks; unchanged camera

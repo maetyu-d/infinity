@@ -1,5 +1,5 @@
-#include "infinite/Navigation.hpp"
-#include "infinite/World.hpp"
+#include "infinity/Navigation.hpp"
+#include "infinity/World.hpp"
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
@@ -8,7 +8,7 @@
 #include <oneapi/tbb/parallel_for.h>
 #include <stdexcept>
 
-using namespace infinite;
+using namespace infinity;
 static int checks = 0;
 static void require(bool ok, const char* what) {
     ++checks;
@@ -196,8 +196,12 @@ int main(int argc, char** argv) {
         auto saved = nav.serialize();
         Navigation restored(u);
         require(restored.restore(saved) && restored.serialize() == saved, "camera persistence serialization");
+        auto originalBrand = saved;
+        originalBrand.replace(0, 8, "INFINITE");
+        require(restored.restore(originalBrand) && restored.serialize() == saved,
+                "original camera save did not load under the new brand");
         require(!restored.restore("bad state"), "corrupt saved state rejected");
-        auto file = std::filesystem::temp_directory_path() / "infinite-regression.sqlite";
+        auto file = std::filesystem::temp_directory_path() / "infinity-regression.sqlite";
         std::filesystem::remove(file);
         {
             Persistence db(file.string(), u.seed());

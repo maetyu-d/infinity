@@ -1,10 +1,10 @@
-#include "infinite/Piloting.hpp"
+#include "infinity/Piloting.hpp"
 #include <algorithm>
 #include <iostream>
 #include <oneapi/tbb/global_control.h>
 #include <sstream>
 #include <stdexcept>
-using namespace infinite;
+using namespace infinity;
 static size_t checks = 0;
 static void check(bool value, const char* message) {
     ++checks;
@@ -156,6 +156,96 @@ int main() {
             check(!ship.ship().shrinking && ship.instruments().hullMetres == 12,
                   "deep cruise silently resized the ship");
             c.wait();
+        }
+        {
+            Navigation n(u);
+            RegionCache c(u);
+            FlightController f(u, n, c);
+            Pilot ship(u, n, f);
+            const auto heading = glm::quatLookAtRH(-direction, glm::dvec3(0, 0, 1));
+            place(n, planet, p.frame.logRadius, direction * (1 + 450000. / radius), heading);
+            ship.resetMotion();
+            const auto start = n.cameraPosition();
+            check(ship.warpTo(planet) && ship.instruments().warp == WarpPhase::Route &&
+                      std::abs(ship.instruments().warpExitRange - (ship.instruments().range - 12000.)) < 1e-6 &&
+                      n.cameraPosition() == start && ship.ship().velocity == glm::dvec3(0),
+                  "Destination warp changed the camera or velocity at engagement");
+            const auto state = ship.serialize();
+            check(state.starts_with("INFINITY_SHIP 7 "), "Guided warp wrote a manual flight save");
+            const auto label = ship.instruments().destination;
+            check(ship.restore(state) && ship.instruments().warp == WarpPhase::Route &&
+                      ship.instruments().destination == label && n.cameraPosition() == start &&
+                      ship.ship().velocity == glm::dvec3(0),
+                  "Saved destination warp did not resume with its course intact");
+            check(ship.instruments().warpDestination == planet &&
+                      ship.instruments().localWarpDestination.z < 0 &&
+                      ship.instruments().warpAngularRadius > 0 &&
+                      ship.instruments().warpArrivalSequence == 0,
+                  "Saved warp lost its actual destination or fabricated an arrival event");
+            double peak = 0;
+            bool countdown = false, reveal = false;
+            for (unsigned i = 0; i < 2500 && ship.ship().cruise; ++i) {
+                c.beginFrame();
+                ship.update({}, 1. / 30.);
+                c.finishFrame();
+                peak = std::max(peak, ship.instruments().speed);
+                countdown |= ship.instruments().warpExitSeconds > 0;
+                reveal |= ship.instruments().warpReveal > .05;
+            }
+            check(!ship.ship().cruise && ship.instruments().navigating && peak > 10000 &&
+                      ship.instruments().range < 12500. && ship.ship().hull == 100.,
+                  "Destination warp failed to accelerate and drop safely into approach");
+            check(countdown && reveal && ship.instruments().warpArrivalSequence == 1 &&
+                      ship.instruments().warpDestination == planet,
+                  "Guided travel did not resolve its destination or publish exactly one arrival");
+            check(ship.instruments().warp == WarpPhase::Drop && ship.instruments().warpExitRange < 0,
+                  "Warp handoff lost its exit confirmation or retained a stale drop distance");
+            bool fieldClear = false;
+            for (unsigned i = 0; i < 300 && ship.instruments().warp != WarpPhase::Off; ++i) {
+                c.beginFrame();
+                ship.update({}, 1. / 30.);
+                c.finishFrame();
+                fieldClear |= ship.instruments().warp == WarpPhase::Drop && !ship.instruments().fieldActive;
+            }
+            check(fieldClear && ship.instruments().warp == WarpPhase::Off,
+                  "Warp handoff failed to signal field clearance and return to the standard instruments");
+            check(ship.warpTo(planet), "Could not re-arm warp for the abort fixture");
+            ship.brake();
+            check(!ship.ship().cruise && ship.ship().throttle == 0.,
+                  "Brake failed to cut the warp field and throttle");
+            check(ship.instruments().warpArrivalSequence == 1,
+                  "Aborted warp fabricated a destination arrival");
+            ship.setSystemAuthority(.1, 1.);
+            check(!ship.warpTo(planet), "Critically damaged engines armed warp");
+        }
+        {
+            Navigation n(u); RegionCache c(u); FlightController f(u, n, c); Pilot ship(u, n, f);
+            std::optional<Node> gas;
+            for (const auto& a : u.children(u.describe(planet.parent()), 200)) {
+                const auto body = u.describe(a);
+                if (!hasSolidSurface(body)) { gas = body; break; }
+            }
+            check(gas.has_value(), "Warp handoff fixture has no gas world");
+            const auto heading = glm::quatLookAtRH(-direction, glm::dvec3(0, 0, 1));
+            place(n, gas->address, gas->frame.logRadius, direction * 3.4, heading);
+            ship.resetMotion(); check(ship.warpTo(gas->address), "Gas-world warp would not engage");
+            for (unsigned i = 0; i < 2400 && ship.ship().cruise; ++i) {
+                c.beginFrame(); ship.update({}, 1./30); c.finishFrame();
+            }
+            const auto exit = ship.instruments().range;
+            check(!ship.ship().cruise && exit < 12500 && ship.instruments().warpArrivalSequence == 1,
+                  "Gas-world warp flew past its drop boundary");
+            bool clear = false;
+            for (unsigned i = 0; i < 600; ++i) {
+                c.beginFrame(); ship.update({}, 1./30); c.finishFrame();
+                clear |= !ship.instruments().fieldActive;
+                check(ship.instruments().range <= exit + 20,
+                      "Guided field overshot its approach point during normal-flight handoff");
+            }
+            const auto centre = u.relative(gas->address, n.anchor, n.logDistance).position - n.cameraPosition();
+            check(clear && ship.ship().hull == 100 &&
+                      glm::dot(n.orientation * glm::dvec3(0, 0, -1), glm::normalize(centre)) > .98,
+                  "Gas-world arrival lost field clearance or swung away from its destination");
         }
         // Obtain an existing rock/grain/lattice branch without adding any objects.
         auto a = planet;

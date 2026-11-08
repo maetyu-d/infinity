@@ -1,5 +1,5 @@
-#include "infinite/Recovery.hpp"
-namespace infinite {
+#include "infinity/Recovery.hpp"
+namespace infinity {
 bool RecoveryController::update(const Universe& u, const NpcPlayer& ship,
                                 const std::optional<ActivityBody>& body, double dt, bool holding,
                                 const Geometry* geometry, std::span<const ActivityBody> nearby) {
@@ -53,4 +53,4 @@ bool RecoveryController::update(const Universe& u, const NpcPlayer& ship,
     progress_ = 0;
     return false;
 }
-} // namespace infinite
+} // namespace infinity

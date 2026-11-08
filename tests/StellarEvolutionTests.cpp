@@ -1,14 +1,14 @@
-#include "infinite/Navigation.hpp"
-#include "infinite/Piloting.hpp"
-#include "infinite/Presentation.hpp"
-#include "infinite/StellarEvolution.hpp"
+#include "infinity/Navigation.hpp"
+#include "infinity/Piloting.hpp"
+#include "infinity/Presentation.hpp"
+#include "infinity/StellarEvolution.hpp"
 #include <future>
 #include <iostream>
 #include <map>
 #include <set>
 #include <sstream>
 #include <stdexcept>
-using namespace infinite;
+using namespace infinity;
 static unsigned checks = 0;
 static void check(bool value, const char* message) {
     ++checks;

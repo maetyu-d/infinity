@@ -1,10 +1,10 @@
-# Polar light and planetary contrast — Infinite 0.30
+# Polar light and planetary contrast — Infinity 0.30
 
-This rendering pass preserves the existing universe, geometry and flight state. Baseline `369e11f` is retained by `checkpoint/infinite-0.29-before-planet-light` and a frozen executable used for matched captures.
+This rendering pass preserves the existing universe, geometry and flight state. Baseline `369e11f` is retained by `checkpoint/infinity-0.29-before-planet-light` and a frozen executable used for matched captures.
 
 ## Visible changes
 
-- **Polar light:** Hyperion’s `auroraFragment` supplies the hollow-shell ray integration, moving oval, filtered rays, height envelope and spectral emission. Infinite supplies the existing climate axis, pressure, scale height and inherited visual phase. Eligible solid atmospheres can show curtains on their night sides. Airless worlds and shrinking views receive no aurora. This is optical presentation, not a new magnetic simulation or inhabited-world rule.
+- **Polar light:** Hyperion’s `auroraFragment` supplies the hollow-shell ray integration, moving oval, filtered rays, height envelope and spectral emission. Infinity supplies the existing climate axis, pressure, scale height and inherited visual phase. Eligible solid atmospheres can show curtains on their night sides. Airless worlds and shrinking views receive no aurora. This is optical presentation, not a new magnetic simulation or inhabited-world rule.
 - **Depth and stability:** shell radii use planet-relative units so changing rendering units cannot resize the effect. Reversed opaque depth and the real planetary surface bound the occupied ray. Conservative latitude/daylight bounds skip empty pixels. Integration uses 16 steps at half resolution; a full-resolution occupied-ray check and four depth-matched taps reconstruct the emission. This adapts Hyperion’s `cloudResolveFragment` approach and avoids adding light across foreground silhouettes. Near-surface emission is reduced and fine strand frequency follows atmospheric thickness.
 - **Clouds:** the retained weather coverage and shell geometry still own every bank. The shader now uses Hyperion’s existing filtered noise lookup, three samples toward the sun, density extinction and billow-normal lighting. Darker undersides, powder light and silver edges give the same banks greater depth. These are shaded cloud shells, rather than a new volumetric weather simulation.
 - **Geological contrast:** the actual vertex heights and surface slopes modulate the inherited mineral coating across globe and terrain LODs. This reuses authoritative geology instead of evaluating another regional noise field at every fragment. Existing close-material relief, frost and fractures remain active.
@@ -29,7 +29,7 @@ The existing landscape remains authoritative. Shading and emission do not add te
 
 ## Measured cost
 
-Six matched Hyperion terrain views at 1440 × 900, using the last ten fully settled frames with the complete material texture published: 60 samples per run. The 0.29 baseline was run twice. No other Infinite instance or CPU test ran during these samples. [Exact sample frames and measurements](graphics-0.30/performance.json), [first baseline](graphics-0.30/baseline_first-frames.csv), [baseline repeat](graphics-0.30/baseline_repeat-frames.csv), [final frames](graphics-0.30/final-frames.csv).
+Six matched Hyperion terrain views at 1440 × 900, using the last ten fully settled frames with the complete material texture published: 60 samples per run. The 0.29 baseline was run twice. No other Infinity instance or CPU test ran during these samples. [Exact sample frames and measurements](graphics-0.30/performance.json), [first baseline](graphics-0.30/baseline_first-frames.csv), [baseline repeat](graphics-0.30/baseline_repeat-frames.csv), [final frames](graphics-0.30/final-frames.csv).
 
 | Metric | 0.29 first / repeat | 0.30 final |
 | --- | ---: | ---: |

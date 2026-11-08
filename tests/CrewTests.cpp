@@ -1,11 +1,11 @@
-#include "infinite/Cockpit.hpp"
-#include "infinite/Economy.hpp"
+#include "infinity/Cockpit.hpp"
+#include "infinity/Economy.hpp"
 #include <chrono>
 #include <iostream>
 #include <set>
 #include <sstream>
 #include <thread>
-using namespace infinite;
+using namespace infinity;
 namespace {
 unsigned checks = 0;
 void check(bool yes, const char* why) {

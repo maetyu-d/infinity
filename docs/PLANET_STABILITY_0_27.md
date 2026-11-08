@@ -1,4 +1,4 @@
-# Planet depth stability — Infinite 0.27
+# Planet depth stability — Infinity 0.27
 
 The flickering planet regression is reproduced in native Metal captures. The old projection mapped a very large range (`0.00005` to `10000` rendering units) into conventional floating-point depth. Distant surfaces collapsed onto the same depth values, sometimes the clear value. Small magnification changes then selected different front/back terrain triangles, producing flashing patches. This was a rendering error, independent of procedural generation.
 
@@ -6,7 +6,7 @@ The flickering planet regression is reproduced in native Metal captures. The old
 
 World views now use reversed-Z: near is one, far is zero, the world depth clear is zero, and world geometry uses greater/greater-or-equal comparisons. Original mode explicitly requests D32F swap-chain depth, and Hyperion/Hybrid retain their existing D32F scene attachment. Terrain, celestial geometry, atoms, cities, traffic, clouds, weather and trails share the corrected convention. The atmosphere reconstructs distances using the same near/far values and reversed-depth equation. Shadow maps and the cockpit retain their independent conventional projections and matching depth tests. Screen-space selection brackets bypass world depth.
 
-The clipping distances, X/Y projection, field of view, vertices, indices, materials and geometry caches remain unchanged. No additional render targets, textures, dependencies or generation work are introduced. Generator, navigation, flight, ship handling, seed and identity sources remain byte-identical to **a80c241**. [Preservation hashes](planet-stability-0.27/preservation.json). The checkpoint is `checkpoint/infinite-0.26-before-planet-stability`.
+The clipping distances, X/Y projection, field of view, vertices, indices, materials and geometry caches remain unchanged. No additional render targets, textures, dependencies or generation work are introduced. Generator, navigation, flight, ship handling, seed and identity sources remain byte-identical to **a80c241**. [Preservation hashes](planet-stability-0.27/preservation.json). The checkpoint is `checkpoint/infinity-0.26-before-planet-stability`.
 
 ## Reproduction and regression
 
@@ -42,7 +42,7 @@ cmake --build build -j4
 ctest --test-dir build -R 'multiscale_depth_precision|native_planet_stability' --output-on-failure
 ```
 
-GPU tests require configuring with `INFINITE_GPU_TESTS=ON` and a native desktop session. Each fixture uses its own data directory and leaves the saved flight untouched.
+GPU tests require configuring with `INFINITY_GPU_TESTS=ON` and a native desktop session. Each fixture uses its own data directory and leaves the saved flight untouched.
 
 ## Final verification
 

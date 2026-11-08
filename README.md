@@ -1,8 +1,8 @@
-# INFINITE
+# INFINITY
 
 A deterministic procedural universe, from spiral galaxies and ringed worlds to the atomic lattices inside a mineral grain.
 
-[![A ringed gas giant and a nearby blue world against Infinite's colourful stellar sky](docs/screenshots/ringed-gas-giant.jpg)](docs/screenshots/ringed-gas-giant.jpg)
+[![A ringed gas giant and a nearby blue world against Infinity's colourful stellar sky](docs/screenshots/ringed-gas-giant.jpg)](docs/screenshots/ringed-gas-giant.jpg)
 
 | Spiral galaxy | Ice giant |
 |:---:|:---:|
@@ -15,6 +15,68 @@ A deterministic procedural universe, from spiral galaxies and ringed worlds to t
 [Download the latest release](https://github.com/maetyu-d/infinity/releases/latest)
 
 ---
+
+The pulse laser’s cockpit readout shows effective reach, target range and heat. A subsystem hit names the damaged part and throws amber sparks at impact. Press **9** to cycle the target subsystem.
+
+**Guided missiles and point defence** are sold through **F2 → Weapons**. Aim at a hostile within 3.5 km and press **Space** to launch. Raiders can launch missiles of their own. The cockpit shows the incoming missile count, the most urgent threat’s bearing and its estimated closing time. A windscreen diamond or edge arrow marks the direction. Fit point defence to an auxiliary turret, assign a gunner in **F9**, then press **7** for Defend. The turret intercepts missiles within 780 m when it has a clear shot in its traverse arc.
+
+Fit an **Ion Disruptor** to an empty weapon mount at a port through **F2 → Weapons**. A hit within 1.4 km cuts a raider’s drive for 22 seconds and leaves its hull intact. Break away or match the raider’s drift with **J**, then hold **0** within recovery range to secure it before the drive restarts.
+
+**Raider encounters** follow valuable freight in transit. Cargo raiders demand part of your most valuable uncommitted cargo before opening fire on your engines. Reach patrol protection or use **Alt+I** to surrender the displayed cargo. Interdiction pairs split the attack between a missile ship and a ship that tries to cut off your escape. Disabling either wing makes its partner break away. Faction hunters respond to recent attacks on their ships in the same system. Press **I** to see which attack prompted the demand and **Alt+I** to pay the displayed restitution when they offer terms.
+
+**Other threats** include nimble skirmishers that fire in close-range bursts, siege ships that lob missiles from the edge of high-value freight lanes, and saboteurs that target thrusters and the nose gun around weather-delayed freight. Scavengers shadow orbital debris and wait for a badly damaged ship to come within reach.
+
+**Relay scouts** flee while transmitting a ten-second call for help. Press **H** to prioritise a visible transmitting scout. Disable its drive or break contact before the countdown ends to prevent a pursuit corsair from joining the fight.
+
+**First-person warp.** Press **N** to engage manual warp and use **W/S** for throttle. Select a world, star, or galaxy and press **Ctrl+N** for a guided warp that drops into normal approach. **+/-** adjusts the drive limit, **N** drops the field, and **B** aborts and brakes. Warp respects local clearance and requires a full-size, undocked ship.
+
+Guided arrival resolves the actual destination through a widening tunnel, with a gradual field release into normal flight. The cockpit shows estimated time to drop, exit distance and course alignment. After the field clears, arrival radio highlights existing distress calls, supply shortages, incoming freight, patrols, survey activity and mineable orbital material. **Shift-I** selects a call and cycles its contacts; **J** approaches and **I** hails. Calls follow the live system economy and existing actor identities. [Arrival behaviour and validation](docs/WARP_ARRIVALS.md).
+
+**Planetary surfaces.** Terrain materials distinguish exposed rock, sediment, frost, dense ice and mineral seams using the existing geology, slopes and elevation. Working settlements have instanced cargo rovers and roof machinery that respond to the local economy; outages, missing inputs and severe weather hold outside work. **I** reports a selected settlement's operations. Surface warnings explain wind, poor visibility, electrical storms, unstable slopes and heat. **L** requests a checked landing; **Shift-L** explicitly accepts environmental risk while keeping the normal solid-ground checks. [Surface presentation, operations and hazards](docs/SURFACE_OPERATIONS.md).
+
+**Surface expeditions.** Heat and electrical storms build damaging exposure, dust limits scanning, and tiny ships are especially vulnerable. The weather strip and cockpit warnings show risk and escape actions. **F3** can now plan **LOCAL SUPPLY** jobs from real settlement shortages: visit the generated resource region, drill, shrink to assay and mark material, regrow to mine, then deliver the requested mass into the settlement's stock. Rover duties and machinery reflect real freight, production and weather holds. [Hazards, controls and the complete mission loop](docs/SURFACE_EXPEDITIONS.md).
+
+**Rare giant cities.** Established, well-supported settlements can develop into regional cities and occasional metropolises with commercial skylines, industrial and agricultural belts, protected habitats, night lights and nearby inhabitants. Their population and infrastructure feed the existing economy and jobs. Original town centres and landing ports remain intact; **F5** identifies nearby districts. [Generation, examples and validation](docs/RARE_CITIES.md).
+
+**Contextual cockpit.** Flight instruments adapt to travel, approach, landing, docking, combat and surface work. **Ctrl-Tab** or click **Contacts** for the full catalogues and flight messages; the green life badge and existing selection keys still work. Warnings share one priority channel, with larger essential numbers and less permanent text. All crew, trade, probe and expedition consoles remain available. [Layout, controls and verification](docs/CONTEXTUAL_COCKPIT.md).
+
+**Surface reconnaissance.** **F5** opens a local terrain scanner with relief, weather hazards, estimated and assayed resources, saved cavern entrances and field incidents. Click or **Shift-F5** selects; **F4** approaches. **Ctrl-F5** asks the navigator to assess the route; **Alt-F5** starts an engineer exposure watch. At a marked recovery site, land and hold **0** to accept work or transfer its required parts through the real economic ledger. [Scanner, crew and field recovery controls](docs/SURFACE_RECONNAISSANCE.md).
+
+**0.61.0:** mining leaves persistent cuttings and exposed, worn faces as shared ore reserves decline, with mineral-specific dust, chips and sparks at the cutter. Paid cavern-assay delivery opens a compact debrief with actual tool/probe/repair spending, net cash, return hull condition and the next assay offer. [Screenshots, accounting and validation](docs/MINING_OUTCOMES_0_61.md).
+
+Expedition sites, deposits and hazards derive from the generated world and its local geology. On cold, ice-bearing faces, sustained cutting or fast close manoeuvres in a shrunk ship can shed ice. Spreading fractures, cutter pitch and an amber cockpit warning give you time to release the cutter or back away. A slow close assay lets the wall settle.
+
+**F2 → F5 → Jobs** also lists production restart kits for plants stalled on missing inputs, emergency relays for disabled cargo runs with unmet demand, and funded distress calls from civilian wrecks with survivors. The board identifies the cause. **F4** targets the next stop or the distressed ship. For a rescue, match its speed and hold **0** near the hull, then return the passenger to the issuing port.
+
+**F2 → I** opens local freight incidents. Select an incident with **Up/Down** and a response with **Left/Right**. **F4** targets the next stop and **Enter** handles acceptance, pickup or delivery. The card shows the affected port’s remaining supply at normal household use, flight estimates, actual deliveries by you and other carriers, and the observed recovery. Short port comms announce major developments during flight.
+
+Settlement industry samples the same local geology as prospecting. Existing ports can specialise in local ice, ore, silicate, carbon or water, and clear ground near industrial districts can gain a small works yard. The **F2** market reports local geology and supply lanes for the selected good. Storms can hold NPC freight off a surface port and leave a real shortage for relief work. A nearly exhausted industrial deposit can post a funded **Reserve Survey** on the **Survey** page. Use **F4** for the new region, hold **F12** to scan, then return the report to the issuing port.
+
+Solid worlds have geological regions that carry the same surface materials from orbit to the ground. Plate uplift, surviving impact basins, volcanic hot spots, sediment and inherited ice determine each region. Select a solid world and press **Alt+F12** to cycle its regional landmarks, **J** to approach and **F12** to survey. The journal records the region alongside the deposit grade.
+
+Ringed giants now have identifiable ice or rubble fragments following the rings' own bands. Some impacted solid worlds and moons retain families of debris in inclined, elliptical orbits. Press **Alt+K** near a world to track a fragment, then **J** to match its course. The traffic scanner shows how many fragments are in range.
+
+Use **Alt+Shift+K** to cycle only landable fragments. Match course with **J**, then press **L** within about 1.5 km for a landing on the rotating face. Fit a mining head at a port and hold **Ctrl+Space** once landed. The cockpit shows the local mineral and remaining stock, and recovered goods go into your hold for sale. **Enter** lifts off. Deposits reflect ring composition or the impact basin that supplied the debris, and depletion is saved per fragment.
+
+**0.60.2:** the planner now opens as a compact mission card: destination, current instruction, contextual warnings and one primary action. Healthy-system checks stay quiet; **D / Details** retains the diagrams and full controls. [Screenshots and verification](docs/COMPACT_PLANNER_0_60_2.md).
+
+**0.60.1:** a minimal visual expedition planner: a connected mission timeline, live drill/cavern section, ship tool bays and compact readiness indicators. **F3** opens it; **D / Details** reveals presets and extra readouts. [Screenshots and verification](docs/VISUAL_PLANNER_0_60_1.md).
+
+**0.60.0:** **F3** opens an expedition planner with cavern-assay offers, inherited world geology, equipment and crew checks, adjustable drill presets and a live objective tracker. It follows the saved excavation from departure through shrinking, close inspection, marking, extraction and paid sample delivery. [Controls and verification](docs/EXPEDITION_PLANNER_0_60.md).
+
+**0.59.0:** excavated caverns expose planet-derived bedding, mineral veins and physical crystal pockets. Choose drill depth and feed, pause to cool, retract safely or detonate at the reached depth. Shrink to assay and mark a deposit, regrow to extract from the shared finite reserve, then deliver a 10 kg sample for a funded cavern-assay contract. [Controls, screenshots and verification](docs/CAVERN_EXPEDITIONS_0_59.md).
+
+**0.58.4:** cockpit warnings and notifications now wrap and stack in clear spaces. World labels and prospect markers avoid occupied UI areas; crew, market and help screens cover underlying HUD text correctly. Long job boards keep the selected offer above their action footer. [Layout fixes, captures and checks](docs/UI_LAYOUT_0_58_4.md).
+
+**0.58.3:** faster probe and cavern rendering through conservative occlusion, reusable work-light buffers and retained particle scratch storage. Matched probe-route measurements: **12.79 → 5.75 ms median frame time**, with 67% fewer reported upload bytes. Five probe-feed captures remain byte-for-byte identical; shaft exits and local geology stay visible. [Measurements and verification](docs/PROBE_OPTIMISATION_0_58_3.md).
+
+**0.58.2:** a heavier mining cutter with scalloped steel sectors, gauge teeth, three counter-spinning toothed rollers, a drive collar and visible hydraulic rams. The full-size head pivots and slides clear of the camera; cuttings and sparks follow its rotation. Includes smooth spin-up, feed pulses and cooling tip glow. [Cutter details and checks](docs/PROBE_CUTTER_0_58_2.md) · [Updated camera video](docs/probe-cutter-0.58.2/mining-probe-pov.mp4).
+
+**0.58.1:** the mining probe now has a visible camera housing, rotating cutter, material-driven vibration and a retracted, stabilized fuse phase. Local work lights replace broad underground illumination; a brief detonation flash, fragments and settling dust reveal the cavern. Controls, excavation geometry and saved resources remain unchanged. [Presentation and checks](docs/PROBE_PRESENTATION_0_58_1.md) · [Updated probe video](docs/probe-presentation-0.58.1/mining-probe-pov.mp4).
+
+**0.58.0:** refit an empty gun bay or trade in its turret for a mining-probe launcher through **F2 → Survey**. **Ctrl-P** fires into exposed solid terrain; the probe bores underground and detonates to leave a saved, physically enterable cavern. Watch through its independent first-person feed, then **Esc / Alt-P** returns to the ship and **Ctrl-J** approaches the entrance. [Controls and validation](docs/MINING_PROBES_0_58.md) · [Probe camera video](docs/mining-probes-0.58/mining-probe-pov.mp4).
+
+**0.57.0:** shrink into an existing outcrop, inspect its rock or minerals, mark valuable material and return to full size for selective mining. **Ctrl-F12** begins an expedition at a surveyed clearing or marks a completed close inspection; **Shift-J** locates the saved entry beacon. Tiny hulls take up to **25× damage**. Marks and finite extraction outcomes survive restarting. [Seam expedition controls](docs/SEAM_EXPEDITIONS_0_57.md).
 
 **0.56.0:** solid worlds now offer visible resource formations, varied geological reserves and gentler sampling clearings. **Shift-F12** finds prospects; **J** approaches a clearing, **F12** surveys and **Ctrl-Space** extracts with a fitted mining head. Existing depleted deposits stay depleted. [Prospecting controls and generation](docs/PROSPECTING_0_56.md).
 
@@ -72,7 +134,7 @@ A deterministic procedural universe, from spiral galaxies and ringed worlds to t
 
 **0.35:** distinct rocky, ice, oceanic, desert and lava presentation, plus additive gas giants, ice giants, sub-Neptunes, hot giants and procedural rings. [Research, preservation and validation](docs/PLANET_DIVERSITY_0_35.md).
 
-A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinite 0.34 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
+A standalone C++20 procedural universe rendered with SDL3 and bgfx. **Infinity 0.34 starts with a full-size ship near an existing planet.** Normal play uses Hyperion-style planetary flight, targeting, approach, landing and launch. Long-range travel is an explicit drive choice; the shrinking field is a separate ship ability.
 
 Version 0.34 adds **evolving planetary circulation, fronts, rotating storm systems, gusts, snow and dust weather**. Moisture, temperature, pressure, gravity, body size and rotation constrain the deterministic forecasts. Lower cloud banks, motion-blurred rain, drifting flakes and dust, depth-aware weather haze, wet terrain and storm-local lightning make the weather visible from flight. The cockpit shows gusts and visibility in its existing weather panel. Established city planning keeps its original climate recipe, preserving sites, layouts and identities. [Weather generation, captures and validation](docs/WEATHER_0_34.md).
 
@@ -134,32 +196,32 @@ The adaptive LOD, asynchronous generation, cancellation, compact indexed meshes 
 
 ## Build and run
 
-Requires CMake 3.24+, a C++20 compiler, Python 3.9+, and SQLite development headers/library (3.35+). Dependencies are local source builds; first-time bootstrap needs internet access. Reserve approximately 600 MB for sources and a Release build. Precompiled Metal/SPIR-V/GLSL presentation shaders are included; Windows additionally needs the pinned bgfx `shaderc` on PATH to generate DXBC at configure time (or set `INFINITE_SHADERC`). No new runtime library is required.
+Requires CMake 3.24+, a C++20 compiler, Python 3.9+, and SQLite development headers/library (3.35+). Dependencies are local source builds; first-time bootstrap needs internet access. Reserve approximately 600 MB for sources and a Release build. Precompiled Metal/SPIR-V/GLSL presentation shaders are included; Windows additionally needs the pinned bgfx `shaderc` on PATH to generate DXBC at configure time (or set `INFINITY_SHADERC`). No new runtime library is required.
 
 ```sh
 python3 tools/bootstrap.py
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j 4
 ctest --test-dir build --output-on-failure
-./build/infinite --fresh
+./build/infinity --fresh
 ```
 
-On this Mac, open `Infinite.app` or `Launch Infinite.command`. CMake is installed at `/Users/user/.local/opt/cmake/CMake.app/Contents/bin`; `ctest` is in the same directory. No heavyweight engine, browser or external runtime is used by the executable. Pinned bgfx shaders are embedded into the executable at build time. No shader compiler, source checkout or full Xcode installation is needed to run the Metal build. The included arm64 app was built for macOS 26.0 or newer; rebuild from source for other deployment targets.
+On this Mac, open `Infinity.app` or `Launch Infinity.command`. CMake is installed at `/Users/user/.local/opt/cmake/CMake.app/Contents/bin`; `ctest` is in the same directory. No heavyweight engine, browser or external runtime is used by the executable. Pinned bgfx shaders are embedded into the executable at build time. No shader compiler, source checkout or full Xcode installation is needed to run the Metal build. The included arm64 app was built for macOS 26.0 or newer; rebuild from source for other deployment targets.
 
-To refresh the macOS app after rebuilding: `python3 tools/package_macos.py build/infinite Infinite.app`.
+To refresh and sign the macOS app after rebuilding, run `python3 tools/package_macos.py build/infinity Infinity.app`.
 
 Platform setup:
 
 - **macOS:** Apple command-line tools (`xcode-select --install`), CMake/Ninja. Uses Metal and the SDK SQLite library.
 - **Linux:** C++20 compiler, CMake/Ninja, `libsqlite3-dev`, X11 development libraries and a Vulkan driver. With a Wayland desktop, launch with `SDL_VIDEODRIVER=x11`. SDL/bgfx use the X11 window handle in this version.
-- **Windows:** Visual Studio 2022 C++ tools or clang-cl, CMake and SQLite (for example vcpkg's `sqlite3` with its CMake toolchain). Uses Direct3D 11. For multi-configuration generators, add `--config Release` and run `build/Release/infinite.exe`.
+- **Windows:** Visual Studio 2022 C++ tools or clang-cl, CMake and SQLite (for example vcpkg's `sqlite3` with its CMake toolchain). Uses Direct3D 11. For multi-configuration generators, add `--config Release` and run `build/Release/infinity.exe`.
 
 Only the macOS arm64 build and Metal runtime have been exercised here. Windows/Linux paths are implemented but require platform CI before claiming support.
 
 Headless core build:
 
 ```sh
-cmake -S . -B build-core -DINFINITE_VIEWER=OFF -DCMAKE_BUILD_TYPE=Release
+cmake -S . -B build-core -DINFINITY_VIEWER=OFF -DCMAKE_BUILD_TYPE=Release
 cmake --build build-core -j 4
 ctest --test-dir build-core --output-on-failure
 ```
@@ -172,7 +234,7 @@ Use **Y** to cycle the current system's primary planets, or **Shift-Y** for the 
 
 The cockpit shows planet/moon totals and the nearest eight celestial contacts with range and ahead/aft/occulted status; a selected destination stays in the list. Its scope retains every body's actual bearing, and unresolved planets and moons have lights in the forward view. Click a contact row, celestial light, star or distant galaxy to select its actual address, then press **J** to travel; **N** supplies the optional long-range drive for astronomical distances.
 
-**N** explicitly enables long-range cruise. Its initial ceiling is **100 light years per second**, with proximity braking near structures. **-/+** changes the cruise ceiling while it is engaged. Voyages remain continuous and can last as long as desired; elapsed flight time, travelled distance and ETA are displayed and saved. Cruise continues when the open app loses focus.
+**N** enables manual warp and **Ctrl+N** engages guided warp to the selected destination. The initial ceiling is **100 light years per second**, with proximity braking near structures. **-/+** changes the ceiling while the field is engaged. Flight time, distance travelled, and an active warp course are saved. Warp continues when the open app loses focus.
 
 **Z** activates the ship's shrinking field. It starts at millimetre size and automatically fits progressively smaller surroundings, down to a **12 pm hull**. **Comma / period** manually request smaller/larger sizes by decades; **Shift-Z** or Z again requests full size. The real contact radius and handling change with the hull. Regrowth is blocked where the ship would overlap material. A size-dependent transit field keeps movement between nearby micro/nano structures practical; contacts resolve against existing SDFs and generated atoms. Camera magnification is displayed separately from ship size.
 
@@ -188,12 +250,13 @@ The cockpit shows planet/moon totals and the nearest eight celestial contacts wi
 | Shift-Y | Cycle moons of the selected/current planet |
 | Ctrl-Y / click LIFE DETECTED | Cycle confirmed inhabited planets and moons |
 | K / I | Select next port/traffic contact / hail its actual status |
+| Shift-I | Select the arrival radio contact; press again to cycle arrival calls |
 | Shift-K | Cycle nearby surface settlements; J approaches, L lands |
 | F6 | Hide/show orbital and surface activity; its clock continues |
-| L / G / Enter | Assisted landing / gear / lift off when landed |
-| N | Toggle long-range cruise |
+| L / Shift-L / G / Enter | Assisted landing / accept surface risk / gear / lift off |
+| N / Ctrl+N | Toggle manual warp / warp to the selected destination |
 | Shift+N | Cycle real stellar destinations; J navigates |
-| - / + or [ / ] | Normal speed multiplier, or cruise speed ceiling |
+| - / + or [ / ] | Normal speed multiplier, or warp speed ceiling |
 | Z | Activate automatic shrinking / request full-size return |
 | Comma / period | Manually request smaller / larger hull |
 | Shift-Z | Request full size, subject to available space |
@@ -206,21 +269,23 @@ The cockpit shows planet/moon totals and the nearest eight celestial contacts wi
 | M / P / T | Discovery / screenshot / original guided tour |
 | Escape | Release mouse; press again to save and quit |
 
-Camera state and compressed discovery notes are stored in `build/user-data/universe.sqlite` for the command-line executable, or `user-data/universe.sqlite` beside `Infinite.app`. `--data DIR` changes the location. `--fresh` ignores the saved camera and ship state. Ship motion is stored beside it in a versioned `ship-<seed>.txt`; historical `display.txt` mode preferences are ignored. `--seed N` selects a universe (persistence is namespaced by seed). Generated geometry is never saved as authoritative world data.
+Infinity reads existing Infinite saves automatically. Both the renamed macOS app and command-line launcher use the same save folders as before.
+
+Camera state and compressed discovery notes are stored in `build/user-data/universe.sqlite` for the command-line executable, or `user-data/universe.sqlite` beside `Infinity.app`. `--data DIR` changes the location. `--fresh` ignores the saved camera and ship state. Ship motion is stored beside it in a versioned `ship-<seed>.txt`; historical `display.txt` mode preferences are ignored. `--seed N` selects a universe (persistence is namespaced by seed). Generated geometry is never saved as authoritative world data.
 
 Backspace restores the previous local camera view and selected branch. New saves retain those breadcrumbs across restarts. Outward wheel navigation promotes the reference frame while preserving the physical zoom pivot.
 
 ```sh
-./build/infinite --smoke-test --width 1920 --height 1080 \
+./build/infinity --smoke-test --width 1920 --height 1080 \
   --capture-dir build/captures --profile build/frame-profile.csv
-./build/infinite --frames 300 --fresh
-./build/infinite --flight-test --render-mode hyperion --capture-dir build/flight-captures
-./build/infinite --streaming-test --render-mode hyperion --capture-dir build/streaming-captures
-./build/infinite --pilot-test --capture-dir build/pilot-captures
-./build/infinite_benchmark > build/generation.csv
+./build/infinity --frames 300 --fresh
+./build/infinity --flight-test --render-mode hyperion --capture-dir build/flight-captures
+./build/infinity --streaming-test --render-mode hyperion --capture-dir build/streaming-captures
+./build/infinity --pilot-test --capture-dir build/pilot-captures
+./build/infinity_benchmark > build/generation.csv
 ```
 
-The smoke test uses the real native renderer, visits all eight scales, returns through the same addresses, and compares submitted geometry with independently regenerated complete descriptors and every LOD. `--tour` performs the journey without the extra proof workload and leaves the window open. `--presentation-test` adds the cosmic web and captures Hyperion at nine scales, asserting unchanged geometry and generation counts. `--flight-test` steers through all nine scales and back using only the automatic flight controller, without focus or wheel commands. Screenshots are PPM for a dependency-free lossless capture path. Enable `-DINFINITE_GPU_TESTS=ON` for native flight/tours, atomic visibility and Hyperion image checks in CTest; these require an active desktop.
+The smoke test uses the real native renderer, visits all eight scales, returns through the same addresses, and compares submitted geometry with independently regenerated complete descriptors and every LOD. `--tour` performs the journey without the extra proof workload and leaves the window open. `--presentation-test` adds the cosmic web and captures Hyperion at nine scales, asserting unchanged geometry and generation counts. `--flight-test` steers through all nine scales and back using only the automatic flight controller, without focus or wheel commands. Screenshots are PPM for a dependency-free lossless capture path. Enable `-DINFINITY_GPU_TESTS=ON` for native flight/tours, atomic visibility and Hyperion image checks in CTest; these require an active desktop.
 
 ## Architecture and identity
 
@@ -249,9 +314,9 @@ An address looks like `0,0,0/1:0/2:0/3:0/...`: the root cell followed by canonic
 
 Up to three concurrent cache tasks, four oneTBB workers, a 32 MiB CPU payload budget, at most 512 geometry entries, a 32 MiB GPU cache budget and bounded transient buffers. The terrain frontier uses at most 192 leaves; complete parent coverage remains while worker-generated children/stitches load. Requests are prioritized and child catalogs are asynchronous. CPU accounting includes allocated vector capacities; static GPU uploads have a per-frame allowance and terrain uses the existing bounded transient buffers. Obsolete jobs receive cancellation flags. Existing object LODs crossfade over 0.3 seconds; terrain cuts share a 0.2-second position morph. Briefly retained blend layers, tile fronts/morph sources and proof workers add to the cache budget; process memory is measured separately. Whole objects outside the projected frustum are culled. Both generation and frame metrics are measured rather than assuming 60 FPS.
 
-`infinite_tests` currently exercises 251 checks covering hash vectors, address parsing, signed-coordinate extremes, generation order, independent threaded generation, cube/tile boundaries, LOD field consistency, finite transforms spanning 36 decades, material inheritance, Kepler periodicity, all five mineral lattices, valid finite mesh buffers at every scale, cancellation, cache eviction and camera serialization. CTest also launches separate writer/reader processes to check SQLite persistence across application restarts. See [generation benchmarks](docs/benchmark-v0.3.csv) and [benchmark memory](docs/benchmark-memory-v0.3.txt) for current measured generation costs on this machine. The native tour checks and records the actual backbuffer resolution; on Retina screens it uses a smaller logical window to render the requested pixel count.
+`infinity_tests` currently exercises 251 checks covering hash vectors, address parsing, signed-coordinate extremes, generation order, independent threaded generation, cube/tile boundaries, LOD field consistency, finite transforms spanning 36 decades, material inheritance, Kepler periodicity, all five mineral lattices, valid finite mesh buffers at every scale, cancellation, cache eviction and camera serialization. CTest also launches separate writer/reader processes to check SQLite persistence across application restarts. See [generation benchmarks](docs/benchmark-v0.3.csv) and [benchmark memory](docs/benchmark-memory-v0.3.txt) for current measured generation costs on this machine. The native tour checks and records the actual backbuffer resolution; on Retina screens it uses a smaller logical window to render the requested pixel count.
 
-`infinite_continuity_tests` verifies full non-default round trips, every LOD, shared terrain samples/materials, SDF convergence, query-stable sites/vacancies/bonds for all five minerals, saved ancestry, exact camera restoration, local sections and parallel regeneration. Restart processes repeat the ascent after SQLite reopen. `infinite_process_tests` checks structural diversity, environmental causality, population statistics, phase-specific stoichiometry and coordination, and inherited constraints. `infinite_navigation_tests` checks stationary free look, frame rates, speed controls, interrupted transitions and saved flying views at all nine scales and three seeds. `infinite_flight_tests` adds complete automatic inward/outward flights, canonical terrain lookup, lateral tile handoffs, camera continuity and manual-view compatibility. The desktop suite includes streaming topology/morph proofs, native boundary pixels, automatic flight, presentation preservation and a Hyperion round trip with seventeen captures. Current operating-scale validation is in [OPERATING_SCALES.md](docs/OPERATING_SCALES.md); the earlier piloting integration and measurements are in [PILOTING.md](docs/PILOTING.md); the earlier shader integration is in [HYPERION_RENDERING.md](docs/HYPERION_RENDERING.md); generation/performance invariants remain documented in [PERFORMANCE.md](docs/PERFORMANCE.md). Recipe-3 model evidence is in [PROCESS_DIVERSITY.md](docs/PROCESS_DIVERSITY.md); [CONTINUITY_AUDIT.md](docs/CONTINUITY_AUDIT.md) and [VALIDATION.md](docs/VALIDATION.md) retain historical evidence for versions 0.2 and 0.1.
+`infinity_continuity_tests` verifies full non-default round trips, every LOD, shared terrain samples/materials, SDF convergence, query-stable sites/vacancies/bonds for all five minerals, saved ancestry, exact camera restoration, local sections and parallel regeneration. Restart processes repeat the ascent after SQLite reopen. `infinity_process_tests` checks structural diversity, environmental causality, population statistics, phase-specific stoichiometry and coordination, and inherited constraints. `infinity_navigation_tests` checks stationary free look, frame rates, speed controls, interrupted transitions and saved flying views at all nine scales and three seeds. `infinity_flight_tests` adds complete automatic inward/outward flights, canonical terrain lookup, lateral tile handoffs, camera continuity and manual-view compatibility. The desktop suite includes streaming topology/morph proofs, native boundary pixels, automatic flight, presentation preservation and a Hyperion round trip with seventeen captures. Current operating-scale validation is in [OPERATING_SCALES.md](docs/OPERATING_SCALES.md); the earlier piloting integration and measurements are in [PILOTING.md](docs/PILOTING.md); the earlier shader integration is in [HYPERION_RENDERING.md](docs/HYPERION_RENDERING.md); generation/performance invariants remain documented in [PERFORMANCE.md](docs/PERFORMANCE.md). Recipe-3 model evidence is in [PROCESS_DIVERSITY.md](docs/PROCESS_DIVERSITY.md); [CONTINUITY_AUDIT.md](docs/CONTINUITY_AUDIT.md) and [VALIDATION.md](docs/VALIDATION.md) retain historical evidence for versions 0.2 and 0.1.
 
 ## Current limits and next concrete work
 

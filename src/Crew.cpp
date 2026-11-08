@@ -1,11 +1,12 @@
-#include "infinite/Crew.hpp"
+#include "infinity/SaveTag.hpp"
+#include "infinity/Crew.hpp"
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
 #include <limits>
 #include <set>
 #include <sstream>
-namespace infinite {
+namespace infinity {
 namespace {
 constexpr std::array<std::pair<unsigned, unsigned>, 9> corridors{
     {{0, 1}, {0, 2}, {1, 2}, {1, 3}, {2, 4}, {3, 4}, {3, 5}, {4, 6}, {5, 6}}};
@@ -675,7 +676,7 @@ void ShipCrew::reconcileMarket(uint64_t revision, std::span<const CrewTitle> tit
 }
 std::string ShipCrew::serialize() const {
     std::ostringstream o;
-    o << std::setprecision(17) << "INFINITE_CREW 4 " << seed_ << ' ' << impacts_ << ' ' << receipts_.hired
+    o << std::setprecision(17) << "INFINITY_CREW 4 " << seed_ << ' ' << impacts_ << ' ' << receipts_.hired
       << ' ' << receipts_.supplied << ' ' << receipts_.treated << ' ' << spares_ << ' ' << medical_ << ' '
       << previousHull_ << ' ' << accumulator_ << ' ' << automatic_ << ' ' << marketRevision_ << ' '
       << members_.size();
@@ -714,7 +715,7 @@ bool ShipCrew::restore(std::string_view text) {
     uint64_t seed;
     if (!(in >> h >> v >> seed >> c.impacts_ >> c.receipts_.hired >> c.receipts_.supplied >>
           c.receipts_.treated >> c.spares_ >> c.medical_ >> c.previousHull_ >> c.accumulator_ >> automatic) ||
-        h != "INFINITE_CREW" || (v < 1 || v > 4) || seed != seed_ || automatic > 1 ||
+        !matchesSaveTag(h, "INFINITY_CREW") || (v < 1 || v > 4) || seed != seed_ || automatic > 1 ||
         c.impacts_ > 1000000000000ULL || c.receipts_.hired > 1000000 || c.receipts_.supplied > 1000000 ||
         c.receipts_.treated > 1000000 || !range(c.spares_, 0, 100) || !range(c.medical_, 0, 50) ||
         !range(c.previousHull_, -1, 100) || !range(c.accumulator_, 0, .25) ||
@@ -803,4 +804,4 @@ size_t ShipCrew::residentBytes() const {
         n += sizeof(std::string) + e.capacity();
     return n;
 }
-} // namespace infinite
+} // namespace infinity

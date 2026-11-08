@@ -1,12 +1,13 @@
-#include "infinite/CombatActors.hpp"
-#include "infinite/Economy.hpp"
-#include "infinite/Piloting.hpp"
+#include "infinity/CombatActors.hpp"
+#include "infinity/Economy.hpp"
+#include "infinity/Piloting.hpp"
+#include "infinity/SurfaceRecon.hpp"
 #include <condition_variable>
 #include <deque>
 #include <mutex>
 #include <sqlite3.h>
 #include <thread>
-namespace infinite {
+namespace infinity {
 namespace {
 void sql(sqlite3* db, const char* query) {
     char* err = nullptr;
@@ -126,7 +127,7 @@ ActivityBody sampleEconomicFreight(const Universe& u, const EconomicNetwork& n, 
         f.phase == FreightPhase::Idle         ? "NO FUNDED ASSIGNMENT"
         : f.phase == FreightPhase::Reposition ? "EMPTY / PICKUP ETA " + remaining
         : f.phase == FreightPhase::Loading    ? "RESERVED " + manifest + " / DEPARTS " + remaining
-        : f.phase == FreightPhase::Holding    ? "WAITING / DESTINATION WAREHOUSE FULL"
+        : f.phase == FreightPhase::Holding    ? (f.weatherHold ? "HOLDING / SURFACE WEATHER" : "WAITING / DESTINATION WAREHOUSE FULL")
                                               : "CARGO " + manifest + " / ARRIVES " + remaining;
     b.economicReport[1] =
         f.phase == FreightPhase::Idle ? "BERTH " + endpoint(f.location) : "FROM " + endpoint(f.source);
@@ -224,6 +225,7 @@ struct EconomyRuntime::Impl {
             // Alias ownership is avoided: the definition already has immutable shared lifetime.
             s->network = definitions.at(e->network().system);
             s->sites = e->sites();
+            s->incidents = e->incidents();
             s->contracts = e->contracts();
             s->hauls = e->hauls();
             s->recoveries = e->recoveries();
@@ -243,6 +245,8 @@ struct EconomyRuntime::Impl {
                 flight.kg = (f.phase == FreightPhase::Transit || f.phase == FreightPhase::Holding) ? f.kg : 0;
                 flight.phase = f.phase;
                 flight.disabledAt = f.disabledAt;
+                flight.weatherHold = f.disabledAt < 0 && f.phase == FreightPhase::Holding &&
+                                     economicWeatherHold(e->network().sites[f.destination], e->tick());
                 flight.source = f.source;
                 flight.destination = f.destination;
                 flight.location = f.location;
@@ -312,6 +316,9 @@ struct EconomyRuntime::Impl {
                 throw std::runtime_error("ECONOMY SAVE INVALID / original ledger retained");
             if (auto text = read("exploration"); text && !exploration.restore(*text, u))
                 throw std::runtime_error("EXPLORATION SAVE INVALID / original ledger retained");
+            for (unsigned m=0;m<maxWeaponMounts;++m)
+                if (exploration.state().probes.launchers[m] && player.weaponAt(m))
+                    throw std::runtime_error("PROBE BAY SAVE MISMATCH / original ledger retained");
             if (auto text = read("expeditions"); text && !expeditions.restore(*text, u))
                 throw std::runtime_error("EXPEDITION SAVE INVALID / original ledger retained");
             expeditions.reconcilePlayer(player);
@@ -385,12 +392,23 @@ struct EconomyRuntime::Impl {
                 catching = economy.tick() < goal;
                 if (!catching)
                     for (const auto& c : orders) {
+                        if(c.action==EconomicAction::RespondFieldIncident){
+                            message=respondFieldIncident(u,economy,player,c);continue;
+                        }
+                        if (c.action == EconomicAction::ExtractOrbitalDebris) {
+                            message = exploration.execute(u, economy, player, c);
+                            continue;
+                        }
+                        if (c.action == EconomicAction::RaiderTribute) {
+                            message = economy.execute(c, player);
+                            continue;
+                        }
                         if (c.action >= EconomicAction::DiagnoseExpedition) {
                             message = expeditions.execute(u, economy, exploration, player, c);
                             continue;
                         }
                         if (c.action >= EconomicAction::ScanSurvey &&
-                            c.action <= EconomicAction::SellSurvey) {
+                            c.action <= EconomicAction::ExtractCavern) {
                             message = exploration.execute(u, economy, player, c);
                             continue;
                         }
@@ -411,11 +429,20 @@ struct EconomyRuntime::Impl {
                             message = "SELL MINING HEAD FIRST / F2 SURVEY";
                             continue;
                         }
+                        if (c.action == EconomicAction::FitWeapon && c.weaponMount < maxWeaponMounts &&
+                            exploration.state().probes.launchers[c.weaponMount]) {
+                            player.lastCommand = std::max(player.lastCommand, c.sequence);
+                            message = "PROBE LAUNCHER FITTED / REMOVE IT IN SURVEY SERVICES FIRST";
+                            continue;
+                        }
                         if (economy.siteIndex(c.port) || c.action == EconomicAction::DisableVessel ||
                             c.action == EconomicAction::ReportCombat ||
                             c.action == EconomicAction::RegisterWreck ||
-                            c.action == EconomicAction::RecoverWreck)
+                            c.action == EconomicAction::RecoverWreck){
+                            const auto credits=player.credits;const auto last=player.lastCommand;
                             message = economy.execute(c, player);
+                            if(c.sequence>last)exploration.recordExpense(c,credits,player);
+                        }
                         else {
                             message = "ORDER CANCELLED / MARKET CHANGED";
                             player.lastCommand = std::max(player.lastCommand, c.sequence);
@@ -497,8 +524,10 @@ size_t EconomyRuntime::residentBytes() const {
     if (!s)
         return 0;
     size_t extras = 0;
+    extras += s->exploration.probes.residentBytes();
     extras += s->exploration.journal.capacity() * sizeof(SurveyRecord) +
               s->exploration.prospects.capacity() * sizeof(Prospect) +
+              s->exploration.seams.capacity() * sizeof(SeamExpedition) +
               s->exploration.contracts.capacity() * sizeof(SurveyContract);
     for (const auto& r : s->exploration.journal)
         extras += r.address.path.capacity() * sizeof(Segment) + r.name.capacity() + r.formation.capacity() +
@@ -506,6 +535,9 @@ size_t EconomyRuntime::residentBytes() const {
                   (r.prospect ? r.prospect->path.capacity() * sizeof(Segment) : 0);
     for (const auto& p : s->exploration.prospects)
         extras += p.address.path.capacity() * sizeof(Segment);
+    for (const auto& seam : s->exploration.seams)
+        extras += (seam.source.path.capacity() + seam.pool.path.capacity() +
+                   (seam.material ? seam.material->path.capacity() : 0)) * sizeof(Segment);
     for (const auto& c : s->exploration.contracts)
         extras +=
             (c.issuer.home.path.capacity() + c.target.path.capacity()) * sizeof(Segment) + c.name.capacity();
@@ -530,11 +562,11 @@ size_t EconomyRuntime::residentBytes() const {
             sizeof(Segment);
     }
     return extras + impl_->workerBytes.load() + sizeof(*s) + s->sites.capacity() * sizeof(EconomicSiteState) +
-           s->flights.capacity() * sizeof(EconomicFlight) +
+           s->flights.capacity() * sizeof(EconomicFlight) + s->incidents.capacity() * sizeof(FreightIncident) +
            s->routes.capacity() * sizeof(EconomySnapshot::TradeRoute) +
            s->hauls.capacity() * sizeof(HaulContract) + s->recoveries.capacity() * sizeof(RecoveryJob) +
            s->outcomes.capacity() * sizeof(EconomicOutcome) +
            s->jobs.capacity() * sizeof(EconomySnapshot::Job) +
            s->portSignals.capacity() * sizeof(EconomicPortSignal);
 }
-} // namespace infinite
+} // namespace infinity

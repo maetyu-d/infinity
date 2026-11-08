@@ -1,11 +1,11 @@
-#include "infinite/CombatActors.hpp"
-#include "infinite/Economy.hpp"
+#include "infinity/CombatActors.hpp"
+#include "infinity/Economy.hpp"
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
 #include <set>
 #include <sstream>
-namespace infinite {
+namespace infinity {
 namespace {
 bool active(CombatJobPhase p) {
     return p == CombatJobPhase::Accepted || p == CombatJobPhase::Claimable;
@@ -240,4 +240,4 @@ bool Economy::readCombat(std::istream& in, bool physical) {
     }
     return accepted <= 1;
 }
-} // namespace infinite
+} // namespace infinity

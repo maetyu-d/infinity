@@ -1,0 +1,11 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 45: stellar_catalogue_preservation
+    Start 52: surface_site_preservation
+    Start 60: established_world_preservation
+1/3 Test #60: established_world_preservation ...   Passed    0.80 sec
+2/3 Test #45: stellar_catalogue_preservation ...   Passed    1.08 sec
+3/3 Test #52: surface_site_preservation ........   Passed    2.61 sec
+
+100% tests passed, 0 tests failed out of 3
+
+Total Test time (real) =   2.62 sec

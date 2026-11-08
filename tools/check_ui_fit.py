@@ -9,8 +9,10 @@ log = (root / 'native.log').read_text()
 assert 'UI_STARTUP window_and_decorations=inside_work_area' in log
 assert 'PASS: native UI fit' in log
 records = re.findall(r'UI_FIT case=(\w+) pixels=(\d+),(\d+) viewport=(\d+),(\d+),(\d+),(\d+) projection=([\d.]+) hit_testing=PASS camera=unchanged', log)
-assert len(records) == 6
-assert {r[0] for r in records} == {'small', 'square', 'portrait', 'retina', 'wide', 'controls'}
+assert len(records) == 12
+assert log.count('text_overlap=0') == 12
+assert {r[0] for r in records} == {'small', 'square', 'portrait', 'retina', 'wide', 'controls',
+                                  'crowded', 'station', 'crew', 'market', 'probe', 'probe_portrait'}
 for name, w, h, x, y, vw, vh, projection in records:
     w, h, x, y, vw, vh = map(int, (w, h, x, y, vw, vh))
     assert 0 <= x and 0 <= y and x + vw <= w and y + vh <= h and vw >= vh
@@ -26,9 +28,13 @@ for name, w, h, x, y, vw, vh, projection in records:
                    for py in range(max(0, int(y + top*vh/900)), min(h, int(y + bottom*vh/900)+1))
                    for px in range(max(0, int(x + left*vh/900)), min(w, int(x + right*vh/900)+1)))
     canvas_w = vw * 900 / vh
-    assert lit(24, 14, 170, 35) > 12, f'{name}: clipped title'
-    assert lit(24, 886, 172, 900) > 5, f'{name}: clipped bottom controls hint'
-    assert lit(canvas_w - 200, 886, canvas_w - 24, 900) > 5, f'{name}: clipped right footer'
+    if name.startswith('probe'):
+        assert lit(38, 43, canvas_w - 38, 61) > 20, f'{name}: missing probe title'
+        assert lit(38, 849, canvas_w - 38, 860) > 10, f'{name}: missing probe controls'
+    else:
+        assert lit(24, 14, 170, 35) > 12, f'{name}: clipped title'
+        assert lit(24, 886, 172, 900) > 5, f'{name}: clipped bottom controls hint'
+        assert lit(canvas_w - 200, 886, canvas_w - 24, 900) > 5, f'{name}: clipped right footer'
     if name == 'controls':
         assert lit(canvas_w / 2 - 260, 225, canvas_w / 2 + 260, 615) > 250, 'Missing controls guide'
-print('PASS: six fitted native HUD/guide captures; full title/footer; real world and traffic clicks; unchanged camera')
+print('PASS: twelve native HUD, popup, crew, market and probe layouts; zero text overlaps; real clicks; unchanged camera')

@@ -1,9 +1,9 @@
-#include "infinite/CockpitMotion.hpp"
+#include "infinity/CockpitMotion.hpp"
 #include <algorithm>
 #include <cmath>
 #include <numbers>
 
-namespace infinite {
+namespace infinity {
 namespace {
 bool finite(glm::dvec3 v) {
     return std::isfinite(v.x) && std::isfinite(v.y) && std::isfinite(v.z);
@@ -97,4 +97,4 @@ void CockpitMotion::update(const CockpitMotionInput& in, double dt) {
     pose_.translation = bounded(slide_.position + jolt_.position + rattle * (vibration * .35), .009);
     pose_.orientation = glm::normalize(glm::dquat(pose_.angles));
 }
-} // namespace infinite
+} // namespace infinity

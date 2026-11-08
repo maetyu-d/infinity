@@ -1,5 +1,5 @@
-if(NOT INFINITE_EXE OR NOT OUTPUT)
-  message(FATAL_ERROR "INFINITE_EXE and OUTPUT are required")
+if(NOT INFINITY_EXE OR NOT OUTPUT)
+  message(FATAL_ERROR "INFINITY_EXE and OUTPUT are required")
 endif()
 file(MAKE_DIRECTORY "${OUTPUT}")
 set(terrain_mode --terrain-test)
@@ -13,7 +13,7 @@ if(NOT WIDTH)
   set(WIDTH 1440)
   set(HEIGHT 900)
 endif()
-execute_process(COMMAND "${INFINITE_EXE}" ${terrain_mode} --render-mode hyperion --width ${WIDTH} --height ${HEIGHT}
+execute_process(COMMAND "${INFINITY_EXE}" ${terrain_mode} --render-mode hyperion --width ${WIDTH} --height ${HEIGHT}
   --capture-dir "${OUTPUT}/captures" --profile "${OUTPUT}/frames.csv" --data "${OUTPUT}/data"
   OUTPUT_FILE "${OUTPUT}/native.log" ERROR_FILE "${OUTPUT}/native.log"
   RESULT_VARIABLE result TIMEOUT 180)

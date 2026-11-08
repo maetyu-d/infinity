@@ -1,5 +1,5 @@
-#include "infinite/Piloting.hpp"
-#include "infinite/Planetology.hpp"
+#include "infinity/Piloting.hpp"
+#include "infinity/Planetology.hpp"
 #include <algorithm>
 #include <iostream>
 #include <oneapi/tbb/global_control.h>
@@ -7,7 +7,7 @@
 #include <set>
 #include <sstream>
 #include <stdexcept>
-using namespace infinite;
+using namespace infinity;
 static size_t checks = 0;
 static void check(bool v, const char* m) {
     ++checks;

@@ -1,6 +1,6 @@
-# Surface optics and architectural depth — Infinite 0.28
+# Surface optics and architectural depth — Infinity 0.28
 
-This pass develops the existing Hyperion presentation through material-specific lighting, geological colour, richer cloud illumination and optical depth behind glass. It preserves the universe and its geometry. Baseline **1b1819e** is retained by `checkpoint/infinite-0.27-before-surface-optics` and a frozen executable used for matched captures.
+This pass develops the existing Hyperion presentation through material-specific lighting, geological colour, richer cloud illumination and optical depth behind glass. It preserves the universe and its geometry. Baseline **1b1819e** is retained by `checkpoint/infinity-0.27-before-surface-optics` and a frozen executable used for matched captures.
 
 ## What changes
 
@@ -11,7 +11,7 @@ This pass develops the existing Hyperion presentation through material-specific 
 - **Cities:** Hyperion's `windowInterior` ray-box shading is adapted to the metre grid behind existing glass panes. Floors, back walls, desks and lamps are optical detail; the simulation does not gain rooms or buildings. Recessed panel joints and small fasteners are filtered, and normal variance broadens distant highlights.
 - **Close-material stability:** magnified height textures receive cubic B-spline reconstruction; minified material continues to use its complete anisotropic mip chain. Insignificant triplanar projections are skipped. A separate precision fix splits the material-noise origin in doubles, packs integer cells into the existing matrix, and adds them only after local floor/fract. The old float coordinate could lose a four-millimetre camera movement. A negative-control regression reproduces that loss and verifies that all four sampled octaves preserve canonical phase with the corrected frame.
 
-The actual references are the sibling Hyperion game's `src/flight/shaders.hpp` (`worldFragment`, `cloudFragment`, `atmoFragment`), `surface_detail.hpp` and `architecture.hpp` (`windowInterior`, panel relief and coherent projection pruning). Cubic reconstruction and the split origin adapt its material sampling to Infinite's precision requirements. No new full-screen pass, image asset, dependency, generation job or render target is added.
+The actual references are the sibling Hyperion game's `src/flight/shaders.hpp` (`worldFragment`, `cloudFragment`, `atmoFragment`), `surface_detail.hpp` and `architecture.hpp` (`windowInterior`, panel relief and coherent projection pruning). Cubic reconstruction and the split origin adapt its material sampling to Infinity's precision requirements. No new full-screen pass, image asset, dependency, generation job or render target is added.
 
 ## Matched views
 
@@ -25,7 +25,7 @@ Native Metal, 1440 × 900, identical addressed worlds and cameras, visual time f
 | City approach | [Before](graphics-0.28/before-1-city-approach-HYPERION.png) | [After](graphics-0.28/after-1-city-approach-HYPERION.png) |
 | Street and glass facades | [Before](graphics-0.28/before-2-inhabitants-HYPERION.png) | [After](graphics-0.28/after-2-inhabitants-HYPERION.png) |
 
-The geometric character of each world remains Infinite's. Smooth generated ground remains smooth. Close material relief and window interiors affect shading and do not provide new collision or walkable geometry. [Source preservation and Hyperion reference hashes](graphics-0.28/preservation.json).
+The geometric character of each world remains Infinity's. Smooth generated ground remains smooth. Close material relief and window interiors affect shading and do not provide new collision or walkable geometry. [Source preservation and Hyperion reference hashes](graphics-0.28/preservation.json).
 
 ## Measured cost
 
@@ -48,4 +48,4 @@ The measured GPU cost increases by **0.326 ms (4.4%)**. CPU and frame pacing var
 
 All **30 Original world crops are pixel-identical** to 0.27: six surface views, seven city/weather views and seventeen scale-tour stops. The comparison excludes cockpit instruments and the transient startup control banner. Geometry and terrain digests remain the same through mode changes. [Pixel comparison](graphics-0.28/original-comparison.json), [validation summary](graphics-0.28/validation.json), [complete test log](graphics-0.28/final-tests.log), [planet-depth checks](graphics-0.28/planet-stability.json), [mode tour](graphics-0.28/mode-round-trip.log).
 
-Shaders are rebuilt for Metal, GLSL and SPIR-V with the pinned shader compiler. Metal is runtime-tested; the other backends are compiled. The local `Infinite.app` is **0.28.0, build 28**, signed and strictly verified. It resumes the existing saved flight.
+Shaders are rebuilt for Metal, GLSL and SPIR-V with the pinned shader compiler. Metal is runtime-tested; the other backends are compiled. The local `Infinity.app` is **0.28.0, build 28**, signed and strictly verified. It resumes the existing saved flight.

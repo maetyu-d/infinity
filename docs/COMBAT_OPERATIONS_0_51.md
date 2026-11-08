@@ -1,6 +1,6 @@
 # Crew combat operations — 0.51
 
-This release adds the three requested layers in order: crew combat piloting, distinct gunner views, then funded security contracts. Infinite's universe generators, seeds, scientific geometry, hierarchical addressing and object identities remain unchanged. Ordinary captain flight still uses the restored manual controller.
+This release adds the three requested layers in order: crew combat piloting, distinct gunner views, then funded security contracts. Infinity's universe generators, seeds, scientific geometry, hierarchical addressing and object identities remain unchanged. Ordinary captain flight still uses the restored manual controller.
 
 ## 1. Give the relief pilot combat orders
 
@@ -52,7 +52,7 @@ Wallet and ledger version 8 append security ownership, progress, receipts and st
 
 Baseline checkpoint: `842b5db`. Eight focused existing crew/combat/economy suites passed before edits. New tests exercise funded escrow, physical escort timing, abandonment and death, named bounty attribution, old wreck rejection, deferred payment, salvage capacity, duplicate claims, conservation, malformed saves, version-seven migration and SQLite restart. Station tests cover physical movement, order feedback, critical-hull retreat, gun traverse, authority loss and portrait/wide HUD fit. NPC tests exercise attacks on a protected civilian and persistent damage.
 
-All **51 Infinite core tests passed**, including galaxy-to-atomic round trips, deterministic processes, restored handling, crew, equipment, contracts and persistence. The two affected HUD suites passed again after the visual correction. Four native station/NPC gameplay and image checks passed; the station fixture was rerun after reserving the arc display against contact labels and correcting capture timing. The extended station fixture contains twelve captures, including both side stations, portrait layout, three crew manoeuvres and the funded security board.
+All **51 Infinity core tests passed**, including galaxy-to-atomic round trips, deterministic processes, restored handling, crew, equipment, contracts and persistence. The two affected HUD suites passed again after the visual correction. Four native station/NPC gameplay and image checks passed; the station fixture was rerun after reserving the arc display against contact labels and correcting capture timing. The extended station fixture contains twelve captures, including both side stations, portrait layout, three crew manoeuvres and the funded security board.
 
 **201 existing source and shader files match checkpoint `842b5db` byte for byte.** The preservation manifest includes all universe generators, scientific geometry, hierarchy, addressing, seed implementations and existing GPU shaders. Unrelated concurrent Dune/Ellipsoid work is excluded from this checkpoint.
 

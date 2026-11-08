@@ -1,11 +1,11 @@
-#include "infinite/Planetology.hpp"
-#include "infinite/SurfaceLife.hpp"
+#include "infinity/Planetology.hpp"
+#include "infinity/SurfaceLife.hpp"
 #include <algorithm>
 #include <cmath>
 #include <numbers>
 #include <stdexcept>
 
-namespace infinite {
+namespace infinity {
 GiantFormation giantFormation(uint64_t seed, unsigned slot, double hostMassSolar) {
     if (slot >= giantPopulationCount)
         throw std::invalid_argument("Invalid giant formation slot");
@@ -158,4 +158,4 @@ std::string_view thermalTypeName(ThermalType t) {
     constexpr std::array names = {"Frozen", "Cold", "Temperate", "Warm", "Hot", "Molten"};
     return names.at(size_t(t));
 }
-} // namespace infinite
+} // namespace infinity

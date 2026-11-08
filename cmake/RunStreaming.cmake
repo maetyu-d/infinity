@@ -1,8 +1,8 @@
-if(NOT INFINITE_EXE OR NOT OUTPUT)
-  message(FATAL_ERROR "INFINITE_EXE and OUTPUT are required")
+if(NOT INFINITY_EXE OR NOT OUTPUT)
+  message(FATAL_ERROR "INFINITY_EXE and OUTPUT are required")
 endif()
 file(MAKE_DIRECTORY "${OUTPUT}/captures")
-execute_process(COMMAND "${INFINITE_EXE}" --streaming-test --render-mode hyperion
+execute_process(COMMAND "${INFINITY_EXE}" --streaming-test --render-mode hyperion
   --width 1920 --height 1080 --capture-dir "${OUTPUT}/captures"
   --profile "${OUTPUT}/frames.csv" --data "${OUTPUT}/data"
   OUTPUT_FILE "${OUTPUT}/native.log" ERROR_FILE "${OUTPUT}/native.log"

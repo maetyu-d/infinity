@@ -1,10 +1,10 @@
-#include "infinite/Navigation.hpp"
-#include "infinite/Presentation.hpp"
-#include "infinite/StellarEvolution.hpp"
+#include "infinity/Navigation.hpp"
+#include "infinity/Presentation.hpp"
+#include "infinity/StellarEvolution.hpp"
 #include <algorithm>
 #include <cmath>
 #include <numbers>
-namespace infinite {
+namespace infinity {
 double stellarDiscVisibility(glm::dvec3 direction, double radius, double distance,
                              std::span<const CelestialContact> bodies) {
     if (!(radius > 0) || !(distance > 0) || glm::length(direction) < 1e-30)
@@ -68,4 +68,4 @@ StellarImage extractStellarImage(const Universe& universe, const Navigation& nav
             : 0;
     return image;
 }
-} // namespace infinite
+} // namespace infinity

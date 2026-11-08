@@ -1,0 +1,15 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start  3: cavern_geology_drilling_and_expedition
+1/5 Test  #3: cavern_geology_drilling_and_expedition ...   Passed    0.64 sec
+    Start  4: expedition_planner_and_objectives
+2/5 Test  #4: expedition_planner_and_objectives ........   Passed    0.65 sec
+    Start  5: mining_consequences_and_save_migration
+3/5 Test  #5: mining_consequences_and_save_migration ...   Passed    0.48 sec
+    Start 12: exploration_worker_and_restart
+4/5 Test #12: exploration_worker_and_restart ...........   Passed    3.92 sec
+    Start 52: cockpit_popup_and_text_collisions
+5/5 Test #52: cockpit_popup_and_text_collisions ........   Passed    0.44 sec
+
+100% tests passed, 0 tests failed out of 5
+
+Total Test time (real) =   6.13 sec

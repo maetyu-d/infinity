@@ -259,6 +259,101 @@ void drawCityPaving(const Mesh& mesh, const Node& planet, const Navigation& nav)
     }
     stats.surfaceTriangles += mesh.indexCount() / 3;
 }
+// Draw the same immutable urban parcels at every distance. The descriptor
+// contains every home's terrain fit; only subpixel drawing is omitted.
+template<class Emit,class Rover>
+void renderUrban(const Node& planet,const SurfaceSettlement& city,const Pose& pose,glm::dvec3 planetEye,
+                 const Navigation& nav,const SettlementWork& work,Emit&& emit,Rover&& rover,Mesh& paving,size_t usedInstances){
+    if(!city.urban)return;const auto& region=*city.urban;++stats.urbanRegions;
+    const double units=std::pow(10.,nav.logDistance),pixelScale=height/(2*std::tan(fieldOfView*.5));
+    const auto sunlight=glm::inverse(pose.orientation)*lightAt(planet.address,nav);
+    struct Visible {const UrbanBlock* block;double distance;glm::dvec3 point;};std::vector<Visible> visible;visible.reserve(region.blocks.size());
+    auto roadQuad=[&](const SurfaceRoad& road){
+        const auto centre=(road.a+road.b)*.5;const auto delta=pose.orientation*(centre-planetEye);
+        if(road.width/std::max(.1,glm::length(delta))*pixelScale<.5||!LOD::visible(cameraInverse*delta/units,(glm::length(road.b-road.a)+road.width)/units,double(width)/height,fieldOfView))return;
+        const auto first=uint32_t(paving.vertices.size());
+        for(unsigned corner:{1u,2u,6u,5u}){const auto p=pose.orientation*(centre-planetEye+glm::dvec3(road.surface[corner]))/units;
+            paving.vertices.push_back({float(p.x),float(p.y),float(p.z),rgba({.16,.23,.28})});}
+        paving.indices.insert(paving.indices.end(),{first,first+1,first+2,first,first+2,first+3});
+    };
+    for(const auto& block:region.blocks){
+        const glm::dvec2 local((block.x+.5)*region.cellWidth,(block.z+.5)*region.cellWidth);
+        const auto point=urbanPoint(city,region,local,block.ground);const auto up=glm::normalize(point);
+        const auto delta=pose.orientation*(point-planetEye);const double distance=glm::length(delta);
+        if(glm::dot(up,planetEye-point)<-block.tallest||distance>region.growth.radius+400000||
+            !LOD::visible(cameraInverse*delta/units,(region.cellWidth*.73+block.tallest)/units,double(width)/height,fieldOfView))continue;
+        ++stats.urbanBlocks;visible.push_back({&block,distance,point});
+        const double night=1-smoothstep(-.12,.12,glm::dot(up,sunlight));
+        const double power=work.synchronized?std::clamp(work.power,0.,1.):1.;
+        if(night*power>.025){
+            const auto tint=block.use==BuildingUse::Commerce?glm::vec3(.65,.32,1):block.use==BuildingUse::Industry?glm::vec3(1,.43,.12):block.use==BuildingUse::Utilities?glm::vec3(.15,.85,.87):glm::vec3(1,.76,.42);
+            // Junction lights are anchored to actual generated street samples.
+            for(unsigned corner:{0u,1u}){
+                const auto ground=urbanPoint(city,region,{block.x*region.cellWidth,(block.z+corner)*region.cellWidth},block.roads[0][corner*urbanRoadSteps*2]+2);
+                const auto p=pose.orientation*(ground-planetEye);
+                if((cameraInverse*p).z>=0)continue;
+                addBillboard(eye+p/units,std::max(5.,distance*.0008)/units,tint*float(night*power*.38));++stats.urbanLights;
+            }
+            if(distance>12000){addBillboard(eye+delta/units,region.cellWidth*.36/units,tint*float(night*power*.035));++stats.urbanLights;}
+        }
+    }
+    std::sort(visible.begin(),visible.end(),[](const auto& a,const auto& b){return a.distance<b.distance;});
+    // Reserve a share for every visible block before refining its parcels.
+    // A nearer block cannot consume the budget and erase the distant skyline.
+    size_t fixed=0,weight=0;
+    for(const auto& view:visible){
+        if(view.distance<1500)fixed+=size_t(std::popcount(view.block->occupied))*2;
+        else weight+=view.distance<2500?2:1;
+    }
+    const auto budget=6000>usedInstances+fixed+96?6000-usedInstances-fixed-96:0;
+    const double quota=std::min(double(urbanPlotCount),double(budget)/std::max(size_t(1),weight));
+    unsigned people=0,vehicles=0;
+    for(const auto& view:visible){const auto& block=*view.block;
+        if(block.tallest/std::max(.1,view.distance)*pixelScale>.8){
+            std::array<unsigned,urbanPlotCount> ordered{};unsigned count=0;uint64_t chosen=0;
+            const Random selection{urbanBlockId(region,block)};
+            for(unsigned group:{4u,0u,8u,2u,6u,1u,7u,3u,5u}){
+                const unsigned x=(group%3)*2,z=(group/3)*2,rotation=selection.bits(group)%4;
+                for(unsigned pick=0;pick<4;++pick){const unsigned corner=(pick+rotation)%4,plot=(z+corner/2)*urbanPlotsAcross+x+corner%2;
+                    if(block.occupied&(uint64_t(1)<<plot)){ordered[count++]=plot;chosen|=uint64_t(1)<<plot;break;}}
+            }
+            for(unsigned plot=0;plot<urbanPlotCount;++plot)if((block.occupied&~chosen)&(uint64_t(1)<<plot))ordered[count++]=plot;
+            const unsigned localQuota=view.distance<1500?urbanPlotCount:unsigned(quota+selection.unit(97));
+            for(unsigned sample=0;sample<std::min(localQuota,count);++sample){const auto plot=ordered[sample];
+                const auto b=urbanBuilding(city,region,block,plot);
+                if(emit(b.kind,b.position,b.orientation,b.dimensions,b.tint)){++stats.surfaceBuildings;++stats.urbanBuildings;}
+                if(b.kind!=SurfaceMesh::Tree&&view.distance<2500)emit(SurfaceMesh::Foundation,b.position,b.orientation,{b.dimensions.x,b.foundationMetres,b.dimensions.z},b.tint);
+                if(people<48&&view.distance<900&&b.inhabitants&&!(work.synchronized&&work.outdoorHold)){
+                    const auto person=urbanResident(city,region,block,plot,unsigned(Random{b.id}.bits(0)%b.inhabitants),activity->seconds);
+                    if(person.outside&&emit(person.suited?SurfaceMesh::Suit:SurfaceMesh::Resident,person.position,person.orientation,{1,1,1},{.68,.85,.94})){++people;++stats.surfaceResidents;++stats.urbanResidents;}
+                }
+            }
+        }
+        if(view.distance<20000){
+            const double stepPixels=region.cellWidth/urbanRoadSteps/std::max(.1,view.distance)*pixelScale;
+            const unsigned stride=stepPixels<3?8:stepPixels<8?4:stepPixels<16?2:1;
+            for(unsigned edge=0;edge<2;++edge)for(unsigned segment=0;segment<urbanRoadSteps;segment+=stride){
+                auto road=urbanRoad(city,region,block,edge,segment);
+                if(stride>1){const auto last=urbanRoad(city,region,block,edge,segment+stride-1);const auto oldCentre=(road.a+road.b)*.5,newCentre=(road.a+last.b)*.5,lastCentre=(last.a+last.b)*.5;
+                    for(unsigned corner=0;corner<4;++corner)road.surface[corner]+=glm::vec3(oldCentre-newCentre);
+                    for(unsigned corner=4;corner<8;++corner)road.surface[corner]=last.surface[corner]+glm::vec3(lastCentre-newCentre);
+                    road.b=last.b;}
+                roadQuad(road);
+            }
+        }
+        if(vehicles<12&&view.distance<6000&&work.synchronized&&!work.outdoorHold&&work.activity>.05&&work.orderCount){
+            const auto& order=work.orders[urbanBlockId(region,block)%work.orderCount];const Random choice{mix64(order.id^urbanBlockId(region,block))};
+            const double clock=work.animationSeconds>=0?work.animationSeconds:activity->seconds*work.activity;
+            const double journey=std::fmod(clock*(4+choice.unit(0)*4)+choice.unit(1)*region.cellWidth*2,region.cellWidth*2);
+            const bool returning=journey>region.cellWidth;const double progress=returning?region.cellWidth*2-journey:journey;
+            const unsigned segment=std::min(urbanRoadSteps-1,unsigned(progress/region.cellWidth*urbanRoadSteps));
+            const auto road=urbanRoad(city,region,block,choice.bits(2)%2,segment);const auto forward=glm::normalize(road.b-road.a),up=glm::normalize(road.a);
+            const auto position=glm::mix(road.a,road.b,std::clamp(progress/region.cellWidth*urbanRoadSteps-segment,0.,1.))+up*.2+glm::normalize(glm::cross(up,forward))*(road.width*.2);
+            rover(position,urbanOrientation(returning?-forward:forward,up),{.27,.74,.83});++vehicles;
+        }
+    }
+    for(const auto& road:region.accessRoads)roadQuad(road);
+}
 void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& nav, RegionCache& cache) {
     for (const auto& node : nodes)
         if (node.address.kind() == Kind::Planet && hasSolidSurface(node)) {
@@ -271,6 +366,7 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
         return;
     std::array<std::array<std::vector<Instance>, 3>, size_t(SurfaceMesh::Count)> batches;
     std::array<std::vector<Instance>, size_t(SurfaceMesh::Count)> sunCasters;
+    std::array<std::array<std::vector<Instance>,3>,size_t(SurfaceMachine::Count)> workBatches;
     const double units = std::pow(10., nav.logDistance);
     const glm::mat4 rotationView = glm::mat4_cast(glm::quat(cameraInverse)), proj(projection);
     bgfx::setViewTransform(61, glm::value_ptr(rotationView), glm::value_ptr(proj));
@@ -360,6 +456,22 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
                 batches[size_t(kind)][detail].push_back({glm::mat4(model), glm::vec4(tint, economicLighting)});
                 ++instances;
             };
+            auto animateWork=[&](const ActivityId& id,SettlementWork& work){
+                if(work.synchronized){
+                    if(workClocks.size()>=128 && !workClocks.contains(id)){
+                        const auto old=std::min_element(workClocks.begin(),workClocks.end(),
+                            [](const auto& a,const auto& b){return a.second.used<b.second.used;});
+                        workClocks.erase(old);
+                    }
+                    auto& animation=workClocks[id];animation.used=frame;
+                    animation.clock.advance(work.activity,activity->seconds);
+                    work.animationSeconds=animation.clock.seconds;
+                    animation.machinery.advance(work.machineryActivity,activity->seconds);
+                    work.machinerySeconds=animation.machinery.seconds;
+                }
+            };
+            struct UrbanDraw {const SurfaceSettlement* city;SettlementWork work;float lighting;};
+            std::vector<UrbanDraw> urbanDraws;
             for (const auto& settlement : world->settlements) {
                 ++stats.surfaceSites;
                 auto body = surfaceContact(*world, settlement, activity->seconds);
@@ -370,6 +482,11 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
                         if (auto i = economy->siteIndex(body.id); i && *i < settlementLights.size())
                             economicLighting = settlementLights[*i];
                 }
+                const auto forecast = sampleWeather(world->climate, settlement.direction,
+                    glm::length(settlement.landingPoint)-world->radiusMetres,activity->seconds);
+                auto work = settlementWork(*world,settlement,forecast,economy.get());
+                body.status += " / " + work.status;
+                if(settlement.urban){animateWork(body.id,work);urbanDraws.push_back({&settlement,work,economicLighting});}
                 const auto delta = pose.orientation * (body.position - planetEye);
                 const double distance = glm::length(delta);
                 if (distance < 1e-10)
@@ -392,6 +509,31 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
                 }
                 if (distance > settlement.radius + 120000)
                     continue;
+                animateWork(body.id,work);
+                if (work.machineryActivity>.05 || (work.activity>.05&&work.orderCount)) ++stats.surfaceWorking;
+                if (work.synchronized && work.outdoorHold) ++stats.surfaceWeatherHolds;
+                if (distance < settlement.radius + 6000) {
+                    for (const auto& actor : sampleSurfaceWork(*world,settlement,work,activity->seconds)) {
+                        if (instances >= 6000) break;
+                        const auto delta=pose.orientation*(actor.position-planetEye);
+                        const double extent=actor.kind==SurfaceMachine::CargoRover ? 5. :
+                            std::max({actor.dimensions.x,actor.dimensions.y,actor.dimensions.z})*4.;
+                        const double pixels=extent/std::max(.01,glm::length(delta))*height/(2*std::tan(fieldOfView*.5));
+                        if (pixels < 1 || !LOD::visible(cameraInverse*delta/units,extent/units,
+                                                       double(width)/height,fieldOfView)) continue;
+                        const auto model=glm::translate(glm::dmat4(1),delta/units)*
+                            glm::mat4_cast(pose.orientation*actor.orientation)*glm::scale(glm::dmat4(1),actor.dimensions/units);
+                        workBatches[size_t(actor.kind)][pixels>60?2:pixels>10?1:0].push_back(
+                            {glm::mat4(model),glm::vec4(actor.tint,1)});
+                        ++instances;
+                        if(actor.kind==SurfaceMachine::CargoRover)++stats.surfaceRovers;else ++stats.surfaceMachines;
+                        if(pixels>4 && work.power>.05) {
+                            const auto beacon=delta/units+pose.orientation*(actor.orientation*glm::dvec3(0,2.2,0))/units;
+                            const auto tint=work.damaged?glm::vec3(1,.10,.025):work.outdoorHold?glm::vec3(1,.40,.04):glm::vec3(.10,.8,.6);
+                            addBillboard(beacon+eye,.14/units,tint*float(.7+.3*std::sin(activity->seconds*3+hyperionPhase(actor.id))));
+                        }
+                    }
+                }
                 // A terrain-following pad: small shared quads leave the landing
                 // plane and original collision surface in exact agreement.
                 for (int x = -2; x < 2; x++)
@@ -454,7 +596,7 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
                     for (unsigned sample = 0; sample < people; sample++) {
                         const unsigned id = unsigned(uint64_t(sample) * settlement.population / people);
                         const auto person = sampleResident(*world, settlement, id, activity->seconds);
-                        if (!person.outside)
+                        if (!person.outside || (work.synchronized && work.outdoorHold))
                             continue;
                         const auto before = instances;
                         const Random palette{person.id};
@@ -469,7 +611,36 @@ void renderSurfaceEnvironment(const std::vector<Node>& nodes, const Navigation& 
                     }
                 }
             }
+            for(const auto& urban:urbanDraws){economicLighting=urban.lighting;
+                auto emit=[&](SurfaceMesh kind,glm::dvec3 point,glm::dquat orientation,glm::dvec3 size,glm::vec3 tint){
+                    const auto before=instances;instance(kind,point,orientation,size,tint);return instances>before;};
+                auto rover=[&](glm::dvec3 point,glm::dquat orientation,glm::vec3 tint){
+                    const auto delta=pose.orientation*(point-planetEye);const double pixels=5/std::max(.1,glm::length(delta))*height/(2*std::tan(fieldOfView*.5));
+                    if(instances>=6000||pixels<1||!LOD::visible(cameraInverse*delta/units,5/units,double(width)/height,fieldOfView))return;
+                    const auto model=glm::translate(glm::dmat4(1),delta/units)*glm::mat4_cast(pose.orientation*orientation)*glm::scale(glm::dmat4(1),glm::dvec3(1)/units);
+                    workBatches[size_t(SurfaceMachine::CargoRover)][pixels>60?2:pixels>10?1:0].push_back({glm::mat4(model),glm::vec4(tint,1)});++instances;++stats.surfaceRovers;};
+                renderUrban(planet,*urban.city,pose,planetEye,nav,urban.work,emit,rover,paving,instances);
+            }
             drawCityPaving(paving, planet, nav);
+            for(size_t role=0;role<workBatches.size();++role)for(unsigned detail=0;detail<3;++detail){
+                auto& objects=workBatches[role][detail];if(objects.empty())continue;
+                auto& mesh=workMeshes[role][detail];
+                if(!bgfx::isValid(mesh.vertices)){const auto source=surfaceMachineMesh(SurfaceMachine(role),detail);
+                    mesh=upload(source);surfaceMeshBytes+=source.bytes();}
+                const auto count=bgfx::getAvailInstanceDataBuffer(uint32_t(objects.size()),80);
+                if(count){bgfx::InstanceDataBuffer buffer;bgfx::allocInstanceDataBuffer(&buffer,count,80);
+                    std::memcpy(buffer.data,objects.data(),count*sizeof(Instance));
+                    bgfx::setVertexBuffer(0,mesh.vertices);bgfx::setIndexBuffer(mesh.indices);bgfx::setInstanceDataBuffer(&buffer);
+                    Geometry source;const ScenePresentation presentation{source,planet.address,{.45,.3,.08,.02},
+                        hyperionPhase(planet.seed),1.f,{3,0,0,0}};
+                    hyperion->bind(presentation,{},glm::vec3(lightAt(planet.address,nav)),glm::mat4(1),0,activity->seconds);
+                    bgfx::setState(BGFX_STATE_WRITE_RGB|BGFX_STATE_WRITE_Z|BGFX_STATE_DEPTH_TEST_GEQUAL|BGFX_STATE_MSAA);
+                    bgfx::submit(61,hyperion->geometryProgram());stats.surfaceTriangles+=count*mesh.count/3;
+                    if(updateSun){bgfx::setVertexBuffer(0,mesh.vertices);bgfx::setIndexBuffer(mesh.indices);
+                        bgfx::setInstanceDataBuffer(&buffer);bgfx::setState(BGFX_STATE_WRITE_Z|BGFX_STATE_DEPTH_TEST_LESS);
+                        bgfx::submit(70,hyperion->sunProgram());}
+                }objects.clear();
+            }
             for (size_t role = 0; role < batches.size(); role++)
                 for (unsigned detail = 0; detail < 3; detail++) {
                     auto& objects = batches[role][detail];

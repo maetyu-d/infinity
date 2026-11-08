@@ -1,4 +1,5 @@
-#include "infinite/SurfaceLife.hpp"
+#include "infinity/SurfaceLife.hpp"
+#include "infinity/Prospecting.hpp"
 #include <algorithm>
 #include <bit>
 #include <cmath>
@@ -7,7 +8,7 @@
 #include <queue>
 #include <set>
 
-namespace infinite {
+namespace infinity {
 namespace {
 constexpr double pi = std::numbers::pi;
 using V = glm::dvec2;
@@ -853,6 +854,43 @@ struct Planner {
                      s.sealed ? glm::dvec3(7, 2, 4) : glm::dvec3(2, .7, .7), {.62, .79, .85});
         }
     }
+    void worksYard() {
+        const auto industry = std::find_if(s.districts.begin(), s.districts.end(), [](const auto& district) {
+            return district.use == BuildingUse::Industry;
+        });
+        if (industry == s.districts.end())
+            return;
+        const auto ground = localCatchment(planet, s.direction);
+        const bool wetWorks = ground.grade[0] > .032 || ground.water >= .038;
+        constexpr std::array<glm::vec3, 4> paint{{{.28f,.76f,.9f}, {.89f,.52f,.24f},
+                                                 {.69f,.61f,.85f}, {.37f,.62f,.52f}}};
+        const double heading = std::atan2(industry->centre.y, industry->centre.x);
+        // Add compact equipment beyond the district frontage. Existing parcels,
+        // structures, flight approaches and the original pad stay where they are.
+        unsigned placed = 0;
+        for (unsigned i = 0; i < 18 && placed < 3 && !stopped(); ++i) {
+            const double angle = heading + (double(i % 6) - 2.5) * .16;
+            const auto at = industry->centre + V(std::cos(angle), std::sin(angle)) * (industry->radius * .72 + i / 6 * 16);
+            if (glm::length(at) < 125 || glm::length(at) > s.radius - 12)
+                continue;
+            const std::array<V, 4> corners{at + V(-6,-6), at + V(6,-6), at + V(6,6), at + V(-6,6)};
+            if (!roadClear(corners) || std::any_of(s.buildings.begin(), s.buildings.end(), [&](const auto& b) {
+                    return glm::length(local(b.position) - at) < glm::length(V(b.dimensions.x, b.dimensions.z)) * .5 + 12;
+                }) || std::any_of(s.props.begin(), s.props.end(), [&](const auto& p) {
+                    return glm::length(local(p.position) - at) < 12;
+                }))
+                continue;
+            const double height = glm::length(point(at));
+            if (std::any_of(corners.begin(), corners.end(), [&](const auto& corner) {
+                    const auto terrain = point(corner);
+                    return !dry(terrain) || std::abs(glm::length(terrain) - height) > 1.2;
+                }))
+                continue;
+            prop(wetWorks ? SurfaceMesh::Utility : SurfaceMesh::Warehouse, at,
+                 wetWorks ? glm::dvec3(8,4,8) : glm::dvec3(10,4,7), paint[ground.dominant], heading);
+            ++placed;
+        }
+    }
 };
 } // namespace
 std::string_view cityPatternName(CityPattern pattern) {
@@ -898,6 +936,7 @@ bool refineCity(const Universe& u, const Node& p, SurfaceSettlement& original,
     planner.paths();
     planner.groundRoads();
     planner.furniture();
+    planner.worksYard();
     if (cancel && cancel->load())
         return false;
     next.layoutRecipe = cityRecipeVersion;
@@ -1008,4 +1047,4 @@ uint64_t cityFingerprint(const SurfaceSettlement& s) {
     }
     return hash;
 }
-} // namespace infinite
+} // namespace infinity

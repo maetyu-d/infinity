@@ -1,4 +1,4 @@
-#include "infinite/Core.hpp"
+#include "infinity/Core.hpp"
 #include <algorithm>
 #include <charconv>
 #include <cmath>
@@ -7,7 +7,7 @@
 #include <sstream>
 #include <stdexcept>
 
-namespace infinite {
+namespace infinity {
 glm::dvec3 cellDisplacement(const std::array<int64_t, 3>& object, const std::array<int64_t, 3>& anchor) {
     glm::dvec3 out;
     for (unsigned i = 0; i < 3; ++i)
@@ -306,4 +306,4 @@ bool LOD::visible(glm::dvec3 p, double r, double aspect, double f) {
     return d + r > 0.001 && d - r < 1e5 && std::abs(p.y) < d * v + r * 1.5 &&
            std::abs(p.x) < d * v * aspect + r * 1.5;
 }
-} // namespace infinite
+} // namespace infinity

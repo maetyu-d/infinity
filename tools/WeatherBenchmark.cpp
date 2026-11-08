@@ -1,4 +1,4 @@
-#include "infinite/WeatherField.hpp"
+#include "infinity/WeatherField.hpp"
 #include <algorithm>
 #include <chrono>
 #include <filesystem>
@@ -6,7 +6,7 @@
 #include <iostream>
 #include <numbers>
 #include <vector>
-using namespace infinite;
+using namespace infinity;
 int main(int argc, char** argv) {
     try {
         const std::filesystem::path out = argc > 1 ? argv[1] : "weather-benchmark";

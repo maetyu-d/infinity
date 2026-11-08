@@ -1,10 +1,10 @@
-#include "infinite/Geometry.hpp"
-#include "infinite/StellarEvolution.hpp"
+#include "infinity/Geometry.hpp"
+#include "infinity/StellarEvolution.hpp"
 #include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
-using namespace infinite;
+using namespace infinity;
 static uint64_t legacyGeometryFingerprint(const Node& node, const std::shared_ptr<Geometry>& geometry) {
     if (!geometry)
         return 0;
@@ -16,7 +16,7 @@ static uint64_t legacyGeometryFingerprint(const Node& node, const std::shared_pt
 int main(int argc, char** argv) {
     try {
         if (argc != 3)
-            throw std::runtime_error("Usage: infinite_population_snapshot --write|--check FILE");
+            throw std::runtime_error("Usage: infinity_population_snapshot --write|--check FILE");
         if (std::string_view(argv[1]) == "--write") {
             std::ofstream out(argv[2]);
             for (uint64_t seed : {0x494e46494e495445ULL, 17ULL, 937ULL}) {
@@ -55,7 +55,17 @@ int main(int argc, char** argv) {
             Universe u(seed);
             const auto node = u.describe(Address::parse(address));
             auto generated = geometry ? GeometryGenerator(u).generate(node, 0) : nullptr;
-            if (descriptorFingerprint(node) != descriptor ||
+            auto retained = node;
+            // Frozen catalogues also contain expanded wilderness planets. The
+            // additive landmark legitimately changes their complete descriptor;
+            // still compare every original field against the untouched golden.
+            // Legacy mesh specimens (and all descendants) retain full checks.
+            if (!geometry && node.address.kind() == Kind::Planet && node.geology && node.geology->landform) {
+                auto base = std::make_shared<PlanetProcess>(*node.geology);
+                base->landform.reset();
+                retained.geology = std::move(base);
+            }
+            if (descriptorFingerprint(retained) != descriptor ||
                 (geometry && legacyGeometryFingerprint(node, generated) != geometry))
                 throw std::runtime_error("Legacy world changed: " + address + " seed " +
                                          std::to_string(seed));

@@ -1,12 +1,13 @@
-#include "infinite/SurfaceLife.hpp"
+#include "infinity/SurfaceLife.hpp"
+#include "infinity/Urban.hpp"
 #include <algorithm>
 #include <chrono>
 
-namespace infinite {
+namespace infinity {
 SurfaceLifeSummary summarizeSurfaceLife(const SurfaceWorld& world) {
     SurfaceLifeSummary result;
     for (const auto& site : world.settlements) {
-        result.population += site.population;
+        result.population += settlementPopulation(site);
         result.ports += site.population > 0;
         result.openPorts += site.population > 0 && !site.sealed;
     }
@@ -140,4 +141,4 @@ SurfaceCacheStats SurfaceLifeCache::stats() const {
     stats.entries = entries_.size();
     return stats;
 }
-} // namespace infinite
+} // namespace infinity

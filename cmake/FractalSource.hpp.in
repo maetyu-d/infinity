@@ -1,0 +1,3 @@
+#pragma once
+inline constexpr char fractalFieldSource[]=R"FRACTAL(@INFINITY_FRACTAL_SOURCE@)FRACTAL";
+inline constexpr char vectorStyleSource[]=R"VECTOR(@INFINITY_VECTOR_SOURCE@)VECTOR";

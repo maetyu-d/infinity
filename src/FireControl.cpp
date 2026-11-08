@@ -1,7 +1,8 @@
-#include "infinite/FireControl.hpp"
+#include "infinity/SaveTag.hpp"
+#include "infinity/FireControl.hpp"
 #include <numbers>
 #include <sstream>
-namespace infinite {
+namespace infinity {
 std::string_view fireOrderName(FireOrder o) {
     return o == FireOrder::Defend ? "DEFEND" : o == FireOrder::Focus ? "FOCUS HOSTILE" : "HOLD FIRE";
 }
@@ -27,7 +28,14 @@ unsigned FireControl::update(const Universe& u, const WeaponRay& hullRay, glm::d
         auto& text = status_[mount];
         const auto& gun = guns.mount(mount);
         const double skill = crew.gunnerReadiness(mount);
-        if (inhibited || order_ == FireOrder::Hold || mount == captainMount || skill <= 0 || !gun.level ||
+        if (gun.level == pointDefence && !inhibited && order_ != FireOrder::Hold &&
+            mount != captainMount && skill > 0 && gun.integrity > 0) {
+            text = gun.overheated || gun.cooldown > 0 ? "POINT DEFENCE / COOLING" : "POINT DEFENCE / WATCH";
+            tracking_[mount] = 0;
+            targets_[mount].reset();
+            continue;
+        }
+        if (inhibited || order_ == FireOrder::Hold || mount == captainMount || skill <= 0 || !gun.level || gun.level == pointDefence ||
             gun.integrity <= 0) {
             text = gun.integrity <= 0      ? "GUN OFFLINE"
                    : inhibited             ? "INHIBITED"
@@ -166,13 +174,13 @@ unsigned FireControl::update(const Universe& u, const WeaponRay& hullRay, glm::d
     return fired;
 }
 std::string FireControl::serialize() const {
-    return "INFINITE_FIRE_CONTROL 1 " + std::to_string(unsigned(order_));
+    return "INFINITY_FIRE_CONTROL 1 " + std::to_string(unsigned(order_));
 }
 bool FireControl::restore(std::string_view text) {
     std::istringstream in{std::string(text)};
     std::string h;
     unsigned v, o;
-    if (!(in >> h >> v >> o) || h != "INFINITE_FIRE_CONTROL" || v != 1 || o > 2)
+    if (!(in >> h >> v >> o) || !matchesSaveTag(h, "INFINITY_FIRE_CONTROL") || v != 1 || o > 2)
         return false;
     in >> std::ws;
     if (!in.eof())
@@ -180,4 +188,4 @@ bool FireControl::restore(std::string_view text) {
     order(FireOrder(o));
     return true;
 }
-} // namespace infinite
+} // namespace infinity

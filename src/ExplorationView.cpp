@@ -1,7 +1,7 @@
-#include "infinite/Economy.hpp"
+#include "infinity/Economy.hpp"
 #include <algorithm>
 #include <numeric>
-namespace infinite {
+namespace infinity {
 std::vector<size_t> explorationJobs(const EconomySnapshot& s) {
     std::vector<size_t> out;
     if (!s.network)
@@ -55,13 +55,22 @@ void explorationMarketView(MarketView& v, const EconomySnapshot& s, bool journal
                 "PROSPECT REMAINING " +
                 std::to_string(std::accumulate(remaining.begin(), remaining.end(), int64_t(0))) +
                 " KG / SHARED ACROSS FINER SCALES");
+            for (const auto& seam : x.seams)
+                if (seam.pool == *r.prospect &&
+                    (seam.source.ancestorOf(r.address) || r.address.kind() <= Kind::Surface)) {
+                    v.detail.push_back(std::string(seam.marked ? "MARKED " : "SEAM EXPEDITION / ") +
+                                       (seam.material ? std::string(resourceName(seam.resource)) : "UNMAPPED") +
+                                       " / RECOVERED " + std::to_string(seam.minedKg) + " KG");
+                    v.detail.push_back("SHIFT-J ENTRY BEACON / SHIFT-Z FULL SIZE / CTRL-SPACE MINE MARK");
+                    break;
+                }
         }
         return;
     }
     const auto jobs = explorationJobs(s);
-    v.selected = std::min(selected, size_t(2) + jobs.size());
+    v.selected = std::min(selected, size_t(5) + jobs.size());
     v.bottleneck =
-        "LEFT-RIGHT MOUNT / ENTER EQUIP OR ACCEPT-CLAIM / BACKSPACE CANCEL JOB / F4 TARGET / SHIFT-F4 PORT";
+        "F3 EXPEDITION PLANNER / LEFT-RIGHT MOUNT / ENTER EQUIP OR ACCEPT-CLAIM / BACKSPACE CANCEL / F4 TARGET";
     const auto scanner = economicExplorationQuote(s, index, false, v.weaponMount);
     const auto mining = economicExplorationQuote(s, index, true, v.weaponMount);
     const auto sale = economicExplorationQuote(s, index, true, v.weaponMount, true);
@@ -82,14 +91,26 @@ void explorationMarketView(MarketView& v, const EconomySnapshot& s, bool journal
                                                               : "CANCELLED";
         rows.push_back({std::string(phase) + " / SURVEY " + j.name + " / GRADE " + std::to_string(j.grade) +
                             " / " + std::to_string(j.reward / 100) + " CR",
-                        j.phase == SurveyPhase::Accepted
+                        j.supplyKg ? "F3 PLAN / FORECAST / DRILL THE RESOURCE REGION / SHRINK / MARK / MINE / DELIVER "+std::to_string(j.supplyKg)+" KG "+std::string(resourceName(j.supplyResource))
+                        : j.cavern ? "SHRINK / CLOSE ASSAY / MARK / FULL-SIZE EXTRACT / DELIVER 10 KG TO ISSUER"
+                        : j.phase == SurveyPhase::Accepted
                             ? "F4 TARGET / NEW OBSERVATION REQUIRED / RETURN TO ISSUER TO CLAIM"
                             : "REWARD RESERVED FROM ISSUER ON ACCEPTANCE"});
     }
+    const auto probeFit = economicProbeQuote(s,index,v.weaponMount,ProbeService::Fit);
+    const auto probeReload = economicProbeQuote(s,index,v.weaponMount,ProbeService::Reload);
+    const auto probeRemove = economicProbeQuote(s,index,v.weaponMount,ProbeService::Remove);
+    rows.push_back({std::string(weaponMountName(v.weaponMount))+" / FIT MINING PROBE / "+
+                    std::to_string(probeFit.totalCents()/100)+" CR",probeFit.status});
+    rows.push_back({"RELOAD PROBES / "+std::to_string(x.probes.rounds[v.weaponMount])+"/6 / "+
+                    std::to_string(probeReload.totalCents()/100)+" CR",probeReload.status});
+    rows.push_back({"SELL PROBE LAUNCHER / "+std::to_string(probeRemove.sellCents/100)+" CR",probeRemove.status});
+    if (v.selected >= 3+jobs.size())
+        v.bottleneck="LEFT-RIGHT BAY / ENTER REFIT / CTRL-P LAUNCH / ALT-P CAMERA / F4 BORE ENTRY";
     const auto first = v.selected >= 8 ? v.selected - 7 : 0;
     for (size_t i = first; i < std::min(rows.size(), first + 8); ++i) {
         v.detail.push_back(std::string(i == v.selected ? "> " : "  ") + rows[i].first);
         v.detail.push_back(rows[i].second);
     }
 }
-} // namespace infinite
+} // namespace infinity

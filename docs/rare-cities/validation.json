@@ -1,0 +1,54 @@
+{
+  "headless_passed": 79,
+  "native_views": 6,
+  "core_fingerprint": 3716621533864739036,
+  "planet_descriptor": 3510800695248573630,
+  "preserved_economic_sites": 148,
+  "daytime_region_buildings": 21099,
+  "daytime_region_population": 4828443,
+  "daytime_region_bytes": 588384,
+  "surface_cache_budget_bytes": 4194304,
+  "native_day": [
+    [
+      "overview",
+      "9.06083",
+      "4695",
+      "4663",
+      "0",
+      "0"
+    ],
+    [
+      "approach",
+      "9.15217",
+      "4308",
+      "4276",
+      "0",
+      "0"
+    ],
+    [
+      "street",
+      "8.92867",
+      "3215",
+      "3215",
+      "0",
+      "30"
+    ]
+  ],
+  "native_night": [
+    [
+      "overview",
+      "8.16313",
+      "746"
+    ],
+    [
+      "approach",
+      "9.99525",
+      "153"
+    ],
+    [
+      "street",
+      "15.4027",
+      "58"
+    ]
+  ]
+}

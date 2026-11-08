@@ -1,7 +1,7 @@
-#include "infinite/StellarEvolution.hpp"
+#include "infinity/StellarEvolution.hpp"
 #include <algorithm>
 #include <cmath>
-namespace infinite {
+namespace infinity {
 bool isDiverseStar(uint64_t id) {
     return (id & stellarIdFlag) != 0;
 }
@@ -196,4 +196,4 @@ double stellarDiscInnerAu(const Node& n) {
         return original;
     return std::max({original, n.stellarRadiusMetres * 8 / 1.495978707e11, n.stellar->survivorInnerAu});
 }
-} // namespace infinite
+} // namespace infinity

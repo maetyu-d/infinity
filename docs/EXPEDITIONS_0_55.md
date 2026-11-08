@@ -1,6 +1,6 @@
 # Material expeditions — 0.55
 
-A colony's thermal-exchanger fault now leads to one connected expedition through Infinite's existing terrain, rock, mineral and atomic structure. The colony finances the repair. The player brings back a physical core, assays its original material lineage in a port lab, and returns to install an adapted exchanger.
+A colony's thermal-exchanger fault now leads to one connected expedition through Infinity's existing terrain, rock, mineral and atomic structure. The colony finances the repair. The player brings back a physical core, assays its original material lineage in a port lab, and returns to install an adapted exchanger.
 
 ## Play the expedition
 
@@ -25,7 +25,7 @@ The lab's **J** command is explicitly a magnification change, not travel by the 
 
 ## Accounting and persistence
 
-The new `INFINITE_EXPEDITIONS 1` custody ledger is written in the same SQLite transaction as the existing wallet, exploration records and active economies. Existing wallet, exploration and ship save formats remain unchanged. Sample mass and volume are derived from this authoritative custody record on load.
+The new `INFINITY_EXPEDITIONS 1` custody ledger is written in the same SQLite transaction as the existing wallet, exploration records and active economies. Existing wallet, exploration and ship save formats remain unchanged. Sample mass and volume are derived from this authoritative custody record on load.
 
 On acceptance, the colony's reward and crew wages enter escrow. Its actual utility parts leave saleable stock for a durable local fitting kit. Cancellation returns those exact resources; completion incorporates the parts into the existing facility-capital accounting. Reward replay cannot pay twice. A pending utility expedition blocks a competing player utility refit at that colony.
 

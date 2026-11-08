@@ -1,6 +1,6 @@
-# Spectral presentation, Infinite 0.24
+# Spectral presentation, Infinity 0.24
 
-This release strengthens the Hyperion presentation across the existing universe. Every procedural generator, geometry generator, coordinate transform, seed, history, city layout, navigation rule and ship dynamic remains unchanged. The baseline is **fde720e**, retained by `checkpoint/infinite-0.23-before-spectacle`. Twenty source files are verified byte-identical in [preservation.json](spectacular-0.24/preservation.json).
+This release strengthens the Hyperion presentation across the existing universe. Every procedural generator, geometry generator, coordinate transform, seed, history, city layout, navigation rule and ship dynamic remains unchanged. The baseline is **fde720e**, retained by `checkpoint/infinity-0.23-before-spectacle`. Twenty source files are verified byte-identical in [preservation.json](spectacular-0.24/preservation.json).
 
 ## Rendering changes
 
@@ -38,7 +38,7 @@ The native fixtures exercise city approaches, street inhabitants, weather, solid
 | Mineral grain and enclosing rock | [Before](spectacular-0.24/before-7-MINERAL%20GRAIN-HYPERION.png) | [After](spectacular-0.24/after-7-MINERAL%20GRAIN-HYPERION.png) |
 | Atomic lattice and enclosing mineral | [Before](spectacular-0.24/before-8-CRYSTAL%20LATTICE-HYPERION.png) | [After](spectacular-0.24/after-8-CRYSTAL%20LATTICE-HYPERION.png) |
 
-Also inspected: [city approach](spectacular-0.24/after-1-city-approach-HYPERION.png), [street view](spectacular-0.24/after-2-inhabitants-HYPERION.png), and [2840 × 1800 surface/cockpit view](spectacular-0.24/after-retina.png). These are actual native captures. Terrain and building silhouettes deliberately remain Infinite's; Hyperion supplies lighting and presentation. Airless skies can show the full spectral field, while daylight atmospheres attenuate it. Existing smooth terrain remains smooth.
+Also inspected: [city approach](spectacular-0.24/after-1-city-approach-HYPERION.png), [street view](spectacular-0.24/after-2-inhabitants-HYPERION.png), and [2840 × 1800 surface/cockpit view](spectacular-0.24/after-retina.png). These are actual native captures. Terrain and building silhouettes deliberately remain Infinity's; Hyperion supplies lighting and presentation. Airless skies can show the full spectral field, while daylight atmospheres attenuate it. Existing smooth terrain remains smooth.
 
 ## Measured cost
 
@@ -62,4 +62,4 @@ cmake --build build -j 4
 ctest --test-dir build --output-on-failure
 ```
 
-The packaged `Infinite.app` is version **0.24.0, build 24**, locally signed and verified. H cycles Original / Hyperion / Hybrid. The existing save remains the default flight state.
+The packaged `Infinity.app` is version **0.24.0, build 24**, locally signed and verified. H cycles Original / Hyperion / Hybrid. The existing save remains the default flight state.

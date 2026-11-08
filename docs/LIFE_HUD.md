@@ -1,4 +1,4 @@
-# Life-detection HUD — Infinite 0.22
+# Life-detection HUD — Infinity 0.22
 
 The system display now makes existing inhabited planets and moons visible without cycling through every nearby moon or station.
 
@@ -24,7 +24,7 @@ Ctrl-Y cycles confirmed addresses in stable address order, including worlds outs
 
 Universe, population, terrain, climate, society and city recipes remain unchanged. Settlement layout, resident IDs, surface geometry, seeds, atmospheric rules and landing eligibility remain unchanged. The existing Y / Shift-Y planet/moon controls are retained. F1 documents Ctrl-Y.
 
-Checkpoint `checkpoint/infinite-0.21-before-life-hud` preserves 0.21. Unit tests cover actual versus inferred life, asynchronous summary-only residency, deterministic re-approach, row priority, row uniqueness, empty/pending results, stable target cycling, viewport layout and coherent ship selection. The native city fixture additionally requires confirmed life to be present in its HUD.
+Checkpoint `checkpoint/infinity-0.21-before-life-hud` preserves 0.21. Unit tests cover actual versus inferred life, asynchronous summary-only residency, deterministic re-approach, row priority, row uniqueness, empty/pending results, stable target cycling, viewport layout and coherent ship selection. The native city fixture additionally requires confirmed life to be present in its HUD.
 
 Release results and native captures are recorded in [life-hud](life-hud/).
 

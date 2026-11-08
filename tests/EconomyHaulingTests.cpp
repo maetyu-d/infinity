@@ -1,11 +1,11 @@
-#include "infinite/Cockpit.hpp"
-#include "infinite/Economy.hpp"
+#include "infinity/Cockpit.hpp"
+#include "infinity/Economy.hpp"
 #include <algorithm>
 #include <chrono>
 #include <iostream>
 #include <sstream>
 #include <thread>
-using namespace infinite;
+using namespace infinity;
 namespace {
 unsigned checks = 0;
 void check(bool value, const char* why) {
@@ -307,7 +307,7 @@ int main(int argc, char** argv) {
         const auto tail = versionTwo.rfind("1 0\n");
         check(tail != std::string::npos, "Missing legacy conversion boundary");
         versionTwo.erase(tail);
-        versionTwo.replace(17, 1, "2");
+        versionTwo.replace(17, versionTwo.find(' ', 17) - 17, "2");
         Economy migrated(n);
         check(migrated.restore(versionTwo) && migrated.moneyTotal() == legacy.moneyTotal() &&
                   migrated.inventoryTotal() == legacy.inventoryTotal() && migrated.sites()[0].project &&

@@ -1,12 +1,12 @@
 #pragma once
-#include "infinite/Economy.hpp"
-#include "infinite/Renderer.hpp"
+#include "infinity/Economy.hpp"
+#include "infinity/Renderer.hpp"
 #include <SDL3/SDL.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
-namespace infinite {
+namespace infinity {
 class ProspectingValidation {
     const Universe& u_;
     Navigation& nav_;
@@ -254,4 +254,4 @@ class ProspectingValidation {
         return stage_ == 6;
     }
 };
-} // namespace infinite
+} // namespace infinity

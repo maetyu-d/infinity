@@ -20,7 +20,7 @@ void main(){
  vec3 c=vec3(.004,.007,.016);
  c+=mix(vec3(.018,.12,.18),vec3(.20,.032,.14),smoothstep(.38,.68,wisps))*cloud*5.4;
  c*=exp(-cavity*1.65);
- // Hyperion skyFragment's maximum-look layers, adapted to Infinite's gas
+ // Hyperion skyFragment's maximum-look layers, adapted to Infinity's gas
  // abundance and ink gaps. Generated star and gas positions remain live.
  vec3 tapestry=ecstatic(d,phase,t);
  float folds=smoothstep(.08,.52,max(tapestry.r,max(tapestry.g,tapestry.b)));

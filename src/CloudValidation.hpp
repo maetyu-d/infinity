@@ -1,10 +1,10 @@
 #pragma once
-#include "infinite/Renderer.hpp"
+#include "infinity/Renderer.hpp"
 #include <filesystem>
 #include <iostream>
 #include <sstream>
 
-namespace infinite {
+namespace infinity {
 class CloudValidation {
   public:
     CloudValidation(const Universe& u, Navigation& nav, Pilot& pilot) : u_(u), nav_(nav), pilot_(pilot) {
@@ -173,4 +173,4 @@ class CloudValidation {
         stable_ = 0;
     }
 };
-} // namespace infinite
+} // namespace infinity

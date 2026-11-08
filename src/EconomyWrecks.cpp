@@ -1,10 +1,19 @@
-#include "infinite/CombatActors.hpp"
-#include "infinite/Economy.hpp"
+#include "infinity/CombatActors.hpp"
+#include "infinity/Economy.hpp"
 #include <algorithm>
 #include <iomanip>
 #include <set>
 #include <sstream>
-namespace infinite {
+namespace infinity {
+void Economy::expireDistressCalls() {
+    for (auto& w : wrecks_) {
+        if (w.rescueEscrow && tick_ > w.rescueDeadline) {
+            sites_[w.accountingSite].cash += w.rescueEscrow;
+            w.rescueEscrow = 0;
+            event("DISTRESS CALL EXPIRED / PORT REWARD RELEASED");
+        }
+    }
+}
 std::string Economy::wreckCommand(const EconomicCommand& c, EconomyPlayer& p) {
     if (c.action == EconomicAction::DisembarkRescued) {
         const auto index = siteIndex(c.port);
@@ -12,6 +21,11 @@ std::string Economy::wreckCommand(const EconomicCommand& c, EconomyPlayer& p) {
             return "RETURN SURVIVORS TO A PORT";
         if (p.rescued.empty())
             return "NO SURVIVORS ABOARD";
+        const bool namedHandover = c.combatTarget && c.combatTarget->slot >= 100 && c.combatTarget->slot < 300;
+        if (namedHandover && std::none_of(p.rescued.begin(), p.rescued.end(), [&](const auto& person) {
+                return person.source == *c.combatTarget;
+            }))
+            return "NAMED SURVIVOR IS NOT ABOARD";
         auto& site = sites_[*index];
         if (site.outageUntil > tick_ || site.health < 500 || site.condition < 300)
             return "RESCUE OFFICE UNAVAILABLE";
@@ -28,20 +42,43 @@ std::string Economy::wreckCommand(const EconomicCommand& c, EconomyPlayer& p) {
             crewMarkets_.push_back({unsigned(*index), economicCrewOffers(s, *index)});
             market = std::prev(crewMarkets_.end());
         }
-        const size_t count =
-            std::min({p.rescued.size(), maxPortCrew - market->offers.size(), size_t(site.cash / 20000)});
+        const auto before = economicVitals(network_->sites[*index], site, tick_);
+        size_t count = 0;
+        int64_t payment = 0;
+        for (auto it = p.rescued.begin(); it != p.rescued.end() && market->offers.size() < maxPortCrew;) {
+            if (namedHandover && it->source != *c.combatTarget) {
+                ++it;
+                continue;
+            }
+            auto wreck = std::find_if(wrecks_.begin(), wrecks_.end(), [&](const auto& w) { return w.id == it->source; });
+            const bool funded = wreck != wrecks_.end() && wreck->rescueEscrow && wreck->accountingSite == *index;
+            if (!funded && site.cash < rescueReward) {
+                ++it;
+                continue;
+            }
+            if (p.credits > 1000000000000000LL - payment - rescueReward) {
+                if (!count)
+                    return "BALANCE LIMIT / RESCUE PAYMENT RETAINED";
+                break;
+            }
+            if (!funded)
+                site.cash -= rescueReward;
+            if (wreck != wrecks_.end() && wreck->rescueEscrow) {
+                if (!funded)
+                    sites_[wreck->accountingSite].cash += wreck->rescueEscrow;
+                wreck->rescueEscrow = 0;
+            }
+            market->offers.push_back(it->person);
+            it = p.rescued.erase(it);
+            ++count;
+            payment += rescueReward;
+        }
         if (!count)
             return "PORT NEEDS RESCUE BERTHS OR REWARD FUNDS / PASSENGERS RETAINED";
-        const int64_t payment = int64_t(count) * 20000;
-        if (p.credits > 1000000000000000LL - payment)
-            return "BALANCE LIMIT / RESCUE PAYMENT RETAINED";
-        for (size_t i = 0; i < count; ++i)
-            market->offers.push_back(p.rescued[i].person);
-        p.rescued.erase(p.rescued.begin(), p.rescued.begin() + count);
         p.rescuesDelivered += count;
         p.credits += payment;
-        site.cash -= payment;
         externalMoneyDelta_ -= payment;
+        recordOutcome(c, *index, OutcomeKind::Rescue, {}, payment, before);
         event("SURVIVORS DELIVERED / " + std::to_string(count) + " / PORT CARE / " +
               std::to_string(payment / 100) + "CR");
         return "SURVIVORS DISEMBARKED / " + std::to_string(count) + " / " + std::to_string(payment / 100) +
@@ -106,6 +143,15 @@ std::string Economy::wreckCommand(const EconomicCommand& c, EconomyPlayer& p) {
             disable.impactSeconds = c.wreck->hitSeconds;
             disableVessel(disable);
         }
+        const auto& issuer = network_->sites[w.accountingSite];
+        auto& funds = sites_[w.accountingSite];
+        if (w.survivor && id.slot >= 100 && id.slot < 300 && issuer.orbital && funds.cash >= rescueReward &&
+            funds.outageUntil <= tick_ && funds.health >= 500 && funds.condition >= 300) {
+            w.rescueDeadline = tick_ + 360;
+            w.rescueEscrow = rescueReward;
+            funds.cash -= w.rescueEscrow;
+            event(issuer.name + " / FUNDED CIVILIAN DISTRESS CALL");
+        }
         wrecks_.push_back(w);
         event("FINITE WRECK MANIFEST REGISTERED / " + id.str());
         return "WRECK REGISTERED / HOLD 0 CLOSE AND SLOW";
@@ -163,10 +209,10 @@ void Economy::writeWrecks(std::ostream& out) const {
             out << ' ';
             writeCrewPerson(out, *w.survivor);
         }
-        out << '\n';
+        out << ' ' << w.rescueDeadline << ' ' << w.rescueEscrow << '\n';
     }
 }
-bool Economy::readWrecks(std::istream& in) {
+bool Economy::readWrecks(std::istream& in, bool dynamicJobs) {
     std::string h, id;
     size_t count;
     if (!(in >> h >> count) || h != "WRECK_RECOVERY" || count > 128)
@@ -202,8 +248,12 @@ bool Economy::readWrecks(std::istream& in) {
         }
         if (rescued && !person)
             return false;
+        if (dynamicJobs && (!(in >> w.rescueDeadline >> w.rescueEscrow) || w.rescueDeadline > 1000000000000ULL ||
+            (w.rescueDeadline && (!w.survivor || w.id.slot < 100 || w.id.slot >= 300 || !network_->sites[w.accountingSite].orbital)) ||
+            (w.rescueEscrow && (w.rescueEscrow != rescueReward || !w.rescueDeadline || w.rescueDeadline < tick_))))
+            return false;
         wrecks_.push_back(w);
     }
     return true;
 }
-} // namespace infinite
+} // namespace infinity

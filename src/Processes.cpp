@@ -1,10 +1,11 @@
-#include "infinite/Universe.hpp"
+#include "infinity/Universe.hpp"
+#include "infinity/MajorLandforms.hpp"
 #include <algorithm>
 #include <cmath>
 #include <numbers>
 #include <stdexcept>
 
-namespace infinite {
+namespace infinity {
 namespace {
 constexpr double pi = std::numbers::pi;
 glm::dvec3 sphere(const Random& r, uint64_t i) {
@@ -114,8 +115,10 @@ std::shared_ptr<const PlanetProcess> planetProcess(uint64_t seed, double logRadi
     }
     for (size_t i = 0; i < p->hotspots.size(); ++i)
         p->hotspots[i] = sphere(r, 1000 + i * 2);
-    if (localTerrain)
+    if (localTerrain) {
         p->terrain = terrainProcess(*p, e);
+        p->landform = generateMajorLandform(*p, e);
+    }
     return p;
 }
 GeologySample geologySample(const PlanetProcess& p, glm::dvec3 d) {
@@ -188,6 +191,18 @@ GeologySample geologySample(const PlanetProcess& p, glm::dvec3 d) {
     }
     s.localReliefMetres = localTerrainHeight(p, d, s);
     s.heightMetres = std::pow(10.0, p.logRadius) * height + s.localReliefMetres;
+    if (p.landform) {
+        const auto major = sampleMajorLandform(*p.landform,d);
+        s.majorReliefMetres = major.reliefMetres;
+        s.majorCoverage = major.coverage;
+        s.majorHeat = major.heat;
+        s.majorIce = major.ice;
+        s.majorFracture = major.fracture;
+        s.heightMetres += major.reliefMetres;
+        s.volcanism += major.heat * .5;
+        s.shear += major.fracture * .2;
+        s.cratering += major.impact * .0006;
+    }
     return s;
 }
 RockProcess rockProcess(uint64_t seed, const Environment& e, const GeologySample& site) {
@@ -421,4 +436,4 @@ std::string_view processName(RockType t) {
         "IMPACT BRECCIA",     "METALLIC FRAGMENT",    "GLACIAL ICE"};
     return names.at(static_cast<size_t>(t));
 }
-} // namespace infinite
+} // namespace infinity

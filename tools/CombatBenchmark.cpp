@@ -1,5 +1,5 @@
-#include "infinite/FireControl.hpp"
-#include "infinite/Recovery.hpp"
+#include "infinity/FireControl.hpp"
+#include "infinity/Recovery.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cstdlib>
@@ -27,7 +27,7 @@ void operator delete[](void* p) noexcept {
     std::free(p);
 }
 
-using namespace infinite;
+using namespace infinity;
 namespace {
 ShipCrew staffed() {
     ShipCrew crew(52);

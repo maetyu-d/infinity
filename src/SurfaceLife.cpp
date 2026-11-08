@@ -1,11 +1,12 @@
-#include "infinite/SurfaceLife.hpp"
+#include "infinity/SurfaceLife.hpp"
+#include "infinity/Urban.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <numbers>
 #include <stdexcept>
 
-namespace infinite {
+namespace infinity {
 namespace {
 constexpr double pi = std::numbers::pi;
 bool cancelled(const std::atomic<bool>* cancel) {
@@ -43,7 +44,7 @@ size_t SurfaceWorld::residentBytes() const {
                  s.roads.capacity() * sizeof(SurfaceRoad) + s.junctions.capacity() * sizeof(CityJunction) +
                  s.streets.capacity() * sizeof(CityStreet) + s.districts.capacity() * sizeof(CityDistrict) +
                  s.parcels.capacity() * sizeof(CityParcel) + s.props.capacity() * sizeof(CityProp) +
-                 s.pedestrianPoints.capacity() * sizeof(glm::vec3);
+                 s.pedestrianPoints.capacity() * sizeof(glm::vec3)+(s.urban?s.urban->residentBytes():0);
     return bytes;
 }
 std::shared_ptr<SurfaceWorld> generateSurfaceLife(const Universe& u, const Node& p,
@@ -230,6 +231,13 @@ std::shared_ptr<SurfaceWorld> generateSurfaceLife(const Universe& u, const Node&
             return {};
         refineCity(u, p, settlement, cancel);
     }
+    // Evaluate growth only after every retained core is complete. No new
+    // building or road can move the established port or another settlement.
+    SurfaceSettlement* capital=nullptr;UrbanGrowth growth;
+    for(auto& city:world->settlements){const auto candidate=urbanGrowth(p,city);
+        if(candidate.tier!=UrbanTier::None&&(!capital||candidate.support>growth.support)){capital=&city;growth=candidate;}}
+    if(capital)capital->urban=generateUrbanRegion(u,p,*capital,growth,world->settlements,cancel);
+    if(cancelled(cancel))return {};
     world->settlements.shrink_to_fit();
     return world;
 }
@@ -294,12 +302,12 @@ ActivityBody surfaceContact(const SurfaceWorld& world, const SurfaceSettlement& 
     body.kind = ActivityKind::SurfacePort;
     body.position = s.landingPoint;
     body.orientation = s.orientation;
-    body.radius = s.radius;
+    body.radius = settlementExtent(s);
     body.seed = s.seed;
-    body.name = s.name;
+    body.name = settlementDisplayName(s);
     body.tint = s.sealed ? glm::vec3(.95, .68, .38) : glm::vec3(.44, 1, .72);
     const auto weather = sampleWeather(world.climate, s.direction, 0, seconds);
-    body.status = std::to_string(s.population) + " RESIDENTS / " + (s.sealed ? "SEALED / " : "OPEN / ") +
+    body.status = std::to_string(settlementPopulation(s)) + " RESIDENTS / " + (s.sealed ? "SEALED / " : "OPEN / ") +
                   std::string(weatherName(weather.type)) + " / J APPROACH / L LAND";
     if (s.layoutRecipe)
         body.status += " / " + std::string(cityPatternName(s.pattern));
@@ -310,8 +318,9 @@ std::optional<double> surfaceCollision(const SurfaceWorld& world, glm::dvec3 fro
     std::optional<double> hit;
     for (const auto& s : world.settlements) {
         const auto centre = (from + to) * .5;
-        if (glm::length(centre - s.landingPoint) > s.radius + glm::length(to - from) * .5 + radius + 200)
+        if (glm::length(centre - s.landingPoint) > settlementExtent(s) + glm::length(to - from) * .5 + radius + 200)
             continue;
+        if(s.urban)if(const auto contact=urbanCollision(s,*s.urban,from,to,radius);contact&&(!hit||*contact<*hit))hit=contact;
         for (const auto& b : s.buildings) {
             const auto inv = glm::inverse(b.orientation);
             const auto a = inv * (from - b.position), delta = inv * (to - from);
@@ -342,4 +351,4 @@ std::optional<double> surfaceCollision(const SurfaceWorld& world, glm::dvec3 fro
     }
     return hit;
 }
-} // namespace infinite
+} // namespace infinity

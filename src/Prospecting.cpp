@@ -1,9 +1,10 @@
-#include "infinite/Prospecting.hpp"
+#include "infinity/Prospecting.hpp"
+#include "infinity/SurfaceProvince.hpp"
 #include <algorithm>
 #include <cmath>
 #include <numeric>
 #include <set>
-namespace infinite {
+namespace infinity {
 std::string_view exposureName(ExposureType t) {
     switch (t) {
     case ExposureType::Vein:
@@ -33,7 +34,7 @@ ResourceExposure resourceExposure(const Node& n, glm::dvec3 d, const GeologySamp
     const double sediment = g.sediment + g.erosion * 400;
     const double fabric =
         .5 + .5 * fractalNoise(glm::normalize(d) * 64., mix64(n.planetSeed ^ 0x4558504f53555245ULL), 2);
-    out.fractions = {c.ice * cold * (1 + 5 * fracture + 4 * n.geology->ice),
+    out.fractions = {c.ice * cold * (1 + 5 * fracture + 4 * n.geology->ice + 3 * g.majorIce),
                      c.metal * (.5 + 4 * vein + 3 * impact + fabric),
                      c.silicate * (.7 + 2 * sediment + .8 * fracture),
                      c.carbon * (.4 + 4 * sediment + 2 * n.environment.waterActivity) *
@@ -58,13 +59,55 @@ ResourceExposure resourceExposure(const Node& n, glm::dvec3 d, const GeologySamp
         out.color += colors[k] * float(out.fractions[k]);
     return out;
 }
+LocalCatchment localCatchment(const Node& planet, glm::dvec3 direction) {
+    LocalCatchment result;
+    if (!hasSolidSurface(planet))
+        return result;
+    const auto up = glm::normalize(direction);
+    const auto frame = tangentFrame(up);
+    const double radius = std::pow(10., planet.frame.logRadius);
+    const double reach = std::clamp(radius * .009, 3000., 75000.) / radius;
+    constexpr std::array<glm::dvec2, 9> offsets{{{0,0}, {1,0}, {-1,0}, {0,1}, {0,-1},
+                                                   {.42,.42}, {-.42,.42}, {.42,-.42}, {-.42,-.42}}};
+    double weight = 0;
+    for (const auto& offset : offsets) {
+        const auto d = glm::normalize(up + frame * glm::dvec3(offset.x * reach, 0, offset.y * reach));
+        const auto g = geologySample(*planet.geology, d);
+        if (planet.geology->liquidWater > .1 && g.heightMetres / radius < -.0008)
+            continue;
+        const auto exposed = resourceExposure(planet, d, g);
+        const double nearby = 1 - glm::length(offset) * .45;
+        const double access = .35 + .65 * exposed.exposure;
+        for (unsigned k = 0; k < result.grade.size(); ++k)
+            result.grade[k] += nearby * exposed.fractions[k] * exposed.concentration * access;
+        result.water += nearby * planet.geology->liquidWater * (.3 + std::clamp(g.sediment, 0., 1.) * .7);
+        weight += nearby;
+    }
+    if (weight > 0) {
+        for (auto& grade : result.grade)
+            grade /= weight;
+        result.water /= weight;
+    }
+    // Silicate is widespread. Valuable accessible ice, metals and carbon
+    // can define a catchment even when they form a smaller part of its rock.
+    const std::array value{result.grade[0] * 1.5, result.grade[1] * 1.35,
+                           result.grade[2] * .6, result.grade[3] * 1.4};
+    result.dominant = unsigned(std::max_element(value.begin(), value.end()) - value.begin());
+    return result;
+}
 glm::vec3 exposureColor(const Node& n, glm::dvec3 direction, const GeologySample& field, glm::vec3 base) {
     const double log = n.address.kind() == Kind::Planet ? n.frame.logRadius : n.planetLogRadius;
-    if (!hasSolidSurface(n) ||
-        (n.geology->liquidWater > .1 && field.heightMetres / std::pow(10., log) < -.0008))
+    if (!hasSolidSurface(n))
         return base;
+    const double height = field.heightMetres / std::pow(10., log);
+    const double exposedGround = n.geology->liquidWater > .1 ? smoothstep(-.0008, -.0005, height) : 1.;
+    if (exposedGround == 0)
+        return base;
+    const auto province = surfaceProvince(*n.geology, direction, field);
+    const auto rock = provinceAlbedo(province, base);
     const auto exposure = resourceExposure(n, direction, field);
-    return glm::mix(base, exposure.color, float(exposure.exposure * .65));
+    return glm::mix(base, glm::mix(rock, exposure.color, float(exposure.exposure * .55)),
+                    float(exposedGround));
 }
 
 namespace {
@@ -240,4 +283,4 @@ Address samplingSourceNear(const Universe& u, const Node& p, glm::dvec3 metres, 
         return chosen->address;
     return sampleAt(glm::normalize(up + frame * glm::dvec3(range, 0, 0) / radius), 0);
 }
-} // namespace infinite
+} // namespace infinity

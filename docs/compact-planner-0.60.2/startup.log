@@ -1,0 +1,6 @@
+WINDOW_FIT client=28,78,1383,758 usable=0,30,1440,830 borders=32,8,8,8
+BACKBUFFER 1383x758 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+WINDOW_FIT client=28,78,1383,758 usable=0,30,1440,830 borders=32,8,8,8
+FRAME median_ms=16.951 p95_ms=33.1281 frames=120 cache_bytes=11599566
+peak_rss_bytes=134119424

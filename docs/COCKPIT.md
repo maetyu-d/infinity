@@ -1,10 +1,10 @@
-# Cockpit — Infinite 0.14
+# Cockpit — Infinity 0.14
 
 The cockpit now uses a readable flight deck with an open central windscreen. Checkpoint `4c41677` preserves the working 0.13 release before the presentation changes. The universe, planets, moons, material hierarchy, navigation rules and ship dynamics remain intact.
 
 ## Hyperion reference
 
-The reference is the user's native Hyperion game. `Hyperion/src/flight_renderer.cpp::Renderer::flightHUD` separates navigation, velocity, scope and ship systems into lower-deck rails. It uses backed context cards, an outlined aiming mark, reserved label space around the aim point, and short contextual actions. Its landing scope changes with the existing flight state. Infinite translates those techniques into its own C++ meshes and bgfx overlay; it does not introduce Hyperion's economy, combat or world coordinates.
+The reference is the user's native Hyperion game. `Hyperion/src/flight_renderer.cpp::Renderer::flightHUD` separates navigation, velocity, scope and ship systems into lower-deck rails. It uses backed context cards, an outlined aiming mark, reserved label space around the aim point, and short contextual actions. Its landing scope changes with the existing flight state. Infinity translates those techniques into its own C++ meshes and bgfx overlay; it does not introduce Hyperion's economy, combat or world coordinates.
 
 `cockpitMesh` retains the existing beveled cabin construction, with its lower deck raised to support the new instruments. The overlay remains downstream of world rendering and colour processing, so instrument text keeps a consistent contrast in all three rendering modes.
 

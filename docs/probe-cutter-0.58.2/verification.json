@@ -1,0 +1,44 @@
+{
+  "version": "0.58.2",
+  "core_probe_suites_passed": 2,
+  "excavation_checks": 117,
+  "presentation_checks": 550,
+  "native_capture_stages_passed": 9,
+  "unchanged_canonical_excavation_and_saved_ship_state": "passed",
+  "rigid_stow_full_rotation_shaft_clearance_and_lens_clearance": "passed",
+  "hydraulic_endpoint_attachment": "passed",
+  "rig_cache_bound_bytes": 262144,
+  "ejecta_cap": 128,
+  "native_observations": {
+    "baseline_version": "0.58.1",
+    "baseline_median_ms": 26.3472,
+    "upgraded_median_ms": 26.9081,
+    "baseline_p95_ms": 50.425,
+    "upgraded_p95_ms": 50.632,
+    "baseline_peak_rss_bytes": 153812992,
+    "upgraded_peak_rss_bytes": 154927104,
+    "geometry_cache_before_and_after_bytes": 13317736,
+    "note": "Consecutive native runs on the same machine; frozen scene stages with asynchronous settling. Descriptive timings, not a general benchmark."
+  },
+  "signed_startup": {
+    "result": "passed",
+    "version": "0.58.2",
+    "bundle_build": "68",
+    "frames": 120,
+    "exit_code": 0,
+    "save": "isolated temporary directory"
+  },
+  "video": {
+    "frames": 639,
+    "fps": 30,
+    "duration_seconds": 21.3,
+    "resolution": [
+      1280,
+      720
+    ],
+    "full_decode": "passed",
+    "sha256": "0f47695a4dc7dafe83775c569590e28dca5b4bf22068e09df04b922a3f0ccf9d"
+  },
+  "matching_signed_code_data_sections": 28,
+  "signature_verified": true
+}

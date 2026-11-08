@@ -1,4 +1,4 @@
-# Persistent civilian economy — Infinite 0.38
+# Persistent civilian economy — Infinity 0.38
 
 This release implements the first playable stage of the economic design: physical inventories, production, wages and household consumption, local markets, funded supply contracts and cargo-backed NPC freight. Existing planets, moons, settlements, buildings, populations and activity identities provide its locations. Economic state is an overlay; it never writes to universe generation.
 
@@ -50,7 +50,7 @@ Save restoration validates stock non-negativity, storage bounds, reserve depleti
 
 ## Validation and evidence
 
-The baseline passed all 35 existing core tests, with checkpoint `checkpoint/infinite-0.37-before-economy` at `34e3883`. The new economic suite checks manufacturing mass balance, inventory and monetary conservation across hundreds of ticks, frame-batching independence, actual freight completion, funded/partial/expired contracts, sequence replay, price limits, wallet/network restart, dormant-network eviction, outages and recovery, payload physics, shrinking guards, fitted UI and generator preservation.
+The baseline passed all 35 existing core tests, with checkpoint `checkpoint/infinity-0.37-before-economy` at `34e3883`. The new economic suite checks manufacturing mass balance, inventory and monetary conservation across hundreds of ticks, frame-batching independence, actual freight completion, funded/partial/expired contracts, sequence replay, price limits, wallet/network restart, dormant-network eviction, outages and recovery, payload physics, shrinking guards, fitted UI and generator preservation.
 
 The starting-system adapter finds **95 existing market sites and 123 existing freight vessels**. The final build passes **36 core tests** and **9 native checks**; the economic suite contains **64,610 checks**. The final economic loop and image checks passed again after the stock-buffer, cash-circulation and cancellation safeguards. [Core results](economy-0.38/core-tests.log), [economic checks](economy-0.38/economy-tests.log), [native regressions](economy-0.38/final-native-tests.log), [final economic rerun](economy-0.38/last-native-economy-tests.log).
 
@@ -75,6 +75,6 @@ The native economy fixture exercises actual worker-backed buying and resale, vis
 
 ## Sources and implementation boundary
 
-The user's Hyperion source supplies the local reference: `economy.hpp`, `economy.cpp::reserveFor`, `marketPrice`, `tradeOrderPrice`, `updateSettlement`, `updateRoute` and `advanceEconomy`. Its actual inventories, input/output recipes, paid freight and escrow informed this design. Infinite retains its own world, coordinates, settlements, renderer and ship physics.
+The user's Hyperion source supplies the local reference: `economy.hpp`, `economy.cpp::reserveFor`, `marketPrice`, `tradeOrderPrice`, `updateSettlement`, `updateRoute` and `advanceEconomy`. Its actual inventories, input/output recipes, paid freight and escrow informed this design. Infinity retains its own world, coordinates, settlements, renderer and ship physics.
 
 External research: [X4 trading and mining](https://wiki.egosoft.com/X4%20Foundations%20Wiki/Manual%20and%20Guides/X4:%20Foundations%20Manual/Trading%20And%20Mining/), [Victoria 3's lead designer on economic modelling](https://www.gamedeveloper.com/design/deep-dive-modeling-the-global-economy-in-victoria-3), [Prosperous Universe workforce and efficiency](https://handbook.apex.prosperousuniverse.com/wiki/efficiency-factors/), and [BEA input-output accounts](https://www.bea.gov/sites/default/files/2021-02/BEA-Input-Output-Accounts.pdf). These inform the system; their world-generation or simulation code is not imported.

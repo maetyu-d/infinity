@@ -1,12 +1,12 @@
 #pragma once
-#include "infinite/Economy.hpp"
-#include "infinite/FireControl.hpp"
-#include "infinite/Recovery.hpp"
-#include "infinite/Renderer.hpp"
+#include "infinity/Economy.hpp"
+#include "infinity/FireControl.hpp"
+#include "infinity/Recovery.hpp"
+#include "infinity/Renderer.hpp"
 #include <filesystem>
 #include <iostream>
 #include <sstream>
-namespace infinite {
+namespace infinity {
 class CombatOperationsValidation {
     const Universe& u_;
     Navigation& nav_;
@@ -293,4 +293,4 @@ class CombatOperationsValidation {
         return finished_;
     }
 };
-} // namespace infinite
+} // namespace infinity

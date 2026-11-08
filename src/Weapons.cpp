@@ -1,15 +1,23 @@
-#include "infinite/Weapons.hpp"
-#include "infinite/CombatActors.hpp"
-#include "infinite/Piloting.hpp"
-#include "infinite/Planetology.hpp"
+#include "infinity/SaveTag.hpp"
+#include "infinity/Weapons.hpp"
+#include "infinity/CombatActors.hpp"
+#include "infinity/Cockpit.hpp"
+#include "infinity/Piloting.hpp"
+#include "infinity/NpcCombat.hpp"
+#include "infinity/StationControl.hpp"
+#include <numbers>
+#include "infinity/Planetology.hpp"
 #include <algorithm>
 #include <iomanip>
 #include <sstream>
-namespace infinite {
+namespace infinity {
 namespace {
-const std::array<WeaponSpec, 3> specs{{{"PULSE LASER I", 10, 3000, .28, 17, 28, {.25, .9, 1}},
+const std::array<WeaponSpec, 6> specs{{{"PULSE LASER I", 10, 3000, .28, 17, 28, {.25, .9, 1}},
                                        {"PULSE LASER II", 16, 6000, .24, 16, 32, {.75, .45, 1}},
-                                       {"PULSE LASER III", 24, 10000, .20, 15, 36, {1, .45, .65}}}};
+                                       {"PULSE LASER III", 24, 10000, .20, 15, 36, {1, .45, .65}},
+                                       {"ION DISRUPTOR", 0, 1400, 3.5, 42, 12, {.33, 1., .55}},
+                                       {"GUIDED MISSILE", 38, 3500, 6., 68, 13, {1, .64, .22}},
+                                       {"POINT DEFENCE", 0, 780, .75, 25, 30, {.48, .85, 1}}}};
 bool finite(glm::dvec3 p) {
     return std::isfinite(p.x) && std::isfinite(p.y) && std::isfinite(p.z);
 }
@@ -91,7 +99,7 @@ void WeaponSystem::setMountReadiness(unsigned mount, double readiness) {
 unsigned WeaponSystem::firingMask() const {
     unsigned mask = 0;
     for (const auto& s : shots_)
-        if (!s.enemy && s.mount < maxWeaponMounts)
+        if (!s.enemy && s.age <= .16 && s.mount < maxWeaponMounts)
             mask |= 1u << s.mount;
     return mask;
 }
@@ -99,6 +107,13 @@ void WeaponSystem::advance(double dt) {
     if (!std::isfinite(dt) || dt <= 0)
         return;
     dt = std::min(dt, 60.);
+    for (auto& outage : outages_) {
+        outage.position += outage.velocity * std::min(dt, outage.remaining);
+        outage.remaining -= dt;
+    }
+    std::erase_if(outages_, [](const auto& outage) { return outage.remaining <= 0; });
+    for (auto& feedback : pulseFeedback_)
+        feedback.remaining = std::max(0., feedback.remaining - dt);
     for (auto& m : mounts_) {
         m.cooldown = std::max(0., m.cooldown - dt);
         m.heat = std::max(0., m.heat - weaponSpec(m.level).cooling * std::max(.65, m.crewReadiness) * dt);
@@ -107,13 +122,13 @@ void WeaponSystem::advance(double dt) {
     }
     for (auto& s : shots_)
         s.age += dt;
-    std::erase_if(shots_, [](const auto& s) { return s.age > .16; });
+    std::erase_if(shots_, [](const auto& s) { return s.age > weaponShotLifetime(s); });
 }
 void WeaponSystem::utilityBeam(const WeaponRay& ray, glm::dvec3 endpoint, unsigned mount) {
     if(mount>=maxWeaponMounts || !finite(ray.origin) || !finite(endpoint))return;
     std::erase_if(shots_,[&](const auto& s){return !s.enemy && s.mount==mount;});
     if(shots_.size()>=12)shots_.erase(shots_.begin());
-    shots_.push_back({ray.reference,ray.origin,endpoint,0,1,true,false,1,false,mount});
+    shots_.push_back({ray.reference,ray.origin,endpoint,0,1,true,false,1,false,mount,true});
 }
 void WeaponSystem::receiveNpcDamage(const ActivityBody& body, double points, double seconds) {
     if ((body.kind != ActivityKind::Ferry && body.kind != ActivityKind::Freighter &&
@@ -133,11 +148,58 @@ void WeaponSystem::receiveNpcDamage(const ActivityBody& body, double points, dou
     it->position = body.position;
     it->orientation = body.orientation;
 }
+const WeaponDamage* WeaponSystem::hunterOffence(const Address& system, double seconds) const {
+    const WeaponDamage* latest = nullptr;
+    for (const auto& hit : damage_)
+        if (isRaider(hit.id) && hit.id.slot != factionHunterSlot && hit.id.home.parent() == system &&
+            seconds - hit.hitSeconds >= 0 && seconds - hit.hitSeconds < 600 &&
+            (!latest || hit.hitSeconds > latest->hitSeconds))
+            latest = &hit;
+    return latest;
+}
+bool WeaponSystem::ionDisabled(const ActivityId& id) const {
+    return std::any_of(outages_.begin(), outages_.end(), [&](const auto& outage) { return outage.id == id; });
+}
+bool WeaponSystem::secureIonTarget(const ActivityBody& body, double seconds) {
+    if (body.kind != ActivityKind::Raider || body.disabled || !ionDisabled(body.id))
+        return false;
+    auto record = std::find_if(damage_.begin(), damage_.end(), [&](const auto& d) { return d.id == body.id; });
+    if (record == damage_.end()) {
+        if (damage_.size() >= 2048)
+            return false;
+        damage_.push_back({body.id, body.hull, seconds, body.position, body.orientation});
+        record = std::prev(damage_.end());
+    }
+    record->hitSeconds = seconds;
+    record->position = body.position;
+    record->orientation = body.orientation;
+    record->systems[size_t(ShipSystem::Engines)] = 0;
+    std::erase_if(outages_, [&](const auto& outage) { return outage.id == body.id; });
+    return true;
+}
 void WeaponSystem::apply(ActivityBody& body) const {
+    const auto applyIon = [&] {
+        if (body.disabled || body.hull <= 0 || body.systems[size_t(ShipSystem::Engines)] <= 0)
+            return;
+        const auto outage = std::find_if(outages_.begin(), outages_.end(),
+                                         [&](const auto& item) { return item.id == body.id; });
+        if (outage == outages_.end())
+            return;
+        body.position = outage->position;
+        body.velocity = outage->velocity;
+        body.systems[size_t(ShipSystem::Engines)] = 0;
+        body.systems[size_t(ShipSystem::Thrusters)] = 0;
+        body.status = "ION OFFLINE " + std::to_string(int(std::ceil(outage->remaining))) + "S / HOLD 0 TO SECURE";
+        body.economicBrief.clear();
+    };
     const auto it =
         std::find_if(damage_.begin(), damage_.end(), [&](const auto& d) { return d.id == body.id; });
-    if (it == damage_.end() || body.kind == ActivityKind::Harbour || body.kind == ActivityKind::SurfacePort)
+    if (body.kind == ActivityKind::Harbour || body.kind == ActivityKind::SurfacePort)
         return;
+    if (it == damage_.end()) {
+        applyIon();
+        return;
+    }
     body.hull = it->hull;
     body.systems = it->systems;
     body.systems[0] = body.hull;
@@ -157,6 +219,7 @@ void WeaponSystem::apply(ActivityBody& body) const {
         body.status += " / HULL " + std::to_string(int(std::ceil(body.hull))) + "%";
         body.tint *= float(.45 + .55 * body.hull / 100);
     }
+    applyIon();
 }
 WeaponTrace traceWeapon(const Universe& u, const WeaponRay& ray, double rangeMetres,
                         std::span<const ActivityBody> targets, const Geometry* geometry) {
@@ -254,7 +317,7 @@ bool WeaponSystem::fireMount(unsigned mount, const Universe& u, const WeaponRay&
     if (mount >= maxWeaponMounts)
         return false;
     auto& m = mounts_[mount];
-    if (!m.level || m.integrity <= 0 || m.crewReadiness <= 0 || m.cooldown > 1e-9 || m.overheated ||
+    if (!m.level || m.level == pointDefence || m.integrity <= 0 || m.crewReadiness <= 0 || m.cooldown > 1e-9 || m.overheated ||
         !finite(input.origin) || !finite(input.direction) || !finite(input.right) ||
         !std::isfinite(input.scale) || input.scale < 1e-12 || input.scale > 1 ||
         !std::isfinite(input.seconds) || input.seconds < 0 || input.seconds > 1e12 ||
@@ -287,8 +350,31 @@ bool WeaponSystem::fireMount(unsigned mount, const Universe& u, const WeaponRay&
     const bool surface = trace.blocked;
     if (requiredTarget && (!chosen || chosen->id != *requiredTarget || chosen->disabled))
         return false;
+    if (m.level == missileLauncher) {
+        if (!chosen || !chosen->hostile || chosen->disabled || ray.scale < .99 || missiles_.size() >= 24)
+            return false;
+        missiles_.push_back({ray.reference, chosen->id, ray.origin + ray.direction * 10., ray.direction});
+        missileEffect(ray.reference, ray.origin + ray.direction * 5., missiles_.back().position,
+                      false, false, missileLauncher);
+        shots_.back().mount = mount;
+        ++m.shotsFired;
+        m.heat += spec.heatPerShot;
+        m.cooldown = spec.interval;
+        return true;
+    }
     bool disabled = false;
-    if (chosen && !chosen->disabled && chosen->kind != ActivityKind::Harbour &&
+    bool damageApplied = false;
+    ShipSystem impacted = ShipSystem::Hull;
+    if (m.level == ionDisruptor) {
+        if (chosen && !chosen->disabled && chosen->kind == ActivityKind::Raider) {
+            auto outage = std::find_if(outages_.begin(), outages_.end(),
+                                       [&](const auto& item) { return item.id == chosen->id; });
+            if (outage != outages_.end())
+                outage->remaining = 22.;
+            else if (chosen->systems[size_t(ShipSystem::Engines)] > 0 && outages_.size() < 64)
+                outages_.push_back({chosen->id, chosen->position, chosen->velocity, 22.});
+        }
+    } else if (chosen && !chosen->disabled && chosen->kind != ActivityKind::Harbour &&
         chosen->kind != ActivityKind::SurfacePort) {
         auto it =
             std::find_if(damage_.begin(), damage_.end(), [&](const auto& d) { return d.id == chosen->id; });
@@ -313,11 +399,16 @@ bool WeaponSystem::fireMount(unsigned mount, const Universe& u, const WeaponRay&
                     it->systems[size_t(input.targetSystem)] =
                         std::max(0., it->systems[size_t(input.targetSystem)] - spec.damage * 3.);
             }
+            damageApplied = true;
+            if (componentHit)
+                impacted = input.targetSystem;
             it->hull = std::max(0., it->hull - spec.damage * (componentHit ? .35 : 1.));
             it->hitSeconds = ray.seconds;
             it->position = chosen->position;
             it->orientation = chosen->orientation;
             disabled = it->hull == 0;
+            if (disabled || it->systems[size_t(ShipSystem::Engines)] <= 0)
+                std::erase_if(outages_, [&](const auto& outage) { return outage.id == chosen->id; });
         }
     }
     ++m.shotsFired;
@@ -329,8 +420,191 @@ bool WeaponSystem::fireMount(unsigned mount, const Universe& u, const WeaponRay&
                       ray.origin + ray.direction * (6 * ray.scale) +
                           ray.right * ((m.shotsFired & 1 ? 1.1 : -1.1) * ray.scale),
                       ray.origin + ray.direction * limit, 0, ray.scale, surface || bool(chosen), disabled,
-                      m.level, false, mount});
+                      m.level, false, mount, false, impacted});
+    if (isPulseLaser(m.level)) {
+        using Result = PulseFeedback::Result;
+        auto& feedback = pulseFeedback_[mount];
+        if (damageApplied || feedback.remaining <= 0 || feedback.result != Result::Hit)
+            feedback = {impacted, damageApplied ? Result::Hit : surface ? Result::Blocked : Result::Miss, 1.15};
+    }
     return true;
+}
+void WeaponSystem::missileEffect(const Address& frame, glm::dvec3 from, glm::dvec3 to, bool enemy,
+                                 bool hit, unsigned level) {
+    if (shots_.size() >= 24)
+        shots_.erase(shots_.begin());
+    shots_.push_back({frame, from, to, 0, 1, hit, false, level, enemy});
+}
+bool WeaponSystem::launchHostileMissile(const WeaponRay& ray) {
+    if (missiles_.size() >= 24 || !finite(ray.origin) || !finite(ray.direction) ||
+        std::abs(glm::length(ray.direction) - 1.) > .01)
+        return false;
+    const auto direction = glm::normalize(ray.direction);
+    missiles_.push_back({ray.reference, {}, ray.origin + direction * 22., direction});
+    missileEffect(ray.reference, ray.origin + direction * 14., missiles_.back().position,
+                  true, false, missileLauncher);
+    return true;
+}
+double WeaponSystem::updateMissiles(const Universe& u, const NpcPlayer& player,
+                                    std::span<const ActivityBody> bodies, const Geometry* geometry,
+                                    double dt, bool defend, unsigned captainMount) {
+    missileThreat_ = {};
+    if (missiles_.empty() || !std::isfinite(dt) || dt <= 0)
+        return 0;
+    dt = std::min(dt, .1);
+    constexpr double speed = 360.;
+    const double playerUnits = std::pow(10., u.describe(player.reference).frame.logRadius);
+    double playerDamage = 0;
+    for (auto it = missiles_.begin(); it != missiles_.end();) {
+        auto& missile = *it;
+        const bool enemy = !missile.target;
+        missile.age += dt;
+        if (missile.age > 14 || (enemy && (player.field || player.landed || player.hull <= 0))) {
+            it = missiles_.erase(it);
+            continue;
+        }
+        ActivityBody target;
+        if (enemy) {
+            target.id = {missile.reference, UINT32_MAX};
+            target.position = u.pointRelative(player.reference, player.position / playerUnits,
+                                              missile.reference, 0);
+            target.radius = std::max(4., 9. * player.size);
+        } else {
+            auto contact = std::find_if(bodies.begin(), bodies.end(),
+                                       [&](const auto& b) { return b.id == *missile.target; });
+            if (contact == bodies.end() || contact->disabled) {
+                it = missiles_.erase(it);
+                continue;
+            }
+            target = *contact;
+            apply(target);
+        }
+        const auto targetPoint = target.id.home == missile.reference ? target.position :
+            u.pointRelative(target.id.home, target.position /
+                std::pow(10., u.describe(target.id.home).frame.logRadius), missile.reference, 0);
+        const auto delta = targetPoint - missile.position;
+        const double range = glm::length(delta);
+        bool intercepted = false;
+        if (enemy && defend && player.size >= .99 && range < weaponSpec(pointDefence).rangeMetres) {
+            const auto toHull = u.relative(missile.reference, player.reference, 0).orientation;
+            const auto right = player.orientation * glm::dvec3(1, 0, 0);
+            for (unsigned i = 1; i < maxWeaponMounts; ++i) {
+                auto& mount = mounts_[i];
+                const auto& spec = weaponSpec(pointDefence);
+                if (i == captainMount || mount.level != pointDefence || mount.integrity <= 0 ||
+                    mount.crewReadiness <= 0 || mount.cooldown > 0 || mount.overheated)
+                    continue;
+                if (mount.heat + spec.heatPerShot > 100) {
+                    mount.overheated = true;
+                    continue;
+                }
+                const auto muzzle = player.position + right * weaponMountLateralMetres(i);
+                const auto aim = -(toHull * delta) - (muzzle - player.position);
+                const double distance = glm::length(aim);
+                if (distance < 1e-6 || distance > spec.rangeMetres)
+                    continue;
+                const auto local = glm::inverse(player.orientation) * (aim / distance);
+                const auto arc = weaponTraverse(i);
+                const double yaw = std::atan2(local.x, -local.z) * 180 / std::numbers::pi;
+                if (yaw < arc.x || yaw > arc.y || std::abs(local.y) > .94)
+                    continue;
+                const WeaponRay ray{player.reference, muzzle, aim / distance, right};
+                const auto obstruction = traceWeapon(u, ray, distance, bodies, geometry);
+                if (obstruction.blocked || obstruction.body)
+                    continue;
+                missileEffect(player.reference, muzzle, muzzle + aim, false, true, pointDefence);
+                ++mount.shotsFired;
+                mount.heat += spec.heatPerShot;
+                mount.cooldown = spec.interval / (mount.crewReadiness * std::max(.25, mount.integrity / 100.));
+                intercepted = true;
+                break;
+            }
+        }
+        if (intercepted) {
+            it = missiles_.erase(it);
+            continue;
+        }
+        if (range > 1e-6) {
+            const auto desired = delta / range;
+            const double angle = std::acos(std::clamp(glm::dot(missile.direction, desired), -1., 1.));
+            auto axis = glm::cross(missile.direction, desired);
+            if (glm::length(axis) < 1e-8)
+                axis = glm::cross(missile.direction, std::abs(missile.direction.y) < .9 ?
+                                   glm::dvec3(0, 1, 0) : glm::dvec3(1, 0, 0));
+            missile.direction = glm::angleAxis(std::min(angle, dt * .57), glm::normalize(axis)) *
+                                missile.direction;
+        }
+        const WeaponRay ray{missile.reference, missile.position, missile.direction};
+        const double travel = speed * dt;
+        const double contact = sphere(delta, missile.direction, target.radius);
+        const auto obstacle = traceWeapon(u, ray, std::min(travel, contact), bodies, geometry);
+        const bool targetHit = contact <= travel &&
+            ((!obstacle.blocked && !obstacle.body) || (obstacle.body && obstacle.body->id == target.id));
+        if (targetHit || obstacle.blocked || obstacle.body) {
+            const auto impact = missile.position + missile.direction * obstacle.distance;
+            missileEffect(missile.reference, missile.position - missile.direction * 24., impact,
+                          enemy, true, missileLauncher);
+            if (targetHit && enemy)
+                playerDamage += 27.;
+            else if (targetHit && !target.disabled) {
+                auto record = std::find_if(damage_.begin(), damage_.end(),
+                                           [&](const auto& d) { return d.id == target.id; });
+                if (record == damage_.end() && damage_.size() < 2048) {
+                    damage_.push_back({target.id, target.hull});
+                    record = std::prev(damage_.end());
+                }
+                if (record != damage_.end()) {
+                    record->hull = std::max(0., record->hull - weaponSpec(missileLauncher).damage);
+                    record->position = target.position;
+                    record->orientation = target.orientation;
+                    record->hitSeconds = player.seconds;
+                    if (record->hull == 0)
+                        std::erase_if(outages_, [&](const auto& o) { return o.id == target.id; });
+                }
+            }
+            it = missiles_.erase(it);
+            continue;
+        }
+        missile.position += missile.direction * travel;
+        if (enemy) {
+            const auto toPlayer = u.relative(missile.reference, player.reference, 0).orientation;
+            const auto toward = toPlayer * (missile.position - targetPoint);
+            const double distance = glm::length(toward);
+            if (distance > 1e-6) {
+                const auto bearing = toward / distance;
+                const double closing = glm::dot(player.velocity - toPlayer * missile.direction * speed, bearing);
+                const double eta = closing > 5 ? distance / closing : -1.;
+                auto& threat = missileThreat_;
+                if (threat.count++ == 0 ||
+                    (eta >= 0 && (threat.seconds < 0 || eta < threat.seconds)) ||
+                    (eta < 0 && threat.seconds < 0 && distance < threat.range)) {
+                    threat.localDirection = glm::inverse(player.orientation) * bearing;
+                    threat.range = distance;
+                    threat.seconds = eta;
+                }
+            }
+        }
+        ++it;
+    }
+    return playerDamage;
+}
+std::string WeaponSystem::pulseStatus(unsigned mount, double scale) const {
+    const auto& gun = mounts_.at(mount);
+    if (!isPulseLaser(gun.level))
+        return {};
+    const auto& feedback = pulseFeedback_[mount];
+    std::string status = flightQuantity(weaponSpec(gun.level).rangeMetres * scale) + " REACH / ";
+    if (gun.integrity <= 0)
+        return status + "OFFLINE";
+    if (gun.overheated)
+        return status + "OVERHEAT / COOLING";
+    if (feedback.remaining > 0) {
+        using Result = PulseFeedback::Result;
+        if (feedback.result == Result::Hit)
+            return status + std::string(shipSystemName(feedback.component)) + " HIT";
+        return status + (feedback.result == Result::Blocked ? "SHOT BLOCKED" : "NO CONTACT");
+    }
+    return status + (gun.cooldown > 0 ? "CYCLING" : "SPACE FIRE");
 }
 void WeaponSystem::annotate(FlightInstruments& t, bool inhibited) const {
     const auto& m = mounts_[0];
@@ -338,7 +612,7 @@ void WeaponSystem::annotate(FlightInstruments& t, bool inhibited) const {
     t.weapon = m.level ? std::string(weaponSpec(m.level).name) : "NO WEAPON FITTED";
     t.weaponHeat = m.heat;
     t.weaponStatus = m.integrity <= 0 ? "NOSE GUN OFFLINE / F9 REPAIR"
-                     : !m.level       ? "F2 WEAPONS / BUY A LASER"
+                     : !m.level       ? "F2 WEAPONS / BUY A WEAPON"
                      : inhibited      ? "WEAPON INHIBITED"
                      : m.overheated   ? "OVERHEAT / COOLING"
                                       : "SPACE FIRE";
@@ -368,7 +642,7 @@ void WeaponSystem::annotate(FlightInstruments& t, bool inhibited) const {
 }
 std::string WeaponSystem::serialize() const {
     std::ostringstream o;
-    o << std::setprecision(17) << "INFINITE_COMBAT 3";
+    o << std::setprecision(17) << (outages_.empty() ? "INFINITY_COMBAT 3" : "INFINITY_COMBAT 4");
     for (const auto& m : mounts_)
         o << ' ' << m.heat << ' ' << m.cooldown << ' ' << m.overheated << ' ' << m.shotsFired;
     o << ' ' << damage_.size();
@@ -378,6 +652,13 @@ std::string WeaponSystem::serialize() const {
           << d.orientation.y << ' ' << d.orientation.z;
         for (double health : d.systems)
             o << ' ' << health;
+    }
+    if (!outages_.empty()) {
+        o << ' ' << outages_.size();
+        for (const auto& outage : outages_)
+            o << ' ' << outage.id.str() << ' ' << outage.remaining << ' '
+              << outage.position.x << ' ' << outage.position.y << ' ' << outage.position.z << ' '
+              << outage.velocity.x << ' ' << outage.velocity.y << ' ' << outage.velocity.z;
     }
     return o.str();
 }
@@ -390,7 +671,7 @@ bool WeaponSystem::restore(std::string_view text, const Universe& u) {
         std::string h;
         unsigned v, hot;
         size_t count;
-        if (!(in >> h >> v) || h != "INFINITE_COMBAT" || (v < 1 || v > 3))
+        if (!(in >> h >> v) || !matchesSaveTag(h, "INFINITY_COMBAT") || (v < 1 || v > 4))
             return false;
         for (unsigned j = 0; j < (v == 1 ? 1u : maxWeaponMounts); ++j) {
             auto& m = p.mounts_[j];
@@ -423,6 +704,25 @@ bool WeaponSystem::restore(std::string_view text, const Universe& u) {
                 return false;
             p.damage_.push_back(d);
         }
+        if (v == 4) {
+            if (!(in >> count) || count > 64)
+                return false;
+            for (size_t i = 0; i < count; ++i) {
+                IonOutage outage;
+                std::string id;
+                if (!(in >> id >> outage.remaining >> outage.position.x >> outage.position.y >>
+                      outage.position.z >> outage.velocity.x >> outage.velocity.y >> outage.velocity.z) ||
+                    !(outage.remaining > 0 && outage.remaining <= 22.) ||
+                    !finite(outage.position) || !finite(outage.velocity) ||
+                    glm::length(outage.position) > 1e20 || glm::length(outage.velocity) > 1e8)
+                    return false;
+                outage.id = ActivityId::parse(id);
+                if (!isRaider(outage.id) || p.ionDisabled(outage.id))
+                    return false;
+                u.describe(outage.id.home);
+                p.outages_.push_back(std::move(outage));
+            }
+        }
         in >> std::ws;
         if (!in.eof())
             return false;
@@ -432,4 +732,4 @@ bool WeaponSystem::restore(std::string_view text, const Universe& u) {
         return false;
     }
 }
-} // namespace infinite
+} // namespace infinity

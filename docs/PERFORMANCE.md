@@ -78,13 +78,13 @@ The native proof digest is recorded in [native.log](performance/native.log). Cap
 ## Reproduce
 
 ```sh
-cmake -S . -B build -DINFINITE_GPU_TESTS=ON
-cmake --build build --target infinite infinite_tests infinite_continuity_tests infinite_process_tests infinite_performance_tests infinite_benchmark -j 4
+cmake -S . -B build -DINFINITY_GPU_TESTS=ON
+cmake --build build --target infinity infinity_tests infinity_continuity_tests infinity_process_tests infinity_performance_tests infinity_benchmark -j 4
 ctest --test-dir build --output-on-failure
-./build/infinite --benchmark-tour --width 1920 --height 1080 --profile build/frames.csv --data build/perf-data
-./build/infinite_benchmark > build/generation.csv
-./build/infinite_performance_tests --cosmic-benchmark > build/cosmic-kernel.csv
+./build/infinity --benchmark-tour --width 1920 --height 1080 --profile build/frames.csv --data build/perf-data
+./build/infinity_benchmark > build/generation.csv
+./build/infinity_performance_tests --cosmic-benchmark > build/cosmic-kernel.csv
 python3 tools/compare_performance.py build/performance/before build/performance/after docs/performance/comparison
 ```
 
-The comparison tool expects `frames-1.csv` through `frames-3.csv`, matching `tour-N.log`, and matching `generation-N.csv` in each run directory. Performance tours omit capture I/O and proof regeneration. Keep that workload identical when comparing changes. GPU fixtures require an active desktop; eight tests run headlessly with `INFINITE_GPU_TESTS=OFF`.
+The comparison tool expects `frames-1.csv` through `frames-3.csv`, matching `tour-N.log`, and matching `generation-N.csv` in each run directory. Performance tours omit capture I/O and proof regeneration. Keep that workload identical when comparing changes. GPU fixtures require an active desktop; eight tests run headlessly with `INFINITY_GPU_TESTS=OFF`.

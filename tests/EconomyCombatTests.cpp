@@ -1,11 +1,11 @@
-#include "infinite/CombatActors.hpp"
-#include "infinite/Economy.hpp"
+#include "infinity/CombatActors.hpp"
+#include "infinity/Economy.hpp"
 #include <chrono>
 #include <filesystem>
 #include <iostream>
 #include <limits>
 #include <thread>
-using namespace infinite;
+using namespace infinity;
 namespace {
 unsigned checks = 0;
 void check(bool value, const char* reason) {
@@ -71,6 +71,36 @@ std::shared_ptr<const EconomySnapshot> wait(EconomyRuntime& r, uint64_t seq, uin
 int main(int argc, char** argv) {
     try {
         auto n = fixture();
+        Economy raid(n);
+        EconomyPlayer payer;
+        payer.cargo[size_t(Good::Machinery)] = 40;
+        const auto home = n->sites.front().id.home;
+        EconomicCommand tribute;
+        tribute.port = {home, cargoRaiderSlot};
+        tribute.action = EconomicAction::RaiderTribute;
+        tribute.sequence = 1;
+        tribute.combatPresent = true;
+        tribute.targetDistance = 1600;
+        tribute.workSeconds = 12;
+        tribute.good = Good::Machinery;
+        tribute.kg = 10;
+        check(raid.execute(tribute, payer).starts_with("CARGO SURRENDERED") &&
+                  payer.availableCargo(Good::Machinery) == 30,
+              "Cargo tribute did not consume ordinary hold cargo");
+        check(raid.execute(tribute, payer) == "ORDER ALREADY PROCESSED" &&
+                  payer.availableCargo(Good::Machinery) == 30,
+              "Duplicate tribute consumed cargo");
+        tribute.sequence = 2;
+        tribute.port.slot = factionHunterSlot;
+        tribute.wreck = WeaponDamage{{home, raiderActivitySlot}, 90};
+        tribute.limitCents = 2000;
+        const auto payerCredits = payer.credits;
+        check(raid.execute(tribute, payer).starts_with("RESTITUTION PAID") &&
+                  payer.credits == payerCredits - 2000,
+              "Hunter restitution did not charge the recorded amount");
+        Economy restoredRaid(n);
+        check(restoredRaid.restore(raid.serialize()) && restoredRaid.serialize() == raid.serialize(),
+              "Tribute receipt did not survive ledger reload");
         Economy e(n);
         EconomyPlayer p;
         const auto money = e.moneyTotal() + p.credits;
@@ -188,7 +218,7 @@ int main(int argc, char** argv) {
             }
         oldText.erase(security);
         oldText += oldRows;
-        oldText.replace(17, 1, "8");
+        oldText.replace(17, oldText.find(' ', 17) - 17, "8");
         check(oldReward.restore(oldText), "Version-eight bounty ledger failed migration");
         EconomyPlayer legacyPilot;
         const auto legacyBounty = oldReward.combatContracts()[1];
@@ -216,7 +246,7 @@ int main(int argc, char** argv) {
         Economy legacy(n);
         auto old = legacy.serialize();
         old.erase(old.find("SECURITY "));
-        old.replace(17, 1, "7");
+        old.replace(17, old.find(' ', 17) - 17, "7");
         Economy migrated(n);
         check(migrated.restore(old), "Version-seven ledger migration failed");
         EconomyPlayer empty;

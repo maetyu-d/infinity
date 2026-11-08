@@ -1,4 +1,4 @@
-# Port services, cargo progression and job planning — Infinite 0.41
+# Port services, cargo progression and job planning — Infinity 0.41
 
 Existing ports now sell hull repairs and three cargo-hold refits. Hauling and trading use the expanded capacity, while the jobs board combines fees with distance, mass, volume, travel estimates and deadline margin. The universe, geometry and restored steering remain intact.
 
@@ -56,7 +56,7 @@ The [preservation manifest](economy-0.41/preservation.json) compares against `33
 
 The representative snapshot grows by **272 B** to about **0.481 MiB**. Four-system cache tests remain below 4 MiB. The expanded native run completes 811 frames, with **21.71 ms median / 47.58 ms p95** frame time and **154,763,264 B peak RSS**. It includes seventeen captures, resizing, streaming and additional port visits, so this is diagnostic timing rather than a matched rendering comparison or speedup claim. [Frame profile](economy-0.41/native-frames.csv).
 
-**Infinite 0.41.0 / build 46** is packaged, ad-hoc signed and verified. All **28 code/data sections** match the tested executable. [Core build](economy-0.41/build.log), [final viewer build](economy-0.41/native-build.log), [package check](economy-0.41/package.json). Test saves are isolated from the existing player save.
+**Infinity 0.41.0 / build 46** is packaged, ad-hoc signed and verified. All **28 code/data sections** match the tested executable. [Core build](economy-0.41/build.log), [final viewer build](economy-0.41/native-build.log), [package check](economy-0.41/package.json). Test saves are isolated from the existing player save.
 
 ![Quoted repairs and cargo refits](economy-0.41/services-before.png)
 

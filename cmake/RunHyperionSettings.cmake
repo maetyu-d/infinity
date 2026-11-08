@@ -1,12 +1,12 @@
-if(NOT INFINITE_EXE OR NOT OUTPUT)
-  message(FATAL_ERROR "INFINITE_EXE and OUTPUT required")
+if(NOT INFINITY_EXE OR NOT OUTPUT)
+  message(FATAL_ERROR "INFINITY_EXE and OUTPUT required")
 endif()
 file(MAKE_DIRECTORY "${OUTPUT}")
 foreach(old_mode ORIGINAL HYBRID)
   set(data "${OUTPUT}/${old_mode}-settings")
   file(MAKE_DIRECTORY "${data}")
   file(WRITE "${data}/display.txt" "${old_mode}\n")
-  execute_process(COMMAND "${INFINITE_EXE}" --frames 30 --width 900 --height 600
+  execute_process(COMMAND "${INFINITY_EXE}" --frames 30 --width 900 --height 600
     --data "${data}" --profile "${data}/frames.csv"
     RESULT_VARIABLE result OUTPUT_FILE "${data}/native.log" ERROR_FILE "${data}/native.log" TIMEOUT 60)
   if(NOT result EQUAL 0)
@@ -20,13 +20,13 @@ foreach(old_mode ORIGINAL HYBRID)
   endif()
 endforeach()
 foreach(removed original hybrid)
-  execute_process(COMMAND "${INFINITE_EXE}" --render-mode "${removed}"
+  execute_process(COMMAND "${INFINITY_EXE}" --render-mode "${removed}"
     RESULT_VARIABLE result OUTPUT_VARIABLE diagnostics ERROR_VARIABLE diagnostics TIMEOUT 10)
   if(result EQUAL 0 OR NOT diagnostics MATCHES "Only Hyperion rendering is available")
     message(FATAL_ERROR "Removed --render-mode ${removed} was accepted")
   endif()
 endforeach()
-execute_process(COMMAND "${INFINITE_EXE}" --help OUTPUT_VARIABLE help RESULT_VARIABLE result)
+execute_process(COMMAND "${INFINITY_EXE}" --help OUTPUT_VARIABLE help RESULT_VARIABLE result)
 if(NOT result EQUAL 0 OR help MATCHES "H cycles|ORIGINAL /|HYBRID|compare-modes")
   message(FATAL_ERROR "CLI help still exposes removed rendering choices")
 endif()

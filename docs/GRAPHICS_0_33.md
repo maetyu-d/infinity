@@ -1,6 +1,6 @@
-# Geological surfaces and landing light — Infinite 0.33
+# Geological surfaces and landing light — Infinity 0.33
 
-This pass improves the appearance of Infinite's existing solid worlds. The verified 0.32 build is retained at `473944e`, with checkpoint `checkpoint/infinite-0.32-before-surface-upgrade`.
+This pass improves the appearance of Infinity's existing solid worlds. The verified 0.32 build is retained at `473944e`, with checkpoint `checkpoint/infinity-0.32-before-surface-upgrade`.
 
 ## What changed
 
@@ -10,7 +10,7 @@ This pass improves the appearance of Infinite's existing solid worlds. The verif
 - **Wet-lowland boundaries:** a derivative-filtered shoreline colour follows the existing elevation/temperature/water rule. This is a material coating on the same triangles; there is no new water plane, ocean simulation, coastline geometry or collision surface.
 - **Landing contact shade:** Hyperion's actual `worldFragment` gear-contact treatment now sits beneath a nearby full-size ship. The retained terrain height, physical hull size and altitude determine its point, footprint and falloff. The world-space contact is calculated in doubles before camera subtraction and float conversion. It fades by 38 m for a 12 m ship, scales with the actual hull size, resets every frame and is scoped to the matching planet. Shrinking, inspector views and Original mode do not receive it.
 
-The reference is the user's Hyperion game, especially `src/flight/shaders.hpp::worldFragment`: land/water roughness, mineral pigments, luminous shores and `groundClearance`/`gearPosition` contact shading. The existing Infinite BRDF and analytic environment are adapted to retain that material separation. [Reference and preservation hashes](graphics-0.33/preservation.json) verify 27 unchanged generator, geometry, navigation, ship, cockpit, coordinate, weather, city and stellar sources. Object identities, seeds, histories and atomic depth are intact.
+The reference is the user's Hyperion game, especially `src/flight/shaders.hpp::worldFragment`: land/water roughness, mineral pigments, luminous shores and `groundClearance`/`gearPosition` contact shading. The existing Infinity BRDF and analytic environment are adapted to retain that material separation. [Reference and preservation hashes](graphics-0.33/preservation.json) verify 27 unchanged generator, geometry, navigation, ship, cockpit, coordinate, weather, city and stellar sources. Object identities, seeds, histories and atomic depth are intact.
 
 The implementation adds two uniform vectors and a bounded physical contact calculation near landing. It adds no render passes, textures, history buffers, readbacks or dependencies. Existing shaders and GPU representations remain in use.
 

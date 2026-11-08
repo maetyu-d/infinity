@@ -1,0 +1,84 @@
+{
+  "workload": "639 fixed probe-camera steps at 1440x900, no screenshot or encoder overhead",
+  "order": "alternating reference/optimised, then optimised/reference",
+  "repeats_per_mode": 2,
+  "runs": [
+    {
+      "frames": 639,
+      "median_ms": 13.1476,
+      "p95_ms": 52.4816,
+      "cpu_median_ms": 9.97529,
+      "probe_cpu_median_ms": 0.385209,
+      "upload_bytes": 69460648,
+      "light_updates": 518,
+      "hidden_frames": 0,
+      "bore": 14181543975564158605,
+      "descriptor": 15490555325395019288,
+      "mode": "reference",
+      "repeat": 0
+    },
+    {
+      "frames": 639,
+      "median_ms": 5.768,
+      "p95_ms": 43.0303,
+      "cpu_median_ms": 3.96504,
+      "probe_cpu_median_ms": 0.337125,
+      "upload_bytes": 22734720,
+      "light_updates": 400,
+      "hidden_frames": 491,
+      "bore": 14181543975564158605,
+      "descriptor": 15490555325395019288,
+      "mode": "optimised",
+      "repeat": 0
+    },
+    {
+      "frames": 639,
+      "median_ms": 5.7225,
+      "p95_ms": 43.1863,
+      "cpu_median_ms": 4.37204,
+      "probe_cpu_median_ms": 0.336167,
+      "upload_bytes": 22756420,
+      "light_updates": 400,
+      "hidden_frames": 491,
+      "bore": 14181543975564158605,
+      "descriptor": 15490555325395019288,
+      "mode": "optimised",
+      "repeat": 1
+    },
+    {
+      "frames": 639,
+      "median_ms": 12.4422,
+      "p95_ms": 43.5716,
+      "cpu_median_ms": 9.12567,
+      "probe_cpu_median_ms": 0.370666,
+      "upload_bytes": 68670304,
+      "light_updates": 518,
+      "hidden_frames": 0,
+      "bore": 14181543975564158605,
+      "descriptor": 15490555325395019288,
+      "mode": "reference",
+      "repeat": 1
+    }
+  ],
+  "median_of_runs": {
+    "reference": {
+      "median_ms": 12.7949,
+      "p95_ms": 48.0266,
+      "cpu_median_ms": 9.55048,
+      "probe_cpu_median_ms": 0.37793750000000004,
+      "upload_bytes": 69065476.0,
+      "light_updates": 518.0,
+      "hidden_frames": 0.0
+    },
+    "optimised": {
+      "median_ms": 5.74525,
+      "p95_ms": 43.1083,
+      "cpu_median_ms": 4.16854,
+      "probe_cpu_median_ms": 0.336646,
+      "upload_bytes": 22745570.0,
+      "light_updates": 400.0,
+      "hidden_frames": 491.0
+    }
+  },
+  "frame_time_reduction_percent": 55.09734347278994
+}

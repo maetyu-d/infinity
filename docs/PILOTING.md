@@ -1,4 +1,4 @@
-# Hyperion piloting — Infinite 0.9
+# Hyperion piloting — Infinity 0.9
 
 This records the 0.9 integration. The current ship model, controls and shrinking ability are documented in [OPERATING_SCALES.md](OPERATING_SCALES.md).
 
@@ -12,7 +12,7 @@ Changing render units never multiplies ship velocity. Crossing a local reference
 
 Hyperion's actual `src/flight/handling.cpp` supplies the handling model: persistent throttle at .36/s, bounded pitch/yaw/roll rate commands, 4.2 rad/s² torque authority, asymmetric 22/26/52 thrust and 32 reverse authority, convex allocation reserving support thrust first, .12 s engine spool, and trapezoidal position integration. `controls.hpp` supplies mouse-delta-to-rate conversion. Assistance regulates velocity; disabling it retains momentum and spin. Braking commands reverse/manoeuvring jets and takes finite time.
 
-The local drive has a 350 m/s base envelope. The explicitly labelled scale drive raises its envelope with available physical clearance; this is fictional travel propulsion over Infinite's uncompressed distances. It does not compress distances or change object sizes. Boost, precision and speed adjustment affect the drive command and authority, not stored momentum. Assisted cruise/probe propulsion also applies explicit, clearance-dependent field braking before interstellar momentum reaches local thruster range. The HUD labels that phase; disabling assistance preserves vacuum coasting. The displayed stopping distance estimates current reverse authority and spool delay; terrain proximity, gravity and an active drive governor can change the eventual stopping distance.
+The local drive has a 350 m/s base envelope. The explicitly labelled scale drive raises its envelope with available physical clearance; this is fictional travel propulsion over Infinity's uncompressed distances. It does not compress distances or change object sizes. Boost, precision and speed adjustment affect the drive command and authority, not stored momentum. Assisted cruise/probe propulsion also applies explicit, clearance-dependent field braking before interstellar momentum reaches local thruster range. The HUD labels that phase; disabling assistance preserves vacuum coasting. The displayed stopping distance estimates current reverse authority and spool delay; terrain proximity, gravity and an active drive governor can change the eventual stopping distance.
 
 Near a planet, ship-only point gravity uses the existing radius and material density as a bulk-density estimate. Assistance reserves thrust to support the ship. This does not alter planetary mass descriptors, orbital snapshots, histories or other simulations. It is a vehicle-handling approximation, not a new n-body world simulation.
 
@@ -30,7 +30,7 @@ Per-seed `ship-<seed>.txt` stores versioned velocity, rotational/engine state, t
 
 The source remains the native game at `../Hyperion`, currently 3.68, with the earlier material/display port documented in [HYPERION_RENDERING.md](HYPERION_RENDERING.md).
 
-| Hyperion source | Infinite adaptation |
+| Hyperion source | Infinity adaptation |
 |---|---|
 | `flight/renderer.cpp: CabinMesh`, `rebuildCockpit`, `drawCockpit` | Actual beveled titanium panels, recessed deck, copper rails, luminous indicators and canopy bolts. Dedicated 70° cockpit projection; the source viewport proportions and depth/slant construction are retained. |
 | `flight_renderer.cpp`, `flight_hud.cpp` | Native-resolution geometry/text instruments: throttle, velocity, braking distance, hull, AGL, descent, drift/prograde, horizon, landing checks, target range/bearing and flattened contact scope. Every reading comes from the pilot or the existing world. |
@@ -39,7 +39,7 @@ The source remains the native game at `../Hyperion`, currently 3.68, with the ea
 | `flight/shaders.hpp: atmoFragment` | Exponential-density Rayleigh/Mie optical integration, with sun-path extinction and the exact opaque depth as the ray limit. Eight view samples and two sun samples bound cost. Warmth and inherited water activity gate this optical presentation; cold dry bodies remain airless. Atomic probe views disable it. |
 | Existing world/material lighting | Pilot mode derives lighting direction from the existing system star. Existing pigment, BRDF, radial emission, bloom and display processing remain modular. |
 
-Distant stars are **Infinite's existing galaxy particle records and object IDs**, retained after the ancestor mesh fades. Their physical positions determine directions; a far rendering shell keeps those directions visible beyond the depth range. The active system's star is excluded to avoid replacing its physical proxy. No Hyperion stellar distribution or unrelated background scene is imported.
+Distant stars are **Infinity's existing galaxy particle records and object IDs**, retained after the ancestor mesh fades. Their physical positions determine directions; a far rendering shell keeps those directions visible beyond the depth range. The active system's star is excluded to avoid replacing its physical proxy. No Hyperion stellar distribution or unrelated background scene is imported.
 
 The 0.8 material/display shaders and their six precompiled fragment binaries remain byte-identical; flight-specific shader variants are loaded only for the pilot. Readable opaque depth is allocated only when optical presentation needs it.
 
@@ -47,7 +47,7 @@ The cockpit is composited after world optical processing with its own depth buff
 
 ## Validation and measured costs
 
-`infinite_piloting_tests` flies the new ship inward through all nine scales and back out with throttle and proximity steering, and also exercises physical momentum across all nine scale frames and back, unit changes over 36 decades, inertial coasting and roll, finite braking, persistent throttle, destination arrival, manual takeover, real-terrain touchdown, non-teleporting launch, save/reload and cockpit geometry at multiple aspect ratios.
+`infinity_piloting_tests` flies the new ship inward through all nine scales and back out with throttle and proximity steering, and also exercises physical momentum across all nine scale frames and back, unit changes over 36 decades, inertial coasting and roll, finite braking, persistent throttle, destination arrival, manual takeover, real-terrain touchdown, non-teleporting launch, save/reload and cockpit geometry at multiple aspect ratios.
 
 `--pilot-test` uses the native Metal renderer. It compares identical camera/planet geometry fingerprints across all three cockpit modes, lands safely, restores landed state, lifts off under thrust, then renders the existing atomic specimen in survey mode. Eight captured images verify both world geometry and flight instruments. The existing full deterministic, streaming, navigation, all-scale rendering and mode-preservation tests remain enabled.
 

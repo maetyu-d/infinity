@@ -1,8 +1,8 @@
-#include "infinite/Cockpit.hpp"
-#include "infinite/NpcCombat.hpp"
-#include "infinite/Piloting.hpp"
+#include "infinity/Cockpit.hpp"
+#include "infinity/NpcCombat.hpp"
+#include "infinity/Piloting.hpp"
 #include <iostream>
-using namespace infinite;
+using namespace infinity;
 namespace {
 unsigned checks = 0;
 void check(bool yes, const char* why) {
@@ -59,6 +59,10 @@ int main() {
         NpcCombat restored;
         check(restored.restore(state, s.u) && restored.serialize(s.u.seed()) == state,
               "NPC state failed exact save round trip");
+        auto originalBrand = state;
+        originalBrand.replace(0, 8, "INFINITE");
+        check(restored.restore(originalBrand, s.u) && restored.serialize(s.u.seed()) == state,
+              "Original NPC combat save did not load under the new brand");
         auto before = s.raider, after = s.raider;
         ai.apply(before);
         restored.apply(after);
@@ -222,6 +226,156 @@ int main() {
             auto hud = cockpitOverlay(instruments, aspect, "", {}, {}, {}, false, 1, nullptr);
             check(!hud.lettering.vertices.empty(), "Combat HUD failed fitted layout");
         }
+        Scenario raid;
+        const auto cargo = sampleCombatActivity(raid.u, {raid.planet, cargoRaiderSlot}, raid.player.seconds);
+        raid.player.position = cargo.position + glm::dvec3(0, 0, 1600);
+        NpcCombat cargoAi;
+        const auto cargoBodies = std::span(&cargo, 1);
+        advance(raid, cargoAi, clean, cargoBodies, 1);
+        check(!cargoAi.demand(), "Cargo raider demanded payment from an empty hold");
+        raid.player.valuableCargo = true;
+        advance(raid, cargoAi, clean, cargoBodies, 1);
+        check(cargoAi.demand() && cargoAi.demand()->id == cargo.id &&
+                  cargoAi.agents().at(cargo.id).shots == 0,
+              "Cargo raider did not wait for its demand");
+        auto guard = sampleActivity(raid.u.describe(raid.planet), 300, raid.player.seconds);
+        guard.position = raid.player.position + glm::dvec3(0, 0, 500);
+        const std::array guarded{cargo, guard};
+        advance(raid, cargoAi, clean, guarded, 1);
+        check(!cargoAi.demand(), "Cargo demand remained active under patrol protection");
+        raid.player.driveDisabled = true;
+        advance(raid, cargoAi, clean, cargoBodies, 1);
+        check(!cargoAi.demand(), "Cargo raider kept demanding from a disabled ship");
+        raid.player.driveDisabled = false;
+        advance(raid, cargoAi, clean, cargoBodies, 1);
+        check(cargoAi.demand().has_value(), "Cargo demand did not resume");
+        NpcCombat unpaid;
+        check(unpaid.restore(cargoAi.serialize(raid.u.seed()), raid.u), "Open demand failed to persist");
+        cargoAi.acceptTruce(cargo.id, raid.player.seconds, raid.player.seconds + 150);
+        check(cargoAi.restore(cargoAi.serialize(raid.u.seed()), raid.u), "Paid truce failed to persist");
+        raid.player.seconds += 13;
+        advance(raid, cargoAi, clean, cargoBodies, 1);
+        advance(raid, unpaid, clean, cargoBodies, 1);
+        check(!cargoAi.demand() && cargoAi.agents().at(cargo.id).mode != NpcMode::Attack &&
+                  unpaid.agents().at(cargo.id).mode == NpcMode::Attack,
+              "Paid and expired demands did not produce different behavior");
+
+        Scenario interdiction;
+        const auto wing = sampleCombatActivity(interdiction.u, {interdiction.planet, missileWingSlot}, 100);
+        auto cutoff = sampleCombatActivity(interdiction.u, {interdiction.planet, cutoffRaiderSlot}, 100);
+        interdiction.player.position = wing.position + glm::dvec3(0, 0, 1800);
+        NpcCombat pairAi;
+        const std::array pair{wing, cutoff};
+        advance(interdiction, pairAi, clean, pair, 1);
+        check(pairAi.agents().at(wing.id).mode == NpcMode::Attack &&
+                  pairAi.agents().at(cutoff.id).mode == NpcMode::Attack,
+              "Both interdiction wings did not acquire the target");
+        cutoff.hull = 0;
+        const std::array brokenPair{wing, cutoff};
+        advance(interdiction, pairAi, clean, brokenPair, 1);
+        check(pairAi.agents().at(wing.id).mode == NpcMode::Retreat,
+              "Missile wing did not break off after losing the cutoff wing");
+
+        Scenario pursuit;
+        WeaponSystem pursuitGuns;
+        NpcCombat pursuitAi;
+        const auto hunter = sampleCombatActivity(pursuit.u, {pursuit.planet, factionHunterSlot}, 100);
+        pursuit.player.position = hunter.position + glm::dvec3(0, 0, 1600);
+        const auto hunterBodies = std::span(&hunter, 1);
+        advance(pursuit, pursuitAi, pursuitGuns, hunterBodies, 1);
+        check(!pursuitAi.demand(), "Hunter accused a player without a recorded attack");
+        pursuit.player.position = pursuit.raider.position + glm::dvec3(0, 0, 1000);
+        hit(pursuit, pursuitGuns, pursuit.raider);
+        pursuit.player.position = hunter.position + glm::dvec3(0, 0, 1600);
+        advance(pursuit, pursuitAi, pursuitGuns, hunterBodies, 1);
+        check(pursuitAi.demand() && pursuitAi.demand()->restitution > 0 &&
+                  pursuitAi.demand()->reason.find(pursuit.raider.name) != std::string::npos,
+              "Hunter did not identify the recorded attack when offering restitution");
+        Scenario enemyTypes;
+        const auto spawn = [&](uint32_t slot) {
+            return sampleCombatActivity(enemyTypes.u, {enemyTypes.planet, slot}, enemyTypes.player.seconds);
+        };
+        auto skirmisher = spawn(skirmisherSlot), siege = spawn(siegeRaiderSlot);
+        auto saboteur = spawn(saboteurSlot), scavenger = spawn(scavengerSlot);
+        for (const auto& enemy : {skirmisher, siege, saboteur, scavenger}) {
+            const auto again = spawn(enemy.id.slot);
+            check(isRaider(enemy.id) && enemy.kind == ActivityKind::Raider &&
+                      again.id == enemy.id && again.position == enemy.position &&
+                      again.seed == enemy.seed && again.name == enemy.name,
+                  "New role did not keep its canonical combat identity");
+        }
+        NpcCombat scavenging;
+        const auto fragment = sampleActivity(enemyTypes.u.describe(enemyTypes.planet), 1000,
+                                             enemyTypes.player.seconds);
+        check(glm::length(scavenger.position - fragment.position) < 3000,
+              "Scavenger was not placed near the debris it shadows");
+        enemyTypes.player.position = scavenger.position + glm::dvec3(0, 0, 1600);
+        const auto scavengers = std::span(&scavenger, 1);
+        check(scavenging.update(enemyTypes.u, enemyTypes.player, scavengers, clean, .05).hostiles == 0,
+              "Scavenger hunted an intact ship");
+        enemyTypes.player.hull = 64;
+        check(scavenging.update(enemyTypes.u, enemyTypes.player, scavengers, clean, .05).hostiles == 1 &&
+                  scavenging.agents().at(scavenger.id).mode == NpcMode::Attack,
+              "Scavenger ignored a damaged ship");
+
+        const auto facePlayer = [&](ActivityBody& attacker, double distance) {
+            const auto up = glm::normalize(attacker.position);
+            const auto forward = glm::normalize(glm::cross(up, glm::dvec3(1, 0, 0)));
+            attacker.orientation = glm::quatLookAtRH(forward, up);
+            attacker.velocity = {};
+            enemyTypes.player.position = attacker.position + forward * distance;
+        };
+        facePlayer(siege, 2750);
+        NpcCombat artillery;
+        auto volley = artillery.update(enemyTypes.u, enemyTypes.player, std::span(&siege, 1), clean, .05);
+        check(volley.missileLaunches.size() == 1 && volley.playerHits.empty(),
+              "Siege ship failed to fire a missile outside ordinary laser range");
+        check(artillery.restore(artillery.serialize(enemyTypes.u.seed()), enemyTypes.u),
+              "New enemy actor failed to survive an NPC save round trip");
+
+        facePlayer(skirmisher, 450);
+        NpcCombat fighter;
+        const auto burst = fighter.update(enemyTypes.u, enemyTypes.player, std::span(&skirmisher, 1), clean, .05);
+        check(burst.firing == 1 && fighter.agents().at(skirmisher.id).cooldown == .20,
+              "Skirmisher failed to begin a close-range burst");
+        facePlayer(saboteur, 210);
+        NpcCombat sabotage;
+        const auto strike = sabotage.update(enemyTypes.u, enemyTypes.player, std::span(&saboteur, 1), clean, .05);
+        check(strike.playerHits.size() == 1 && strike.playerHits.front().first == ShipSystem::Thrusters,
+              "Saboteur failed to target the ship's manoeuvring thrusters");
+        Scenario relay;
+        const auto scout = sampleCombatActivity(relay.u, {relay.planet, raiderScoutSlot}, 100);
+        const auto corsair = sampleCombatActivity(relay.u, {relay.planet, pursuitRaiderSlot}, 100);
+        relay.player.position = scout.position + glm::dvec3(0, 0, 1200);
+        const auto scouts = std::span(&scout, 1);
+        NpcCombat signal;
+        const auto warning = signal.update(relay.u, relay.player, scouts, clean, .05);
+        check(warning.signalRemaining == 10 && warning.firing == 0,
+              "Scout did not warn the player and flee before calling reinforcements");
+        NpcCombat interrupted, lostContact;
+        const auto relaySave = signal.serialize(relay.u.seed());
+        check(interrupted.restore(relaySave, relay.u) && lostContact.restore(relaySave, relay.u),
+              "Relay countdown failed to persist");
+        relay.player.seconds = 111;
+        auto disabledScout = scout;
+        disabledScout.systems[size_t(ShipSystem::Engines)] = 0;
+        interrupted.update(relay.u, relay.player, std::span(&disabledScout, 1), clean, .05);
+        check(!interrupted.reinforcementActive(relay.planet, relay.player.seconds),
+              "Disabled scout sent a pursuit signal");
+        lostContact.update(relay.u, relay.player, {}, clean, .05);
+        lostContact.update(relay.u, relay.player, scouts, clean, .05);
+        check(!lostContact.reinforcementActive(relay.planet, relay.player.seconds),
+              "Scout completed a signal after contact had been lost");
+        signal.update(relay.u, relay.player, scouts, clean, .05);
+        check(signal.reinforcementActive(relay.planet, relay.player.seconds),
+              "Uninterrupted scout failed to call in a pursuit ship");
+        relay.player.position = corsair.position + glm::dvec3(0, 0, 1400);
+        const auto corsairs = std::span(&corsair, 1);
+        check(signal.update(relay.u, relay.player, corsairs, clean, .05).pursuitIncoming,
+              "Pursuit ship failed to acquire its target");
+        relay.player.seconds += 91;
+        check(!signal.update(relay.u, relay.player, corsairs, clean, .05).pursuitIncoming,
+              "Pursuit did not expire");
         const auto seed = s.u.describe(s.planet).seed;
         auto raider = sampleRaider(s.u, s.planet, 300);
         auto again = sampleRaider(s.u, s.planet, 300);

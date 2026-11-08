@@ -1,7 +1,7 @@
-#include "infinite/Geometry.hpp"
-#include "infinite/Planetology.hpp"
-#include "infinite/Prospecting.hpp"
-#include "infinite/StellarEvolution.hpp"
+#include "infinity/Geometry.hpp"
+#include "infinity/Planetology.hpp"
+#include "infinity/Prospecting.hpp"
+#include "infinity/StellarEvolution.hpp"
 #include <FastNoise/FastNoise.h>
 #include <algorithm>
 #include <bit>
@@ -12,7 +12,7 @@
 #include <stdexcept>
 #include <unordered_map>
 
-namespace infinite {
+namespace infinity {
 constexpr double pi = std::numbers::pi;
 uint32_t rgba(glm::vec3 c, float a) {
     auto byte = [](float v) { return static_cast<uint32_t>(std::clamp(v, 0.f, 1.f) * 255.f + .5f); };
@@ -709,4 +709,4 @@ void GeometryBlend::update(std::shared_ptr<const Geometry> candidate, double sec
     if (blend_ >= 1)
         previous.reset();
 }
-} // namespace infinite
+} // namespace infinity

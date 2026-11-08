@@ -1,21 +1,173 @@
-#include "infinite/Activity.hpp"
-#include "infinite/Piloting.hpp"
+#include "infinity/Activity.hpp"
+#include "infinity/OrbitalDebris.hpp"
+#include "infinity/Planetology.hpp"
+#include "infinity/Piloting.hpp"
+#include "infinity/SurfaceLife.hpp"
 #include <algorithm>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <oneapi/tbb/global_control.h>
 #include <set>
 #include <stdexcept>
-using namespace infinite;
+using namespace infinity;
 static size_t checks = 0;
 static void check(bool value, const char* message) {
     ++checks;
     if (!value)
         throw std::runtime_error(message);
 }
+static void debrisTests(const Universe& u) {
+    unsigned ringWorlds = 0, impactWorlds = 0, impactMoons = 0, empty = 0;
+    double sampledDepth = 0, meanDepth = 0;
+    std::optional<ActivityId> savedFragment;
+    const auto galaxy = Address{}.child(Kind::Galaxy, 0);
+    for (uint64_t star : {0, 1, 2, 9}) {
+        const auto system = u.describe(galaxy.child(Kind::System, star));
+        for (const auto& address : u.children(system)) {
+            const auto planet = u.describe(address);
+            const auto ring = planetTraits(planet).rings;
+            const auto fragments = sampleOrbitalDebris(planet, 640);
+            check(fragments.size() <= orbitalDebrisCapacity, "Debris exceeded its allocated ID range");
+            if (fragments.empty()) {
+                ++empty;
+                check(!ring.present(), "Visible rings lost their physical fragments");
+                continue;
+            }
+            ringWorlds += ring.present();
+            impactWorlds += !ring.present();
+            impactMoons += isMoon(address);
+            const double radius = std::pow(10., planet.frame.logRadius);
+            const double massSolar = 4.188790204786391 * planetDensity(planet) *
+                                     radius * radius * radius / 1.98847e30;
+            const double hill = planet.orbit.semiMajorMetres * (1 - planet.orbit.eccentricity) *
+                                std::cbrt(massSolar / (3 * planet.orbit.centralMassSolar));
+            const auto climate = planetClimate(planet);
+            const double minimum = radius + (climate.pressureBar > 0 ? 7 * climate.scaleHeightMetres : 0);
+            double uniform = 0;
+            if (ring.present()) {
+                for (unsigned i = 0; i < 64; ++i)
+                    uniform += ringOpticalDepth(ring, glm::mix(ring.innerRadius, ring.outerRadius,
+                                                                (i + .5) / 64));
+                uniform /= 64;
+            }
+            std::set<ActivityId> ids;
+            const auto old = activitySlots(planet);
+            for (const auto& b : fragments) {
+                check(isOrbitalDebris(b.id) && b.id.home == address && ids.insert(b.id).second &&
+                          std::find(old.begin(), old.end(), b.id.slot) == old.end(),
+                      "Orbital debris reused a legacy address");
+                const auto repeat = sampleActivity(planet, b.id.slot, 640);
+                check(repeat.position == b.position && repeat.orientation == b.orientation,
+                      "Independent member and field sampling disagreed");
+                const auto before = sampleActivity(planet, b.id.slot, 639.99),
+                           after = sampleActivity(planet, b.id.slot, 640.01);
+                check(glm::length((after.position - before.position) / .02 - b.velocity) < .025,
+                      "Reported velocity does not follow the debris orbit");
+                for (double time : {0., 60000., 1e12}) {
+                    const auto body = sampleActivity(planet, b.id.slot, time);
+                    const auto distance = glm::length(body.position);
+                    check(distance > minimum && distance < hill * .24 && body.radius > 0 &&
+                              std::abs(glm::length(body.orientation) - 1) < 1e-10,
+                          "Debris left its atmosphere and Hill bounds");
+                    if (ring.present())
+                        check(distance > ring.innerRadius * radius && distance < ring.outerRadius * radius &&
+                                  glm::dot(glm::normalize(glm::cross(body.position, body.velocity)),
+                                           ring.axis) > .99999,
+                              "Ring debris crossed a ring edge or left the ring plane");
+                }
+                if (ring.present()) {
+                    sampledDepth += ringOpticalDepth(ring, glm::length(b.position) / radius);
+                    meanDepth += uniform;
+                    savedFragment = b.id;
+                }
+            }
+        }
+    }
+    check(ringWorlds && impactWorlds && impactMoons && empty,
+          "Orbital ensemble lacks ring fields, impact families, moon debris or quiet worlds");
+    check(sampledDepth > meanDepth * 1.12, "Ring fragments ignored the dense bands");
+    ActivityState clock;
+    clock.selected = savedFragment;
+    clock.advance(640);
+    ActivityState restored;
+    check(restored.restore(clock.serialize(), u) && restored.serialize() == clock.serialize(),
+          "Ring fragment selection did not survive a save round trip");
+    std::cout << "Debris fields ringed=" << ringWorlds << " impact=" << impactWorlds
+              << " moons=" << impactMoons << " quiet=" << empty << '\n';
+}
+static void debrisLandingTest(const Universe& u) {
+    const auto system = Address{}.child(Kind::Galaxy, 0).child(Kind::System, 9);
+    const auto home = u.describe(system.child(Kind::Planet, 13));
+    constexpr double start = 640;
+    const auto field = sampleOrbitalDebris(home, start);
+    const auto chosen = std::find_if(field.begin(), field.end(), landableDebris);
+    check(chosen != field.end(), "Landing fixture lacks a large ring fragment");
+    const auto pad = debrisPad(*chosen, 1);
+    const auto q = glm::quatLookAtRH(pad.forward, pad.up);
+    const auto eye = pad.eye + pad.up * 38. + pad.forward * 19.;
+    const auto offset = eye / 1000. - q * glm::dvec3(0, 0, 1);
+    std::ostringstream view;
+    view << std::setprecision(17) << home.address.str() << " 3 " << q.w << ' ' << q.x << ' '
+         << q.y << ' ' << q.z << ' ' << offset.x << ' ' << offset.y << ' ' << offset.z;
+    Navigation nav(u);
+    check(nav.restore(view.str()), "Invalid debris landing view");
+    RegionCache cache(u);
+    FlightController flight(u, nav, cache);
+    Pilot pilot(u, nav, flight);
+    pilot.resetMotion();
+    pilot.setDebrisClock(start);
+    pilot.setVelocity(pad.velocity);
+    check(pilot.landOnDebris(*chosen), "Matched approach did not acquire the rotating face");
+    double seconds = start;
+    auto tick = [&] {
+        seconds += 1. / 60;
+        pilot.setDebrisClock(seconds);
+        pilot.update({}, 1. / 60);
+    };
+    for (int i = 0; i < 2700 && !pilot.ship().landed; ++i)
+        tick();
+    if (!pilot.landedDebris() || pilot.ship().hull != 100) {
+        const auto report = pilot.instruments();
+        const auto moving = debrisPad(sampleActivity(home, chosen->id.slot, seconds), 1);
+        const auto eyeNow = u.pointRelative(nav.anchor, nav.cameraPosition() *
+            std::pow(10., nav.logDistance - u.describe(nav.anchor).frame.logRadius), home.address, 0);
+        const auto offsetNow = eyeNow - moving.eye;
+        const auto attitude = u.relative(nav.anchor, home.address, 0).orientation * nav.orientation;
+        std::cerr << report.phase << " altitude=" << glm::dot(offsetNow, moving.up)
+                  << " offset=" << glm::length(offsetNow) << " relative=" << report.relativeSpeed
+                  << " up=" << glm::dot(attitude * glm::dvec3(0, 1, 0), moving.up)
+                  << " forward=" << glm::dot(attitude * glm::dvec3(0, 0, -1), moving.forward)
+                  << " hull=" << pilot.ship().hull << " frame=" << nav.anchor.str() << '\n';
+    }
+    check(pilot.landedDebris() && *pilot.landedDebris() == chosen->id && pilot.ship().hull == 100,
+          "Landing controller did not settle safely on the fragment");
+    auto checkPosition = [&] {
+        const auto moving = debrisPad(sampleActivity(home, chosen->id.slot, seconds), 1);
+        const auto point = u.pointRelative(nav.anchor, nav.cameraPosition() *
+                std::pow(10., nav.logDistance - u.describe(nav.anchor).frame.logRadius), home.address, 0);
+        check(glm::length(point - moving.eye) < 1e-3, "Landed ship slipped across the moving face");
+    };
+    checkPosition();
+    const auto saved = pilot.serialize();
+    check(pilot.restore(saved) && pilot.landedDebris() && *pilot.landedDebris() == chosen->id,
+          "Debris landing did not round trip through ship persistence");
+    for (int i = 0; i < 60; ++i)
+        tick();
+    checkPosition();
+    pilot.launch();
+    for (int i = 0; i < 145; ++i)
+        tick();
+    check(!pilot.ship().landed && pilot.instruments().altitude > 8, "Lift-off did not clear the moving face");
+    std::cout << "DEBRIS_LANDING_TOUCHDOWN hull=" << pilot.ship().hull << " lift_agl="
+              << pilot.instruments().altitude << '\n';
+}
 int main() {
     try {
         oneapi::tbb::global_control workers(oneapi::tbb::global_control::max_allowed_parallelism, 4);
         Universe u;
+        debrisTests(u);
+        debrisLandingTest(u);
         const auto home = Address{}.child(Kind::Galaxy, 0).child(Kind::System, 9).child(Kind::Planet, 0);
         const auto planet = u.describe(home);
         const auto fingerprint = descriptorFingerprint(planet);

@@ -1,12 +1,12 @@
-#include "infinite/FlightEnvironment.hpp"
-#include "infinite/Flight.hpp"
-#include "infinite/Planetology.hpp"
-#include "infinite/ShipDynamics.hpp"
-#include "infinite/SurfaceLife.hpp"
+#include "infinity/FlightEnvironment.hpp"
+#include "infinity/Flight.hpp"
+#include "infinity/Planetology.hpp"
+#include "infinity/ShipDynamics.hpp"
+#include "infinity/SurfaceLife.hpp"
 #include <algorithm>
 #include <map>
 #include <set>
-namespace infinite {
+namespace infinity {
 struct FlightEnvironment::Impl {
     struct Body {
         Address address;
@@ -171,4 +171,4 @@ ShipEnvironmentSample FlightEnvironment::sample(glm::dvec3 eye, double seconds) 
     }
     return result;
 }
-} // namespace infinite
+} // namespace infinity

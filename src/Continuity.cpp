@@ -1,7 +1,7 @@
-#include "infinite/Continuity.hpp"
+#include "infinity/Continuity.hpp"
 #include <stdexcept>
 
-namespace infinite {
+namespace infinity {
 uint64_t ObjectProof::digest() const {
     uint64_t hash = mix64(seed ^ descriptor);
     for (auto value : geometry)
@@ -79,4 +79,4 @@ uint64_t RoundTripVerifier::digest() const {
         hash = mix64(hash ^ proof.digest());
     return hash;
 }
-} // namespace infinite
+} // namespace infinity

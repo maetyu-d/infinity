@@ -1,10 +1,10 @@
-# Planet diversity — Infinite 0.35
+# Planet diversity — Infinity 0.35
 
-Infinite now generates gas giants, ice giants and sub-Neptunes as additional addressed destinations. They join the existing rocky and icy worlds rather than replacing them. Large giants have resolved cloud belts, shear and oval vortices; smaller volatile-rich envelopes have cooler colours and more muted bands. Suitable worlds have generated rings with optical depth, radial structure and gaps. Solid worlds receive distinct rocky, iron-rich, desert, oceanic, ice and lava presentation derived from their existing geology, temperature, mineral and water reservoirs.
+Infinity now generates gas giants, ice giants and sub-Neptunes as additional addressed destinations. They join the existing rocky and icy worlds rather than replacing them. Large giants have resolved cloud belts, shear and oval vortices; smaller volatile-rich envelopes have cooler colours and more muted bands. Suitable worlds have generated rings with optical depth, radial structure and gaps. Solid worlds receive distinct rocky, iron-rich, desert, oceanic, ice and lava presentation derived from their existing geology, temperature, mineral and water reservoirs.
 
 ## Research and modelling choices
 
-[NASA’s planet classification](https://science.nasa.gov/exoplanets/planet-types/) distinguishes terrestrial, super-Earth, Neptunian and gas-giant populations, with substantial variation within each group. Infinite keeps material family, physical radius and thermal regime separate: a cold ice-covered solid is different from an ice giant with a deep envelope, and a temperate temperature alone does not establish habitability. The radius cutoffs are game-model approximations, not a universal observational classification.
+[NASA’s planet classification](https://science.nasa.gov/exoplanets/planet-types/) distinguishes terrestrial, super-Earth, Neptunian and gas-giant populations, with substantial variation within each group. Infinity keeps material family, physical radius and thermal regime separate: a cold ice-covered solid is different from an ice giant with a deep envelope, and a temperate temperature alone does not establish habitability. The radius cutoffs are game-model approximations, not a universal observational classification.
 
 [NASA’s formation overview](https://science.nasa.gov/exoplanets/how-do-planets-form/) motivates separate condensed solids and retained gas reservoirs. Four additive formation channels provide two large giants, an ice giant and a sub-Neptune. One large-giant channel can occupy a clear inner orbit; otherwise it remains outside the established system. This deliberately provides a richer gameplay population rather than reproducing measured planet-occurrence rates.
 
@@ -12,11 +12,11 @@ Density and volume determine the new bodies’ masses. Moon periods and orbiting
 
 [NASA’s Saturn reference](https://science.nasa.gov/saturn/facts/) describes rings made of ice, rock and dust, with thin radial structure and divisions. The generator confines ring extents using a fluid Roche-limit estimate and a conservative fraction of the Hill region. Temperature controls an icy-to-rocky material proxy; warm rocky rings are less common. Seeded radial density bands and two gaps share one CPU/GPU field. [Tidal-disruption ring research](https://arxiv.org/abs/1609.02396) informs this formation interpretation; the generator does not simulate an actual disruption event.
 
-[NASA’s Neptune reference](https://science.nasa.gov/neptune/neptune-facts/) motivates separating the muted blue-green appearance of volatile-rich envelopes from the warmer belts of large gas giants. The renderer uses stylized palettes within Infinite’s retained Hyperion presentation, rather than claiming spectral or photorealistic colour accuracy.
+[NASA’s Neptune reference](https://science.nasa.gov/neptune/neptune-facts/) motivates separating the muted blue-green appearance of volatile-rich envelopes from the warmer belts of large gas giants. The renderer uses stylized palettes within Infinity’s retained Hyperion presentation, rather than claiming spectral or photorealistic colour accuracy.
 
 ## Preservation boundary
 
-The verified 0.34 checkpoint is `3bba48e`, with branch `checkpoint/infinite-0.34-before-planet-diversity` and a frozen executable. All 30 baseline core checks passed before edits.
+The verified 0.34 checkpoint is `3bba48e`, with branch `checkpoint/infinity-0.34-before-planet-diversity` and a frozen executable. All 30 baseline core checks passed before edits.
 
 - Every established primary keeps its old numerical ID, seed, orbit, physical radius, chemistry, geological process, terrain and history. Its moons also keep their existing addresses and descriptors.
 - Four primaries are appended after `establishedPlanetCount`. Systems now contain 17–25 primaries, plus the existing stable moon generator’s additions around the new giants. The system coordinate unit stays unchanged; the physical envelope query includes the additions.

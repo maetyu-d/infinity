@@ -1,0 +1,4 @@
+STATE 0 WORKING / 0 LOADING / 0 INBOUND machines=8 rovers=5 residents=21 working=1 held=0 gpu=397070 cpu=17.9785 terrain=1393038368112330000 storm=0 time=12
+STATE 1 WORKING / 0 LOADING / 0 INBOUND machines=8 rovers=6 residents=19 working=1 held=0 gpu=397070 cpu=17.3586 terrain=1393038368112330000 storm=0 time=17
+STATE 2 MACHINERY OFFLINE / F2 SITE STATUS machines=8 rovers=6 residents=19 working=0 held=0 gpu=397070 cpu=19.3996 terrain=1393038368112330000 storm=0 time=18
+Metal surface work proof / 4 states / moved=1 result=0

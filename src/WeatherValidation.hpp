@@ -1,11 +1,11 @@
 #pragma once
-#include "infinite/Renderer.hpp"
+#include "infinity/Renderer.hpp"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 
-namespace infinite {
+namespace infinity {
 // Real forecasts and real solid worlds: no synthetic rain or altered planet
 // descriptors are injected to make the native weather captures look active.
 class WeatherValidation {
@@ -199,4 +199,4 @@ class WeatherValidation {
         stable_ = 0;
     }
 };
-} // namespace infinite
+} // namespace infinity

@@ -1,12 +1,12 @@
-#include "infinite/CockpitMotion.hpp"
-#include "infinite/PointLight.hpp"
+#include "infinity/CockpitMotion.hpp"
+#include "infinity/PointLight.hpp"
 #include <algorithm>
 #include <iostream>
 #include <limits>
 #include <numeric>
 #include <stdexcept>
 #include <vector>
-using namespace infinite;
+using namespace infinity;
 namespace {
 void check(bool value, const char* why) {
     if (!value)

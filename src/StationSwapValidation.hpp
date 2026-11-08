@@ -1,13 +1,13 @@
 #pragma once
-#include "infinite/Economy.hpp"
-#include "infinite/Renderer.hpp"
-#include "infinite/StationControl.hpp"
+#include "infinity/Economy.hpp"
+#include "infinity/Renderer.hpp"
+#include "infinity/StationControl.hpp"
 #include <SDL3/SDL.h>
 #include <filesystem>
 #include <iostream>
 #include <numbers>
 #include <sstream>
-namespace infinite {
+namespace infinity {
 class StationSwapValidation {
     const Universe& u_;
     Navigation& nav_;
@@ -221,4 +221,4 @@ class StationSwapValidation {
         return finished_;
     }
 };
-} // namespace infinite
+} // namespace infinity

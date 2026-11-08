@@ -1,4 +1,4 @@
-#include "infinite/Piloting.hpp"
+#include "infinity/Piloting.hpp"
 #include <iomanip>
 #include <iostream>
 #include <limits>
@@ -6,7 +6,7 @@
 #include <sstream>
 #include <stdexcept>
 
-using namespace infinite;
+using namespace infinity;
 namespace {
 size_t checks = 0;
 void check(bool b, const char* message) {

@@ -33,9 +33,9 @@ The image checker compares the actual cell-handoff pixels and checks the terrain
 ```sh
 cmake --build build -j 4
 ctest --test-dir build --output-on-failure
-./build/infinite --streaming-test --render-mode hyperion --width 1920 --height 1080 \
+./build/infinity --streaming-test --render-mode hyperion --width 1920 --height 1080 \
   --capture-dir build/streaming-native/captures --profile build/streaming-native/frames.csv
 python3 tools/check_streaming_captures.py build/streaming-native/captures
 ```
 
-Native tests require `INFINITE_GPU_TESTS=ON` and an active desktop. Metal on macOS arm64 is the exercised backend; the updated Metal, SPIR-V and GLSL shaders are included.
+Native tests require `INFINITY_GPU_TESTS=ON` and an active desktop. Metal on macOS arm64 is the exercised backend; the updated Metal, SPIR-V and GLSL shaders are included.

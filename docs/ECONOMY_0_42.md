@@ -1,4 +1,4 @@
-# Visible economic state — Infinite 0.42
+# Visible economic state — Infinity 0.42
 
 This update exposes the existing ledger in the cockpit, city lighting and civilian freight reports. It adds no settlements, residents, buildings, ships, contracts or economic simulation rules. Flight controls, world seeds, spatial identities and geometry remain intact. Existing ship, wallet and ledger save formats are unchanged.
 
@@ -46,7 +46,7 @@ Snapshot/reporting overhead is **26,980 B (26.3 KiB)**, bringing the representat
 
 The expanded native scenario records **1,481 frames**, **56.52 ms median / 147.14 ms p95**, and **149,946,368 B peak process RSS**. It includes additional city geometry, five new captures and controlled transitions on a heavily loaded machine. These are diagnostic measurements rather than a matched rendering comparison or speedup claim. [Frame profile](economy-0.42/native-frames.csv).
 
-The tested executable is packaged as **Infinite 0.42.0 / build 47**, ad-hoc signed and verified. All **28 code/data sections** match the tested build, and the native test uses that exact executable. Tests use isolated data and retain the existing player save. [Build log](economy-0.42/build.log), [package verification](economy-0.42/package.json).
+The tested executable is packaged as **Infinity 0.42.0 / build 47**, ad-hoc signed and verified. All **28 code/data sections** match the tested build, and the native test uses that exact executable. Tests use isolated data and retain the existing player save. [Build log](economy-0.42/build.log), [package verification](economy-0.42/package.json).
 
 ![Port status and normal settlement power](economy-0.42/economic-city-powered.png)
 

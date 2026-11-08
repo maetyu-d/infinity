@@ -1,0 +1,42 @@
+{
+  "warp": {
+    "before": 1443,
+    "after": 399,
+    "reduction_percent": 72.3
+  },
+  "approach": {
+    "before": 1411,
+    "after": 428,
+    "reduction_percent": 69.7
+  },
+  "landing": {
+    "before": 1311,
+    "after": 397,
+    "reduction_percent": 69.7
+  },
+  "docking": {
+    "before": 538,
+    "after": 509,
+    "reduction_percent": 5.4
+  },
+  "combat": {
+    "before": 1332,
+    "after": 535,
+    "reduction_percent": 59.8
+  },
+  "surface": {
+    "before": 1418,
+    "after": 531,
+    "reduction_percent": 62.6
+  },
+  "micro": {
+    "before": 616,
+    "after": 457,
+    "reduction_percent": 25.8
+  },
+  "catalogue": {
+    "before": 1427,
+    "after": 1289,
+    "reduction_percent": 9.7
+  }
+}

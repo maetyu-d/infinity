@@ -1,8 +1,8 @@
-#include "infinite/Economy.hpp"
-#include "infinite/Piloting.hpp"
-#include "infinite/World.hpp"
+#include "infinity/Economy.hpp"
+#include "infinity/Piloting.hpp"
+#include "infinity/World.hpp"
 #include <iostream>
-using namespace infinite;
+using namespace infinity;
 namespace {
 unsigned checks = 0;
 void check(bool v, const char* why) {

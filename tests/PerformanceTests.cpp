@@ -1,4 +1,4 @@
-#include "infinite/World.hpp"
+#include "infinity/World.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -8,7 +8,7 @@
 #include <set>
 #include <stdexcept>
 
-using namespace infinite;
+using namespace infinity;
 // The pre-optimisation recipe-3 kernel, retained as an independent equivalence
 // oracle and an identically sampled microbenchmark (not a simulated old GPU).
 static WebSample referenceWeb(glm::dvec3 p, uint64_t seed) {

@@ -1,12 +1,12 @@
-#include "infinite/Piloting.hpp"
-#include "infinite/Planetology.hpp"
+#include "infinity/Piloting.hpp"
+#include "infinity/Planetology.hpp"
 #include <fstream>
 #include <iostream>
 #include <limits>
 #include <oneapi/tbb/global_control.h>
 #include <sstream>
 #include <stdexcept>
-using namespace infinite;
+using namespace infinity;
 namespace {
 unsigned checks = 0;
 void check(bool value, const char* message) {
@@ -184,7 +184,7 @@ int main(int argc, char** argv) {
         check(dock.pilot.instruments().approachError < 6 && dock.pilot.instruments().relativeSpeed < .5,
               "Moving-target rendezvous did not match velocity and stand-off");
         const auto save = dock.pilot.serialize();
-        check(save.starts_with("INFINITE_SHIP 5 ") && dock.pilot.restore(save) &&
+        check(save.starts_with("INFINITY_SHIP 5 ") && dock.pilot.restore(save) &&
                   save == dock.pilot.serialize(),
               "Physics actuator state failed persistence round trip");
         auto legacy = save.substr(0, save.rfind(' '));

@@ -1,9 +1,9 @@
 #pragma once
-#include "infinite/WindowLayout.hpp"
+#include "infinity/WindowLayout.hpp"
 #include <SDL3/SDL.h>
 #include <iostream>
 
-namespace infinite {
+namespace infinity {
 inline WindowBorders windowBorders(SDL_Window* window) {
     WindowBorders borders;
     // Cocoa in the pinned SDL release does not implement this query. Reserve
@@ -36,4 +36,4 @@ inline bool fitWindowToDisplay(SDL_Window* window, bool center) {
               << borders.right << '\n';
     return true;
 }
-} // namespace infinite
+} // namespace infinity

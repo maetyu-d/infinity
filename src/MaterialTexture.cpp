@@ -1,8 +1,8 @@
-#include "infinite/MaterialTexture.hpp"
+#include "infinity/MaterialTexture.hpp"
 #include <algorithm>
 #include <cmath>
 
-namespace infinite {
+namespace infinity {
 namespace {
 // Exact integer lookup from Hyperion src/flight/renderer.cpp::lookupNoise.
 uint8_t lookup(int x, int y) {
@@ -100,4 +100,4 @@ MaterialTexture bakeMaterialTexture(const std::atomic<bool>* cancel) {
     }
     return result;
 }
-} // namespace infinite
+} // namespace infinity

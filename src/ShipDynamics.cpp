@@ -1,7 +1,15 @@
-#include "infinite/ShipDynamics.hpp"
+#include "infinity/ShipDynamics.hpp"
 #include <algorithm>
 #include <cmath>
-namespace infinite {
+namespace infinity {
+double shipDamageMultiplier(double size) {
+    return std::clamp(std::pow(std::clamp(size, 1e-12, 1.), -.25), 1., 25.);
+}
+double shipContactDamage(double speed, double size, double severity) {
+    const double vulnerability = shipDamageMultiplier(size);
+    return std::max(0., speed / std::clamp(size, 1e-12, 1.) - 2. / std::sqrt(vulnerability)) *
+           severity * vulnerability;
+}
 ShipProperties shipProperties(double size, double boost, double payloadKg) {
     ShipProperties p;
     const double s = std::clamp(size, 1e-12, 1.), m = s * s * s, i = m * s * s;
@@ -90,4 +98,4 @@ glm::dvec3 atmosphericDrag(const ShipProperties& p, glm::dquat q, glm::dvec3 v, 
     const double area = glm::dot(d, p.faceAreas), k = .5 * density * p.dragCoefficient * area / p.massKg;
     return -v * (p.massKg / dt) * (k * speed * dt / (1 + k * speed * dt));
 }
-} // namespace infinite
+} // namespace infinity

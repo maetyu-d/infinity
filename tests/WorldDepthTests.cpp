@@ -1,8 +1,8 @@
-#include "infinite/WorldDepth.hpp"
+#include "infinity/WorldDepth.hpp"
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
-using namespace infinite;
+using namespace infinity;
 static void check(bool v, const char* message) {
     if (!v)
         throw std::runtime_error(message);

@@ -1,0 +1,15 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start  4: expedition_planner_and_objectives
+1/5 Test  #4: expedition_planner_and_objectives ...   Passed    1.18 sec
+    Start 50: cockpit_layout_and_targeting
+2/5 Test #50: cockpit_layout_and_targeting ........   Passed    0.81 sec
+    Start 51: cockpit_popup_and_text_collisions
+3/5 Test #51: cockpit_popup_and_text_collisions ...   Passed    1.53 sec
+    Start 58: ship_handling_and_roll
+4/5 Test #58: ship_handling_and_roll ..............   Passed    2.51 sec
+    Start 64: rendering_preserves_universe
+5/5 Test #64: rendering_preserves_universe ........   Passed    4.96 sec
+
+100% tests passed, 0 tests failed out of 5
+
+Total Test time (real) =  11.03 sec

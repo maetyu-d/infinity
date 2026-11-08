@@ -1,9 +1,10 @@
-#include "infinite/Activity.hpp"
+#include "infinity/Activity.hpp"
+#include "infinity/OrbitalDebris.hpp"
 #include <algorithm>
 #include <cmath>
 #include <numbers>
 
-namespace infinite {
+namespace infinity {
 namespace {
 const glm::vec3 hull{.31, .39, .45}, trim{.48, .62, .68}, glass{.13, .37, .53}, glow{.45, .91, .88};
 void tri(Mesh& m, glm::dvec3 a, glm::dvec3 b, glm::dvec3 c, glm::vec3 color) {
@@ -151,4 +152,10 @@ Mesh activityMesh(ActivityKind kind, unsigned detail) {
     m.compact();
     return m;
 }
-} // namespace infinite
+Mesh landableDebrisMesh(unsigned detail) {
+    auto mesh = activityMesh(ActivityKind::Debris, std::max(1u, detail));
+    for (auto& vertex : mesh.vertices)
+        vertex.y = std::clamp(vertex.y, -float(debrisFaceHeight), float(debrisFaceHeight));
+    return mesh;
+}
+} // namespace infinity

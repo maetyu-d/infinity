@@ -1,10 +1,10 @@
 #pragma once
-#include "infinite/Renderer.hpp"
+#include "infinity/Renderer.hpp"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
-namespace infinite {
+namespace infinity {
 class PointLightValidation {
     const Universe& u_;
     Navigation& nav_;
@@ -155,4 +155,4 @@ class PointLightValidation {
         return done_;
     }
 };
-} // namespace infinite
+} // namespace infinity

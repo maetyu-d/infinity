@@ -1,0 +1,9 @@
+HUD_CAPTURE warp digest=5149391451716758143 cpu_ms=11.4941
+HUD_CAPTURE approach digest=5149391451716758143 cpu_ms=8.42196
+HUD_CAPTURE landing digest=5149391451716758143 cpu_ms=8.56021
+HUD_CAPTURE docking digest=5149391451716758143 cpu_ms=8.45246
+HUD_CAPTURE combat digest=5149391451716758143 cpu_ms=8.32392
+HUD_CAPTURE surface digest=5149391451716758143 cpu_ms=8.65817
+HUD_CAPTURE micro digest=5149391451716758143 cpu_ms=8.18054
+HUD_CAPTURE catalogue digest=5149391451716758143 cpu_ms=9.905
+PASS: eight native cockpit states / unchanged generated terrain and settlement

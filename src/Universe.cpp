@@ -1,7 +1,9 @@
-#include "infinite/Universe.hpp"
-#include "infinite/Prospecting.hpp"
-#include "infinite/Planetology.hpp"
-#include "infinite/StellarEvolution.hpp"
+#include "infinity/Universe.hpp"
+#include "infinity/MajorLandforms.hpp"
+#include "infinity/Prospecting.hpp"
+#include "infinity/Planetology.hpp"
+#include "infinity/StellarEvolution.hpp"
+#include "infinity/SurfaceProvince.hpp"
 #include <algorithm>
 #include <bit>
 #include <cmath>
@@ -11,7 +13,7 @@
 #include <numbers>
 #include <stdexcept>
 
-namespace infinite {
+namespace infinity {
 constexpr double pi = std::numbers::pi;
 struct Universe::DescriptorCache {
     std::mutex mutex;
@@ -58,6 +60,8 @@ glm::vec3 stellarColor(double temperatureK) {
                     static_cast<float>(std::clamp((temperatureK - 3000) / 7000, 0.0, 1.0)));
 }
 std::string Node::label() const {
+    if (address.kind() == Kind::Surface && geology && geology->landform && address == majorLandformAddress(*this))
+        return std::string(majorLandformName(geology->landform->type)) + " " + std::to_string(seed % 100000);
     if (address.kind() == Kind::System && stellar)
         return std::string(stellarKindName(stellar->kind)) + " " +
                (stellar->kind == StellarKind::MainSequence || stellar->kind == StellarKind::BrownDwarf
@@ -76,6 +80,11 @@ std::string Node::label() const {
         return "Moon " + std::to_string(seed % 100000);
     if (address.kind() == Kind::Planet && expandedPopulation && frame.logRadius < 6.08)
         return "Dwarf " + std::to_string(seed % 100000);
+    if (address.kind() == Kind::Surface && hasSolidSurface(*this) && decodeTile(address.id()).level == 7) {
+        const auto geologyAtTile = geologySample(*geology, geographicDirection);
+        const auto province = surfaceProvince(*geology, geographicDirection, geologyAtTile).dominant();
+        return std::string(provinceName(province)) + " " + std::to_string(seed % 100000);
+    }
     return std::string(kindName(address.kind())) + " " + std::to_string(seed % 100000);
 }
 bool isMoon(const Address& a) {
@@ -776,6 +785,14 @@ std::vector<Address> Universe::children(const Node& n, size_t limit) const {
     if (kind == Kind::Mountain)
         for (unsigned i=0; i<3 && out.size()<limit; ++i)
             out.push_back(n.address.child(Kind::Rock, exposureRockIdFlag | i));
+    if (kind == Kind::Planet && out.size() < limit) {
+        const auto landmarks = geologicalLandmarks(*this, n, limit - out.size());
+        out.insert(out.end(), landmarks.begin(), landmarks.end());
+        if (n.geology->landform && out.size() < limit) {
+            const auto major = majorLandformAddress(n);
+            if (std::find(out.begin(),out.end(),major)==out.end()) out.push_back(major);
+        }
+    }
     return out;
 }
 double Universe::terrainHeight(const Node& p, glm::dvec3 d) const {
@@ -827,6 +844,8 @@ glm::vec3 Universe::terrainAlbedo(const Node& n, glm::dvec3, const GeologySample
                      static_cast<float>(std::clamp(field.volcanism * .7, 0.0, .8)));
     if (n.geology->liquidWater > .1 && h > .003)
         color = glm::mix(color, glm::vec3(.85, .88, .85), static_cast<float>(smoothstep(.003, .006, h)));
+    if (field.majorIce > 0)
+        color = glm::mix(color,glm::vec3(.66,.86,.94),float(field.majorIce*.72));
     return color;
 }
 glm::dvec3 Universe::terrainPoint(const Node& p, double x, double z) const {
@@ -962,6 +981,13 @@ uint64_t descriptorFingerprint(const Node& n) {
         }
         for (auto hotspot : p.hotspots)
             vec(hotspot);
+        if (p.landform) {
+            add(majorLandformRecipeVersion);
+            const auto& f=*p.landform;
+            add(uint64_t(f.type)); add(f.seed);
+            vec(f.centre); vec(f.along); vec(f.across);
+            for (double v : {f.widthMetres,f.lengthMetres,f.reliefMetres,f.radiusMetres,f.activity}) real(v);
+        }
         if (p.terrain.type != TerrainType::None) {
             add(terrainRecipeVersion);
             add(static_cast<uint64_t>(p.terrain.type));
@@ -990,4 +1016,4 @@ uint64_t descriptorFingerprint(const Node& n) {
     real(n.crystal.dislocation);
     return hash;
 }
-} // namespace infinite
+} // namespace infinity

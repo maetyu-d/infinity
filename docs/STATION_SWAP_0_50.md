@@ -41,7 +41,7 @@ All **8 native gameplay/image checks pass across 28 captures**: station swapping
 
 The final station fixture recorded **217 frames**, **34.11 ms median / 91.48 ms p95** raw frame time and **149,864,448 bytes peak RSS**. These diagnostics include loading, captures and resizing and are not a matched performance comparison.
 
-**Infinite 0.50.0 / build 55** is packaged and ad-hoc signed. All four native executables match the final build, and all **28 code/data sections** match the signed app. The preservation manifest verifies **188 protected files**, the exact physical `ShipState`, room IDs and corridor graph against checkpoint `701243a`. Validation uses isolated saves.
+**Infinity 0.50.0 / build 55** is packaged and ad-hoc signed. All four native executables match the final build, and all **28 code/data sections** match the signed app. The preservation manifest verifies **188 protected files**, the exact physical `ShipState`, room IDs and corridor graph against checkpoint `701243a`. Validation uses isolated saves.
 
 [Final results and hashes](station-swap-0.50/validation.json), [core tests](station-swap-0.50/core-tests.log), [native tests](station-swap-0.50/native-tests.log), [preservation](station-swap-0.50/preservation.json), [package verification](station-swap-0.50/package.json), [lossless capture hashes](station-swap-0.50/captures.json).
 

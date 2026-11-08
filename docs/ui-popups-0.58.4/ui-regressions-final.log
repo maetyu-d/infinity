@@ -1,0 +1,17 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start 25: player_crew_and_damage_control
+    Start 49: cockpit_popup_and_text_collisions
+1/6 Test #49: cockpit_popup_and_text_collisions ...   Passed    0.36 sec
+    Start 21: captain_gunner_station_swap
+2/6 Test #21: captain_gunner_station_swap .........   Passed    1.46 sec
+    Start 31: cockpit_motion_and_feedback
+3/6 Test #31: cockpit_motion_and_feedback .........   Passed    0.67 sec
+    Start 48: cockpit_layout_and_targeting
+4/6 Test #48: cockpit_layout_and_targeting ........   Passed    0.81 sec
+    Start 23: inflight_crew_management
+5/6 Test #25: player_crew_and_damage_control ......   Passed    3.35 sec
+6/6 Test #23: inflight_crew_management ............   Passed    0.62 sec
+
+100% tests passed, 0 tests failed out of 6
+
+Total Test time (real) =   3.94 sec

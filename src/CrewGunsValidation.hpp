@@ -1,11 +1,11 @@
 #pragma once
-#include "infinite/Economy.hpp"
-#include "infinite/Renderer.hpp"
+#include "infinity/Economy.hpp"
+#include "infinity/Renderer.hpp"
 #include <SDL3/SDL.h>
 #include <filesystem>
 #include <iostream>
 #include <sstream>
-namespace infinite {
+namespace infinity {
 class CrewGunsValidation {
     const Universe& u_;
     Navigation& nav_;
@@ -290,4 +290,4 @@ class CrewGunsValidation {
         return finished_;
     }
 };
-} // namespace infinite
+} // namespace infinity

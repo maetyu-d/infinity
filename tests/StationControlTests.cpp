@@ -1,10 +1,10 @@
-#include "infinite/Cockpit.hpp"
-#include "infinite/StationControl.hpp"
+#include "infinity/Cockpit.hpp"
+#include "infinity/StationControl.hpp"
 #include <iostream>
 #include <limits>
 #include <oneapi/tbb/global_control.h>
 #include <sstream>
-using namespace infinite;
+using namespace infinity;
 namespace {
 unsigned checks = 0;
 void check(bool value, const char* message) {

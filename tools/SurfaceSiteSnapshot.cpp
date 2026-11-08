@@ -1,10 +1,10 @@
-#include "infinite/SurfaceLife.hpp"
+#include "infinity/SurfaceLife.hpp"
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 
-using namespace infinite;
+using namespace infinity;
 int main(int argc, char** argv) {
     if (argc != 3)
         return 2;
@@ -17,7 +17,20 @@ int main(int argc, char** argv) {
         for (unsigned planet = 0; planet < u.establishedPlanetCount(system); planet++) {
             const auto p = u.describe(system.address.child(Kind::Planet, planet));
             const auto world = generateSurfaceLife(u, p);
-            records << "WORLD " << p.address.str() << ' ' << world->seed << ' ' << world->descriptor << '\n';
+            auto retained = p;
+            if (p.geology && p.geology->landform) {
+                // A new landform may change only empty wilderness entries.
+                // Keep the golden's original geology hash and exact site lines.
+                if (!world->settlements.empty()) {
+                    std::cerr << "Major relief altered a settled world\n";
+                    return 1;
+                }
+                auto base = std::make_shared<PlanetProcess>(*p.geology);
+                base->landform.reset();
+                retained.geology = std::move(base);
+            }
+            records << "WORLD " << p.address.str() << ' ' << world->seed << ' '
+                    << descriptorFingerprint(retained) << '\n';
             for (const auto& s : world->settlements) {
                 records << "SITE " << p.address.str() << ' ' << s.slot << ' ' << s.seed << ' '
                         << unsigned(s.kind) << ' ' << s.sealed << ' ' << s.landingPoint.x << ' '

@@ -1,11 +1,11 @@
-#include "infinite/World.hpp"
-#include "infinite/Streaming.hpp"
+#include "infinity/World.hpp"
+#include "infinity/Streaming.hpp"
 #include <algorithm>
 #include <sqlite3.h>
 #include <stdexcept>
 #include <zstd.h>
 
-namespace infinite {
+namespace infinity {
 RegionCache::RegionCache(const Universe& u, size_t budget, size_t jobs)
     : universe_(u), budget_(budget), maxJobs_(std::max(size_t(1), jobs)) {}
 RegionCache::~RegionCache() {
@@ -450,4 +450,4 @@ std::optional<std::string> Persistence::loadState() const {
     return std::string(reinterpret_cast<const char*>(sqlite3_column_text(s.value, 0)),
                        static_cast<size_t>(sqlite3_column_bytes(s.value, 0)));
 }
-} // namespace infinite
+} // namespace infinity

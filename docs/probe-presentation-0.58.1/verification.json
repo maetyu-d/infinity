@@ -1,0 +1,39 @@
+{
+  "version": "0.58.1",
+  "core_suites_passed": 62,
+  "native_stages": 9,
+  "native_image_validation": "passed",
+  "presentation_checks": "passed",
+  "unchanged_canonical_bore_geometry_and_saved_state": "passed",
+  "independent_ship_state": "passed in native test",
+  "native_frame_median_ms": 18.8518,
+  "native_frame_p95_ms": 31.8981,
+  "geometry_cache_bytes": 13317736,
+  "peak_rss_bytes": 141459456,
+  "particle_cap_per_excavation": 128,
+  "particle_expiry_seconds": 9,
+  "rig_triangle_count": 1902,
+  "new_shader_dependencies": false,
+  "signed_app_startup": {
+    "result": "passed",
+    "version": "0.58.1",
+    "bundle_build": "67",
+    "frames": 120,
+    "exit_code": 0,
+    "save": "isolated temporary directory"
+  },
+  "video": {
+    "frames": 639,
+    "fps": 30,
+    "duration_seconds": 21.3,
+    "resolution": [
+      1280,
+      720
+    ],
+    "full_decode": "passed",
+    "sha256": "1368234a3f800a4eb14a932e62027dd10149732b5f85e24a722e637d0b2055e6"
+  },
+  "matching_signed_code_data_sections": 28,
+  "signature_verified": true,
+  "build": "CMake configured successfully; current core, viewer and all 56 core test executables compiled/relinked with generated build commands"
+}

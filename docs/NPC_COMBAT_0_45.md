@@ -1,4 +1,4 @@
-# NPC combat — Infinite 0.45
+# NPC combat — Infinity 0.45
 
 Hostile raiders now patrol the outer lanes near existing orbital harbours. They detect a full-size ship within 12 km, accelerate into a roughly 1.1 km engagement orbit, strafe, and fire within 2.4 km when aligned. Aimed weapons and incoming hits trigger short evasive manoeuvres. At 30% hull or less, they turn away and retreat without firing. When contact is lost, surviving ships return toward their original route.
 
@@ -22,7 +22,7 @@ Incoming damage reduces the existing saved hull value; existing port repair serv
 
 The director updates at most 128 nearby flying actors from at most 512 extracted bodies. The state map is capped at 4,096 entries, settled patrol states are removed, and at most 24 short-lived NPC pulses are rendered. Frame conversions are cached per nearby planet; no new shader, asset dependency or runtime library is introduced. Raider geometry reuses the existing patrol mesh batches.
 
-NPC state has its own seed-validated, bounded `INFINITE_NPC_COMBAT 1` save. Canonical traffic and flight saves retain their formats. Weapon and selected-contact loaders accept the new reserved activity ID. Tests and native captures use isolated save folders.
+NPC state has its own seed-validated, bounded `INFINITY_NPC_COMBAT 1` save. Canonical traffic and flight saves retain their formats. Weapon and selected-contact loaders accept the new reserved activity ID. Tests and native captures use isolated save folders.
 
 ## Validation
 
@@ -36,7 +36,7 @@ The [preservation manifest](npc-combat-0.45/preservation.json) verifies **184 pr
 
 The native combat fixture records **476 frames**, **68.39 ms median / 121.66 ms p95** raw frame time and **139,149,312 bytes peak RSS** on this shared machine. These include loading, resizing, readbacks and concurrent economy validation; they are diagnostic measurements, not a matched before/after benchmark. The unit fixture asserts the director stays below 2 MiB during its scenarios. [Measurements and hashes](npc-combat-0.45/validation.json), [frame data](npc-combat-0.45/native-combat-frames.csv).
 
-**Infinite 0.45.0 / build 50** is packaged and ad-hoc signed. All **28 code/data sections** match the final build; the native combat copy has the same full executable SHA-256. [Final build](npc-combat-0.45/final-build.log), [package verification](npc-combat-0.45/package.json), [signature](npc-combat-0.45/signing.log).
+**Infinity 0.45.0 / build 50** is packaged and ad-hoc signed. All **28 code/data sections** match the final build; the native combat copy has the same full executable SHA-256. [Final build](npc-combat-0.45/final-build.log), [package verification](npc-combat-0.45/package.json), [signature](npc-combat-0.45/signing.log).
 
 ![Attack, evasion, retreat and patrol retaliation](npc-combat-0.45/combat-overview.png)
 

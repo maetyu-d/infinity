@@ -1,11 +1,11 @@
-#include "infinite/Universe.hpp"
+#include "infinity/Universe.hpp"
 #include <algorithm>
 #include <cmath>
 #include <map>
 #include <numbers>
 #include <stdexcept>
 
-namespace infinite {
+namespace infinity {
 std::string_view processName(CrystalPhase phase) {
     constexpr std::array names{
         "ALPHA QUARTZ / TRIGONAL SiO2",        "ALPHA/DELTA IRON / BCC",    "GAMMA IRON / FCC",
@@ -192,4 +192,4 @@ Lattice generateLattice(const Node& n, LatticeQuery query, const std::atomic<boo
     }
     return out;
 }
-} // namespace infinite
+} // namespace infinity

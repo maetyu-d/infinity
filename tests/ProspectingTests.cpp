@@ -1,14 +1,14 @@
-#include "infinite/Economy.hpp"
-#include "infinite/Piloting.hpp"
-#include "infinite/Streaming.hpp"
-#include "infinite/World.hpp"
+#include "infinity/Economy.hpp"
+#include "infinity/Piloting.hpp"
+#include "infinity/Streaming.hpp"
+#include "infinity/World.hpp"
 #include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <numeric>
 #include <set>
 #include <sstream>
-using namespace infinite;
+using namespace infinity;
 namespace {
 unsigned checks = 0;
 void check(bool b, const char* why) {

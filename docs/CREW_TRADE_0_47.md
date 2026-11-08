@@ -1,4 +1,4 @@
-# Crew trading — Infinite 0.47
+# Crew trading — Infinity 0.47
 
 Crew are now individually traded through the existing port economy. Buying moves a named person from port stock into a ship berth; selling pays the port's bid and moves that same person into its stock. Names, identities, traits, skills, health, fatigue and morale survive transfer, repurchase and save reload. New arrivals start in bunks, ready for assignment through the existing crew deck.
 
@@ -50,7 +50,7 @@ The native scenario buys, sells and repurchases one actual port offer. It checks
 
 All **eight native gameplay/image checks pass across 48 captures**: four crew-market frames, five crew-emergency frames, six NPC-combat frames and 33 economy frames. The crew-market run records 220 frames, **68.96 ms median / 117.98 ms p95** raw frame time and **144,097,280 bytes peak RSS**. Startup, resizing, GPU readback and concurrent fixtures are included; these shared-machine diagnostics are not a matched performance comparison.
 
-**Infinite 0.47.0 / build 52** is built, packaged and ad-hoc signed. All four native scenarios use the exact final executable, and all **28 code/data sections** match the signed app. Existing user saves were not used by the tests.
+**Infinity 0.47.0 / build 52** is built, packaged and ad-hoc signed. All four native scenarios use the exact final executable, and all **28 code/data sections** match the signed app. Existing user saves were not used by the tests.
 
 Final test counts, executable/package hashes and frame measurements are recorded in [validation.json](crew-trade-0.47/validation.json). [Core results](crew-trade-0.47/core-tests.log), [native results](crew-trade-0.47/native-tests.log), [build log](crew-trade-0.47/build.log), [signature](crew-trade-0.47/signing.log).
 

@@ -1,0 +1,44 @@
+{
+  "version": "0.58.3",
+  "probe_checks": 117,
+  "presentation_checks": 561,
+  "native_stages": 11,
+  "bit_identical_probe_capture_stages": [
+    2,
+    3,
+    4,
+    5,
+    8
+  ],
+  "exit_and_exterior_visibility": "passed",
+  "prepared_lighting_colour_equivalence": "passed",
+  "canonical_excavation_and_saved_ship_preservation": "passed",
+  "memory_observations": {
+    "reference": {
+      "median_peak_bytes": 124755968.0,
+      "runs": [
+        124239872,
+        125272064
+      ]
+    },
+    "optimised": {
+      "median_peak_bytes": 118792192.0,
+      "runs": [
+        123240448,
+        114343936
+      ]
+    }
+  },
+  "benchmark": "comparison.json",
+  "signed_app_startup": {
+    "result": "passed",
+    "version": "0.58.3",
+    "bundle_build": "69",
+    "frames": 120,
+    "exit_code": 0,
+    "save": "isolated temporary directory"
+  },
+  "matching_signed_code_data_sections": 28,
+  "signature_verified": true,
+  "enclosing_cave_priority": "retained ahead of the eight-cave draw limit"
+}

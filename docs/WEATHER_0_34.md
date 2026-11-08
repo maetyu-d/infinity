@@ -1,8 +1,8 @@
-# Planetary weather — Infinite 0.34
+# Planetary weather — Infinity 0.34
 
 Live weather now has latitude-driven circulation, wind-advected fronts, evolving cyclones with spiral rain bands and clearer eyes, moist convection, cold precipitation and wind-driven dust. The existing planet radius, rotation, gravity, temperature, pressure, volatile inventory and inherited seed constrain those processes. This is a deterministic weather model with physically motivated rules, rather than a fluid or chemistry solver.
 
-The verified 0.33 baseline is `4a8448c`, retained at `checkpoint/infinite-0.33-before-weather-upgrade`. Universe addresses, object seeds, terrain, orbital structures, histories, cities and ship dynamics are preserved. Climate and settlement planning remain recipe 1. The old weather function is retained unchanged as `samplePlanningClimate` for city siting and districts; only live weather uses recipe 2. [Preservation evidence](weather-0.34/preservation.json).
+The verified 0.33 baseline is `4a8448c`, retained at `checkpoint/infinity-0.33-before-weather-upgrade`. Universe addresses, object seeds, terrain, orbital structures, histories, cities and ship dynamics are preserved. Climate and settlement planning remain recipe 1. The old weather function is retained unchanged as `samplePlanningClimate` for city siting and districts; only live weather uses recipe 2. [Preservation evidence](weather-0.34/preservation.json).
 
 ## What is visible
 
@@ -12,7 +12,7 @@ The verified 0.33 baseline is `4a8448c`, retained at `checkpoint/infinite-0.33-b
 - Warm, moist storm cells receive short, inherited-seed discharge pulses inside their cloud volume. Illumination is localized to dense storm regions.
 - The existing cockpit weather card shows state, temperature, pressure, mean wind, gusts and visibility in two lines within its previous bounds. Hazard colour makes strong weather easier to spot.
 
-The visual reference remains the actual Hyperion game. `src/flight/shaders.hpp::cloudFragment` supplies its density erosion and localized discharge approach; `worldFragment` supplies its distance-haze treatment. Infinite retains its own geometry, atmosphere rays, materials, weather atlas and rendering backend. There are no invented lightning bolts, new weather geometry layers or new dependencies. Original retains its drawing path while displaying the same updated live forecast; Hyperion and Hybrid receive the enhanced optical presentation.
+The visual reference remains the actual Hyperion game. `src/flight/shaders.hpp::cloudFragment` supplies its density erosion and localized discharge approach; `worldFragment` supplies its distance-haze treatment. Infinity retains its own geometry, atmosphere rays, materials, weather atlas and rendering backend. There are no invented lightning bolts, new weather geometry layers or new dependencies. Original retains its drawing path while displaying the same updated live forecast; Hyperion and Hybrid receive the enhanced optical presentation.
 
 The weather atlas remains 128 × 64 RGBA8 with mipmaps, 43,692 bytes per field. Dust uses the previously unused alpha channel. Generation prepares circulation once per atlas on the existing bounded asynchronous cache: at most two jobs and four CPU entries. The GPU retains two fields (87,384 bytes). No new render target or temporal history is allocated. Reused particle buffers are capped at 384 particles. Clear views use the existing composite; precipitation selects the optional visibility shader.
 

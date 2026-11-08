@@ -1,9 +1,9 @@
-#include "infinite/Economy.hpp"
+#include "infinity/Economy.hpp"
 #include <algorithm>
 #include <iomanip>
 #include <set>
 #include <sstream>
-namespace infinite {
+namespace infinity {
 namespace {
 std::vector<CrewMember> initialOffers(const EconomicNetwork& n, size_t site) {
     const auto& d = n.sites.at(site);
@@ -255,4 +255,4 @@ bool Economy::readCrewMarkets(std::istream& in) {
     }
     return true;
 }
-} // namespace infinite
+} // namespace infinity

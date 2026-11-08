@@ -1,12 +1,12 @@
-#include "infinite/Cockpit.hpp"
-#include "infinite/Economy.hpp"
-#include "infinite/Piloting.hpp"
+#include "infinity/Cockpit.hpp"
+#include "infinity/Economy.hpp"
+#include "infinity/Piloting.hpp"
 #include <algorithm>
 #include <chrono>
 #include <iostream>
 #include <sstream>
 #include <thread>
-using namespace infinite;
+using namespace infinity;
 namespace {
 unsigned checks = 0;
 void check(bool value, const char* why) {

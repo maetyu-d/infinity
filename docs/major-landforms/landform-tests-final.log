@@ -1,0 +1,29 @@
+UpdateCTestConfiguration  from :/Users/user/Documents/SC tutorial/Infinite/build/DartConfiguration.tcl
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 154
+    Start 154: rare_major_landforms
+
+154: Test command: /Users/user/Documents/SC\ tutorial/Infinite/build/infinity_landform_tests
+154: Working Directory: /Users/user/Documents/SC tutorial/Infinite/build
+154: Test timeout computed to be: 120
+154: Supervolcanic Caldera count=4 fixture=0,0,0/1:0/2:90/3:9 width_km=19.2006 relief_m=2496.08 descriptor=11914375501120568979
+154: Giant Shield Volcano count=2 fixture=0,0,0/1:0/2:116/3:6 width_km=74.9266 relief_m=6368.76 descriptor=14664966846339233854
+154: Continental Glacier count=176 fixture=0,0,0/1:0/2:127/3:15 width_km=91.6504 relief_m=2291.26 descriptor=487813725718225932
+154: Great Rift count=9 fixture=0,0,0/1:0/2:114/3:6 width_km=20.0552 relief_m=3609.94 descriptor=98007218327987135
+154: Multi-ring Impact Basin count=6 fixture=0,0,0/1:0/2:92/3:9 width_km=155.965 relief_m=7018.41 descriptor=1827860889492720515
+154: CATALOGUE 197/2112 solid worlds (2624 total), descriptor=128 bytes; terrain sampling 10k baseline_ms=18.4948 major_ms=19.2501 sink=2438.67
+154: PASS rare physics-constrained landforms, deterministic regeneration, settlements, discovery, surveys, materials, hazards and shared mesh/collision field
+1/1 Test #154: rare_major_landforms .............   Passed    0.91 sec
+
+The following tests passed:
+	rare_major_landforms
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.92 sec

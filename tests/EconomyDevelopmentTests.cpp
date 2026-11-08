@@ -1,11 +1,11 @@
-#include "infinite/Cockpit.hpp"
-#include "infinite/Economy.hpp"
+#include "infinity/Cockpit.hpp"
+#include "infinity/Economy.hpp"
 #include <chrono>
 #include <iostream>
 #include <numeric>
 #include <sstream>
 #include <thread>
-using namespace infinite;
+using namespace infinity;
 namespace {
 unsigned checks = 0;
 void check(bool value, const char* why) {
@@ -74,7 +74,7 @@ std::string legacy(std::string text, size_t sites) {
         text.pop_back();
         text.erase(text.rfind('\n') + 1);
     }
-    text.replace(0, 18, "INFINITE_ECONOMY 1 ");
+    text.replace(17, text.find(' ', 17) - 17, "1");
     return text;
 }
 std::shared_ptr<const EconomySnapshot> wait(EconomyRuntime& r, const Address& a, uint64_t tick,

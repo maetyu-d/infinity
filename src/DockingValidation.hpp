@@ -1,11 +1,11 @@
 #pragma once
-#include "infinite/Economy.hpp"
-#include "infinite/Renderer.hpp"
+#include "infinity/Economy.hpp"
+#include "infinity/Renderer.hpp"
 #include <filesystem>
 #include <iostream>
 #include <sstream>
 
-namespace infinite {
+namespace infinity {
 class DockingValidation {
     const Universe& u_;
     Navigation& nav_;
@@ -129,4 +129,4 @@ class DockingValidation {
         return complete_;
     }
 };
-} // namespace infinite
+} // namespace infinity

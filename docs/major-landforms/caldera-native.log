@@ -1,0 +1,3 @@
+NATIVE Supervolcanic Caldera address=0,0,0/1:0/2:116/3:8 scene=0 cpu_median_ms=9.40908 terrain_digest=17032569351873881932 surface_bytes=0
+NATIVE Supervolcanic Caldera address=0,0,0/1:0/2:116/3:8 scene=1 cpu_median_ms=9.81483 terrain_digest=6917603636409833830 surface_bytes=0
+PASS native landform/approach, stable camera and deterministic geometry

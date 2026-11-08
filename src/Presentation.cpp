@@ -1,12 +1,13 @@
-#include "infinite/Presentation.hpp"
-#include "infinite/Navigation.hpp"
-#include "infinite/StellarEvolution.hpp"
-#include "infinite/SurfaceLife.hpp"
+#include "infinity/Presentation.hpp"
+#include "infinity/Navigation.hpp"
+#include "infinity/StellarEvolution.hpp"
+#include "infinity/SurfaceLife.hpp"
+#include "infinity/TerrainMaterial.hpp"
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
 
-namespace infinite {
+namespace infinity {
 std::string_view renderModeName(RenderMode mode) {
     switch (mode) {
     case RenderMode::Hyperion:
@@ -89,6 +90,7 @@ ScenePresentation extractPresentation(const Node& node, const Geometry& geometry
     return result;
 }
 void describePlanetPresentation(ScenePresentation& result, const Node& node) {
+    result.terrainMaterial = terrainMaterial(node).uniforms();
     const auto t = planetTraits(node);
     result.planet = {glm::vec4(float(t.type) + 1, float(t.phase), float(t.jetBands), float(t.haze)),
                      glm::vec4(t.low, float(t.thermal)), glm::vec4(t.high, float(t.iceCoverage)),
@@ -223,4 +225,4 @@ std::vector<CelestialContact> extractCelestialContacts(const Universe& universe,
                                              &contact.address, contact.angularRadius);
     return contacts;
 }
-} // namespace infinite
+} // namespace infinity

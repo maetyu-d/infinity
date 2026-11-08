@@ -1,11 +1,11 @@
 #pragma once
-#include "infinite/Cockpit.hpp"
-#include "infinite/Renderer.hpp"
+#include "infinity/Cockpit.hpp"
+#include "infinity/Renderer.hpp"
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
 
-namespace infinite {
+namespace infinity {
 class CockpitMotionValidation {
   public:
     CockpitMotionValidation(const Universe& u, Navigation& nav, Pilot& pilot)
@@ -107,4 +107,4 @@ class CockpitMotionValidation {
     unsigned stage_ = 0, age_ = 0, hold_ = 0;
     static constexpr const char* effects_[] = {"neutral", "turn", "recoil", "impact", "damage", "recovery"};
 };
-} // namespace infinite
+} // namespace infinity

@@ -7,9 +7,10 @@ uniform vec4 u_materialDomain;
 uniform mat4 u_pattern;
 uniform vec4 u_surface;
 uniform vec4 u_environment;
+uniform vec4 u_terrainMaterial[4]; // bedrock/roughness, sediment/roughness, strata/cover/metal/radius, fabric/ice
 uniform vec4 u_landingContact[2]; // ground point/radius and tangent up/strength, camera-relative
 uniform vec4 u_weatherVisual[3];
-#if INFINITE_FLIGHT_RELIEF
+#if INFINITY_FLIGHT_RELIEF
 uniform mat4 u_micro;
 uniform mat4 u_meso;
 uniform vec4 u_microParams;
@@ -119,6 +120,14 @@ void main(){
   float steep=1.-clamp(dot(N,radial),0.,1.);
   albedo*=.68+exposed*.46;
   albedo=mix(albedo,albedo*.68+mineral*.055,smoothstep(.08,.40,steep)*.32);
+  // Read-only lithology: steep faces expose bedrock while weathered gentle
+  // ground retains sediment. The original province albedo remains a broad
+  // modulation, rather than a source of high-frequency coloured speckle.
+  float cover=u_terrainMaterial[2].y*(1.-smoothstep(.025,.18,steep));
+  vec3 substrate=mix(u_terrainMaterial[0].rgb,u_terrainMaterial[1].rgb,cover);
+  float province=clamp(dot(base,vec3(.299,.587,.114)),.15,.9);
+  vec3 mineralFilm=mix(vec3(1.),vec3(.58)+mineral*.95,.16);
+  albedo=mix(albedo,substrate*(.64+province*.62)*mineralFilm,terrain?.93:.76);
  }
  // Mineral identity and the existing geological lowland/temperature rule
  // control coating; no liquid plane, height field or new biome is generated.
@@ -127,7 +136,7 @@ void main(){
  float wet=liquid*(1.-smoothstep(-.00088,-.00072,v_elevation));
  // The same forecast that draws the rain wets nearby retained terrain.
  // No stored water, geometry, roughness texture or procedural seed changes.
-#if INFINITE_FLIGHT_RELIEF
+#if INFINITY_FLIGHT_RELIEF
  if(terrain && u_weatherVisual[0].w>.5 && u_weatherVisual[2].z>u_weatherVisual[2].w+.01 && u_microParams.x>0.){
   float rangeMetres=length(v_position-u_hyperion[2].xyz)*.36/u_microParams.x;
   float rain=max(0.,u_weatherVisual[2].z-u_weatherVisual[2].w);
@@ -149,7 +158,7 @@ void main(){
  }
  float rough=atom?.24:craft?u_hyperion[1].x:u_hyperion[1].x*.88,microVein=0.,cavity=1.;
  vec3 microGlow=vec3(0.),coatHue=mineral;
-#if INFINITE_FLIGHT_RELIEF
+#if INFINITY_FLIGHT_RELIEF
  // Hyperion surface_detail.hpp: smooth strata/deposits bridge planetary
  // colour to the separately filtered 16 m close-material texture.
  if(terrain && u_microParams.z>0. && u_microParams.y>.5){
@@ -163,29 +172,30 @@ void main(){
   float strata=broad*.50+warp*.30+middle*.20;
   float slope=1.-clamp(dot(N,radial),0.,1.);
   float dust=smoothstep(.30,.76,warp)*(1.-smoothstep(.08,.5,slope));
-  float layer=q.y*(.25*6.283185)+middle*2.+warp*4.;
+  // Bedding follows the retained physical elevation. Filter whole bands
+  // away when they become smaller than a pixel, including grazing views.
+  float layer=(v_elevation*u_terrainMaterial[2].w/max(2.,u_terrainMaterial[2].x)+
+               dot(n,u_terrainMaterial[3].xyz)*.35)*6.283185+warp*.6;
   float bedding=mix(.5,.5+.5*sin(layer),1.-smoothstep(.6,2.,fwidth(layer)));
   float vein=thread(middle*24.+warp*.8,.035)*(1.-smoothstep(.15,.9,fwidth(middle*24.)));
-  vec3 deposits=albedo*(.24+strata*1.45+grain*.34+bedding*.12);
-  deposits=mix(deposits,deposits*.75+vec3(.055,.043,.032),dust*.30);
+  vec3 deposits=albedo*(.76+strata*.36+(grain-.5)*.07+bedding*.12);
+  deposits=mix(deposits,u_terrainMaterial[1].rgb*(.72+strata*.20),dust*u_terrainMaterial[2].y*.28);
   coatHue=pigment(phase+strata*.85+grain*.16);
   // Hyperion's geological pigment sits in the reflectance. Light and shadow
   // still describe the existing relief; this is not an emissive overlay.
   // Pigment absorbs the broad white substrate instead of adding another
   // pastel light term. The retained metre-anchored strata select the hue.
-  vec3 dryPigment=deposits*(.32+coatHue*1.25)+coatHue*.065;
-  vec3 frozenPigment=deposits*vec3(.57,.83,1.05)+coatHue*.075;
-  deposits=mix(deposits,mix(dryPigment,frozenPigment,ice),.62);
-  deposits=mix(deposits,deposits*.88+coatHue*.028,.20);
-  deposits+=coatHue*.003;
-  deposits=mix(deposits,deposits*.65+pigment(phase+middle*.18)*.11,vein*.32);
+  vec3 dryPigment=deposits*(.72+coatHue*.65);
+  vec3 frozenPigment=deposits*vec3(.64,.91,1.08)+coatHue*.012;
+  deposits=mix(deposits,mix(dryPigment,frozenPigment,ice),.32);
+  deposits=mix(deposits,deposits*.46+pigment(phase+middle*.18)*.085,vein*.42);
   albedo=deposits;
-  rough=clamp(rough+(grain-.5)*.16+dust*.10,.22,.98);
-  float height=((middle-.5)*1.8+(grain-.5)*.35)*u_microParams.z;
+  rough=clamp(rough+(grain-.5)*.06+dust*.10,.22,.98);
+  float height=((middle-.5)*.65+(grain-.5)*.10)*u_microParams.z;
   vec3 dx=dFdx(v_position),dy=dFdy(v_position),a=cross(dy,N),b=cross(N,dx);float det=dot(dx,a);
   vec3 gradient=sign(det)*(dFdx(height)*a+dFdy(height)*b)/max(abs(det),1e-20);
-  gradient*=min(1.,.42/max(length(gradient),.001));N=normalize(N-gradient);
-  cavity*=mix(.60,1.,smoothstep(.28,.58,middle+grain*.08));
+  gradient*=min(1.,.24/max(length(gradient),.001));N=normalize(N-gradient);
+  cavity*=mix(.84,1.,smoothstep(.28,.58,middle+grain*.04));
   float mineralIce=ice;
   float quartz=1.-step(.1,abs(u_surface.x));
   float hot=smoothstep(800.,1350.,u_surface.z)*smoothstep(.35,.80,u_materialDomain.z);
@@ -232,7 +242,7 @@ void main(){
 
  }
 #endif
-#if INFINITE_FLIGHT_RELIEF
+#if INFINITY_FLIGHT_RELIEF
  // Hyperion water.hpp: filtered, metre-anchored ripple normals on the
  // existing warm wet coating. Integer frequencies preserve the 64-unit
  // material-origin period; no sea plane or landing surface is added.
@@ -261,6 +271,9 @@ void main(){
   float steep=1.-clamp(dot(N,radial),0.,1.);
   regolith=(1.-ice)*(1.-wet)*(1.-smoothstep(.10,.38,steep));
   rough=max(rough,mix(.52,.82,regolith)*(1.-wet)*(1.-ice));
+  float cover=u_terrainMaterial[2].y*(1.-smoothstep(.025,.18,steep));
+  float lithology=mix(u_terrainMaterial[0].w,u_terrainMaterial[1].w,cover);
+  rough=mix(lithology,rough,clamp(wet+ice,0.,1.));
  }
  vec3 ndx=dFdx(N),ndy=dFdy(N);float variance=min(.25,max(dot(ndx,ndx),dot(ndy,ndy))*.5);
  rough=pow(min(1.,pow(rough,4.)+variance),.25);

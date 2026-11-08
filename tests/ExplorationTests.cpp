@@ -1,9 +1,10 @@
-#include "infinite/Economy.hpp"
-#include "infinite/Planetology.hpp"
-#include "infinite/World.hpp"
+#include "infinity/Economy.hpp"
+#include "infinity/Planetology.hpp"
+#include "infinity/OrbitalDebris.hpp"
+#include "infinity/World.hpp"
 #include <iostream>
 #include <numeric>
-using namespace infinite;
+using namespace infinity;
 namespace {
 unsigned checks = 0;
 void check(bool value, const char* why) {
@@ -36,11 +37,140 @@ SurveyObserver orbit(const Universe& u, const Address& planet) {
     o.seconds = 100;
     return o;
 }
+void checkDebrisExtraction(const Universe& u) {
+    const auto system = Address{}.child(Kind::Galaxy, 0).child(Kind::System, 9);
+    const auto planet = u.describe(system.child(Kind::Planet, 13));
+    const auto fragments = sampleOrbitalDebris(planet, 640);
+    const auto rock = std::find_if(fragments.begin(), fragments.end(), landableDebris);
+    check(rock != fragments.end(), "Debris economy fixture has no mineable fragment");
+    const auto deposit = debrisDeposit(planet, *rock);
+    check(deposit.mineral == Mineral::Ice && deposit.capacity[0] > 200 &&
+              debrisDeposit(planet, sampleActivity(planet, rock->id.slot, 60)).capacity == deposit.capacity,
+          "Ice-ring deposits ignored their source or changed with orbital phase");
+    bool foundDifferent = false;
+    for (const auto& address : u.children(u.describe(system))) {
+        const auto host = u.describe(address);
+        if (!hasSolidSurface(host))
+            continue;
+        for (const auto& body : sampleOrbitalDebris(host, 640))
+            if (landableDebris(body) && debrisDeposit(host, body).mineral != deposit.mineral)
+                foundDifferent = true;
+    }
+    check(foundDifferent, "Impact remnants all inherited the ring mineral");
+    const auto net = network(u, planet.address);
+    Economy economy(net);
+    EconomyPlayer player;
+    ExplorationLedger ledger;
+    EconomicCommand c;
+    c.sequence = 1;
+    c.action = EconomicAction::FitMiningHead;
+    c.port = net->sites.front().id;
+    c.weaponMount = 1;
+    c.limitCents = 100000000;
+    c.observer = orbit(u, planet.address);
+    c.observer->position = net->sites.front().metres;
+    check(ledger.execute(u, economy, player, c).starts_with("MINING HEAD FITTED"), "Cannot fit debris cutter");
+    const auto pad = debrisPad(*rock, -1);
+    c.action = EconomicAction::ExtractOrbitalDebris;
+    c.port = rock->id;
+    c.combatPresent = true;
+    c.workSeconds = 6;
+    c.observer->position = pad.eye;
+    c.observer->velocity = pad.velocity;
+    c.observer->attitude = glm::quatLookAtRH(pad.forward, pad.up);
+    c.observer->seconds = 640;
+    c.sequence++;
+    check(!ledger.execute(u, economy, player, c).starts_with("DEBRIS CUT"), "An unclamped ship extracted ore");
+    c.observer->landed = true;
+    c.sequence++;
+    const auto before = player.cargo[size_t(Good::Ice)];
+    check(ledger.execute(u, economy, player, c).starts_with("DEBRIS CUT") &&
+              player.cargo[size_t(Good::Ice)] == before + 10 &&
+              ledger.state().debris.size() == 1 && ledger.state().debris.front().extracted[0] == 10,
+          "Debris cut did not transfer the actual ice and consume the saved reserve");
+    check(!ledger.execute(u, economy, player, c).starts_with("DEBRIS CUT"),
+          "Retry duplicated orbital cargo");
+    ExplorationLedger restored;
+    check(restored.restore(ledger.serialize(), u) &&
+              restored.state().debris.front().id == rock->id &&
+              restored.state().debris.front().extracted == ledger.state().debris.front().extracted,
+          "Debris depletion did not survive reload");
+}
+void checkReserveSurvey(const Universe& u, const Address& system) {
+    const auto generated = generateEconomicNetwork(u, system);
+    auto found = std::find_if(generated->sites.begin(), generated->sites.end(), [&](const auto& site) {
+        return !site.orbital && localCatchment(u.describe(site.id.home), site.metres).grade[2] > .08;
+    });
+    check(found != generated->sites.end(), "Generated system has no silicate-bearing settlement for reserve survey");
+    auto n = std::make_shared<EconomicNetwork>();
+    n->system = system;
+    n->universeSeed = u.seed();
+    n->fingerprint = generated->fingerprint;
+    n->sites.push_back(*found);
+    auto& port = n->sites.front();
+    port.recipes = {19};
+    port.workers = port.power = 100;
+    port.initial.fill(10000);
+    port.capacityKg = 1000000;
+    const auto silicate = size_t(Good::Silicate);
+    port.initial[silicate] = 0;
+    port.reserves[silicate] = 18;
+    port.target[silicate] = 100;
+    Economy economy(n);
+    EconomyPlayer player;
+    ExplorationLedger ledger;
+    ledger.offer(u, economy);
+    check(std::none_of(ledger.state().contracts.begin(), ledger.state().contracts.end(), [](const auto& j) {
+              return j.target.kind() == Kind::Surface;
+          }), "Healthy deposit posted a replacement reserve survey");
+    economy.advanceTo(1);
+    check(economy.sites().front().extracted[silicate] == 18, "Fixture did not exhaust a real production batch");
+    const auto money = economy.moneyTotal() + player.credits;
+    ledger.offer(u, economy);
+    const auto offer = std::find_if(ledger.state().contracts.begin(), ledger.state().contracts.end(),
+                                    [](const auto& j) { return j.target.kind() == Kind::Surface; });
+    check(offer != ledger.state().contracts.end() && offer->issuer == port.id && offer->target.parent() == port.id.home,
+          "Depletion did not tender an actual nearby reserve survey");
+    const auto job = *offer;
+    const auto originalTile = encodeTile(tileAt(glm::normalize(port.metres), 7));
+    check(job.target.id() != originalTile && prospectAddress(u, job.target) == job.target &&
+              prospectResources(u, job.target)[2] > 20, "Survey targeted the spent region or an absent resource");
+    EconomicCommand order;
+    order.sequence = 1;
+    order.port = port.id;
+    order.contract = job.id;
+    order.action = EconomicAction::AcceptSurvey;
+    check(ledger.execute(u, economy, player, order).starts_with("SURVEY ACCEPTED"), "Reserve survey escrow could not fund");
+    ExplorationLedger saved;
+    check(saved.restore(ledger.serialize(), u) && saved.serialize() == ledger.serialize(), "Reserve survey did not survive save reload");
+    const auto world = u.describe(port.id.home);
+    const auto direction = u.describe(job.target).geographicDirection;
+    SurveyObserver observer;
+    observer.reference = port.id.home;
+    observer.position = direction * (std::pow(10., world.frame.logRadius) + u.terrainHeight(world, direction) + 200.);
+    observer.seconds = 10;
+    order.sequence++;
+    order.action = EconomicAction::ScanSurvey;
+    order.surveyTarget = job.target;
+    order.observer = observer;
+    order.workSeconds = 8;
+    order.serviceUnits = 100;
+    check(saved.execute(u, economy, player, order).starts_with("DISCOVERY RECORDED"), "Actual reserve tile could not be surveyed");
+    observer.landed = true;
+    observer.position = port.metres;
+    order.sequence++;
+    order.action = EconomicAction::ClaimSurvey;
+    order.observer = observer;
+    check(saved.execute(u, economy, player, order).starts_with("SURVEY CONTRACT COMPLETE") &&
+              economy.moneyTotal() + player.credits == money, "Reserve report did not pay its conserved escrow");
+}
 } // namespace
 int main() {
     try {
         Universe u;
+        checkDebrisExtraction(u);
         const auto planet = Address{}.child(Kind::Galaxy, 0).child(Kind::System, 9).child(Kind::Planet, 0);
+        checkReserveSurvey(u, planet.parent());
         const auto node = u.describe(planet);
         const auto descriptor = descriptorFingerprint(node);
         auto eye = orbit(u, planet);
@@ -96,7 +226,7 @@ int main() {
         EconomyPlayer player;
         ExplorationLedger ledger;
         ledger.offer(u, e);
-        check(ledger.state().contracts.size() == 3, "Real survey offers missing");
+        check(ledger.state().contracts.size() == 4, "Survey and subsurface assay offers missing");
         const auto initialMoney = e.moneyTotal() + player.credits;
         uint64_t sequence = 0;
         auto issue = [&](EconomicCommand c) {

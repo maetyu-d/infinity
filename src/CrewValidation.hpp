@@ -1,11 +1,11 @@
 #pragma once
-#include "infinite/Cockpit.hpp"
-#include "infinite/Renderer.hpp"
+#include "infinity/Cockpit.hpp"
+#include "infinity/Renderer.hpp"
 #include <SDL3/SDL.h>
 #include <filesystem>
 #include <iostream>
 #include <sstream>
-namespace infinite {
+namespace infinity {
 class CrewValidation {
     const Universe& u_;
     Navigation& nav_;
@@ -127,4 +127,4 @@ class CrewValidation {
         return finished_;
     }
 };
-} // namespace infinite
+} // namespace infinity

@@ -1,12 +1,12 @@
 #pragma once
-#include "infinite/Cockpit.hpp"
-#include "infinite/Renderer.hpp"
+#include "infinity/Cockpit.hpp"
+#include "infinity/Renderer.hpp"
 #include <algorithm>
 #include <filesystem>
 #include <iostream>
 #include <sstream>
 
-namespace infinite {
+namespace infinity {
 class SurfaceValidation {
   public:
     SurfaceValidation(const Universe& universe, Navigation& nav, Pilot& pilot, ActivityState& activity)
@@ -251,4 +251,4 @@ class SurfaceValidation {
                   << " population=" << s.population << '\n';
     }
 };
-} // namespace infinite
+} // namespace infinity

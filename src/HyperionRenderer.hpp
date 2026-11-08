@@ -1,13 +1,13 @@
 #pragma once
-#include "infinite/Presentation.hpp"
-#include "infinite/SurfaceShading.hpp"
-#include "infinite/WeatherField.hpp"
+#include "infinity/Presentation.hpp"
+#include "infinity/SurfaceShading.hpp"
+#include "infinity/WeatherField.hpp"
 #include <array>
 #include <bgfx/bgfx.h>
 #include <memory>
 #include <oneapi/tbb/task_group.h>
 
-namespace infinite {
+namespace infinity {
 // Geometry shading, emission bloom and final display transform only. Owns no
 // universe, navigation, generator, seed state or geometry cache.
 class HyperionRenderer {
@@ -27,6 +27,7 @@ class HyperionRenderer {
               const glm::mat4& micro = glm::mat4(0), float relief = 0, const glm::mat4& meso = glm::mat4(0),
               float mesoRelief = 0);
     void bindEmissions(const Node&, const glm::mat4& pattern, double visualTime);
+    void localLamp(); // A probe/ship work light does not inherit the surface sun's occlusion map.
     void prepareWeather(const Node&, const glm::dmat4& planetFromEye, double seconds, double delta,
                         bool volumes = true, bool frozen = false);
     float weatherBlend(const Address& planet) const;
@@ -130,6 +131,7 @@ class HyperionRenderer {
                         weatherPost_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle meso_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle micro_ = BGFX_INVALID_HANDLE, microParams_ = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle terrainMaterial_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle domain_ = BGFX_INVALID_HANDLE, skyParams_ = BGFX_INVALID_HANDLE,
                         skyRotation_ = BGFX_INVALID_HANDLE;
     bgfx::ProgramHandle sky_ = BGFX_INVALID_HANDLE;
@@ -161,4 +163,4 @@ class HyperionRenderer {
     size_t sunBytes_ = 0;
     bool sunActive_ = false, sunValid_ = false, sunUpdated_ = false;
 };
-} // namespace infinite
+} // namespace infinity

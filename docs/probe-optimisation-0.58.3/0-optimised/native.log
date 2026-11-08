@@ -1,0 +1,28 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+PROBE_VIDEO 0 seconds=0 depth=0 phase=SURFACE APPROACH
+PROBE_VIDEO 30 seconds=1 depth=0 phase=SURFACE APPROACH
+PROBE_VIDEO 60 seconds=2 depth=0 phase=SURFACE APPROACH
+PROBE_VIDEO 90 seconds=3 depth=0 phase=SURFACE APPROACH
+PROBE_VIDEO 120 seconds=4 depth=0 phase=SURFACE APPROACH
+PROBE_VIDEO 150 seconds=5 depth=9.11147 phase=BORING / CUTTER ACTIVE
+PROBE_VIDEO 180 seconds=6 depth=18.2229 phase=BORING / CUTTER ACTIVE
+PROBE_VIDEO 210 seconds=7 depth=27.3344 phase=BORING / CUTTER ACTIVE
+PROBE_VIDEO 240 seconds=8 depth=36.4459 phase=BORING / CUTTER ACTIVE
+PROBE_VIDEO 270 seconds=9 depth=45.5573 phase=BORING / CUTTER ACTIVE
+PROBE_VIDEO 300 seconds=10 depth=54.6688 phase=BORING / CUTTER ACTIVE
+PROBE_VIDEO 330 seconds=11 depth=63.7803 phase=BORING / CUTTER ACTIVE
+PROBE_VIDEO 360 seconds=12 depth=72.8918 phase=BORING / CUTTER ACTIVE
+PROBE_VIDEO 390 seconds=13 depth=80 phase=CHARGE ARMED
+PROBE_VIDEO 420 seconds=14 depth=80 phase=CHARGE ARMED
+PROBE_VIDEO 450 seconds=15 depth=80 phase=DETONATION
+PROBE_VIDEO 480 seconds=16 depth=80 phase=CAVERN SURVEY BEACON
+PROBE_VIDEO 510 seconds=17 depth=80 phase=CAVERN SURVEY BEACON
+PROBE_VIDEO 540 seconds=18 depth=80 phase=CAVERN SURVEY BEACON
+PROBE_VIDEO 570 seconds=19 depth=80 phase=CAVERN SURVEY BEACON
+PROBE_VIDEO 600 seconds=20 depth=80 phase=CAVERN SURVEY BEACON
+PROBE_VIDEO 630 seconds=21 depth=80 phase=CAVERN SURVEY BEACON
+PROBE_PERF frames=639 median_ms=5.768 p95_ms=43.0303 cpu_median_ms=3.96504 probe_cpu_median_ms=0.337125 upload_bytes=22734720 light_updates=400 hidden_frames=491 bore=14181543975564158605 descriptor=15490555325395019288
+PASS: native probe benchmark / 639 frames / 30 FPS
+FRAME median_ms=5.80688 p95_ms=42.0921 frames=673 cache_bytes=9385744
+peak_rss_bytes=123240448

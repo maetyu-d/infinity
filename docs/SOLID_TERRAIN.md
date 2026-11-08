@@ -1,4 +1,4 @@
-# Solid-planet terrain — Infinite 0.18
+# Solid-planet terrain — Infinity 0.18
 
 Selected expanded solid planets now have local highlands, volcanic ridges, incised valleys or ice ridges. These are generated height fields used by the geometry and flight systems. Terrain is visible from approach, supports collision and landing, and stays attached to the same planet through deeper inspection.
 
@@ -8,7 +8,7 @@ Use **Y** to select a world labelled **Highlands**, **Volcanic**, **Canyons** or
 
 The new layer applies to 80% of the expanded primary planets, selected by an isolated deterministic feature key. Each system's original 5–9 planets and all moons retain their prior geological fields. Smoother expanded worlds retain their existing broad geology. Planet addresses, seeds, radii, orbits, populations, chemistry and procedural histories are unchanged. Existing plate tectonics, impacts, broad erosion and all rock/mineral/atomic generators remain in place.
 
-The base generation recipe remains 3 and population recipe remains 1. The additive local terrain recipe is 1, and its parameters are included in descriptor fingerprints only for worlds that use it. All **120 records** in the pre-expansion descriptor/geometry snapshot still match exactly. `baa0425` and branch `checkpoint/infinite-0.17-before-terrain` preserve the 0.17 checkpoint.
+The base generation recipe remains 3 and population recipe remains 1. The additive local terrain recipe is 1, and its parameters are included in descriptor fingerprints only for worlds that use it. All **120 records** in the pre-expansion descriptor/geometry snapshot still match exactly. `baa0425` and branch `checkpoint/infinity-0.17-before-terrain` preserve the 0.17 checkpoint.
 
 The current catalogue models condensed rocky/icy bodies. An explicit `GasEnvelope` process and `hasSolidSurface` contract now exclude gaseous descriptors from terrain queries, terrain children, streamed patches, collision ground queries and landing. Gas envelopes use an undeformed sphere representation. This update does not reclassify existing worlds or add a gas-giant population.
 
@@ -44,7 +44,7 @@ The native terrain fixture uses four actual catalogue worlds at 1440×900, with 
 - [Canyons](solid-terrain/captures/2-Canyons-HYPERION.png)
 - [Ice ridges](<solid-terrain/captures/3-Ice ridges-HYPERION.png>)
 
-[Validation data](solid-terrain/validation.json), [native terrain proof](solid-terrain/terrain-native.log) and [release results](solid-terrain/release-tests.log) record the actual worlds, seeds, measurements and test outcomes. Run `build/infinite --terrain-test --capture-dir build/terrain-demo/captures --data build/terrain-demo/data` to reproduce the four-world native demonstration without using the normal saved-flight files.
+[Validation data](solid-terrain/validation.json), [native terrain proof](solid-terrain/terrain-native.log) and [release results](solid-terrain/release-tests.log) record the actual worlds, seeds, measurements and test outcomes. Run `build/infinity --terrain-test --capture-dir build/terrain-demo/captures --data build/terrain-demo/data` to reproduce the four-world native demonstration without using the normal saved-flight files.
 
 ## Measured cost
 

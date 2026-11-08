@@ -1,0 +1,159 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+      Start 75: continuity_restart_write
+      Start 72: persistence_process_write
+      Start 18: desert_buggy_racing
+      Start 19: desert_alternating_race_formats
+ 1/77 Test #72: persistence_process_write ....................   Passed    0.41 sec
+      Start 13: graceful_docking_and_departure
+ 2/77 Test #75: continuity_restart_write .....................   Passed    1.25 sec
+      Start 30: crew_commodity_market
+ 3/77 Test #30: crew_commodity_market ........................   Passed   11.27 sec
+      Start 52: planetary_weather_and_surface_life
+ 4/77 Test #13: graceful_docking_and_departure ...............   Passed   16.04 sec
+      Start 74: cross_scale_round_trip
+ 5/77 Test #52: planetary_weather_and_surface_life ...........   Passed   11.48 sec
+      Start 40: persistent_economic_supply_chains
+ 6/77 Test #74: cross_scale_round_trip .......................   Passed    9.87 sec
+      Start 38: economic_hauling_and_career
+ 7/77 Test #40: persistent_economic_supply_chains ............   Passed    7.48 sec
+      Start 39: economic_investment_and_trade
+ 8/77 Test #38: economic_hauling_and_career ..................   Passed    6.09 sec
+      Start 59: persistent_orbital_activity
+ 9/77 Test #39: economic_investment_and_trade ................   Passed    5.98 sec
+      Start 64: seamless_scale_flight
+10/77 Test #59: persistent_orbital_activity ..................   Passed    6.02 sec
+      Start 36: economic_ship_services_and_planning
+11/77 Test #64: seamless_scale_flight ........................   Passed    4.36 sec
+      Start 63: unbounded_spatial_streaming
+12/77 Test #36: economic_ship_services_and_planning ..........   Passed    5.00 sec
+      Start 11: material_expedition_worker_restart
+13/77 Test #63: unbounded_spatial_streaming ..................   Passed    3.52 sec
+      Start 24: physical_wreck_salvage_and_rescue
+14/77 Test #24: physical_wreck_salvage_and_rescue ............   Passed    3.03 sec
+      Start 31: player_crew_and_damage_control
+15/77 Test #11: material_expedition_worker_restart ...........   Passed    5.12 sec
+      Start 50: surface_site_preservation
+16/77 Test #31: player_crew_and_damage_control ...............   Passed    2.56 sec
+      Start 28: crewed_weapon_stations
+17/77 Test #50: surface_site_preservation ....................   Passed    2.55 sec
+      Start 26: economic_security_contracts
+18/77 Test #28: crewed_weapon_stations .......................   Passed    3.26 sec
+      Start 15: exploration_worker_and_restart
+19/77 Test #26: economic_security_contracts ..................   Passed    3.76 sec
+      Start 51: procedural_city_structure
+20/77 Test #51: procedural_city_structure ....................   Passed    2.17 sec
+      Start 14: exploration_survey_and_mining
+21/77 Test #14: exploration_survey_and_mining ................   Passed    1.92 sec
+      Start 33: weapons_combat_and_equipment
+22/77 Test #19: desert_alternating_race_formats ..............   Passed   59.62 sec
+      Start 41: physical_ship_forces_and_guidance
+23/77 Test #41: physical_ship_forces_and_guidance ............   Passed    1.63 sec
+      Start 70: structural_processes
+24/77 Test #70: structural_processes .........................   Passed    1.30 sec
+      Start 42: stellar_evolution_and_inheritance
+25/77 Test #42: stellar_evolution_and_inheritance ............   Passed    1.25 sec
+      Start 43: stellar_catalogue_preservation
+26/77 Test #33: weapons_combat_and_equipment .................   Passed    5.05 sec
+      Start 56: planetary_population_and_moons
+27/77 Test #15: exploration_worker_and_restart ...............   Passed   10.47 sec
+      Start 27: captain_gunner_station_swap
+28/77 Test #43: stellar_catalogue_preservation ...............   Passed    1.13 sec
+      Start  9: geological_mining_prospects
+29/77 Test #56: planetary_population_and_moons ...............   Passed    1.34 sec
+      Start 66: filtered_material_texture
+30/77 Test #27: captain_gunner_station_swap ..................   Passed    1.22 sec
+      Start 69: performance_invariants
+31/77 Test  #9: geological_mining_prospects ..................   Passed    1.59 sec
+      Start 44: planetary_type_diversity
+32/77 Test #66: filtered_material_texture ....................   Passed    1.46 sec
+      Start 29: inflight_crew_management
+33/77 Test #69: performance_invariants .......................   Passed    1.34 sec
+      Start 37: cockpit_motion_and_feedback
+34/77 Test #44: planetary_type_diversity .....................   Passed    1.26 sec
+      Start 34: economic_recovery_and_outcomes
+35/77 Test #29: inflight_crew_management .....................   Passed    1.48 sec
+      Start 46: addressed_stellar_optics
+36/77 Test #37: cockpit_motion_and_feedback ..................   Passed    1.48 sec
+      Start 68: rendering_preserves_universe
+37/77 Test #34: economic_recovery_and_outcomes ...............   Passed    1.61 sec
+      Start 25: crew_fire_control_and_ship_systems
+38/77 Test #46: addressed_stellar_optics .....................   Passed    1.49 sec
+      Start 76: continuity_restart_read
+39/77 Test #25: crew_fire_control_and_ship_systems ...........   Passed    1.73 sec
+      Start 35: economic_world_feedback
+40/77 Test #76: continuity_restart_read ......................   Passed    2.13 sec
+      Start 58: established_world_preservation
+41/77 Test #35: economic_world_feedback ......................   Passed    0.82 sec
+      Start 45: planetary_weather_processes
+42/77 Test #58: established_world_preservation ...............   Passed    0.35 sec
+      Start 47: read_only_weather_optics
+43/77 Test #45: planetary_weather_processes ..................   Passed    0.56 sec
+      Start 10: shrinking_seam_expedition
+44/77 Test #47: read_only_weather_optics .....................   Passed    0.97 sec
+      Start 49: multiscale_depth_precision
+45/77 Test #68: rendering_preserves_universe .................   Passed    4.70 sec
+      Start  8: mining_consequences_and_save_migration
+46/77 Test #10: shrinking_seam_expedition ....................   Passed    1.45 sec
+      Start 65: free_flight_navigation
+47/77 Test #49: multiscale_depth_precision ...................   Passed    1.22 sec
+      Start 16: stable_background_point_lights
+48/77 Test  #8: mining_consequences_and_save_migration .......   Passed    1.81 sec
+      Start 12: material_expedition_round_trip
+49/77 Test #65: free_flight_navigation .......................   Passed    1.87 sec
+      Start 48: window_fits_display_work_area
+50/77 Test #16: stable_background_point_lights ...............   Passed    1.91 sec
+      Start 62: ship_handling_and_roll
+51/77 Test #12: material_expedition_round_trip ...............   Passed    1.87 sec
+      Start 20: desert_coupled_tyres_and_brakes
+52/77 Test #48: window_fits_display_work_area ................   Passed    1.71 sec
+      Start 57: legacy_population_preservation
+53/77 Test #57: legacy_population_preservation ...............   Passed    0.80 sec
+      Start 60: operating_regimes_and_shrinking
+54/77 Test #62: ship_handling_and_roll .......................   Passed    2.57 sec
+      Start 22: desert_persistent_terrain_deformation
+55/77 Test #20: desert_coupled_tyres_and_brakes ..............   Passed    2.32 sec
+      Start  6: cavern_geology_drilling_and_expedition
+56/77 Test  #6: cavern_geology_drilling_and_expedition .......   Passed    1.68 sec
+      Start  3: warp_destination_and_arrival_encounters
+57/77 Test #22: desert_persistent_terrain_deformation ........   Passed    2.41 sec
+      Start  7: expedition_planner_and_objectives
+58/77 Test  #3: warp_destination_and_arrival_encounters ......   Passed    0.87 sec
+      Start  5: mining_probe_camera_lighting_and_blast
+59/77 Test  #7: expedition_planner_and_objectives ............   Passed    2.08 sec
+      Start 17: desert_turrets_and_local_coop
+60/77 Test  #5: mining_probe_camera_lighting_and_blast .......   Passed    1.48 sec
+      Start 54: cockpit_layout_and_targeting
+61/77 Test #60: operating_regimes_and_shrinking ..............   Passed    5.60 sec
+      Start 67: surface_shading_preserves_mesh
+62/77 Test #17: desert_turrets_and_local_coop ................   Passed    0.78 sec
+      Start 71: universe_regressions
+63/77 Test #71: universe_regressions .........................   Passed    0.27 sec
+      Start  4: mining_probe_excavation_and_camera
+64/77 Test #54: cockpit_layout_and_targeting .................   Passed    1.17 sec
+      Start  2: terrain_materials_surface_work_and_hazards
+65/77 Test #67: surface_shading_preserves_mesh ...............   Passed    0.90 sec
+      Start 23: ellipsoid_geometry_and_depth
+66/77 Test  #4: mining_probe_excavation_and_camera ...........   Passed    0.84 sec
+      Start 32: npc_combat_behaviour
+67/77 Test  #2: terrain_materials_surface_work_and_hazards ...   Passed    1.54 sec
+      Start 21: fractal_geometry_and_contacts
+68/77 Test #23: ellipsoid_geometry_and_depth .................   Passed    1.81 sec
+      Start 53: solid_planet_local_terrain
+69/77 Test #32: npc_combat_behaviour .........................   Passed    1.93 sec
+      Start 77: desert_incremental_terrain_cache
+70/77 Test #21: fractal_geometry_and_contacts ................   Passed    1.47 sec
+      Start 61: ship_dynamics_and_landing
+71/77 Test #77: desert_incremental_terrain_cache .............   Passed    1.47 sec
+      Start 73: persistence_process_read
+72/77 Test #73: persistence_process_read .....................   Passed    0.03 sec
+      Start 55: cockpit_popup_and_text_collisions
+73/77 Test #53: solid_planet_local_terrain ...................   Passed    2.31 sec
+      Start  1: environmental_hazards_and_surface_mission
+74/77 Test  #1: environmental_hazards_and_surface_mission ....   Passed    0.08 sec
+75/77 Test #55: cockpit_popup_and_text_collisions ............   Passed    1.58 sec
+76/77 Test #61: ship_dynamics_and_landing ....................   Passed    2.77 sec
+77/77 Test #18: desert_buggy_racing ..........................   Passed  197.19 sec
+
+100% tests passed, 0 tests failed out of 77
+
+Total Test time (real) = 197.20 sec

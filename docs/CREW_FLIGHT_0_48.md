@@ -1,4 +1,4 @@
-# In-flight crew management — Infinite 0.48
+# In-flight crew management — Infinity 0.48
 
 Version 0.49 adds [individual gun consoles](CREW_GUNS_0_49.md): click a gun button or use Ctrl+1/2/3 to assign the selected crew member. Best Stations now includes installed auxiliaries after the normal duties.
 
@@ -57,7 +57,7 @@ All **ten native gameplay/image checks pass across 53 captures**: five flight-co
 
 The final flight-console fixture records **274 frames**, **71.86 ms median / 120.94 ms p95** raw frame time and **144,048,128 bytes peak RSS**. These diagnostics include startup, resizing, readbacks and concurrent fixtures on a shared machine; they are not a matched performance comparison.
 
-**Infinite 0.48.0 / build 53** is built, packaged and ad-hoc signed. All five native scenarios use the exact final executable, and all **28 code/data sections** match the signed app. The preservation manifest verifies **192 protected files** against `58a1170`. User saves were not used in validation. During disk pressure, completed test executables were temporarily compressed with verified hashes and restored byte-for-byte; [storage verification](crew-flight-0.48/test-storage.json).
+**Infinity 0.48.0 / build 53** is built, packaged and ad-hoc signed. All five native scenarios use the exact final executable, and all **28 code/data sections** match the signed app. The preservation manifest verifies **192 protected files** against `58a1170`. User saves were not used in validation. During disk pressure, completed test executables were temporarily compressed with verified hashes and restored byte-for-byte; [storage verification](crew-flight-0.48/test-storage.json).
 
 Final test results and executable hashes are recorded in [validation.json](crew-flight-0.48/validation.json). [Core results](crew-flight-0.48/core-tests.log), [native results](crew-flight-0.48/native-tests.log), [preservation manifest](crew-flight-0.48/preservation.json), [package verification](crew-flight-0.48/package.json), [complete build](crew-flight-0.48/final-build.log).
 

@@ -1,10 +1,10 @@
-# Stellar light and glacial worlds — Infinite 0.32
+# Stellar light and glacial worlds — Infinity 0.32
 
-This pass changes the presentation of existing objects. The 0.31 checkpoint is `7b50bb2`, retained as `checkpoint/infinite-0.31-before-stellar-upgrade`.
+This pass changes the presentation of existing objects. The 0.31 checkpoint is `7b50bb2`, retained as `checkpoint/infinity-0.31-before-stellar-upgrade`.
 
 ## What changed
 
-- **Emissive stars:** existing stellar spheres now emit light instead of receiving the generic rocky-object BRDF. Filtered, animated convection gives their surfaces detail; limb darkening gives the luminous disc depth. The existing primary-star halo instance receives a coronal treatment and retains its compact core when unresolved. Stellar radius, temperature colour, companion geometry, positions and identities come from Infinite.
+- **Emissive stars:** existing stellar spheres now emit light instead of receiving the generic rocky-object BRDF. Filtered, animated convection gives their surfaces detail; limb darkening gives the luminous disc depth. The existing primary-star halo instance receives a coronal treatment and retains its compact core when unresolved. Stellar radius, temperature colour, companion geometry, positions and identities come from Infinity.
 - **Real solar images:** planetary flight can show its actual parent star beyond the local geometry depth range. Its apparent size and bearing follow the same hierarchical coordinates as the star mesh. Original, Hyperion and Hybrid continue to share the same camera and universe.
 - **Eclipses and foreground clipping:** finite-disc overlap uses existing celestial contacts in the camera frame. Opaque scene depth rejects foreground silhouettes while allowing the emitter's own photosphere. Full and partial eclipse controls exercise real generated planets. Cloud extinction and atmospheric perspective affect the source; behind-camera and fully occulted sources produce no added light.
 - **Hyperion optics:** the actual game's `skyFragment` solar falloff and `postFragment` streak/ghost techniques are adapted to the existing C++ pipeline. Broad glare uses the existing third-resolution bloom pass, with analytic filtering for thin streaks. Sharp source coverage remains at full resolution. There is no readback, temporal history or additional render target.
@@ -13,7 +13,7 @@ This pass changes the presentation of existing objects. The 0.31 checkpoint is `
 
 Star surfaces and halos have dedicated shaders and batches, keeping their material work out of ordinary terrain and starfield draws. The large HDR, bloom, cloud, polar, sun-shadow and material textures retain their previous dimensions and budgets. The existing stellar halo particle supplies its geometry; no new stars or planet types are generated.
 
-The reference is the user's Hyperion game, especially `src/flight/shaders.hpp` (`skyFragment`, `worldFragment`, `postFragment`), `renderer.cpp` and the shared filtered-noise/material techniques. The adaptation preserves Infinite's straight projection and universe geometry. [Reference hashes and 24 unchanged generator, simulation, geometry and layout sources](graphics-0.32/preservation.json).
+The reference is the user's Hyperion game, especially `src/flight/shaders.hpp` (`skyFragment`, `worldFragment`, `postFragment`), `renderer.cpp` and the shared filtered-noise/material techniques. The adaptation preserves Infinity's straight projection and universe geometry. [Reference hashes and 24 unchanged generator, simulation, geometry and layout sources](graphics-0.32/preservation.json).
 
 ## Matched views
 
@@ -58,4 +58,4 @@ The universe, seeds, object identities, histories, solid terrain, cities, ship d
 
 ## Reproducing the checks
 
-Build with the existing CMake project, then run the core and native suite serially with `ctest --test-dir build --output-on-failure -j 1` (native tests require a desktop and `INFINITE_GPU_TESTS=ON`). The focused fixture is `--celestial-graphics-test --width 1440 --height 900 --capture-dir OUTPUT/captures --profile OUTPUT/frames.csv --data OUTPUT/data`; it uses isolated test data. `tools/check_celestial_optics.py OUTPUT` verifies the images and logs. The test setup is saved in `cmake/RunCelestialOptics.cmake`.
+Build with the existing CMake project, then run the core and native suite serially with `ctest --test-dir build --output-on-failure -j 1` (native tests require a desktop and `INFINITY_GPU_TESTS=ON`). The focused fixture is `--celestial-graphics-test --width 1440 --height 900 --capture-dir OUTPUT/captures --profile OUTPUT/frames.csv --data OUTPUT/data`; it uses isolated test data. `tools/check_celestial_optics.py OUTPUT` verifies the images and logs. The test setup is saved in `cmake/RunCelestialOptics.cmake`.

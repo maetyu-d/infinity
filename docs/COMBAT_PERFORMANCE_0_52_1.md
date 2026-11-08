@@ -35,8 +35,8 @@ Measured `operator new` calls per update fell from **9197.8 to 27.5** for Defend
 Raw measurements and reproducibility metadata: [comparison.json](combat-performance-0.52.1/comparison.json), with three before/after CSV pairs in the same folder. Reproduce the current implementation with:
 
 ```sh
-cmake --build build --target infinite_combat_benchmark
-./build/infinite_combat_benchmark
+cmake --build build --target infinity_combat_benchmark
+./build/infinity_combat_benchmark
 ```
 
 The benchmark source is `tools/CombatBenchmark.cpp`. Rebuild that same source against the baseline core to compare revisions; the retained baseline executable used for these results was linked before the runtime changes.

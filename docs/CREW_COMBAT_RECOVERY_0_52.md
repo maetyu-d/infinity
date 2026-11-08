@@ -1,6 +1,6 @@
 # Autonomous gunners, ship systems and physical recovery — 0.52
 
-These three additions sit above Infinite's existing universe, addresses, seeds, geometry and rendering. A healthy ship retains the existing manual handling and roll controls. Damage adds explicit limitations that crew can repair using the existing rooms and supplies.
+These three additions sit above Infinity's existing universe, addresses, seeds, geometry and rendering. A healthy ship retains the existing manual handling and roll controls. Damage adds explicit limitations that crew can repair using the existing rooms and supplies.
 
 ## Autonomous crew gunners
 

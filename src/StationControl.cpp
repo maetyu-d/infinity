@@ -1,6 +1,6 @@
-#include "infinite/StationControl.hpp"
+#include "infinity/StationControl.hpp"
 #include <numbers>
-namespace infinite {
+namespace infinity {
 namespace {
 bool available(const Pilot& pilot) {
     const auto& s = pilot.ship();
@@ -224,4 +224,4 @@ void StationControl::annotate(FlightInstruments& t, const ShipCrew& crew, const 
                      : gun.cooldown > 0                                      ? "RELOADING"
                                         : "SPACE FIRE THIS GUN / F10 HELM";
 }
-} // namespace infinite
+} // namespace infinity

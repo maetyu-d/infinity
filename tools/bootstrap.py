@@ -35,8 +35,9 @@ def wanted(name, path):
 def fetch(dep):
     name, spec = dep
     destination = ROOT / "external" / name
-    stamp = destination / ".infinite-pin"
-    if stamp.exists() and stamp.read_text() == spec["revision"]:
+    stamp = destination / ".infinity-pin"
+    existing_stamp = stamp if stamp.exists() else destination / ".infinite-pin"
+    if existing_stamp.exists() and existing_stamp.read_text() == spec["revision"]:
         return name + " already present"
     url = "https://codeload.github.com/" + spec["repository"] + "/tar.gz/" + spec["revision"]
     archive = ROOT / "external" / "downloads" / (name + ".tar.gz")

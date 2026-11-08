@@ -1,0 +1,14 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+PROBE_CAPTURE 0 id=14181543975564158605 depth=0 meshes=0 cut_tiles=0
+PROBE_CAPTURE 1 id=14181543975564158605 depth=0 meshes=0 cut_tiles=0
+PROBE_CAPTURE 2 id=14181543975564158605 depth=40 meshes=1 cut_tiles=2
+PROBE_CAPTURE 3 id=14181543975564158605 depth=80 meshes=1 cut_tiles=2
+PROBE_CAPTURE 4 id=14181543975564158605 depth=80 meshes=1 cut_tiles=2
+PROBE_CAPTURE 5 id=14181543975564158605 depth=80 meshes=1 cut_tiles=2
+PROBE_CAPTURE 6 id=14181543975564158605 depth=80 meshes=1 cut_tiles=2
+PROBE_CAPTURE 7 id=14181543975564158605 depth=80 meshes=1 cut_tiles=2
+PROBE_CAPTURE 8 id=14181543975564158605 depth=80 meshes=1 cut_tiles=2
+PASS: native mining probe / turret refit / independent first-person camera / real excavated cavern
+FRAME median_ms=17.7766 p95_ms=35.3479 frames=518 cache_bytes=13317736
+peak_rss_bytes=144736256

@@ -1,7 +1,7 @@
-#include "infinite/Navigation.hpp"
+#include "infinity/Navigation.hpp"
 #include <iomanip>
 #include <iostream>
-using namespace infinite;
+using namespace infinity;
 int main() {
     Universe u;
     auto planet = u.describe(Address{}.child(Kind::Galaxy, 0).child(Kind::System, 1).child(Kind::Planet, 10));

@@ -10,13 +10,13 @@ import sys
 binary = pathlib.Path(sys.argv[1]).resolve()
 bundle = pathlib.Path(sys.argv[2]).resolve()
 if not binary.is_file() or bundle.suffix != ".app":
-    raise SystemExit("Usage: package_macos.py path/to/infinite Infinite.app")
+    raise SystemExit("Usage: package_macos.py path/to/infinity Infinity.app")
 info_path = bundle / "Contents/Info.plist"
 if info_path.exists():
     info = plistlib.loads(info_path.read_bytes())
-    if info.get("CFBundleIdentifier") != "org.infinite.universe":
+    if info.get("CFBundleIdentifier") != "org.infinity.universe":
         raise SystemExit("Refusing to replace an unrelated app")
-destination = bundle / "Contents/MacOS/Infinite"
+destination = bundle / "Contents/MacOS/Infinity"
 destination.parent.mkdir(parents=True, exist_ok=True)
 temporary = destination.with_suffix(".next")
 shutil.copy2(binary, temporary)
@@ -25,13 +25,13 @@ temporary.replace(destination)
 load_commands = subprocess.check_output(["otool", "-l", str(binary)], text=True)
 minimum = re.search(r"\bminos\s+([0-9.]+)", load_commands)
 info = {
-    "CFBundleIdentifier": "org.infinite.universe",
-    "CFBundleName": "Infinite",
-    "CFBundleDisplayName": "Infinite",
-    "CFBundleExecutable": "Infinite",
+    "CFBundleIdentifier": "org.infinity.universe",
+    "CFBundleName": "Infinity",
+    "CFBundleDisplayName": "Infinity",
+    "CFBundleExecutable": "Infinity",
     "CFBundlePackageType": "APPL",
-    "CFBundleShortVersionString": "0.56.0",
-    "CFBundleVersion": "64",
+    "CFBundleShortVersionString": "0.61.0",
+    "CFBundleVersion": "75",
     "NSHighResolutionCapable": True,
     "LSMinimumSystemVersion": minimum.group(1) if minimum else "14.0",
 }
@@ -47,4 +47,7 @@ for library in ("bgfx", "bimg", "bx"):
             target = resources / "licenses" / library / path.relative_to(root / "external" / library)
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(path, target)
+# Replacing an executable or resource invalidates a previous bundle signature.
+subprocess.run(["codesign", "--force", "--sign", "-", str(bundle)], check=True)
+subprocess.run(["codesign", "--verify", "--deep", "--strict", str(bundle)], check=True)
 print(bundle)

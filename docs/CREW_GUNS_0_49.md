@@ -1,4 +1,4 @@
-# Crewed ship weapon stations — Infinite 0.49
+# Crewed ship weapon stations — Infinity 0.49
 
 The ship now has three independent laser mounts: its existing nose gun and two optional port/starboard guns. All use the existing Pulse Laser I–III equipment and combat rendering. The extra consoles share the existing weapons bay; no compartments, ship/world coordinates or procedural structures are replaced.
 
@@ -55,7 +55,7 @@ All **12 unique native gameplay/image checks pass across 62 captures**, includin
 
 The new native fixture records **349 frames**, **82.81 ms median / 266.40 ms p95** raw frame time and **148,799,488 bytes peak RSS**. These shared-machine diagnostics include loading, resizing, captures and a concurrent economy fixture; they are not a matched performance comparison.
 
-**Infinite 0.49.0 / build 54** is built, packaged and ad-hoc signed. All six native copies match the final executable; all **28 code/data sections** match the signed app. The preservation audit verifies **190 protected files** and three structural definitions. Test executables temporarily compressed during disk pressure were restored byte-for-byte; [storage verification](crew-guns-0.49/test-storage.json). User saves were not used in validation.
+**Infinity 0.49.0 / build 54** is built, packaged and ad-hoc signed. All six native copies match the final executable; all **28 code/data sections** match the signed app. The preservation audit verifies **190 protected files** and three structural definitions. Test executables temporarily compressed during disk pressure were restored byte-for-byte; [storage verification](crew-guns-0.49/test-storage.json). User saves were not used in validation.
 
 Final results and hashes are in [validation.json](crew-guns-0.49/validation.json). [Core tests](crew-guns-0.49/core-tests.log), [initial native run](crew-guns-0.49/native-tests.log), [economy retry](crew-guns-0.49/native-economy-retry.log), [preservation](crew-guns-0.49/preservation.json), [package verification](crew-guns-0.49/package.json), [build log](crew-guns-0.49/build.log).
 

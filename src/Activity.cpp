@@ -1,7 +1,10 @@
-#include "infinite/Activity.hpp"
-#include "infinite/CombatActors.hpp"
-#include "infinite/Planetology.hpp"
-#include "infinite/SurfaceLife.hpp"
+#include "infinity/SaveTag.hpp"
+#include "infinity/Activity.hpp"
+#include "infinity/CombatActors.hpp"
+#include "infinity/OrbitalDebris.hpp"
+#include "infinity/Planetology.hpp"
+#include "infinity/Prospecting.hpp"
+#include "infinity/SurfaceLife.hpp"
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
@@ -10,7 +13,7 @@
 #include <sstream>
 #include <stdexcept>
 
-namespace infinite {
+namespace infinity {
 namespace {
 constexpr double pi = std::numbers::pi;
 // Activity recipe one owns its stream; the world seed and Feature streams stay intact.
@@ -34,6 +37,119 @@ glm::dquat heading(glm::dvec3 velocity, glm::dvec3 up) {
 double habitation(const Node& p) {
     return smoothstep(170, 260, p.environment.temperature) *
            (1 - smoothstep(330, 600, p.environment.temperature)) * (.35 + .65 * p.environment.waterActivity);
+}
+struct DebrisFamily {
+    RingProcess ring;
+    std::array<double, 64> radialMass{};
+    glm::dquat plane{1, 0, 0, 0};
+    double planetRadius = 0, massSolar = 0, inner = 0, outer = 0;
+    unsigned count = 0;
+    uint64_t seed = 0;
+    glm::dvec3 origin{};
+};
+DebrisFamily debrisFamily(const Node& p) {
+    DebrisFamily family;
+    if (p.address.kind() != Kind::Planet || !p.geology)
+        return family;
+    const Random random{mix64(p.seed ^ 0x4f52424954414c44ULL)};
+    family.seed = random.key;
+    const double radius = std::pow(10., p.frame.logRadius);
+    family.planetRadius = radius;
+    family.massSolar = 4.188790204786391 * planetDensity(p) * radius * radius * radius / 1.98847e30;
+    if (!hasSolidSurface(p)) {
+        family.ring = planetTraits(p).rings;
+        if (!family.ring.present())
+            return family;
+        family.inner = family.ring.innerRadius;
+        family.outer = family.ring.outerRadius;
+        family.plane = tangentFrame(family.ring.axis);
+        family.count = 12 + unsigned(16 * smoothstep(.035, .55, family.ring.opticalDepth));
+        // Equal-width annuli are weighted by both optical depth and area.
+        double total = 0;
+        for (size_t i = 0; i < family.radialMass.size(); ++i) {
+            const double r = glm::mix(family.inner, family.outer, (i + .5) / family.radialMass.size());
+            total += r * ringOpticalDepth(family.ring, r);
+            family.radialMass[i] = total;
+        }
+        return family;
+    }
+    const auto strengthOf = [](const ImpactBasin& basin) { return basin.radius * basin.survival; };
+    const auto impact = std::max_element(p.geology->impacts.begin(), p.geology->impacts.end(),
+        [&](const ImpactBasin& a, const ImpactBasin& b) { return strengthOf(a) < strengthOf(b); });
+    const double strength = smoothstep(.020, .095, strengthOf(*impact)) *
+                            smoothstep(.15, .6, p.environment.impact);
+    if (strength < .08 || random.unit(0) > .35 + .65 * strength)
+        return family;
+    const auto climate = planetClimate(p);
+    const double hill = p.orbit.semiMajorMetres * (1 - p.orbit.eccentricity) *
+                        std::cbrt(family.massSolar / (3 * std::max(1e-12, p.orbit.centralMassSolar)));
+    family.inner = std::max(1.22, 1 + (climate.pressureBar > 0 ? 7 * climate.scaleHeightMetres / radius : 0));
+    family.outer = std::min(2.05, hill / radius * .23);
+    if (family.outer < family.inner + .12)
+        return family;
+    const auto basin = tangentFrame(impact->centre);
+    family.origin = impact->centre;
+    const auto alongBasin = basin * glm::dvec3(std::cos(random.unit(1) * 2 * pi), 0,
+                                               std::sin(random.unit(1) * 2 * pi));
+    const auto normal = glm::normalize(glm::cross(alongBasin, impact->centre));
+    family.plane = glm::quat_cast(glm::dmat3(impact->centre, normal, alongBasin));
+    family.count = 8 + unsigned(strength * 12);
+    return family;
+}
+ActivityBody debrisMember(const Node& p, const DebrisFamily& family, unsigned index, double seconds) {
+    const Random random{mix64(family.seed ^ mix64(index))};
+    const bool ring = family.ring.present();
+    double radial = glm::mix(family.inner, family.outer, .18 + .64 * random.unit(0));
+    double eccentricity = 0;
+    auto plane = family.plane;
+    if (ring) {
+        const double mass = random.unit(0) * family.radialMass.back();
+        const auto bin = std::upper_bound(family.radialMass.begin(), family.radialMass.end(), mass);
+        const size_t i = std::min(size_t(bin - family.radialMass.begin()), family.radialMass.size() - 1);
+        const double before = i ? family.radialMass[i - 1] : 0;
+        const double within = (mass - before) / (family.radialMass[i] - before);
+        radial = glm::mix(family.inner, family.outer, (i + within) / family.radialMass.size());
+        plane *= glm::angleAxis(random.signedUnit(1) * .0018, glm::dvec3(1, 0, 0));
+    } else {
+        const double margin = std::min(radial - family.inner, family.outer - radial);
+        eccentricity = std::min(.19, margin / radial * .88) * (.6 + .4 * random.unit(1));
+        plane *= glm::angleAxis(random.signedUnit(2) * .12, glm::dvec3(1, 0, 0));
+        plane *= glm::angleAxis(random.signedUnit(3) * .28, glm::dvec3(0, 1, 0));
+    }
+    ActivityBody b;
+    b.id = {p.address, orbitalDebrisFirstSlot + index};
+    b.kind = ActivityKind::Debris;
+    b.seed = random.key;
+    b.phase = 2 * pi * (index + random.unit(4)) / family.count;
+    const Orbit orbit{radial * family.planetRadius, eccentricity, b.phase, 0, family.massSolar};
+    const auto point = keplerPosition(orbit, seconds);
+    const double minor = std::sqrt(1 - eccentricity * eccentricity);
+    const double cosE = point.x / orbit.semiMajorMetres + eccentricity;
+    const double sinE = point.z / (orbit.semiMajorMetres * minor);
+    const double meanMotion = std::sqrt(1.32712440018e20 * orbit.centralMassSolar /
+                                        std::pow(orbit.semiMajorMetres, 3));
+    b.position = plane * glm::dvec3(point.x, 0, -point.z);
+    b.velocity = plane * glm::dvec3(-sinE, 0, -minor * cosE) *
+                 (orbit.semiMajorMetres * meanMotion / (1 - eccentricity * cosE));
+    const auto spin = glm::normalize(glm::dvec3(.6 + random.unit(5), random.signedUnit(6), random.signedUnit(7)));
+    const double period = 95 + 680 * random.unit(8);
+    b.orientation = plane * glm::angleAxis(2 * pi * std::remainder(seconds, period) / period + b.phase, spin);
+    const double size = std::pow(random.unit(9), 3);
+    b.radius = std::min(family.planetRadius * .015, ring ? 18 + 175 * size : 28 + 460 * size);
+    if (ring) {
+        b.tint = glm::mix(glm::vec3(.61f, .39f, .26f), glm::vec3(.63f, .89f, 1.f),
+                         float(family.ring.iceFraction));
+        b.name = (family.ring.iceFraction > .55 ? "RING ICE " : "RING RUBBLE ") +
+                 std::to_string(b.seed % 10000);
+        b.status = "RING FRAGMENT / COPLANAR ORBIT";
+    } else {
+        b.tint = material(p.environment.mineral).color;
+        b.name = "IMPACT REMNANT " + std::to_string(b.seed % 10000);
+        b.status = "IMPACT FAMILY / ELLIPTICAL ORBIT";
+    }
+    if (landableDebris(b))
+        b.status += " / L LAND";
+    return b;
 }
 } // namespace
 std::string ActivityId::str() const {
@@ -76,6 +192,13 @@ std::vector<uint32_t> activitySlots(const Node& planet) {
 ActivityBody sampleActivity(const Node& p, uint32_t slot, double seconds) {
     if (!std::isfinite(seconds) || seconds < 0 || seconds > 1e12)
         throw std::invalid_argument("Invalid activity time");
+    if (isOrbitalDebris({p.address, slot})) {
+        const auto family = debrisFamily(p);
+        const auto index = slot - orbitalDebrisFirstSlot;
+        if (index >= family.count)
+            throw std::invalid_argument("Unknown orbital debris slot");
+        return debrisMember(p, family, index, seconds);
+    }
     const auto slots = activitySlots(p);
     if (std::find(slots.begin(), slots.end(), slot) == slots.end())
         throw std::invalid_argument("Unknown activity slot");
@@ -174,6 +297,63 @@ std::vector<ActivityBody> sampleActivity(const Node& planet, double seconds) {
         bodies.push_back(sampleActivity(planet, slot, seconds));
     return bodies;
 }
+std::vector<ActivityBody> sampleOrbitalDebris(const Node& planet, double seconds) {
+    if (!std::isfinite(seconds) || seconds < 0 || seconds > 1e12)
+        throw std::invalid_argument("Invalid activity time");
+    const auto family = debrisFamily(planet);
+    std::vector<ActivityBody> bodies;
+    bodies.reserve(family.count);
+    for (unsigned i = 0; i < family.count; ++i)
+        bodies.push_back(debrisMember(planet, family, i, seconds));
+    return bodies;
+}
+DebrisPad debrisPad(const ActivityBody& body, int side) {
+    const Random r{body.seed};
+    const auto spin = glm::normalize(glm::dvec3(.6 + r.unit(5), r.signedUnit(6), r.signedUnit(7)));
+    const auto angular = body.orientation * spin * (2 * pi / (95 + 680 * r.unit(8)));
+    const auto up = body.orientation * glm::dvec3(0, side < 0 ? -1 : 1, 0);
+    const auto surface = up * (debrisFaceHeight * body.radius);
+    const auto eye = surface + up * debrisGearHeight;
+    return {body.position + surface, body.position + eye,
+            body.velocity + glm::cross(angular, eye), up, body.orientation * glm::dvec3(0, 0, -1)};
+}
+DebrisDeposit debrisDeposit(const Node& planet, const ActivityBody& body) {
+    DebrisDeposit result;
+    if (!landableDebris(body) || body.id.home != planet.address)
+        return result;
+    const auto family = debrisFamily(planet);
+    const Random r{body.seed};
+    std::array<double, 4> fractions{};
+    if (family.ring.present()) {
+        const auto epoch = debrisMember(planet, family, body.id.slot - orbitalDebrisFirstSlot, 0);
+        const double radial = (glm::length(epoch.position) / family.planetRadius - family.inner) /
+                              (family.outer - family.inner);
+        const double ice = glm::clamp(family.ring.iceFraction * (.76 + .27 * radial + .14 * r.unit(11)), 0., 1.);
+        fractions = {ice, (1 - ice) * planet.environment.chemistry.metal * .9,
+                     (1 - ice) * planet.environment.chemistry.silicate,
+                     (1 - ice) * planet.environment.chemistry.carbon * 1.4};
+    } else {
+        const auto g = geologySample(*planet.geology, family.origin);
+        fractions = resourceExposure(planet, family.origin, g).fractions;
+        for (unsigned i = 0; i < fractions.size(); ++i)
+            fractions[i] *= .65 + .7 * r.unit(11 + i);
+    }
+    const double total = fractions[0] + fractions[1] + fractions[2] + fractions[3];
+    if (total <= 0)
+        return result;
+    const auto dominant = size_t(std::max_element(fractions.begin(), fractions.end()) - fractions.begin());
+    const int64_t kg = int64_t(std::clamp(body.radius * (7. + 11 * r.unit(16)), 350., 7000.));
+    int64_t assigned = 0;
+    for (size_t i = 0; i < fractions.size(); ++i) {
+        result.capacity[i] = int64_t(std::floor(kg * fractions[i] / total));
+        assigned += result.capacity[i];
+    }
+    result.capacity[dominant] += kg - assigned;
+    result.mineral = dominant == 0 ? Mineral::Ice : dominant == 1 ? Mineral::Iron :
+                     dominant == 3 ? Mineral::Graphite :
+                     planet.environment.peakTemperature > 1300 ? Mineral::Olivine : Mineral::Quartz;
+    return result;
+}
 std::string hailActivity(const ActivityBody& b) {
     if (!b.economicBrief.empty()) {
         auto report = b.name + " / " + b.economicBrief;
@@ -194,7 +374,7 @@ void ActivityState::advance(double dt) {
 std::string ActivityState::serialize() const {
     std::ostringstream out;
     out.imbue(std::locale::classic());
-    out << std::setprecision(17) << "INFINITE_ACTIVITY 1 " << seconds << ' ' << enabled << ' '
+    out << std::setprecision(17) << "INFINITY_ACTIVITY 1 " << seconds << ' ' << enabled << ' '
         << (selected ? selected->str() : "-");
     return out.str();
 }
@@ -206,7 +386,7 @@ bool ActivityState::restore(std::string_view text, const Universe& u) {
         int version;
         ActivityState candidate;
         if (!(in >> header >> version >> candidate.seconds >> candidate.enabled >> id) ||
-            header != "INFINITE_ACTIVITY" || version != 1 || !std::isfinite(candidate.seconds) ||
+            !matchesSaveTag(header, "INFINITY_ACTIVITY") || version != 1 || !std::isfinite(candidate.seconds) ||
             candidate.seconds < 0 || candidate.seconds > 1e12)
             return false;
         if (id != "-") {
@@ -229,4 +409,4 @@ bool ActivityState::restore(std::string_view text, const Universe& u) {
         return false;
     }
 }
-} // namespace infinite
+} // namespace infinity

@@ -1,8 +1,8 @@
-if(NOT INFINITE_EXE OR NOT OUTPUT)
-  message(FATAL_ERROR "INFINITE_EXE and OUTPUT required")
+if(NOT INFINITY_EXE OR NOT OUTPUT)
+  message(FATAL_ERROR "INFINITY_EXE and OUTPUT required")
 endif()
 file(MAKE_DIRECTORY "${OUTPUT}")
-execute_process(COMMAND "${INFINITE_EXE}" --cockpit-motion-test --width 1440 --height 900
+execute_process(COMMAND "${INFINITY_EXE}" --cockpit-motion-test --width 1440 --height 900
   --capture-dir "${OUTPUT}/captures" --data "${OUTPUT}/data" --profile "${OUTPUT}/frames.csv"
   OUTPUT_FILE "${OUTPUT}/native.log" ERROR_FILE "${OUTPUT}/native.log"
   RESULT_VARIABLE result TIMEOUT 150)

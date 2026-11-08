@@ -1,11 +1,12 @@
 #pragma once
 #include "WindowSizing.hpp"
-#include "infinite/Cockpit.hpp"
-#include "infinite/Renderer.hpp"
+#include "infinity/Cockpit.hpp"
+#include "infinity/Economy.hpp"
+#include "infinity/Renderer.hpp"
 #include <filesystem>
 #include <stdexcept>
 
-namespace infinite {
+namespace infinity {
 class UiValidation {
   public:
     UiValidation(SDL_Window* window, Navigation& nav, Pilot& pilot)
@@ -25,6 +26,30 @@ class UiValidation {
         // Exact framebuffer sizes below are fixture requests, not interactive
         // minimum sizes. Production startup fitting above remains exercised.
         SDL_SetWindowMinimumSize(window_, 1, 1);
+        ShipCrew shipCrew(584);
+        crew_ = shipCrew.view(0, CrewStation::Bridge);
+        crew_.members.resize(maxShipCrew);
+        for (auto& member : crew_.members)
+            member.name = "LIEUTENANT LONG SURNAME";
+        crew_.tasks.resize(maxShipCrew);
+        for (auto& task : crew_.tasks) {
+            task.status = "REPAIRING";
+            task.detail = "MAINTAINING LIFE SUPPORT";
+        }
+        crew_.summary = "CREW EMERGENCY / ENGINE DAMAGE / RELIEF HELM MOVING";
+        crew_.alert = "ENGINE ROOM FIRE / REPAIRS IN PROGRESS";
+        crew_.message = "DAMAGE CONTROL ORDER CONFIRMED";
+        market_.connected = market_.ready = true;
+        market_.page = MarketPage::Jobs;
+        market_.site = "SURFACE EQUIPMENT PORT";
+        market_.role = "COLONY JOB BOARD";
+        market_.selected = 14;
+        market_.summary = "CARGO FULL / CREW READY";
+        market_.message = "TRANSACTION COMPLETE / EQUIPMENT READY";
+        market_.plan = "DELIVER TO ORBITAL HARBOUR";
+        market_.planTiming = "ETA 1:20 / DEADLINE 5:00";
+        for (unsigned i = 0; i < 80; ++i)
+            market_.detail.push_back("JOB ROW " + std::to_string(i) + " / FUNDED COLONY DELIVERY / LONG DESCRIPTION");
     }
     void advance(Renderer& renderer) {
         if (placed_ || finished())
@@ -38,6 +63,7 @@ class UiValidation {
         if (w != c.w || h != c.h)
             throw std::runtime_error("UI fixture did not receive its requested framebuffer size");
         renderer.resize(w, h);
+        renderer.setCockpitValidation(true);
         renderer.setMode(c.mode);
         if (help_ != c.help) {
             renderer.toggleCockpitHelp();
@@ -45,6 +71,46 @@ class UiValidation {
         }
         placed_ = true;
         stable_ = 0;
+    }
+    void apply(FlightInstruments& t, Renderer& renderer) {
+        t.contactsExpanded=true;
+        const auto fixture = cases_[stage_].fixture;
+        if (!fixture)
+            return;
+        // Presentation-only stress data; the navigation and ship simulation
+        // continue to use their real state, checked in observe().
+        t.weapon = "MINING PROBE LAUNCHER";
+        t.explorationActive = true;
+        t.exploration = {"MINING PROBE / NOSE", "SIX ROUNDS / CTRL-P LAUNCH", "SOLID TERRAIN / SAVED CAVERN",
+                         "ALT-P CAMERA / CTRL-J ENTRANCE"};
+        t.altitude = 35;
+        t.gear = t.growthBlocked = true;
+        t.descent = 100;
+        t.stoppingDistance = 5000;
+        t.crewFire = "GUNNERS HOLD FIRE / NEUTRAL SHIPS NEARBY";
+        t.targetVisible = true;
+        t.localTarget = {0, 0, -1};
+        t.range = 4000;
+        crew_.flightOpen = fixture == 2;
+        crew_.open = fixture == 3;
+        market_.open = fixture == 4;
+        if (fixture == 2) {
+            t.stationStatus = "CAPTAIN AT PORT GUN / CREW RELIEF PILOT ACTIVE";
+            t.playerGun = 1;
+            t.reliefHelm = "LIEUTENANT LONG SURNAME";
+        }
+        if (fixture == 5) {
+            t.phase = "MINING PROBE CAMERA";
+            t.exploration = {"BORING / CUTTER ACTIVE", "DEPTH 80M / TARGET 80M",
+                             "CUTTER 100 RPM / LOAD 80% / TIP HEAT 50%", "ESC RETURNS TO SHIP / ALT-P CAMERA"};
+        }
+        renderer.setCrew(&crew_);
+        renderer.setEconomy(nullptr, &market_);
+    }
+    std::string_view notice() const {
+        return cases_[stage_].fixture
+                   ? "TRANSACTION COMPLETE / MINING PROBE LAUNCHER FITTED / SIX ROUNDS AVAILABLE / NEW EQUIPMENT READY"
+                   : "";
     }
     void observe(const FrameStats& stats, RegionCache& cache, Renderer& renderer,
                  const std::string& directory) {
@@ -56,7 +122,7 @@ class UiValidation {
             captured_ = false;
             placed_ = false;
             if (++stage_ == std::size(cases_))
-                std::cout << "PASS: native UI fit / six sizes and guide / world and traffic hit testing / "
+                std::cout << "PASS: native UI fit / twelve layouts and popups / world and traffic hit testing / "
                              "camera unchanged\n";
             return;
         }
@@ -80,11 +146,11 @@ class UiValidation {
         const auto shipPoint = v.toPixels({layout.traffic.x + 24, 217});
         const auto world = renderer.pick(worldPoint.x, worldPoint.y);
         const auto ship = renderer.pickActivity(shipPoint.x, shipPoint.y);
-        if (help_) {
+        if (help_ || c.fixture >= 3) {
             if (world || ship)
                 throw std::runtime_error("Controls guide allowed world selection through its panels");
         } else if (world != worlds[cockpitCelestialRows(worlds).front()].address ||
-                   ship != ships[cockpitActivityRows(ships).front()].body.id)
+                   (c.fixture == 2 ? bool(ship) : ship != ships[cockpitActivityRows(ships).front()].body.id))
             throw std::runtime_error("Resized/Retina contact rows select the wrong world or craft");
         const auto blocked = v.toPixels({40, 80});
         if (renderer.pick(blocked.x, blocked.y) || renderer.pickActivity(blocked.x, blocked.y))
@@ -92,7 +158,7 @@ class UiValidation {
         renderer.screenshot((std::filesystem::path(directory) / (std::string(c.name) + ".ppm")).string());
         std::cout << "UI_FIT case=" << c.name << " pixels=" << c.w << ',' << c.h << " viewport=" << v.x << ','
                   << v.y << ',' << v.width << ',' << v.height << " projection=" << v.projectionScale
-                  << " hit_testing=PASS camera=unchanged\n";
+                  << " hit_testing=PASS camera=unchanged text_overlap=0\n";
         captured_ = true;
         hold_ = 6;
     }
@@ -106,19 +172,28 @@ class UiValidation {
         int w, h;
         RenderMode mode;
         bool help;
+        unsigned fixture;
     };
-    static constexpr Case cases_[] = {{"small", 800, 500, RenderMode::Hyperion, false},
-                                      {"square", 600, 600, RenderMode::Hyperion, false},
-                                      {"portrait", 600, 900, RenderMode::Hyperion, false},
-                                      {"retina", 1920, 1200, RenderMode::Hyperion, false},
-                                      {"wide", 1440, 900, RenderMode::Hyperion, false},
-                                      {"controls", 800, 500, RenderMode::Hyperion, true}};
+    static constexpr Case cases_[] = {{"small", 800, 500, RenderMode::Hyperion, false, 0},
+                                      {"square", 600, 600, RenderMode::Hyperion, false, 0},
+                                      {"portrait", 600, 900, RenderMode::Hyperion, false, 0},
+                                      {"retina", 1920, 1200, RenderMode::Hyperion, false, 0},
+                                      {"wide", 1440, 900, RenderMode::Hyperion, false, 0},
+                                      {"controls", 800, 500, RenderMode::Hyperion, true, 0},
+                                      {"crowded", 800, 500, RenderMode::Hyperion, false, 1},
+                                      {"station", 600, 600, RenderMode::Hyperion, false, 2},
+                                      {"crew", 600, 900, RenderMode::Hyperion, false, 3},
+                                      {"market", 800, 500, RenderMode::Hyperion, false, 4},
+                                      {"probe", 800, 500, RenderMode::Hyperion, false, 5},
+                                      {"probe_portrait", 600, 900, RenderMode::Hyperion, false, 5}};
     SDL_Window* window_;
     Navigation& nav_;
     Pilot& pilot_;
     std::string camera_;
+    CrewView crew_;
+    MarketView market_;
     size_t stage_ = 0;
     unsigned stable_ = 0, hold_ = 0;
     bool placed_ = false, captured_ = false, help_ = false;
 };
-} // namespace infinite
+} // namespace infinity

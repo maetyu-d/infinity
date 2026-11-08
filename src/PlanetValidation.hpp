@@ -1,11 +1,11 @@
 #pragma once
-#include "infinite/Piloting.hpp"
-#include "infinite/Renderer.hpp"
+#include "infinity/Piloting.hpp"
+#include "infinity/Renderer.hpp"
 #include <filesystem>
 #include <iostream>
 #include <sstream>
 
-namespace infinite {
+namespace infinity {
 // Render the same physical orbit using two legal magnifications. At the
 // smaller unit size the planet is 4,000 units away, still inside the 10,000
 // unit far plane. Conventional float depth rounds it into the cleared sky.
@@ -106,4 +106,4 @@ class PlanetValidation {
         stable_ = 0;
     }
 };
-} // namespace infinite
+} // namespace infinity

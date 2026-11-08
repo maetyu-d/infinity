@@ -1,0 +1,15 @@
+Test project /Users/user/Documents/SC tutorial/Infinite/build
+    Start  1: mining_probe_excavation_and_camera
+1/5 Test  #1: mining_probe_excavation_and_camera .......   Passed    0.82 sec
+    Start  3: cavern_geology_drilling_and_expedition
+2/5 Test  #3: cavern_geology_drilling_and_expedition ...   Passed    0.88 sec
+    Start  4: expedition_planner_and_objectives
+3/5 Test  #4: expedition_planner_and_objectives ........   Passed    1.00 sec
+    Start 50: cockpit_layout_and_targeting
+4/5 Test #50: cockpit_layout_and_targeting .............   Passed    2.16 sec
+    Start 51: cockpit_popup_and_text_collisions
+5/5 Test #51: cockpit_popup_and_text_collisions ........   Passed    2.43 sec
+
+100% tests passed, 0 tests failed out of 5
+
+Total Test time (real) =   7.36 sec

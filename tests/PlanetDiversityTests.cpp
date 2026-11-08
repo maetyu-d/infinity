@@ -1,11 +1,11 @@
-#include "infinite/Planetology.hpp"
-#include "infinite/SurfaceLife.hpp"
+#include "infinity/Planetology.hpp"
+#include "infinity/SurfaceLife.hpp"
 #include <algorithm>
 #include <iostream>
 #include <map>
 #include <set>
 #include <stdexcept>
-using namespace infinite;
+using namespace infinity;
 static unsigned checks = 0;
 static void check(bool v, const char* text) {
     ++checks;

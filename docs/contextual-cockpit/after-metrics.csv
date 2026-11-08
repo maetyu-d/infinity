@@ -1,0 +1,9 @@
+case,text_runs,characters,panels_bytes,labels,popups
+warp,33,399,2760,1,0
+approach,36,428,3000,1,0
+landing,35,397,2880,0,0
+docking,37,509,3000,1,0
+combat,40,535,3240,1,1
+surface,40,531,3240,1,0
+micro,37,457,3000,1,0
+catalogue,86,1289,5640,4,0

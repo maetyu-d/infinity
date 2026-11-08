@@ -1,10 +1,10 @@
 #pragma once
-#include "infinite/Renderer.hpp"
+#include "infinity/Renderer.hpp"
 #include <filesystem>
 #include <iostream>
 #include <sstream>
 
-namespace infinite {
+namespace infinity {
 class CelestialValidation {
   public:
     CelestialValidation(const Universe& u, Navigation& nav, Pilot& pilot, bool sunOnly = false)
@@ -163,4 +163,4 @@ class CelestialValidation {
         stable_ = 0;
     }
 };
-} // namespace infinite
+} // namespace infinity

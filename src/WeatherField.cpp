@@ -1,9 +1,9 @@
-#include "infinite/WeatherField.hpp"
+#include "infinity/WeatherField.hpp"
 #include <algorithm>
 #include <cmath>
 #include <numbers>
 
-namespace infinite {
+namespace infinity {
 glm::ivec2 cloudBufferSize(int w, int h) {
     w = std::max(1, w);
     h = std::max(1, h);
@@ -151,4 +151,4 @@ WeatherFieldStats WeatherFieldCache::stats() const {
 void WeatherFieldCache::wait() {
     tasks_.wait();
 }
-} // namespace infinite
+} // namespace infinity

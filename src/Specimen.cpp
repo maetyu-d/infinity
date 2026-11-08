@@ -1,9 +1,9 @@
-#include "infinite/Economy.hpp"
-#include "infinite/Expedition.hpp"
-#include "infinite/Navigation.hpp"
-#include "infinite/Piloting.hpp"
+#include "infinity/Economy.hpp"
+#include "infinity/Expedition.hpp"
+#include "infinity/Navigation.hpp"
+#include "infinity/Piloting.hpp"
 #include <algorithm>
-namespace infinite {
+namespace infinity {
 bool SpecimenProbe::enter(const Universe& u, Navigation& nav, Pilot& pilot, const MaterialExpedition& j) {
     if (active() || j.phase != ExpeditionPhase::Assay || !j.lab || pilot.ship().shrinking ||
         pilot.ship().cruise || glm::length(pilot.ship().velocity) > 3)
@@ -82,4 +82,4 @@ void expeditionMarketView(MarketView& v, const EconomySnapshot& s, size_t select
     if (j->phase == ExpeditionPhase::Survey)
         v.detail.push_back("COLONY-LOANED CORE SAMPLER / LAND WITHIN 80 M / F12 THEN CTRL-SPACE");
 }
-} // namespace infinite
+} // namespace infinity

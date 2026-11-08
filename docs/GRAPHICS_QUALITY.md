@@ -1,4 +1,4 @@
-# Graphics quality — Infinite 0.16
+# Graphics quality — Infinity 0.16
 
 The existing psychedelic Hyperion presentation now has stronger directional lighting and a quieter sky, so planets, rocks and ships read as volumes. The generators, coordinates, seeds, object identities, navigation, ship dynamics and scale hierarchy remain unchanged. `80ca1b7` is the working 0.15 checkpoint.
 
@@ -12,7 +12,7 @@ The existing psychedelic Hyperion presentation now has stronger directional ligh
 - Both final display paths share an HDR-safe edge resolver. It chooses between short and wider edge samples using the local luminance range, preserves hue through the existing tone curve, and adds stable sub-code-value dithering to gradients. No temporal history is used across scale changes.
 - Atoms above 48 projected pixels can use one additional shared 24×40 sphere display mesh in Hyperion/Hybrid. All atom centres, radii, elements, site IDs and bonds are unchanged. Original mode retains its previous display meshes and shading.
 
-The reference remains the user's game in `../Hyperion`: `src/flight/shaders.hpp` (`worldFragment`, especially the irradiance and spectral surface layers, and `postFragment` edge filtering) and `src/flight/surface_detail.hpp` (`closeMaterial`). The prior port and source analysis are recorded in [HYPERION_RENDERING.md](HYPERION_RENDERING.md) and [PSYCHEDELIC_PRESENTATION.md](PSYCHEDELIC_PRESENTATION.md). The compact normal stream and additional atom display LOD are adaptations to Infinite's existing 3D meshes.
+The reference remains the user's game in `../Hyperion`: `src/flight/shaders.hpp` (`worldFragment`, especially the irradiance and spectral surface layers, and `postFragment` edge filtering) and `src/flight/surface_detail.hpp` (`closeMaterial`). The prior port and source analysis are recorded in [HYPERION_RENDERING.md](HYPERION_RENDERING.md) and [PSYCHEDELIC_PRESENTATION.md](PSYCHEDELIC_PRESENTATION.md). The compact normal stream and additional atom display LOD are adaptations to Infinity's existing 3D meshes.
 
 ## Images
 

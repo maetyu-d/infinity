@@ -1,12 +1,12 @@
-#include "infinite/Cockpit.hpp"
-#include "infinite/CockpitMotion.hpp"
-#include "infinite/Piloting.hpp"
+#include "infinity/Cockpit.hpp"
+#include "infinity/CockpitMotion.hpp"
+#include "infinity/Piloting.hpp"
 #include <iostream>
 #include <limits>
 #include <oneapi/tbb/global_control.h>
 #include <stdexcept>
 
-using namespace infinite;
+using namespace infinity;
 namespace {
 size_t checks = 0;
 void check(bool b, const char* message) {

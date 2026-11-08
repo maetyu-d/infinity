@@ -1,6 +1,6 @@
-# Validation and comparisons — Infinite 0.5
+# Validation and comparisons — Infinity 0.5
 
-The packaged `Infinite.app` is version **0.5.0**, ad-hoc signed and verified. Its compiled Mach-O text matches the tested executable. The tested machine is Apple M1 / arm64 / macOS 26.4.1 / bgfx Metal. [Preservation records and executable hashes](preservation.json) identify Git checkpoint `0d61030` and verify 17 unchanged generator, coordinate, history, cache, navigation and dependency files. Generation recipe remains **3**.
+The packaged `Infinity.app` is version **0.5.0**, ad-hoc signed and verified. Its compiled Mach-O text matches the tested executable. The tested machine is Apple M1 / arm64 / macOS 26.4.1 / bgfx Metal. [Preservation records and executable hashes](preservation.json) identify Git checkpoint `0d61030` and verify 17 unchanged generator, coordinate, history, cache, navigation and dependency files. Generation recipe remains **3**.
 
 ## Preservation and native validation
 
@@ -41,15 +41,15 @@ All procedural generation remains on the existing asynchronous workers; presenta
 
 ## Actual Hyperion references
 
-These were captured by running the user's existing **Hyperion 3.64** native game with no-save graphics fixtures. They are its actual 2880×1800 screenshots. Infinite's comparison captures below are 1920×1080.
+These were captured by running the user's existing **Hyperion 3.64** native game with no-save graphics fixtures. They are its actual 2880×1800 screenshots. Infinity's comparison captures below are 1920×1080.
 
 | Hyperion galaxy/chart renderer | Hyperion 3D flight renderer |
 |---|---|
 | ![Hyperion galaxy reference](reference-galaxy.png) | ![Hyperion flight reference](reference-flight.png) |
 
-The source game shows folded spectral sheets/threads, luminous points, restrained dark gaps, material sheen and HDR highlight rolloff. Infinite uses those actual shader functions and composition algorithms on its own generated geometry. Its galaxy keeps its physical stellar/gas distribution; its ice rock keeps its existing cavities; its graphite specimen keeps its atomic sites and bonds. The source game's decorative sky field, terrain generation, buildings, combat and weather are not inserted into Infinite. [Source-by-source audit and intentional differences](../HYPERION_RENDERING.md).
+The source game shows folded spectral sheets/threads, luminous points, restrained dark gaps, material sheen and HDR highlight rolloff. Infinity uses those actual shader functions and composition algorithms on its own generated geometry. Its galaxy keeps its physical stellar/gas distribution; its ice rock keeps its existing cavities; its graphite specimen keeps its atomic sites and bonds. The source game's decorative sky field, terrain generation, buildings, combat and weather are not inserted into Infinity. [Source-by-source audit and intentional differences](../HYPERION_RENDERING.md).
 
-## Identical Infinite scenes
+## Identical Infinity scenes
 
 Camera and geometry are identical across each row. Material animation is frozen at 12 seconds. The source-derived effects are strongest on material surfaces and emission, with fibres suppressed on atoms to keep crystallographic structure readable. Around terrain patches, both the patch and enclosing section share the planet's material coordinates; the sampling rectangle is not coloured independently.
 
@@ -66,11 +66,11 @@ Camera and geometry are identical across each row. Material animation is frozen 
 ## Reproduction and limits
 
 ```sh
-cmake -S . -B build -DINFINITE_GPU_TESTS=ON
+cmake -S . -B build -DINFINITY_GPU_TESTS=ON
 cmake --build build -j 3
 ctest --test-dir build --output-on-failure
-python3 tools/profile_render_modes.py --binary build/infinite \
-  --baseline build/infinite-original-0.4 --output build/render-profile --runs 3
+python3 tools/profile_render_modes.py --binary build/infinity \
+  --baseline build/infinity-original-0.4 --output build/render-profile --runs 3
 python3 tools/summarize_render_modes.py build/render-profile
 ```
 

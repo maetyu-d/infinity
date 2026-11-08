@@ -1,10 +1,10 @@
 #pragma once
-#include "infinite/Renderer.hpp"
+#include "infinity/Renderer.hpp"
 #include <filesystem>
 #include <iostream>
 #include <map>
 #include <sstream>
-namespace infinite {
+namespace infinity {
 class PlanetDiversityValidation {
   public:
     PlanetDiversityValidation(const Universe& u, Navigation& n, Pilot& p, ActivityState& a)
@@ -144,4 +144,4 @@ class PlanetDiversityValidation {
         stable_ = 0;
     }
 };
-} // namespace infinite
+} // namespace infinity

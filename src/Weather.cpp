@@ -1,10 +1,10 @@
-#include "infinite/SurfaceLife.hpp"
+#include "infinity/SurfaceLife.hpp"
 #include <algorithm>
 #include <cmath>
 #include <numbers>
 #include <stdexcept>
 
-namespace infinite {
+namespace infinity {
 PlanetClimate planetClimate(const Node& planet) {
     PlanetClimate c;
     c.seed = featureSeed(planet.seed, Feature::PlanetClimate, climateRecipeVersion);
@@ -246,4 +246,4 @@ std::string_view weatherName(WeatherType type) {
         return "VACUUM";
     }
 }
-} // namespace infinite
+} // namespace infinity

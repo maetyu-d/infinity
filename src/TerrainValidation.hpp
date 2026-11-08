@@ -1,12 +1,12 @@
 #pragma once
-#include "infinite/Piloting.hpp"
-#include "infinite/Renderer.hpp"
+#include "infinity/Piloting.hpp"
+#include "infinity/Renderer.hpp"
 #include <filesystem>
 #include <iostream>
 #include <map>
 #include <sstream>
 
-namespace infinite {
+namespace infinity {
 class TerrainValidation {
   public:
     TerrainValidation(const Universe& universe, Navigation& nav, Pilot& pilot, bool quality = false,
@@ -47,8 +47,7 @@ class TerrainValidation {
         }
         place();
     }
-    void observe(const FrameStats& stats, RegionCache& cache, Renderer& renderer,
-                 const std::string& directory) {
+    void observe(const FrameStats& stats, Renderer& renderer, const std::string& directory) {
         if (pendingCapture_) {
             if (hold_) {
                 --hold_;
@@ -76,11 +75,13 @@ class TerrainValidation {
         const auto& planet = planets_[world_];
         if (descriptorFingerprint(universe_.describe(planet.address)) != descriptor_)
             throw std::runtime_error("Native terrain exploration changed its descriptor");
-        auto generation = cache.stats();
-        const bool ready = stats.terrainTiles > 50 && generation.pending == 0 && generation.queued == 0 &&
-                           stats.lodTransitions == 0 && stats.uploadDeferred == 0 &&
-                           stats.weatherPending == 0;
-        stable_ = ready ? stable_ + 1 : 0;
+        const auto addressed = renderer.submittedGeometry(surfaceFrame_ ? nav_.anchor : planet.address);
+        const bool ready = addressed && stats.terrainTiles > 50 && stats.lodTransitions == 0 &&
+                           stats.uploadDeferred == 0 && stats.weatherPending == 0;
+        // Capture the settled terrain cut independently of distant catalogue work.
+        const uint64_t digest = ready ? renderer.terrainGeometryDigest() : 0;
+        stable_ = digest != 0 && digest == stableTerrain_ ? stable_ + 1 : 0;
+        stableTerrain_ = digest;
         if (hold_) {
             --hold_;
             return;
@@ -89,15 +90,11 @@ class TerrainValidation {
             return;
         if (mode_ == 0) {
             view_ = nav_.serialize();
-            geometry_ = renderer.submittedGeometry(surfaceFrame_ ? nav_.anchor : planet.address);
-            if (!geometry_)
-                throw std::runtime_error("Terrain fixture lost its original addressed geometry");
+            geometry_ = addressed;
             geometryHash_ = geometryFingerprint(*geometry_);
-            terrainHash_ = renderer.terrainGeometryDigest();
+            terrainHash_ = digest;
         } else if (nav_.serialize() != view_ ||
-                   geometryFingerprint(*renderer.submittedGeometry(
-                       surfaceFrame_ ? nav_.anchor : planet.address)) != geometryHash_ ||
-                   renderer.terrainGeometryDigest() != terrainHash_)
+                   geometryFingerprint(*addressed) != geometryHash_ || digest != terrainHash_)
             throw std::runtime_error("Terrain rendering mode changed geometry or the camera");
         if (!directory.empty())
             renderer.screenshot((std::filesystem::path(directory) /
@@ -132,7 +129,7 @@ class TerrainValidation {
     unsigned altitude_ = 0;
     static constexpr double heights_[3] = {250, 2000, 11800};
     unsigned mode_ = 0, stable_ = 0, hold_ = 0;
-    uint64_t descriptor_ = 0, geometryHash_ = 0, terrainHash_ = 0;
+    uint64_t descriptor_ = 0, geometryHash_ = 0, terrainHash_ = 0, stableTerrain_ = 0;
     double range_ = 0;
     bool pendingCapture_ = false;
     std::string view_, fixedView_;
@@ -196,4 +193,4 @@ class TerrainValidation {
                   << '\n';
     }
 };
-} // namespace infinite
+} // namespace infinity

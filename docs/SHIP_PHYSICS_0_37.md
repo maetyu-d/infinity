@@ -1,8 +1,8 @@
 # Ship physics 0.37
 
-Infinite now uses a fixed physical hull and finite actuators for ordinary flight. Turning changes attitude; redirecting travel takes thrust and time. Flight assist remains available, roll remains unrestricted, and the existing destination–approach–landing–launch loop remains operational. Long-range cruise and shrinking retain their explicit fictional fields.
+Infinity now uses a fixed physical hull and finite actuators for ordinary flight. Turning changes attitude; redirecting travel takes thrust and time. Flight assist remains available, roll remains unrestricted, and the existing destination–approach–landing–launch loop remains operational. Long-range cruise and shrinking retain their explicit fictional fields.
 
-The universe is unchanged. No generators, seeds, addresses, terrain, cities, planetary or stellar descriptors, orbital arrangements, atomic structures or renderer passes were edited. [The preservation manifest](ship-physics-0.37/preservation.json) verifies nineteen generation, geometry, navigation and rendering sources against `checkpoint/infinite-0.36-before-flight-physics` (`7a35cf7`). Existing population, stellar catalogue and surface-site snapshots also pass.
+The universe is unchanged. No generators, seeds, addresses, terrain, cities, planetary or stellar descriptors, orbital arrangements, atomic structures or renderer passes were edited. [The preservation manifest](ship-physics-0.37/preservation.json) verifies nineteen generation, geometry, navigation and rendering sources against `checkpoint/infinity-0.36-before-flight-physics` (`7a35cf7`). Existing population, stellar catalogue and surface-site snapshots also pass.
 
 ## Research and scope
 

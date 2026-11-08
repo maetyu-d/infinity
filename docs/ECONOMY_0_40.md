@@ -1,4 +1,4 @@
-# Cargo-backed hauling and carrier work — Infinite 0.40
+# Cargo-backed hauling and carrier work — Infinity 0.40
 
 This phase adds paid transport work to the existing economy. A buyer reserves money for actual goods and a carrier fee; an existing supplier reserves the goods. The player can accept the job remotely, physically collect the consignment and deliver it for the funded fee. Buying the goods is not required, so a new pilot can earn transport income without a large trading bankroll.
 
@@ -68,7 +68,7 @@ The new representative snapshot costs **5,448 B (5.3 KiB)** more, for a total of
 
 The final native scenario completes 701 frames and thirteen readbacks in 32.16 seconds, with **24.70 ms median / 75.16 ms p95** frame time and **161,169,408 B peak process RSS**. The core ledger fixture measures 7,939.88 ms for adapter plus the first 100 ticks and 2,333.89 ms for the next 1,000 ticks while other core tests run. This machine was heavily loaded by other applications, and the expanded native scenario differs from 0.39; these timings are diagnostic observations, not a matched performance comparison or speedup claim. [Frame profile](economy-0.40/native-frames.csv), [ledger measurements](economy-0.40/core-details.log).
 
-The executable is packaged as **Infinite 0.40.0 / build 45**, ad-hoc signed and verified. All 28 Mach-O code/data sections match the tested build. [Build log](economy-0.40/build.log), [package verification](economy-0.40/package.json). The native fixture uses disposable test data and leaves the player's existing save untouched.
+The executable is packaged as **Infinity 0.40.0 / build 45**, ad-hoc signed and verified. All 28 Mach-O code/data sections match the tested build. [Build log](economy-0.40/build.log), [package verification](economy-0.40/package.json). The native fixture uses disposable test data and leaves the player's existing save untouched.
 
 ![Funded jobs at existing ports](economy-0.40/jobs-board.png)
 

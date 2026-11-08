@@ -1,6 +1,6 @@
 #pragma once
 #include "CrewValidation.hpp"
-namespace infinite {
+namespace infinity {
 class CrewFlightValidation {
     const Universe& universe_;
     Navigation& nav_;
@@ -110,4 +110,4 @@ class CrewFlightValidation {
         return finished_;
     }
 };
-} // namespace infinite
+} // namespace infinity

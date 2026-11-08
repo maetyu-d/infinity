@@ -1,4 +1,4 @@
-# Player ship crew — Infinite 0.46
+# Player ship crew — Infinity 0.46
 
 Version 0.48 adds an [in-flight F9 command console](CREW_FLIGHT_0_48.md), station matching, emergency dispatch and completed-task return to duty. F8 retains this detailed deck.
 
@@ -6,7 +6,7 @@ Version 0.47 adds a [crew market](CREW_TRADE_0_47.md): **Backspace now sells** t
 
 Six named crew join the existing player ship, with room for eight. **F8** opens a live crew deck with a compartment schematic, moving crew tokens, roster, health, fatigue, morale, station skills, stores and incident reports. The player remains the captain and flies the ship directly. The external hull, restored manual handling, roll, universe generators and every scientific scale remain intact.
 
-The design takes its broad emphasis on ship emergencies and crew choices from [Subset Games’ FTL](https://www.subsetgames.com/ftl.html), and distinct onboard roles from [MicroProse’s B-17 Flying Fortress](https://store.steampowered.com/app/2000800/B17_Flying_Fortress_The_Mighty_8th_Redux/). Infinite uses its own names, rules, deck diagram and native vector UI. Its seven abstract compartments are a crew-management simulation, rather than a new walkable 3D interior or a replacement for the ship mesh.
+The design takes its broad emphasis on ship emergencies and crew choices from [Subset Games’ FTL](https://www.subsetgames.com/ftl.html), and distinct onboard roles from [MicroProse’s B-17 Flying Fortress](https://store.steampowered.com/app/2000800/B17_Flying_Fortress_The_Mighty_8th_Redux/). Infinity uses its own names, rules, deck diagram and native vector UI. Its seven abstract compartments are a crew-management simulation, rather than a new walkable 3D interior or a replacement for the ship mesh.
 
 ## Stations and orders
 
@@ -42,7 +42,7 @@ At a connected, full-size, stopped berth or landed surface port, the F8 panel sh
 
 Recruitment, supplies and clinic work consume unreserved port food, oxygen, medicine and hardware, with paid local labour and money conservation. Outages, poor port condition, insufficient stock or insufficient credits block services. Crew do not silently repair the external hull; existing paid hull repair services remain authoritative. Supply packages fill the onboard stores up to their caps.
 
-Wallet version 5 reads versions 1–4, adding cumulative, durable crew-service receipts. The asynchronous economic worker commits each purchase before the main thread applies it. Applying the same receipt twice grants nothing extra. A paid recruit that cannot yet fit remains an unredeemed contract until a berth opens. Crew identities, duty assignments, in-transit movement, skills, health, fatigue, morale, hazards, stores and applied receipts have a separate seed-validated `INFINITE_CREW 1` save. Invalid crew saves stop loading with the source file retained. Existing ship and universe save formats are unchanged.
+Wallet version 5 reads versions 1–4, adding cumulative, durable crew-service receipts. The asynchronous economic worker commits each purchase before the main thread applies it. Applying the same receipt twice grants nothing extra. A paid recruit that cannot yet fit remains an unredeemed contract until a berth opens. Crew identities, duty assignments, in-transit movement, skills, health, fatigue, morale, hazards, stores and applied receipts have a separate seed-validated `INFINITY_CREW 1` save. Invalid crew saves stop loading with the source file retained. Existing ship and universe save formats are unchanged.
 
 Crew simulation runs in fixed quarter-second steps with at most eight people and seven rooms. Pathfinding and incident history are bounded. No dependency, texture, shader or world-generation task is added. Crew hazards pause while the game window is unfocused, consistent with suspended local combat.
 
@@ -58,7 +58,7 @@ The [preservation manifest](crew-0.46/preservation.json) verifies **182 protecte
 
 The final crew native fixture records **319 frames**, **69.65 ms median / 142.79 ms p95** raw frame time and **137,494,528 bytes peak RSS** on the shared machine. These include loading, resizing, readbacks and concurrent validation; they are diagnostic measurements rather than a matched speedup comparison. Crew state stays below its **32 KiB** test budget, including a full roster and bounded history. [Measurements and executable hashes](crew-0.46/validation.json), [frame data](crew-0.46/native-crew-frames.csv).
 
-**Infinite 0.46.0 / build 51** is built, packaged and ad-hoc signed. All **28 code/data sections** match the tested executable. [Complete build](crew-0.46/complete-build.log), [package verification](crew-0.46/package.json), [signature](crew-0.46/signing.log). Tests use isolated saves. Completed test executables were temporarily compressed with verified SHA-256 hashes during disk pressure and restored byte-for-byte after validation. [Test storage verification](crew-0.46/test-storage.log).
+**Infinity 0.46.0 / build 51** is built, packaged and ad-hoc signed. All **28 code/data sections** match the tested executable. [Complete build](crew-0.46/complete-build.log), [package verification](crew-0.46/package.json), [signature](crew-0.46/signing.log). Tests use isolated saves. Completed test executables were temporarily compressed with verified SHA-256 hashes during disk pressure and restored byte-for-byte after validation. [Test storage verification](crew-0.46/test-storage.log).
 
 ![Assigned crew and ship stations](crew-0.46/crew-stations.png)
 

@@ -2,7 +2,7 @@ SAMPLER2D(s_weatherField,7);
 SAMPLER2D(s_weatherNext,8);
 uniform vec4 u_weather[4];
 uniform mat4 u_weatherFromEye;
-// Read-only snapshots of Infinite's sampleWeather. The pole rows share a
+// Read-only snapshots of Infinity's sampleWeather. The pole rows share a
 // single physical direction; longitude wraps without a seam.
 vec4 opticalWeatherField(vec3 n,float lod){
  vec2 uv=vec2(atan2(n.z,n.x)/6.283185+.5,acos(clamp(n.y,-1.,1.))/3.14159265);

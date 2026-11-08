@@ -1,14 +1,15 @@
 #pragma once
-#include "infinite/Cockpit.hpp"
-#include "infinite/Piloting.hpp"
-#include "infinite/Renderer.hpp"
+#include "infinity/Cockpit.hpp"
+#include "infinity/OrbitalDebris.hpp"
+#include "infinity/Piloting.hpp"
+#include "infinity/Renderer.hpp"
 #include <algorithm>
 #include <filesystem>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 
-namespace infinite {
+namespace infinity {
 class PilotValidation {
   public:
     PilotValidation(const Universe& u, Navigation& n, Pilot& p) : u_(u), n_(n), p_(p) {
@@ -44,7 +45,7 @@ class PilotValidation {
                   << " temperature=" << u_.describe(planet_).environment.temperature << '\n';
         place(true);
     }
-    void advance(Renderer& renderer) {
+    void advance(Renderer& renderer, ActivityState& activity) {
         ++age_;
         if (stage_ == 0)
             return;
@@ -52,6 +53,11 @@ class PilotValidation {
             p_.update({}, 1. / 30, renderer.submittedGeometry(n_.anchor));
         if (stage_ == 2 || stage_ == 6)
             p_.update({}, 1. / 30, renderer.submittedGeometry(n_.anchor));
+        if (stage_ == 20 || stage_ == 22) {
+            activity.advance(1. / 30);
+            p_.setDebrisClock(activity.seconds);
+            p_.update({}, 1. / 30);
+        }
         if (stage_ == 3 && !n_.transitioning) {
             if (!p_.ship().shrinking)
                 p_.toggleShrink();
@@ -67,7 +73,8 @@ class PilotValidation {
                       renderer.submittedGeometry(n_.anchor));
         }
     }
-    void observe(const FrameStats& stats, Renderer& renderer, const std::string& directory) {
+    void observe(const FrameStats& stats, Renderer& renderer, ActivityState& activity,
+                 const std::string& directory) {
         if (descriptorFingerprint(u_.describe(planet_)) != descriptor_)
             throw std::runtime_error("Piloting altered planet identity");
         auto capture = [&](const char* name) {
@@ -221,19 +228,34 @@ class PilotValidation {
             stage_ = 1;
             age_ = 0;
         } else if (stage_ == 1) {
-            if (age_ == 20)
+            const auto& landing = p_.instruments().landing;
+            if (!landingApproach_ && landing.phase == LandingPhase::Align && stats.landingGuideVertices) {
                 capture("landing-approach");
+                landingApproach_ = true;
+            }
+            if (!landingFlare_ && landing.phase == LandingPhase::Flare && stats.landingGuideVertices) {
+                capture("landing-flare");
+                landingFlare_ = true;
+            }
             if (p_.ship().landed) {
-                if (std::abs(p_.instruments().altitude) > .15 || p_.ship().hull != 100)
-                    throw std::runtime_error("Native touchdown was unsafe");
-                const auto saved = p_.serialize();
-                if (!p_.restore(saved) || !p_.ship().landed)
-                    throw std::runtime_error("Native landed save failed");
-                capture("landed");
-                std::cout << "PILOT_TOUCHDOWN agl=" << p_.instruments().altitude << " hull=" << p_.ship().hull
-                          << '\n';
-                stage_ = 2;
-                age_ = 0;
+                if (touchdownFrame_ == 0) {
+                    if (std::abs(p_.instruments().altitude) > .15 || p_.ship().hull != 100)
+                        throw std::runtime_error("Native touchdown was unsafe");
+                    if (!landingApproach_ || !landingFlare_ || !stats.landingGuideVertices || landing.settle <= 0)
+                        throw std::runtime_error("Native landing skipped the approach, flare or touchdown lights");
+                    capture("landed");
+                    touchdownFrame_ = age_;
+                    std::cout << "PILOT_TOUCHDOWN agl=" << p_.instruments().altitude
+                              << " hull=" << p_.ship().hull
+                              << " light_vertices=" << stats.landingGuideVertices << '\n';
+                } else if (age_ >= touchdownFrame_ + 6) {
+                    // Give the native capture a rendered frame before checking the restored state.
+                    const auto saved = p_.serialize();
+                    if (!p_.restore(saved) || !p_.ship().landed || p_.instruments().landing.settle > 0)
+                        throw std::runtime_error("Native landed save failed");
+                    stage_ = 2;
+                    age_ = 0;
+                }
             }
         } else if (stage_ == 2) {
             if (age_ == 15) {
@@ -361,8 +383,50 @@ class PilotValidation {
             stage_ = 17;
             age_ = 0;
         } else if (stage_ == 17 && age_ > 6) {
-            // Screenshot readback is asynchronous; keep rendering the held
-            // attitude until the final framebuffer callback has completed.
+            placeRingFragment(activity);
+            stage_ = 18;
+            age_ = 0;
+        } else if (stage_ == 18 && age_ >= 12) {
+            const auto contacts = renderer.activityContacts();
+            const auto contact = std::find_if(contacts.begin(), contacts.end(),
+                [&](const auto& c) { return c.body.id == *activity.selected; });
+            if (contact != contacts.end() && contact->selected && !contact->occluded &&
+                stats.activityTriangles > 0 && renderer.pickActivity(720, 450) == activity.selected) {
+                if (std::abs(contact->distance - 460.) > .1)
+                    throw std::runtime_error("Native fragment drifted away from its physical orbit");
+                capture("ring-fragment");
+                std::cout << "PILOT_RING_FRAGMENT " << contact->body.id.str()
+                          << " range=" << contact->distance << " picking=PASS\n";
+                stage_ = 19;
+                age_ = 0;
+            }
+        } else if (stage_ == 19 && age_ > 6) {
+            const auto id = *activity.selected;
+            const auto body = sampleActivity(u_.describe(id.home), id.slot, activity.seconds);
+            const auto pad = debrisPad(body, 1);
+            placeFragmentView(id.home, pad.eye + pad.up * 31. + pad.forward * 15.,
+                              glm::quatLookAtRH(pad.forward, pad.up));
+            p_.setDebrisClock(activity.seconds);
+            p_.setVelocity(pad.velocity);
+            if (!p_.landOnDebris(body))
+                throw std::runtime_error("Native debris landing could not acquire its face");
+            stage_ = 20;
+            age_ = 0;
+        } else if (stage_ == 20 && p_.landedDebris()) {
+            if (p_.ship().hull != 100 || !stats.activityTriangles)
+                throw std::runtime_error("Native debris touchdown damaged the hull or lost the rock mesh");
+            capture("debris-landed");
+            stage_ = 21;
+            age_ = 0;
+        } else if (stage_ == 21 && age_ > 6) {
+            p_.launch();
+            stage_ = 22;
+            age_ = 0;
+        } else if (stage_ == 22 && age_ == 54) {
+            if (p_.ship().landed || p_.instruments().altitude < 8)
+                throw std::runtime_error("Native ship could not lift off orbital debris");
+            std::cout << "PILOT_DEBRIS_LANDING_AND_LIFTOFF hull=" << p_.ship().hull
+                      << " clearance=" << p_.instruments().altitude << " PASS\n";
             finished_ = true;
         }
         if (age_ > 4000)
@@ -379,13 +443,51 @@ class PilotValidation {
     Address planet_, nanoAddress_, distantPlanet_;
     Address moonAddress_;
     ActivityId harbourId_;
-    bool microCaptured_ = false;
+    bool microCaptured_ = false, landingApproach_ = false, landingFlare_ = false;
     glm::dvec3 direction_{};
     glm::dvec3 rollForward_{}, rollRight_{};
     uint64_t descriptor_ = 0, geometry_ = 0;
     std::string camera_;
-    int stage_ = 0, age_ = 0, hold_ = 0;
+    int stage_ = 0, age_ = 0, hold_ = 0, touchdownFrame_ = 0;
     bool finished_ = false, queued_ = false;
+    void placeRingFragment(ActivityState& activity) {
+        for (const auto& address : u_.children(u_.describe(planet_.parent()))) {
+            const auto planet = u_.describe(address);
+            const auto rings = planetTraits(planet).rings;
+            if (!rings.present())
+                continue;
+            const auto fragments = sampleOrbitalDebris(planet, activity.seconds);
+            if (fragments.empty())
+                continue;
+            const auto star = u_.relative(address.parent(), address, 0).position;
+            const auto sun = glm::normalize(star);
+            const auto visible = std::max_element(fragments.begin(), fragments.end(),
+                [&](const auto& a, const auto& b) {
+                    return landableDebris(a) != landableDebris(b) ? landableDebris(b) :
+                        glm::dot(glm::normalize(a.position), sun) * a.radius <
+                        glm::dot(glm::normalize(b.position), sun) * b.radius;
+                });
+            if (!landableDebris(*visible))
+                continue;
+            const auto from = glm::normalize(sun + rings.axis * .4);
+            const auto q = glm::quatLookAtRH(-from, rings.axis);
+            placeFragmentView(address, visible->position + from * 460., q);
+            activity.selected = visible->id;
+            return;
+        }
+        throw std::runtime_error("Native ring fragment fixture has no ringed world");
+    }
+    void placeFragmentView(const Address& address, glm::dvec3 eye, glm::dquat q) {
+        const auto offset = eye / 1000. - q * glm::dvec3(0, 0, 1);
+        std::ostringstream view;
+        view.precision(17);
+        view << address.str() << " 3 " << q.w << ' ' << q.x << ' ' << q.y << ' ' << q.z
+             << ' ' << offset.x << ' ' << offset.y << ' ' << offset.z;
+        if (!n_.restore(view.str()))
+            throw std::runtime_error("Invalid ring fragment fixture");
+        n_.selected.reset();
+        p_.resetMotion();
+    }
     void place(bool orbit) {
         auto p = u_.describe(planet_);
         double radius = std::pow(10., p.frame.logRadius);
@@ -416,4 +518,4 @@ class PilotValidation {
         p_.resetMotion();
     }
 };
-} // namespace infinite
+} // namespace infinity

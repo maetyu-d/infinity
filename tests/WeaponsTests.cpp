@@ -1,11 +1,13 @@
-#include "infinite/Cockpit.hpp"
-#include "infinite/Economy.hpp"
+#include "infinity/Cockpit.hpp"
+#include "infinity/CombatActors.hpp"
+#include "infinity/NpcCombat.hpp"
+#include "infinity/Economy.hpp"
 #include <chrono>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <sstream>
 #include <thread>
-using namespace infinite;
+using namespace infinity;
 namespace {
 unsigned checks = 0;
 void check(bool yes, const char* why) {
@@ -72,11 +74,149 @@ int main(int argc, char** argv) {
         ray.reference = planet;
         ray.origin = body.position + glm::dvec3(0, 0, 600);
         ray.seconds = 12;
+        {
+            auto raider = sampleRaider(u, planet, 12);
+            auto ionRay = ray;
+            ionRay.origin = raider.position + glm::dvec3(0, 0, 600);
+            WeaponSystem ion;
+            ion.setLevel(ionDisruptor);
+            check(ion.fire(u, ionRay, std::span(&raider, 1)), "Ion shot did not fire");
+            auto drifting = raider;
+            ion.apply(drifting);
+            check(ion.ionDisabled(raider.id) && drifting.hull == 100 &&
+                      drifting.systems[size_t(ShipSystem::Engines)] == 0 && ion.damage().empty(),
+                  "Ion shot damaged hull or failed to disable drives");
+            WeaponSystem savedIon;
+            check(savedIon.restore(ion.serialize(), u), "Ion outage save did not restore");
+            savedIon.advance(3);
+            drifting = raider;
+            savedIon.apply(drifting);
+            check(glm::length(drifting.position - (raider.position + raider.velocity * 3.)) < 1e-5,
+                  "Disabled raider did not coast");
+            check(savedIon.secureIonTarget(drifting, 15) && savedIon.damage().front().hull == 100 &&
+                      savedIon.damage().front().systems[size_t(ShipSystem::Engines)] == 0,
+                  "Secured raider did not enter the recovery path");
+            ion.advance(22);
+            drifting = raider;
+            ion.apply(drifting);
+            check(!ion.ionDisabled(raider.id) && drifting.systems[size_t(ShipSystem::Engines)] == 100,
+                  "Unsecured ion outage did not expire");
+        }
+        {
+            auto raider = sampleRaider(u, planet, 12);
+            WeaponRay launch{planet, raider.position + glm::dvec3(0, 0, 600), {0, 0, -1}};
+            NpcPlayer player;
+            player.reference = planet;
+            player.position = raider.position;
+            player.seconds = 12;
+            auto run = [&](WeaponSystem& battery, bool defend, unsigned captain = 0) {
+                double damage = 0;
+                for (int i = 0; i < 120; ++i) {
+                    battery.advance(.025);
+                    damage += battery.updateMissiles(u, player, {}, nullptr, .025, defend, captain);
+                }
+                return damage;
+            };
+            WeaponSystem incoming;
+            check(incoming.launchHostileMissile(launch), "Hostile missile launch rejected");
+            const auto launchPoint = incoming.missiles().front().position;
+            check(incoming.updateMissiles(u, player, {}, nullptr, .025, false, 0) == 0 &&
+                      incoming.missileThreat().seconds > 0 &&
+                      incoming.missileThreat().localDirection.z > .99, "Missile hit instantly or omitted the warning");
+            check(incoming.missiles().size() == 1 && incoming.missiles().front().position != launchPoint &&
+                      incoming.shots().size() == 1,
+                  "Missile flight emitted extra effects instead of exposing its live trajectory");
+            check(run(incoming, false) == 27, "An undefended missile failed to hit once");
+            WeaponSystem crossfire;
+            auto outboundPlayer = player;
+            outboundPlayer.velocity = {0, 0, -500};
+            check(crossfire.launchHostileMissile(launch), "Crossfire aft launch failed");
+            crossfire.updateMissiles(u, outboundPlayer, {}, nullptr, .025, false, 0);
+            check(crossfire.missileThreat().count == 1 && crossfire.missileThreat().seconds < 0,
+                  "Opening threat was displayed as closing");
+            const WeaponRay ahead{planet, player.position - glm::dvec3(0, 0, 900), {0, 0, 1}};
+            check(crossfire.launchHostileMissile(ahead), "Crossfire forward launch failed");
+            crossfire.updateMissiles(u, outboundPlayer, {}, nullptr, .025, false, 0);
+            const auto threat = crossfire.missileThreat();
+            check(threat.count == 2 && threat.seconds > 0 && threat.seconds < 1.2 &&
+                      threat.localDirection.z < -.99,
+                  "Cockpit did not prioritise the closing threat or account for ship velocity");
+            FlightInstruments instrument;
+            const auto clear = cockpitOverlay(instrument, 1.6, "");
+            instrument.localMissile = threat.localDirection;
+            instrument.combatStatus = "MISSILE 2 / AHEAD / 1S";
+            const auto warning = cockpitOverlay(instrument, 1.6, "");
+            check(warning.strokes.vertices.size() > clear.strokes.vertices.size(),
+                  "Closing missile did not draw a windscreen marker");
+
+            for (bool inArc : {false, true}) {
+                player.orientation = inArc ? glm::dquat(0, 0, 1, 0) : glm::dquat(1, 0, 0, 0);
+                for (bool staffed : {false, true}) {
+                    WeaponSystem defence;
+                    defence.setLoadout({1, pointDefence, 0});
+                    defence.setMountReadiness(1, staffed ? 1. : 0.);
+                    check(defence.launchHostileMissile(launch), "Defence test could not launch missile");
+                    const bool shouldIntercept = staffed && inArc;
+                    check(run(defence, true) == (shouldIntercept ? 0. : 27.) &&
+                              defence.mount(1).shotsFired == unsigned(shouldIntercept),
+                          "Interception ignored turret staffing or traverse");
+                }
+            }
+            WeaponSystem evaded;
+            check(evaded.launchHostileMissile(launch), "Evasion fixture could not launch missile");
+            auto fleeing = player;
+            double evasionDamage = 0;
+            for (int i = 0; i < 320; ++i) {
+                fleeing.position.x += 36.;
+                evasionDamage += evaded.updateMissiles(u, fleeing, {}, nullptr, .05, false, 0);
+            }
+            check(evasionDamage == 0 && evaded.missileThreat().count == 0,
+                  "A ship that broke away could not escape missile guidance");
+            WeaponSystem outbound;
+            outbound.setLevel(missileLauncher);
+            check(outbound.fire(u, launch, std::span(&raider, 1)) && outbound.damage().empty(),
+                  "Launcher failed to lock or applied damage before flight");
+            player.position = launch.origin;
+            for (int i = 0; i < 120; ++i)
+                outbound.updateMissiles(u, player, std::span(&raider, 1), nullptr, .025, false, 0);
+            check(outbound.damage().size() == 1 && outbound.damage().front().hull == 62,
+                  "Guided missile failed to reach the locked raider");
+            check(outbound.missiles().empty() && outbound.shots().size() == 2 && outbound.shots().back().hit,
+                  "Guided missile did not transition from one live projectile to a single impact");
+            outbound.advance(.30);
+            check(outbound.shots().size() == 1 && outbound.shots().front().hit && outbound.firingMask() == 0,
+                  "Impact afterglow expired with the muzzle flash or counted as active firing");
+            outbound.advance(.4);
+            check(outbound.shots().empty(), "Missile impact afterglow failed to expire");
+        }
+        {
+            WeaponSystem pulse;
+            check(pulse.pulseStatus(0, .001).starts_with(flightQuantity(3.) + " REACH"),
+                  "Pulse range readout did not follow ship size");
+            auto aimed = ray;
+            aimed.targetSystem = ShipSystem::Engines;
+            const auto component = body.position +
+                body.orientation * (systemOffset(aimed.targetSystem) * body.radius);
+            aimed.origin = component + glm::dvec3(0, 0, 600);
+            check(pulse.fire(u, aimed, std::span(&body, 1)) &&
+                      pulse.shots().back().component == ShipSystem::Engines &&
+                      pulse.pulseStatus(0, 1).ends_with("ENGINES HIT") &&
+                      pulse.damage().front().systems[size_t(ShipSystem::Engines)] == 70,
+                  "Pulse subsystem feedback disagreed with applied damage");
+            pulse.advance(2);
+            check(pulse.pulseStatus(0, 1).ends_with("SPACE FIRE"),
+                  "Pulse impact confirmation failed to expire");
+            aimed.origin = body.position + glm::dvec3(0, 0, 3100);
+            check(pulse.fire(u, aimed, std::span(&body, 1)) &&
+                      pulse.pulseStatus(0, 1).ends_with("NO CONTACT") &&
+                      pulse.damage().front().systems[size_t(ShipSystem::Engines)] == 70,
+                  "Out-of-range pulse reported a hit or applied damage");
+        }
         WeaponSystem w;
         check(w.level() == 1 && w.fire(u, ray, std::span(&body, 1)), "Starter laser unavailable");
         auto hit = body;
         w.apply(hit);
-        check(hit.hull == 90 && !hit.disabled, "Laser did not damage nearest craft");
+        check(w.pulseStatus(0, 1).ends_with("HULL HIT") && hit.hull == 90 && !hit.disabled, "Laser did not damage nearest craft");
         check(!w.fire(u, ray, std::span(&body, 1)) && w.shotsFired() == 1, "Laser bypassed cooldown");
         const auto before = w.serialize();
         check(!w.restore(before + " corrupt", u) && w.serialize() == before,
@@ -200,9 +340,20 @@ int main(int argc, char** argv) {
         for (auto aspect : {16. / 10, .75}) {
             auto v = economicMarketView(&s, net->sites[0].id, 2, 10, true, MarketPage::Weapons);
             auto hud = cockpitOverlay({}, aspect, "", {}, {}, {}, false, 1, &v);
-            check(v.detail.size() == 15 && !hud.lettering.vertices.empty(),
+            check(v.detail.size() == 5 * maxWeaponLevel && !hud.lettering.vertices.empty(),
                   "Weapon shop does not fit/render");
         }
+        check(!economicWeaponQuote(s, 0, ionDisruptor).available,
+              "Disruptor quote silently replaced a fitted laser");
+        q = economicWeaponQuote(s, 0, ionDisruptor, false, 1);
+        c.sequence++;
+        c.serviceUnits = ionDisruptor;
+        c.weaponMount = 1;
+        c.limitCents = q.totalCents();
+        check(q.available && e.execute(c, p).starts_with("WEAPON FITTED") &&
+                  p.weaponAt(1) == ionDisruptor && p.weaponAt(0) == 3,
+              "Port refit did not install a distinct disruptor on the empty mount");
+        audit(e, p, money);
         // Historical v3 fixture, independent of future wallet trailers.
         std::ostringstream old;
         old << "INFINITE_WALLET 3 " << p.credits << ' ' << p.lastCommand;

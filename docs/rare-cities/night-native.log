@@ -1,0 +1,6 @@
+CITY address=0,0,0/1:0/2:353/3:0 slot=6 core=11605888242638737538 descriptor=10649597646916102092 core_population=31053 world_bytes=1864434 generation_ms=3529.88
+URBAN buildings=11614 people=8734662 radius=15508.2 bytes=400968
+URBAN_CAPTURE case=overview terrain_digest=4308668391337586389 cpu_median=8.16313 surface_bytes=1864434 visible_buildings=2381 surface_gpu_bytes=73656 urban_blocks=441 urban_buildings=2236 urban_lights=746 urban_residents=0
+URBAN_CAPTURE case=approach terrain_digest=14981243734044862418 cpu_median=9.99525 surface_bytes=1864434 visible_buildings=3564 surface_gpu_bytes=229176 urban_blocks=231 urban_buildings=3527 urban_lights=153 urban_residents=0
+URBAN_CAPTURE case=street terrain_digest=12592241126356739011 cpu_median=15.4027 surface_bytes=1864434 visible_buildings=2612 surface_gpu_bytes=256632 urban_blocks=145 urban_buildings=2612 urban_lights=58 urban_residents=12
+PASS: same city core, planet, terrain camera and navigation; three native city approach views

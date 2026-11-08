@@ -1,11 +1,11 @@
-#include "infinite/Flight.hpp"
-#include "infinite/Streaming.hpp"
+#include "infinity/Flight.hpp"
+#include "infinity/Streaming.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <stdexcept>
 
-namespace infinite {
+namespace infinity {
 Address FlightController::surfaceAt(const Address& planet, glm::dvec3 p) {
     if (planet.kind() != Kind::Planet || !std::isfinite(glm::length(p)) || glm::length(p) == 0)
         throw std::invalid_argument("Surface lookup requires a planet and a finite nonzero direction");
@@ -31,6 +31,26 @@ void FlightController::update(glm::dvec3 axes, double dt, bool fast, bool precis
     }
     if (holdForFlight_)
         return; // A manual parent/focus view remains usable until flight resumes.
+    if (excavations_)
+        for (const auto& b : excavations_->holes)
+            if (b.planet.ancestorOf(nav_.anchor) && excavationSeconds_ >= b.impactTime()) {
+                const auto eye = universe_.pointRelative(nav_.anchor,
+                    nav_.cameraPosition()*std::pow(10.,nav_.logDistance-universe_.describe(nav_.anchor).frame.logRadius),
+                    b.planet,0);
+                const double space = excavationClearance(*excavations_,b.planet,eye,excavationSeconds_);
+                const auto planet=universe_.describe(b.planet);
+                const double height=glm::length(eye)-std::pow(10.,planet.frame.logRadius)-
+                    universe_.terrainHeight(planet,glm::normalize(eye));
+                if (space > 0 && height < 0) {
+                    if (nav_.anchor != b.planet) changeFrame(b.planet);
+                    clearanceMetres_ = space;
+                    nav_.setRenderScale(std::clamp(std::log10(std::max(space*.7,1e-10)),-10.5,26.8));
+                    target_.reset();
+                    if (glm::length(axes)>0) nav_.move(axes,dt,fast,precise);
+                    return;
+                }
+                break; // All matching holes share the current planet; the query already combined them.
+            }
     if (nav_.anchor.kind() == Kind::Cosmic) {
         const auto point = nav_.cameraPosition() * std::pow(10., nav_.logDistance - rootCellLogMetres);
         const auto [root, local] = canonicalRoot(nav_.anchor, point);
@@ -214,4 +234,4 @@ void FlightController::update(glm::dvec3 axes, double dt, bool fast, bool precis
     const double step = std::min(dt, .2 * std::max(clearance, minimum) / speed);
     nav_.move(axes, step, fast, precise);
 }
-} // namespace infinite
+} // namespace infinity

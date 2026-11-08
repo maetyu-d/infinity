@@ -1,11 +1,15 @@
-#include "infinite/Economy.hpp"
+#include "infinity/Economy.hpp"
 #include <algorithm>
 #include <cmath>
-namespace infinite {
+namespace infinity {
 std::vector<EconomicPortSignal> economicPortSignals(const EconomySnapshot& s) {
     std::vector<EconomicPortSignal> result;
     if (!s.network || s.sites.size() != s.network->sites.size())
         return result;
+    std::vector<unsigned> held(s.sites.size());
+    for (const auto& flight : s.flights)
+        if (flight.weatherHold && flight.destination < held.size())
+            ++held[flight.destination];
     result.reserve(s.sites.size());
     for (size_t i = 0; i < s.sites.size(); ++i) {
         const auto& d = s.network->sites[i];
@@ -75,6 +79,11 @@ std::vector<EconomicPortSignal> economicPortSignals(const EconomySnapshot& s) {
             signal.brief = "SERVICE CREW UNAVAILABLE";
             signal.alert = .65f;
         }
+        if (held[i]) {
+            signal.brief += " / WEATHER HOLD";
+            signal.alert = std::max(signal.alert, .65f);
+            signal.report[2] = std::to_string(held[i]) + " FREIGHT IN LANDING HOLD / " + signal.report[2];
+        }
         const auto expedition = std::find_if(s.expeditions.jobs.begin(), s.expeditions.jobs.end(),
                                              [&](const auto& j) { return j.colony == d.id; });
         if (expedition != s.expeditions.jobs.end()) {
@@ -108,4 +117,4 @@ void annotateEconomicPort(ActivityBody& body, const EconomySnapshot& s) {
     if (s.catchingUp)
         body.economicReport[0] = "CATCHING UP / LAST PUBLISHED STATE";
 }
-} // namespace infinite
+} // namespace infinity

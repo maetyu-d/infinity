@@ -1,4 +1,4 @@
-# Research-led city generation — Infinite 0.20
+# Research-led city generation — Infinity 0.20
 
 This release replaces the common square-lot appearance of 0.19 settlements with a connected urban model: street graph → accessible parcels → functional districts → architecture → pedestrian routes. It preserves the existing planets and the original surface-site selection. **Shift-K**, **J**, **L** and **Enter** still select a surface port, approach, land and launch.
 
@@ -11,10 +11,10 @@ Three primary research sources informed the new implementation:
 | Research | Applied here |
 | --- | --- |
 | Chen, Song & Ortner, [Hierarchical Co-generation of Parcels and Streets in Urban Modeling](https://repository.sutd.edu.sg/esploro/outputs/journalArticle/Hierarchical-Co-generation-of-Parcels-and-Streets/9912329509846), 2024 | Treat streets and parcels as coupled data. Organic layouts use hierarchical block subdivision; every accepted building has frontage on a street reachable from the port. This is a bounded implementation, without the paper's global optimization stage. |
-| Chen et al., [Interactive Procedural Street Modeling](https://www2.cs.uh.edu/~chengu/Publications/streetModeling/street_sig08.pdf), 2008 | Distinguish street hierarchy and combine regular, radial and terrain-related directions. Infinite uses explicit patterns, smooth deformation, slope alignment and terrain-cost alternatives; it does not implement the paper's interactive tensor-field editor. |
+| Chen et al., [Interactive Procedural Street Modeling](https://www2.cs.uh.edu/~chengu/Publications/streetModeling/street_sig08.pdf), 2008 | Distinguish street hierarchy and combine regular, radial and terrain-related directions. Infinity uses explicit patterns, smooth deformation, slope alignment and terrain-cost alternatives; it does not implement the paper's interactive tensor-field editor. |
 | Müller et al., [Procedural Modeling of Buildings](https://doi.org/10.1145/1141911.1141931), 2006 | Separate architectural massing from façade detail and apply context-sensitive rules. Here, typed massing rules produce housing courts, setbacks, vaulted halls, row-house roofs, sheds and linked pressure habitats. There is no general CGA parser. |
 
-The existing Hyperion game's `src/flight/settlements.cpp::facility`, `domeFrame`, `roofUnit` and port-access treatment were also inspected for the visual vocabulary of glazed modules, equipment, contrasting trim and grounded facilities. Its world simulation is not imported. New structures use Infinite's existing Original, Hyperion and Hybrid rendering paths.
+The existing Hyperion game's `src/flight/settlements.cpp::facility`, `domeFrame`, `roofUnit` and port-access treatment were also inspected for the visual vocabulary of glazed modules, equipment, contrasting trim and grounded facilities. Its world simulation is not imported. New structures use Infinity's existing Original, Hyperion and Hybrid rendering paths.
 
 ## City structure
 
@@ -61,19 +61,19 @@ The universe/population/terrain recipes remain **3 / 1 / 1**, and climate/societ
 
 City generation runs in the existing cancellable asynchronous surface cache. The **4 MiB cache**, two-job limit and shared oneTBB runtime are unchanged. Each city is bounded to 240 buildings; the frame still limits ordinary surface instances to 6,000 and samples at most 96 residents per nearby settlement. Source templates remain shared across all cities. No new dependency or shader compiler requirement is added.
 
-Branch `checkpoint/infinite-0.19-before-city-research` retains the baseline. A terrain that cannot support a valid connected refinement retains its previous settlement layout and landing anchor.
+Branch `checkpoint/infinity-0.19-before-city-research` retains the baseline. A terrain that cannot support a valid connected refinement retains its previous settlement layout and landing anchor.
 
 ## Verification and reproduction
 
 ```sh
-cmake -S . -B build -DINFINITE_GPU_TESTS=ON
+cmake -S . -B build -DINFINITY_GPU_TESTS=ON
 cmake --build build -j 4
 ctest --test-dir build --output-on-failure
-build/infinite_city_tests --svg build/city-plans
-build/infinite --surface-test --capture-dir build/city-demo/captures --profile build/city-demo/frames.csv --data build/city-demo/data
+build/infinity_city_tests --svg build/city-plans
+build/infinity --surface-test --capture-dir build/city-demo/captures --profile build/city-demo/frames.csv --data build/city-demo/data
 ```
 
-Native GPU tests require an active desktop. CPU-only builds can leave `INFINITE_GPU_TESTS` disabled.
+Native GPU tests require an active desktop. CPU-only builds can leave `INFINITY_GPU_TESTS` disabled.
 
 The structural tests cover all four morphologies, graph connectivity, hierarchy, unique IDs, street frontage, mixed uses, architectural variety, ground-fitted pavement, pedestrian clearance, deterministic regeneration and the clear landing approach. Site and universe preservation have separate snapshots. Native captures compare all three display modes with matching cameras, terrain and full city-data fingerprints.
 

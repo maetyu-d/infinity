@@ -1,0 +1,21 @@
+BACKBUFFER 1440x900 (requested 1440x900)
+Infinite / Metal / seed 5282236693612155973
+PROBE_CAPTURE 0 id=14181543975564158605 depth=0 meshes=0 cut_tiles=0 rig=0 lit=0 dust=0 flash=0 hidden=0 light_uploads=0 text_overlap=0
+PROBE_CAPTURE 1 id=14181543975564158605 depth=0 meshes=0 cut_tiles=0 rig=4240 lit=0 dust=0 flash=0 hidden=0 light_uploads=0 text_overlap=0
+PROBE_CAPTURE 2 id=14181543975564158605 depth=40 meshes=1 cut_tiles=2 rig=4528 lit=2593 dust=81 flash=0 hidden=1 light_uploads=0 text_overlap=0
+PROBE_CAPTURE 3 id=14181543975564158605 depth=80 meshes=1 cut_tiles=2 rig=4528 lit=2593 dust=0 flash=0 hidden=1 light_uploads=0 text_overlap=0
+PROBE_CAPTURE 4 id=14181543975564158605 depth=80 meshes=1 cut_tiles=2 rig=4528 lit=11452 dust=96 flash=0.32628 hidden=1 light_uploads=0 text_overlap=0
+PROBE_CAPTURE 5 id=14181543975564158605 depth=80 meshes=1 cut_tiles=2 rig=4528 lit=11452 dust=96 flash=0 hidden=1 light_uploads=0 text_overlap=0
+PROBE_CAPTURE 6 id=14181543975564158605 depth=80 meshes=1 cut_tiles=2 rig=0 lit=11452 dust=96 flash=0 hidden=0 light_uploads=0 text_overlap=0
+PROBE_CAPTURE 7 id=14181543975564158605 depth=80 meshes=1 cut_tiles=2 rig=0 lit=11452 dust=96 flash=0 hidden=1 light_uploads=1 text_overlap=0
+PROBE_CAPTURE 8 id=14181543975564158605 depth=80 meshes=1 cut_tiles=2 rig=4528 lit=11452 dust=96 flash=0 hidden=1 light_uploads=0 text_overlap=0
+PROBE_CAPTURE 9 id=14181543975564158605 depth=80 meshes=1 cut_tiles=2 rig=0 lit=11452 dust=96 flash=0 hidden=0 light_uploads=0 text_overlap=0
+PROBE_CAPTURE 10 id=14181543975564158605 depth=80 meshes=1 cut_tiles=2 rig=0 lit=11452 dust=96 flash=0 hidden=0 light_uploads=0 text_overlap=0
+PROBE_CAPTURE 11 id=14181543975564158605 depth=80 meshes=1 cut_tiles=2 rig=0 lit=11452 dust=96 flash=0 hidden=1 light_uploads=1 text_overlap=0
+PROBE_CAPTURE 12 id=14181543975564158605 depth=18.2229 meshes=1 cut_tiles=2 rig=4528 lit=2593 dust=0 flash=0 hidden=1 light_uploads=0 text_overlap=0
+PROBE_CAPTURE 13 id=14181543975564158605 depth=30.0678 meshes=1 cut_tiles=2 rig=4528 lit=2593 dust=82 flash=0 hidden=1 light_uploads=0 text_overlap=0
+PROBE_CAPTURE 14 id=14181543975564158605 depth=48 meshes=1 cut_tiles=2 rig=4528 lit=9524 dust=96 flash=0.32628 hidden=1 light_uploads=0 text_overlap=0
+PROBE_CAPTURE 15 id=14181543975564158605 depth=0 meshes=1 cut_tiles=2 rig=4240 lit=2593 dust=0 flash=0 hidden=0 light_uploads=0 text_overlap=0
+PASS: native mining probe / turret refit / independent first-person camera / real excavated cavern
+FRAME median_ms=17.6675 p95_ms=37.9035 frames=960 cache_bytes=14730596
+peak_rss_bytes=139395072

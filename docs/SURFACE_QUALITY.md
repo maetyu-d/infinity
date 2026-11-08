@@ -1,4 +1,4 @@
-# Surface graphics, Infinite 0.23
+# Surface graphics, Infinity 0.23
 
 This pass implements the five surface improvements identified from the screenshot: field normals, separate albedo and illumination, material detail between orbital and close views, terrain sunlight shadows, and climate-scaled atmosphere/daylight presentation. It changes presentation above the existing universe. Original mode, terrain heights, meshes, collision, identities, seeds, climates and flight dynamics remain authoritative.
 
@@ -8,10 +8,10 @@ The reference is the user's game at `../Hyperion`. Source hashes are recorded in
 
 - `src/flight/renderer.cpp::lookupNoise`: the exact periodic integer lookup and offset colour channels, recreated as one shared 256 × 256 RGBA8 image.
 - `src/flight/shaders.hpp::noise` and `src/flight/surface_detail.hpp::closeMaterial`: smooth interpolated strata/deposits, filtered bedding, mineral pigments and bounded material relief. Rock-cell detail remains at close range; enlarging those cells into landscape tiles was rejected after native inspection.
-- `src/flight/lighting.hpp::PRISM_NEAR_SUN_GLSL`: receiver-plane-corrected sun-shadow filtering. Infinite extends its existing bgfx light map to existing terrain triangles.
-- `src/flight/shaders.hpp::atmoFragment`: occupied ray spans, exponential density, sun optical depth and Rayleigh/Mie phases. Infinite supplies its own retained planetary climate and opaque depth.
+- `src/flight/lighting.hpp::PRISM_NEAR_SUN_GLSL`: receiver-plane-corrected sun-shadow filtering. Infinity extends its existing bgfx light map to existing terrain triangles.
+- `src/flight/shaders.hpp::atmoFragment`: occupied ray spans, exponential density, sun optical depth and Rayleigh/Mie phases. Infinity supplies its own retained planetary climate and opaque depth.
 
-The [original Hyperion flight capture](hyperion/reference-flight.png) remains the visual reference. Infinite retains its own planet geometry and orbital population, so surface silhouettes and composition differ deliberately. The folded spectral sky, pigments, restrained mineral emission, filtering and lighting derive from the source techniques; no Hyperion world generator is imported.
+The [original Hyperion flight capture](hyperion/reference-flight.png) remains the visual reference. Infinity retains its own planet geometry and orbital population, so surface silhouettes and composition differ deliberately. The folded spectral sky, pigments, restrained mineral emission, filtering and lighting derive from the source techniques; no Hyperion world generator is imported.
 
 ## Lighting and material boundary
 
@@ -55,7 +55,7 @@ Also inspected: [city approach](surface-quality/after-1-city-approach-HYPERION.p
 
 ## Preservation and validation
 
-`checkpoint/infinite-0.22-before-surface-pass` preserves baseline **b92a8b7**. [Source preservation](surface-quality/preservation.json) verifies 16 byte-identical generation, geometry, simulation, history, city and navigation source files. `Streaming.cpp` only retains additional read-only lighting metadata.
+`checkpoint/infinity-0.22-before-surface-pass` preserves baseline **b92a8b7**. [Source preservation](surface-quality/preservation.json) verifies 16 byte-identical generation, geometry, simulation, history, city and navigation source files. `Streaming.cpp` only retains additional read-only lighting metadata.
 
 CPU tests compare **18 baseline terrain mesh fingerprints**, including original positions, colours and indices, across three LODs and three stitch masks on legacy and rugged worlds. They also check field normals, unlit albedo, metadata-independent identity, periodic material frames through rebasing/magnification, lookup continuity and daylight behaviour. Native tests verify identical terrain/planet hashes and serialized cameras across rendering modes, plus a paired grazing-sun test of the exact saved-flight camera. All **six Original terrain crops are pixel-identical** to baseline (640 × 210 pixels, excluding cockpit/HUD); see [comparison.json](surface-quality/comparison.json).
 
@@ -68,7 +68,7 @@ python3 tools/compile_shaders.py --shaderc build/shader-tool/shaderc
 cmake --build build -j 4
 ctest --test-dir build --output-on-failure
 # Additional fixed-view diagnostic; does not affect saved play:
-build/infinite --terrain-quality-test --no-sun-shadows --capture-dir build/shadow-off/captures --data build/shadow-off/data
+build/infinity --terrain-quality-test --no-sun-shadows --capture-dir build/shadow-off/captures --data build/shadow-off/data
 ```
 
 ## Measured cost
